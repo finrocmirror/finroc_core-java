@@ -1,0 +1,21 @@
+<targets>
+
+  <finrocjavalibrary name="core" libs="rrlib_finroc_core_utils.jar">
+    <sources exclude="org/finroc/core/test/**">
+      **.java
+    </sources>
+  </finrocjavalibrary>
+
+  <finrocjavaprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
+    <sources>
+      org/finroc/core/test/*.java
+    </sources>
+    <script name="testrealports" main-class="org.finroc.core.test.RealPortTest5"/>
+    <script name="testqueuedports" main-class="org.finroc.core.test.RealPortQueueTest"/>
+    <script name="testtcp2server" main-class="org.finroc.core.test.RealServerTest"/>
+    <script name="testtcp2client" main-class="org.finroc.core.test.RealClientTest"/>
+    <script name="test_initial_pushing" main-class="org.finroc.core.test.InitialPushTest"/>
+    <script name="test_p2p" main-class="org.finroc.core.test.Peer2PeerTest"/>
+  </finrocjavaprogram>
+  
+</targets>
