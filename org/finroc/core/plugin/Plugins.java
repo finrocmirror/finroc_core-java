@@ -21,6 +21,9 @@
  */
 package org.finroc.core.plugin;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.jc.annotation.JavaOnly;
@@ -183,7 +186,18 @@ public class Plugins { /*implements HTTPResource*/
     @JavaOnly
     public static void loadAllDataTypesInPackage(Class<?> classInPackage) {
         try {
-            Files.getPackageClasses(classInPackage, "", getInstance().pluginLoader == null ? null : getInstance().pluginLoader.getClassLoader());
+            //System.out.println("loadAllDataTypesInPackage: " + classInPackage.toString());
+            for (Class<?> c : Files.getPackageClasses(classInPackage, "", getInstance().pluginLoader == null ? null : getInstance().pluginLoader.getClassLoader())) {
+                //c.newInstance();
+                //System.out.println(c.toString());
+                for (Field f : c.getFields()) {
+                    if (Modifier.isStatic(f.getModifiers())) {
+                        f.setAccessible(true);
+                        @SuppressWarnings("unused")
+                        Object o = f.get(null);
+                    }
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
