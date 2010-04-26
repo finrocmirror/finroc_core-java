@@ -127,9 +127,13 @@ public class RealPortQueueTest extends Thread {
         System.out.println("\nAnd now for Concurrency :-)  ...");
 
         // connect to unlimited input
-        //input.disconnectAll();
         output.connectToTarget(unlimitedInput);
         output.connectToTarget(unlimitedInput2);
+
+        // remove values from initial push
+        unlimitedInput.dequeueSingleAutoLocked();
+        unlimitedInput2.dequeueSingleAutoLocked();
+        ThreadLocalCache.getFast().releaseAllLocks();
 
         // start writer threads
         @SharedPtr RealPortQueueTest thread1 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(true));
