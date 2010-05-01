@@ -510,4 +510,11 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         boolean valueMatches = (value == o.value);
         return o.numType == numType && o.unit == unit && valueMatches;
     }
+
+    /**
+     * @return Is this a double or float number?
+     */
+    public boolean isFloatingPoint() {
+        return numType == Type.FLOAT || numType == Type.DOUBLE;
+    }
 }
