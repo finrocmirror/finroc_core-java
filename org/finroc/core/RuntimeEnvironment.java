@@ -643,7 +643,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
             for (@SizeT int i = 0; i < alternativeLinkRoots.size(); i++) {
                 FrameworkElement altRoot = alternativeLinkRoots.get(i);
                 fe = altRoot.getChildElement(linkName, 0, true, altRoot);
-                if (fe != null) {
+                if (fe != null && !fe.isDeleted()) {
                     assert fe.isPort();
                     return (AbstractPort)fe;
                 }

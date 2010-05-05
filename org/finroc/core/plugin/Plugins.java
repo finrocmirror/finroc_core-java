@@ -57,7 +57,7 @@ public class Plugins { /*implements HTTPResource*/
     /** Plugin manager instance */
     private final PluginManager pluginManager = new PluginManager();
 
-    /** Plugin loade implementation */
+    /** Plugin loader implementation */
     @SharedPtr private PluginLoader pluginLoader;
 //
 //  /** PluginsListener */
@@ -201,6 +201,14 @@ public class Plugins { /*implements HTTPResource*/
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * @return ClassLoader used for loading plugins
+     */
+    @JavaOnly
+    public ClassLoader getPluginClassLoader() {
+        return pluginLoader.getClassLoader();
     }
 
 //

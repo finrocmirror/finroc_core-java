@@ -267,7 +267,7 @@ public class FrameworkElement implements HasDestructor {
      */
     @SpinLock
     protected synchronized void setFlag(int flag) {
-        assert (flag & CoreFlags.CONSTANT_FLAGS) == 0;
+        assert(flag & CoreFlags.CONSTANT_FLAGS) == 0;
         flags |= flag;
     }
 
@@ -278,7 +278,7 @@ public class FrameworkElement implements HasDestructor {
      */
     @SpinLock
     protected synchronized void removeFlag(int flag) {
-        assert (flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
+        assert(flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
         flags &= ~flag;
     }
 
@@ -437,7 +437,7 @@ public class FrameworkElement implements HasDestructor {
 
                 // avoid cycles
                 assert child.getChild() != this;
-                assert (!this.isChildOf(child.getChild()));
+                assert(!this.isChildOf(child.getChild()));
 
                 // Check if child with same name already exists and possibly rename (?)
                 if (getFlag(CoreFlags.AUTO_RENAME)) {
@@ -508,7 +508,7 @@ public class FrameworkElement implements HasDestructor {
         @Ptr ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             @Ptr Link child = iterable.get(i);
-            if (child != null && name.regionMatches(nameIndex, child.description, 0, child.description.length())) {
+            if (child != null && name.regionMatches(nameIndex, child.description, 0, child.description.length()) && (!child.getChild().isDeleted())) {
                 if (name.length() == nameIndex + child.description.length()) {
                     if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
                         return child.getChild();
@@ -718,7 +718,7 @@ public class FrameworkElement implements HasDestructor {
 
         synchronized (children) {
             assert !getFlag(CoreFlags.DELETED);
-            assert ((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
+            assert((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
 
             flags = (flags | CoreFlags.DELETED) & ~CoreFlags.READY;
 
@@ -1157,7 +1157,7 @@ public class FrameworkElement implements HasDestructor {
         int count = 0;
         @Ptr ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
-            if (iterable.get(i) != null ) {
+            if (iterable.get(i) != null) {
                 count++;
             }
         }
