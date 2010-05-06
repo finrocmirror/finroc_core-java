@@ -187,6 +187,20 @@ public abstract class ExternalConnection extends FrameworkElement {
     public void setLoopTime(long ms) {
     }
 
+    /**
+     * @return Connection quality information (in a scale from 0 (bad) to 1 (good))
+     */
+    public abstract float getConnectionQuality();
+
+    /**
+     * @param detailed Return more detailed information?
+     * @return Connection status information for user
+     */
+    @Virtual
+    public String getStatus(boolean detailed) {
+        return getConnectionAddress();
+    }
+
 //  protected class ConnectionListenerManager extends WeakRefListenerManager<ConnectionListener> {
 //
 //      @Override
