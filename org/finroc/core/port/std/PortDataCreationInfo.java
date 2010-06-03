@@ -107,7 +107,7 @@ public class PortDataCreationInfo {
      *
      * @param obj Uninitialized object
      */
-    void addUnitializedObject(@Ptr PortDataImpl obj) {
+    synchronized void addUnitializedObject(@Ptr PortDataImpl obj) {
         uninitializedPortData.add(obj);
     }
 
@@ -116,7 +116,7 @@ public class PortDataCreationInfo {
      * (May be called anywhere except of constructors (binding problem)
      *  - typically by PortDataContainerPool class)
      */
-    public void initUnitializedObjects() {
+    public synchronized void initUnitializedObjects() {
         @Ptr PortDataImpl pd;
         while (uninitializedPortData.size() > 0) {
             pd = uninitializedPortData.remove(0);

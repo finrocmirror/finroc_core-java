@@ -31,6 +31,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.finroc.core.RuntimeSettings;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.container.SimpleList;
 
 /**
@@ -38,6 +39,7 @@ import org.finroc.jc.container.SimpleList;
  *
  * Loads plugins when code is compiled and packed in jar files.
  */
+@JavaOnly
 public class JavaReleasePluginLoader implements PluginLoader {
 
     /** Class loader for plugins */
@@ -96,7 +98,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
         if (className == null) {
             throw new Exception("No Plugin class specified in " + jarFile);
         }
-        Class<? extends Plugin> c = (Class<? extends Plugin>)classLoader.loadClass(className);
+        Class <? extends Plugin > c = (Class <? extends Plugin >)classLoader.loadClass(className);
 
         // Is Plugin?
         if (!Plugin.class.isAssignableFrom(c)) {
@@ -132,6 +134,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
      *
      * This class loader is used to load plugins.
      */
+    @JavaOnly
     static public class PluginClassLoader extends URLClassLoader {
 
         /**

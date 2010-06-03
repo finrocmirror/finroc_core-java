@@ -71,15 +71,19 @@ public class InterfacePort extends AbstractPort {
     final @Ptr MultiTypePortDataBufferPool bufPool;
 
     public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type) {
-        this(new PortCreationInfo(description, parent, dataType, 0), type);
+        this(new PortCreationInfo(description, parent, dataType, 0), type, -1);
     }
 
     public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type, int customFlags) {
-        this(new PortCreationInfo(description, parent, dataType, customFlags), type);
+        this(new PortCreationInfo(description, parent, dataType, customFlags), type, -1);
     }
 
-    public InterfacePort(PortCreationInfo pci, Type type) {
-        super(processPci(pci, type));
+    public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type, int customFlags, int lockLevel) {
+        this(new PortCreationInfo(description, parent, dataType, customFlags), type, lockLevel);
+    }
+
+    public InterfacePort(PortCreationInfo pci, Type type, int lockLevel) {
+        super(processPci(pci, type, lockLevel));
         initLists(edgesSrc, edgesDest);
         bufPool = (type == Type.Routing) ? null : new MultiTypePortDataBufferPool();
         //deferred = (type == Type.Routing) ? null : new WonderQueueTL<MethodCall>();
@@ -87,7 +91,7 @@ public class InterfacePort extends AbstractPort {
     }
 
     /** makes adjustment to flags passed through constructor */
-    private static PortCreationInfo processPci(PortCreationInfo pci, Type type) {
+    private static PortCreationInfo processPci(PortCreationInfo pci, Type type, int lockLevel) {
         switch (type) {
         case Server:
             pci.flags |= PortFlags.EMITS_DATA | PortFlags.OUTPUT_PORT;
@@ -99,6 +103,9 @@ public class InterfacePort extends AbstractPort {
         case Routing:
             pci.flags |= PortFlags.EMITS_DATA | PortFlags.ACCEPTS_DATA;
             break;
+        }
+        if (lockLevel >= 0) {
+            pci.lockOrder = lockLevel;
         }
         return pci;
     }

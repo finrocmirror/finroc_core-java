@@ -30,6 +30,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.util.Files;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.container.SimpleList;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -39,6 +40,7 @@ import org.w3c.dom.NodeList;
  * @author max
  *
  */
+@JavaOnly
 public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
 
     /** Finroc repository root */

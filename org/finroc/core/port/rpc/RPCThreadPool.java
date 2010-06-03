@@ -21,7 +21,9 @@
  */
 package org.finroc.core.port.rpc;
 
+import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.rpc.RPCThread.RPCThreadContainer;
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
@@ -45,6 +47,9 @@ public class RPCThreadPool {
     /** Pool of unused threads */
     @InCpp("util::WonderQueue<RPCThread> unusedThreads;")
     private WonderQueue<RPCThread.RPCThreadContainer> unusedThreads = new WonderQueue<RPCThread.RPCThreadContainer>();
+
+    /** Lock order: locked before thread list in C++ */
+    public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 100);
 
     @Init("unusedThreads()")
     private RPCThreadPool() {

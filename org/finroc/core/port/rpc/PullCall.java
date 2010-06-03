@@ -171,35 +171,42 @@ public class PullCall extends AbstractCall implements Task {
     @Override
     public void executeTask() {
         assert(port != null);
-        if (port.getPort().getDataType().isCCType()) {
-            CCPortBase cp = (CCPortBase)port.getPort();
-            CCInterThreadContainer<?> cpd = cp.getPullInInterthreadContainerRaw(true);
-            recycleParameters();
+        synchronized (port.getPort()) {
+            if (!port.getPort().isReady()) {
+                System.out.println("pull call received for port that will soon be deleted");
+                recycle();
+            }
 
-            //JavaOnlyBlock
-            addParamForSending(cpd);
+            if (port.getPort().getDataType().isCCType()) {
+                CCPortBase cp = (CCPortBase)port.getPort();
+                CCInterThreadContainer<?> cpd = cp.getPullInInterthreadContainerRaw(true);
+                recycleParameters();
 
-            //Cpp addParamForSending(cpd);
+                //JavaOnlyBlock
+                addParamForSending(cpd);
 
-            sendParametersComplete();
-            setStatusReturn();
-            port.sendCallReturn(this);
-        } else if (port.getPort().getDataType().isStdType()) {
-            PortBase p = (PortBase)port.getPort();
-            @Const PortData pd = p.getPullLockedUnsafe(true);
-            recycleParameters();
+                //Cpp addParamForSending(cpd);
 
-            //JavaOnlyBlock
-            addParamForSending(pd);
+                sendParametersComplete();
+                setStatusReturn();
+                port.sendCallReturn(this);
+            } else if (port.getPort().getDataType().isStdType()) {
+                PortBase p = (PortBase)port.getPort();
+                @Const PortData pd = p.getPullLockedUnsafe(true);
+                recycleParameters();
 
-            //Cpp addParamForSending(pd);
+                //JavaOnlyBlock
+                addParamForSending(pd);
 
-            sendParametersComplete();
-            setStatusReturn();
-            port.sendCallReturn(this);
-        } else {
-            System.out.println("pull call received for port with invalid data type");
-            recycle();
+                //Cpp addParamForSending(pd);
+
+                sendParametersComplete();
+                setStatusReturn();
+                port.sendCallReturn(this);
+            } else {
+                System.out.println("pull call received for port with invalid data type");
+                recycle();
+            }
         }
     }
 

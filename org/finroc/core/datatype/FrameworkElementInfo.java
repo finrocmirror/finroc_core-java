@@ -39,7 +39,6 @@ import org.finroc.core.RuntimeListener;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.DataType;
 
@@ -112,54 +111,54 @@ public class FrameworkElementInfo {
      * @param tp Packet to serialize to
      * @param elementFilter Element filter for client
      * @param tmp Temporary string buffer
+     *
+     * (call in runtime-registry synchronized context only)
      */
     public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, CoreOutput tp, FrameworkElementTreeFilter elementFilter, @Ref StringBuilder tmp) {
-        if (fe.getFlag(PortFlags.DELETED)) {
-            return;
-        }
 
         tp.writeByte(opCode); // write opcode (see base class)
 
-        synchronized (fe) {
+        // write common info
+        tp.writeInt(fe.getHandle());
+        tp.writeInt(fe.getAllFlags());
+        if (opCode == RuntimeListener.REMOVE) {
+            return;
+        }
+        assert(!fe.isDeleted());
+        int cnt = fe.getLinkCount();
+        tp.writeBoolean(elementFilter.isPortOnlyFilter());
 
-            // write common info
-            tp.writeInt(fe.getHandle());
-            tp.writeInt(fe.getAllFlags());
-            int cnt = fe.getLinkCount();
-            tp.writeBoolean(elementFilter.isPortOnlyFilter());
+        // write links (only when creating element)
+        if (opCode == RuntimeListener.ADD) {
+            if (elementFilter.isPortOnlyFilter()) {
+                for (int i = 0; i < cnt; i++) {
+                    boolean unique = fe.getQualifiedLink(tmp, i);
+                    tp.writeByte(1 | (unique ? CoreFlags.GLOBALLY_UNIQUE_LINK : 0));
+                    tp.writeString(tmp.substring(1));
+                }
+            } else {
+                for (int i = 0; i < cnt; i++) {
 
-            // write links (only when creating element)
-            if (opCode == RuntimeListener.ADD) {
-                if (elementFilter.isPortOnlyFilter()) {
-                    for (int i = 0; i < cnt; i++) {
-                        boolean unique = fe.getQualifiedLink(tmp, i);
-                        tp.writeByte(1 | (unique ? CoreFlags.GLOBALLY_UNIQUE_LINK : 0));
-                        tp.writeString(tmp.substring(1));
-                    }
-                } else {
-                    for (int i = 0; i < cnt; i++) {
-
-                        // we only serialize parents that target is interested in
-                        FrameworkElement parent = fe.getParent(i);
-                        if (elementFilter.accept(parent, tmp)) {
-                            // serialize 1 for another link - ORed with CoreFlags for parent LINK_ROOT and GLOBALLY_UNIQUE
-                            tp.writeByte(1 | (parent.getAllFlags() & PARENT_FLAGS_TO_STORE));
-                            fe.writeDescription(tp, i);
-                            tp.writeInt(parent.getHandle());
-                        }
+                    // we only serialize parents that target is interested in
+                    FrameworkElement parent = fe.getParent(i);
+                    if (elementFilter.accept(parent, tmp)) {
+                        // serialize 1 for another link - ORed with CoreFlags for parent LINK_ROOT and GLOBALLY_UNIQUE
+                        tp.writeByte(1 | (parent.getAllFlags() & PARENT_FLAGS_TO_STORE));
+                        fe.writeDescription(tp, i);
+                        tp.writeInt(parent.getHandle());
                     }
                 }
-                tp.writeByte(0);
             }
+            tp.writeByte(0);
+        }
 
-            // possibly write port info
-            if (fe.isPort()) {
-                AbstractPort port = (AbstractPort)fe;
+        // possibly write port info
+        if (fe.isPort()) {
+            AbstractPort port = (AbstractPort)fe;
 
-                tp.writeShort(port.getDataType().getUid());
-                tp.writeShort(port.getStrategy());
-                tp.writeShort(port.getMinNetUpdateInterval());
-            }
+            tp.writeShort(port.getDataType().getUid());
+            tp.writeShort(port.getStrategy());
+            tp.writeShort(port.getMinNetUpdateInterval());
         }
     }
 
@@ -189,6 +188,9 @@ public class FrameworkElementInfo {
         // read common info
         handle = is.readInt();
         flags = is.readInt();
+        if (opCode == RuntimeListener.REMOVE) {
+            return;
+        }
         boolean portOnlyClient = is.readBoolean();
 
         // read links

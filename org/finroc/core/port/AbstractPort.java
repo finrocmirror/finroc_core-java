@@ -46,6 +46,7 @@ import org.finroc.jc.container.SimpleList;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
+import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.net.NetPort;
@@ -62,6 +63,11 @@ import org.finroc.core.portdatabase.TypedObject;
  * Convention: Protected Methods do not perform any necessary synchronization
  * concerning calling threads (that they are called only once at the same time)
  * This has to be done by all public methods.
+ *
+ * Methods are all thread-safe. Most setting methods are synchronized on runtime.
+ * Constant methods may return outdated results when element is concurrently changed.
+ * In many cases this (non-blocking) behaviour is intended.
+ * However, to avoid that, synchronize to runtime before calling.
  */
 @ForwardDecl( {LinkEdge.class, EdgeAggregator.class, NetPort.class, PortDataImpl.class})
 @Include( {"rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h", "core/RuntimeSettings.h"})
@@ -146,7 +152,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     //@Init({"edgesSrc((util::SafeConcurrentlyIterableList<AbstractPort*>)edgesSrc_)",
     //     "edgesDest((util::SafeConcurrentlyIterableList<AbstractPort*>)edgesDest_)"})
     public AbstractPort(PortCreationInfo pci) {
-        super(pci.description, pci.parent, processFlags(pci));
+        super(pci.description, pci.parent, processFlags(pci), pci.lockOrder < 0 ? LockOrderLevels.PORT : pci.lockOrder);
 
         // init types
         //dataType = DataTypeRegister2.getDataTypeEntry(pci.dataType);
@@ -206,41 +212,40 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * disconnects all edges
      */
     @SuppressWarnings("unchecked")
-    public synchronized void disconnectAll() {
+    public void disconnectAll() {
 
-        // remove link edges
-        if (linkEdges != null) {
-            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-                linkEdges.get(i).delete();
-            }
-            linkEdges.clear();
-        }
+        synchronized (getRegistryLock()) {
 
-        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
-        for (int i = 0, n = it.size(); i < n; i++) {
-            AbstractPort target = it.get(i);
-            if (target == null) {
-                continue;
+            // remove link edges
+            if (linkEdges != null) {
+                for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+                    linkEdges.get(i).delete();
+                }
+                linkEdges.clear();
             }
-            synchronized (target) {
+
+            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
+                AbstractPort target = it.get(i);
+                if (target == null) {
+                    continue;
+                }
                 removeInternal(this, target);
             }
-        }
 
-        it = edgesDest.getIterable();
-        for (int i = 0, n = it.size(); i < n; i++) {
-            AbstractPort target = it.get(i);
-            if (target == null) {
-                continue;
-            }
-            synchronized (target) {
+            it = edgesDest.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
+                AbstractPort target = it.get(i);
+                if (target == null) {
+                    continue;
+                }
                 removeInternal(target, this);
             }
         }
     }
 
     @JavaOnly
-    public void initLists(@Ptr EdgeList<? extends AbstractPort> edgesSrc_, @Ptr EdgeList<? extends AbstractPort> edgesDest_) {
+    public void initLists(@Ptr EdgeList <? extends AbstractPort > edgesSrc_, @Ptr EdgeList <? extends AbstractPort > edgesDest_) {
         edgesSrc = edgesSrc_;
         edgesDest = edgesDest_;
     }
@@ -294,8 +299,11 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param target Target port
      */
-    public synchronized void connectToTarget(@Ptr AbstractPort target) {
-        synchronized (target) {
+    public void connectToTarget(@Ptr AbstractPort target) {
+        synchronized (getRegistryLock()) {
+            if (isDeleted()) {
+                return;
+            }
             if (mayConnectTo(target) && (!isConnectedTo(target))) {
                 rawConnectToTarget(target);
 //              strategy = (short)Math.max(0, strategy);
@@ -358,8 +366,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized void disconnectFrom(@Ptr AbstractPort target) {
-        synchronized (target) {
+    public void disconnectFrom(@Ptr AbstractPort target) {
+        synchronized (getRegistryLock()) {
             @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
                 if (it.get(i) == target) {
@@ -482,7 +490,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Changed "flag" (has two different values for ordinary and initial data)
      */
-    public byte getChanged() {
+    @ConstMethod public byte getChanged() {
         return changed;
     }
 
@@ -528,16 +536,21 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param linkName Link name of source port (relative to parent framework element)
      */
-    public synchronized void connectToSource(@Const @Ref String srcLink) {
-        if (linkEdges == null) { // lazy inizialization
-            linkEdges = new SimpleList<LinkEdge>();
-        }
-        for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-            if (linkEdges.get(i).getSourceLink().equals(srcLink)) {
+    public void connectToSource(@Const @Ref String srcLink) {
+        synchronized (getRegistryLock()) {
+            if (isDeleted()) {
                 return;
             }
+            if (linkEdges == null) { // lazy inizialization
+                linkEdges = new SimpleList<LinkEdge>();
+            }
+            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+                if (linkEdges.get(i).getSourceLink().equals(srcLink)) {
+                    return;
+                }
+            }
+            linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle()));
         }
-        linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle()));
     }
 
     /**
@@ -546,16 +559,21 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param linkName Link name of target port (relative to parent framework element)
      */
-    public synchronized void connectToTarget(@Const @Ref String destLink) {
-        if (linkEdges == null) { // lazy initialization
-            linkEdges = new SimpleList<LinkEdge>();
-        }
-        for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-            if (linkEdges.get(i).getTargetLink().equals(destLink)) {
+    public void connectToTarget(@Const @Ref String destLink) {
+        synchronized (getRegistryLock()) {
+            if (isDeleted()) {
                 return;
             }
+            if (linkEdges == null) { // lazy initialization
+                linkEdges = new SimpleList<LinkEdge>();
+            }
+            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+                if (linkEdges.get(i).getTargetLink().equals(destLink)) {
+                    return;
+                }
+            }
+            linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink)));
         }
-        linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink)));
     }
 
     /**
@@ -582,9 +600,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param push Push data?
      */
-    public synchronized void setPushStrategy(boolean push) {
-        setFlag(PortFlags.PUSH_STRATEGY, push);
-        propagateStrategy(null, null);
+    public void setPushStrategy(boolean push) {
+        synchronized (getRegistryLock()) {
+            if (push == getFlag(PortFlags.PUSH_STRATEGY)) {
+                return;
+            }
+            setFlag(PortFlags.PUSH_STRATEGY, push);
+            propagateStrategy(null, null);
+        }
     }
 
     /**
@@ -602,25 +625,27 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param push Push data?
      */
     @SuppressWarnings("unchecked")
-    public synchronized void setReversePushStrategy(boolean push) {
+    public void setReversePushStrategy(boolean push) {
         if (!acceptsReverseData() || push == getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
             return;
         }
 
-        setFlag(PortFlags.PUSH_STRATEGY_REVERSE, push);
-        if (push && isReady()) { // strategy change
-            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
-            for (int i = 0, n = it.size(); i < n; i++) {
-                AbstractPort ap = it.get(i);
-                if (ap != null && ap.isReady()) {
-                    System.out.println("Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
-                    ap.initialPushTo(this, true);
-                    break;
+        synchronized (getRegistryLock()) {
+            setFlag(PortFlags.PUSH_STRATEGY_REVERSE, push);
+            if (push && isReady()) { // strategy change
+                @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+                for (int i = 0, n = it.size(); i < n; i++) {
+                    AbstractPort ap = it.get(i);
+                    if (ap != null && ap.isReady()) {
+                        System.out.println("Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
+                        ap.initialPushTo(this, true);
+                        break;
+                    }
                 }
             }
-        }
-        if (isInitialized()) {
-            this.publishUpdatedInfo(RuntimeListener.CHANGE);
+            if (isInitialized()) {
+                this.publishUpdatedInfo(RuntimeListener.CHANGE);
+            }
         }
     }
 
@@ -681,6 +706,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * Called whenever a new connection to this port was established
      * (meant to be overridden by subclasses)
+     * (called with runtime-registry lock)
      *
      * @param partner Port at other end of connection
      */
@@ -689,6 +715,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * Called whenever a connection to this port was removed
      * (meant to be overridden by subclasses)
+     * (called with runtime-registry lock)
      *
      * @param partner Port at other end of connection
      */
@@ -747,10 +774,12 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param interval2 Minimum Network Update Interval
      */
     public void setMinNetUpdateInterval(int interval2) {
-        short interval = (short)Math.min(interval2, Short.MAX_VALUE);
-        if (minNetUpdateTime != interval) {
-            minNetUpdateTime = interval;
-            commitUpdateTimeChange();
+        synchronized (getRegistryLock()) {
+            short interval = (short)Math.min(interval2, Short.MAX_VALUE);
+            if (minNetUpdateTime != interval) {
+                minNetUpdateTime = interval;
+                commitUpdateTimeChange();
+            }
         }
     }
 
@@ -849,72 +878,76 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Did Strategy for this port change?
      */
     @SuppressWarnings("unchecked")
-    @Virtual protected synchronized boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
+    @Virtual protected boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
 
-        // step1: determine max queue length (strategy) for this port
-        short max = (short)Math.min(getStrategyRequirement(), Short.MAX_VALUE);
-        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
-        @Ptr ArrayWrapper<AbstractPort> itPrev = edgesDest.getIterable();
-        for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
-            if (port != null) {
-                max = (short)Math.max(max, port.getStrategy());
+        synchronized (getRegistryLock()) {
+
+            // step1: determine max queue length (strategy) for this port
+            short max = (short)Math.min(getStrategyRequirement(), Short.MAX_VALUE);
+            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+            @Ptr ArrayWrapper<AbstractPort> itPrev = edgesDest.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
+                @Ptr AbstractPort port = it.get(i);
+                if (port != null) {
+                    max = (short)Math.max(max, port.getStrategy());
+                }
             }
-        }
 
-        // has max length (strategy) for this port changed? => propagate to sources
-        boolean change = (max != strategy);
+            // has max length (strategy) for this port changed? => propagate to sources
+            boolean change = (max != strategy);
 
-        // if origin wants a push - and we are a "source" port - provide this push (otherwise - "push wish" should be propagated further)
-        if (pushWanter != null) {
-            boolean sourcePort = (strategy >= 1 && max >= 1) || edgesDest.isEmpty();
-            if (!sourcePort) {
-                boolean allSourcesReversePushers = true;
-                for (int i = 0, n = itPrev.size(); i < n; i++) {
-                    @Ptr AbstractPort port = itPrev.get(i);
-                    if (port != null && port.isReady() && (!port.reversePushStrategy())) {
-                        allSourcesReversePushers = false;
-                        break;
+            // if origin wants a push - and we are a "source" port - provide this push (otherwise - "push wish" should be propagated further)
+            if (pushWanter != null) {
+                boolean sourcePort = (strategy >= 1 && max >= 1) || edgesDest.isEmpty();
+                if (!sourcePort) {
+                    boolean allSourcesReversePushers = true;
+                    for (int i = 0, n = itPrev.size(); i < n; i++) {
+                        @Ptr AbstractPort port = itPrev.get(i);
+                        if (port != null && port.isReady() && (!port.reversePushStrategy())) {
+                            allSourcesReversePushers = false;
+                            break;
+                        }
                     }
+                    sourcePort = allSourcesReversePushers;
                 }
-                sourcePort = allSourcesReversePushers;
-            }
-            if (sourcePort) {
-                if (isReady() && pushWanter.isReady()) {
-                    System.out.println("Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
-                    initialPushTo(pushWanter, false);
+                if (sourcePort) {
+                    if (isReady() && pushWanter.isReady()) {
+                        System.out.println("Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
+                        initialPushTo(pushWanter, false);
+                    }
+                    pushWanter = null;
                 }
-                pushWanter = null;
             }
-        }
 
-        // okay... do we wish to receive a push?
-        // yes if...
-        //  1) we are target of a new connection, have a push strategy, no other sources, and partner is no reverse push source
-        //  2) our strategy changed to push, and exactly one source
-        int otherSources = 0;
-        for (int i = 0, n = itPrev.size(); i < n; i++) {
-            @Ptr AbstractPort port = itPrev.get(i);
-            if (port != null && port.isReady() && port != newConnectionPartner) {
-                otherSources++;
+            // okay... do we wish to receive a push?
+            // yes if...
+            //  1) we are target of a new connection, have a push strategy, no other sources, and partner is no reverse push source
+            //  2) our strategy changed to push, and exactly one source
+            int otherSources = 0;
+            for (int i = 0, n = itPrev.size(); i < n; i++) {
+                @Ptr AbstractPort port = itPrev.get(i);
+                if (port != null && port.isReady() && port != newConnectionPartner) {
+                    otherSources++;
+                }
             }
+            boolean requestPush = ((newConnectionPartner != null) && (max >= 1) && (otherSources == 0) && (!newConnectionPartner.reversePushStrategy()))
+                                  || ((max >= 1 && strategy < 1) && (otherSources == 1));
+
+            // register strategy change
+            if (change) {
+
+                strategy = max;
+            }
+
+            forwardStrategy(strategy, requestPush ? this : null); // forward strategy... do it anyway, since new ports may have been connected
+
+            if (change) { // do this last to ensure that all relevant strategies have been set, before any network updates occur
+                publishUpdatedInfo(RuntimeListener.CHANGE);
+            }
+
+            return change;
+
         }
-        boolean requestPush = ((newConnectionPartner != null) && (max >= 1) && (otherSources == 0) && (!newConnectionPartner.reversePushStrategy()))
-                              || ((max >= 1 && strategy < 1) && (otherSources == 1));
-
-        // register strategy change
-        if (change) {
-
-            strategy = max;
-        }
-
-        forwardStrategy(strategy, requestPush ? this : null); // forward strategy... do it anyway, since new ports may have been connected
-
-        if (change) { // do this last to ensure that all relevant strategies have been set, before any network updates occur
-            publishUpdatedInfo(RuntimeListener.CHANGE);
-        }
-
-        return change;
     }
 
 //          if (!acceptsReverseData()) {
@@ -939,7 +972,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param pushWanter Port that "wants" an initial push and from whom this call originates - null if there's no port that wants as push
      */
     @SuppressWarnings("unchecked")
-    protected void forwardStrategy(short strategy2, AbstractPort pushWanter) {
+    private void forwardStrategy(short strategy2, AbstractPort pushWanter) {
         @Ptr ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             @Ptr AbstractPort port = it.get(i);
@@ -962,7 +995,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Is port connected to output ports that request reverse pushes?
      */
     @SuppressWarnings("unchecked")
-    public boolean isConnectedToReversePushSources() {
+    @ConstMethod public boolean isConnectedToReversePushSources() {
         @Ptr ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             @Ptr AbstractPort port = it.get(i);
@@ -1027,18 +1060,21 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             System.out.println("warning: tried to set queue length on port without queue");
             return;
         }
-        if (queueLength <= 1) {
-            removeFlag(PortFlags.USES_QUEUE);
-            clearQueueImpl();
-        } else if (queueLength != getMaxQueueLengthImpl()) {
-            setMaxQueueLengthImpl(queueLength);
-            setFlag(PortFlags.USES_QUEUE); // publishes change
+        synchronized (getRegistryLock()) {
+            if (queueLength <= 1) {
+                removeFlag(PortFlags.USES_QUEUE);
+                clearQueueImpl();
+            } else if (queueLength != getMaxQueueLengthImpl()) {
+                setMaxQueueLengthImpl(queueLength);
+                setFlag(PortFlags.USES_QUEUE); // publishes change
+            }
+            propagateStrategy(null, null);
         }
-        propagateStrategy(null, null);
     }
 
     /**
      * @return Returns minimum strategy requirement (for this port in isolation) - typically 0 for non-input-ports
+     * (Called in runtime-registry synchronized context only)
      */
     @ConstMethod protected short getStrategyRequirement() {
         if (isInputPort() /*&& (!getFlag(PortFlags.PROXY)) && (!getFlag(PortFlags.NETWORK_ELEMENT))*/) {
@@ -1060,6 +1096,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * Set maximum queue length
      * (only implementation - does not set flags or propagate strategy)
+     * (Called in runtime-registry synchronized context only)
      *
      * @param length Maximum queue length (values <= 1 mean that there is no queue)
      */
@@ -1103,7 +1140,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * Typically it does, unless it has multiple sources or no push strategy itself.
      * (Standard implementation for this)
      */
-    @Inline protected boolean wantsPush(boolean reverse, byte changeConstant) {
+    @ConstMethod @Inline protected boolean wantsPush(boolean reverse, byte changeConstant) {
         @InCpp("") final boolean REVERSE = reverse;
         @InCpp("") final byte CHANGE_CONSTANT = changeConstant;
 
@@ -1125,7 +1162,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Number of connections to this port (incoming and outgoing)
      */
-    public int getConnectionCount() {
+    @ConstMethod public int getConnectionCount() {
         return edgesDest.countElements() + edgesSrc.countElements();
     }
 }

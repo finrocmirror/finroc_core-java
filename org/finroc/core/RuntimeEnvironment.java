@@ -23,7 +23,9 @@ package org.finroc.core;
 
 import java.lang.ref.WeakReference;
 
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.Time;
+import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
@@ -33,6 +35,8 @@ import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.Mutable;
+import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
@@ -40,6 +44,7 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.BoundedQElementContainer;
 import org.finroc.jc.container.ConcurrentMap;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.stream.ChunkedBuffer;
 
 import org.finroc.core.datatype.Constant;
@@ -71,6 +76,45 @@ import org.finroc.core.port.stream.StreamCommitThread;
 @CppInclude("LinkEdge.h")
 @Friend(LinkEdge.class)
 public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*/
+
+    /**
+     * Contains diverse registers/lookup tables of runtime.
+     * They are moved to extra class in order to be separately lockable
+     * (necessary for systematic dead-lock avoidance)
+     */
+    @AtFront @PassByValue @Friend(RuntimeEnvironment.class)
+    public class Registry {
+
+        /** Global register of all ports. Allows accessing ports with simple handle. */
+        @SharedPtr private final CoreRegister<AbstractPort> ports = new CoreRegister<AbstractPort>(true);
+
+        /** Global register of all framework elements (except of ports) */
+        private final CoreRegister<FrameworkElement> elements = new CoreRegister<FrameworkElement>(false);
+
+        /** Edges dealing with linked ports */
+        //@Elems({PassByValue.class, Ptr.class, Ptr.class})
+        private final ConcurrentMap<String, LinkEdge> linkEdges = new ConcurrentMap<String, LinkEdge>(null);
+
+        /** List with runtime listeners */
+        private final RuntimeListenerManager listeners = new RuntimeListenerManager();
+
+        /** Temporary buffer - may be used in synchronized context */
+        private StringBuilder tempBuffer = new StringBuilder();
+
+        /** Lock to thread local cache list */
+        @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
+        @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
+
+        /** Alternative roots for links (usually remote runtime environments mapped into this one) */
+        private SimpleList<FrameworkElement> alternativeLinkRoots = new SimpleList<FrameworkElement>();
+
+        /** Mutex */
+        @Mutable
+        public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.RUNTIME_REGISTER);
+    }
+
+    /** Single final instance of above */
+    private final Registry registry = new Registry();
 
 //  /*Cpp
 //  // Static elements to delete after all elements in runtime environment
@@ -123,27 +167,11 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
     //private final ListenerManager listeners = new ListenerManager();
     //private final Byte ADD = 1, REMOVE = 2;
 
-    /** Global register of all ports. Allows accessing ports with simple handle. */
-    @SharedPtr private final CoreRegister<AbstractPort> ports = new CoreRegister<AbstractPort>(true);
-
-    /** Global register of all framework elements (except of ports) */
-    private final CoreRegister<FrameworkElement> elements = new CoreRegister<FrameworkElement>(false);
-
 //  /** Links to framework elements */
 //  private final ConcurrentMap<String, AbstractPort> links = new ConcurrentMap<String, AbstractPort>();
 
-    /** Edges dealing with linked ports */
-    //@Elems({PassByValue.class, Ptr.class, Ptr.class})
-    private final ConcurrentMap<String, LinkEdge> linkEdges = new ConcurrentMap<String, LinkEdge>(null);
-
-    /** List with runtime listeners */
-    private final RuntimeListenerManager listeners = new RuntimeListenerManager();
-
 //  /** True, when Runtime environment is shutting down */
 //  public static boolean shuttingDown = false;
-
-    /** Temporary buffer - may be used in synchronized context */
-    private StringBuilder tempBuffer = new StringBuilder();
 
     /** Framework element that contains all framework elements that have no parent specified */
     FrameworkElement unrelated = null;
@@ -155,13 +183,9 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
     @SuppressWarnings("unused")
     private static boolean active = false;
 
-    /** Lock to thread local cache list */
+    /** Mutex for static methods */
     @SuppressWarnings("unused")
-    @CppType("util::SimpleList<ThreadLocalCache*>")
-    private @SharedPtr SimpleList<WeakReference<ThreadLocalCache>> infosLock;
-
-    /** Alternative roots for links (usually remote runtime environments mapped into this one) */
-    private SimpleList<FrameworkElement> alternativeLinkRoots = new SimpleList<FrameworkElement>();
+    private static final MutexLockOrder staticClassMutex = new MutexLockOrder(LockOrderLevels.FIRST);
 
     /**
      * Initializes the runtime environment. Needs to be called before any
@@ -180,8 +204,8 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
         Time.getInstance(); // (possibly) init timing thread
 //      MethodCall.staticInit();
 //      PullCall.staticInit();
-        @CppType("util::SimpleList<ThreadLocalCache*>")
-        @SharedPtr SimpleList<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
+        @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
+        @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
         MethodCallSyncher.staticInit(); // dito
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
@@ -190,9 +214,9 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
 
         //JavaOnlyBlock
         new RuntimeEnvironment(); // should be done before any ports/elements are added
-        instance.infosLock = infosLock;
 
         //Cpp new RuntimeEnvironment(); // should be done before any ports/elements are added
+        instance.registry.infosLock = infosLock;
 
         // Start thread - because it needs a thread local cache
         StreamCommitThread.getInstance().start();
@@ -254,7 +278,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
 
     //@Init("deleteLastList(new util::SimpleList<finroc::util::Object*>())")
     private RuntimeEnvironment() {
-        super("Runtime", null, CoreFlags.ALLOWS_CHILDREN | CoreFlags.IS_RUNTIME);
+        super("Runtime", null, CoreFlags.ALLOWS_CHILDREN | CoreFlags.IS_RUNTIME, LockOrderLevels.RUNTIME_ROOT);
         assert instance == null;
         instance = this;
         instanceRawPtr = this;
@@ -589,8 +613,26 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param frameworkElement Element to register
      * @return Handle of Framework element
      */
-    synchronized int registerElement(FrameworkElement fe) {
-        return fe.isPort() ? ports.add((AbstractPort)fe) : elements.add(fe);
+    int registerElement(FrameworkElement fe) {
+        synchronized (registry) {
+            return fe.isPort() ? registry.ports.add((AbstractPort)fe) : registry.elements.add(fe);
+        }
+    }
+
+    /**
+     * Mark element as (soon completely) deleted at RuntimeEnvironment
+     * This is done automatically and should not be called by a user.
+     *
+     * @param frameworkElement Element to mark deleted
+     */
+    void markElementDeleted(FrameworkElement fe) {
+        synchronized (registry) {
+            if (fe.isPort()) {
+                registry.ports.markDeleted(fe.getHandle());
+            } else {
+                registry.elements.markDeleted(fe.getHandle());
+            }
+        }
     }
 
     /**
@@ -599,11 +641,13 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      *
      * @param frameworkElement Element to remove
      */
-    synchronized void unregisterElement(FrameworkElement fe) {
-        if (fe.isPort()) {
-            ports.remove(fe.getHandle());
-        } else {
-            elements.remove(fe.getHandle());
+    void unregisterElement(FrameworkElement fe) {
+        synchronized (registry) {
+            if (fe.isPort()) {
+                registry.ports.remove(fe.getHandle());
+            } else {
+                registry.elements.remove(fe.getHandle());
+            }
         }
     }
 
@@ -625,7 +669,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @return Port - if port with such handle exists - otherwise null
      */
     public AbstractPort getPort(int portHandle) {
-        AbstractPort p = ports.get(portHandle);
+        AbstractPort p = registry.ports.get(portHandle);
         if (p == null) {
             return null;
         }
@@ -638,20 +682,23 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @return Port with this name - or null if it does not exist
      */
     public AbstractPort getPort(@Const @Ref String linkName) {
-        FrameworkElement fe = getChildElement(linkName, false);
-        if (fe == null) {
-            for (@SizeT int i = 0; i < alternativeLinkRoots.size(); i++) {
-                FrameworkElement altRoot = alternativeLinkRoots.get(i);
-                fe = altRoot.getChildElement(linkName, 0, true, altRoot);
-                if (fe != null && !fe.isDeleted()) {
-                    assert fe.isPort();
-                    return (AbstractPort)fe;
+        synchronized (registry) {
+
+            FrameworkElement fe = getChildElement(linkName, false);
+            if (fe == null) {
+                for (@SizeT int i = 0; i < registry.alternativeLinkRoots.size(); i++) {
+                    FrameworkElement altRoot = registry.alternativeLinkRoots.get(i);
+                    fe = altRoot.getChildElement(linkName, 0, true, altRoot);
+                    if (fe != null && !fe.isDeleted()) {
+                        assert fe.isPort();
+                        return (AbstractPort)fe;
+                    }
                 }
+                return null;
             }
-            return null;
+            assert fe.isPort();
+            return (AbstractPort)fe;
         }
-        assert fe.isPort();
-        return (AbstractPort)fe;
     }
 
 //  /**
@@ -700,22 +747,24 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param link link that edge is interested in
      * @param edge Edge to add
      */
-    protected synchronized void addLinkEdge(@Const @Ref String link, LinkEdge edge) {
-        LinkEdge interested = linkEdges.get(link);
-        if (interested == null) {
-            // add first edge
-            linkEdges.put(link, edge);
-        } else {
-            // insert edge
-            LinkEdge next = interested.getNext();
-            interested.setNext(edge);
-            edge.setNext(next);
-        }
+    protected void addLinkEdge(@Const @Ref String link, LinkEdge edge) {
+        synchronized (registry) {
+            LinkEdge interested = registry.linkEdges.get(link);
+            if (interested == null) {
+                // add first edge
+                registry.linkEdges.put(link, edge);
+            } else {
+                // insert edge
+                LinkEdge next = interested.getNext();
+                interested.setNext(edge);
+                edge.setNext(next);
+            }
 
-        // directly notify link edge?
-        AbstractPort p = getPort(link);
-        if (p != null) {
-            edge.linkAdded(this, link, p);
+            // directly notify link edge?
+            AbstractPort p = getPort(link);
+            if (p != null) {
+                edge.linkAdded(this, link, p);
+            }
         }
     }
 
@@ -726,26 +775,28 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param link link that edge is interested in
      * @param edge Edge to add
      */
-    protected synchronized void removeLinkEdge(@Const @Ref String link, LinkEdge edge) {
-        LinkEdge current = linkEdges.get(link);
-        if (current == edge) {
-            if (current.getNext() == null) { // remove entries for this link completely
-                linkEdges.remove(link);
-            } else { // remove first element
-                linkEdges.put(link, current.getNext());
-            }
-        } else { // remove element out of linked list
-            LinkEdge prev = current;
-            current = current.getNext();
-            while (current != null) {
-                if (current == edge) {
-                    prev.setNext(current.getNext());
-                    return;
+    protected void removeLinkEdge(@Const @Ref String link, LinkEdge edge) {
+        synchronized (registry) {
+            LinkEdge current = registry.linkEdges.get(link);
+            if (current == edge) {
+                if (current.getNext() == null) { // remove entries for this link completely
+                    registry.linkEdges.remove(link);
+                } else { // remove first element
+                    registry.linkEdges.put(link, current.getNext());
                 }
-                prev = current;
+            } else { // remove element out of linked list
+                LinkEdge prev = current;
                 current = current.getNext();
+                while (current != null) {
+                    if (current == edge) {
+                        prev.setNext(current.getNext());
+                        return;
+                    }
+                    prev = current;
+                    current = current.getNext();
+                }
+                System.out.println("warning: Could not remove link edge for link: " + link);
             }
-            System.out.println("warning: Could not remove link edge for link: " + link);
         }
     }
 
@@ -755,11 +806,13 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param link Link
      * @param partnerPort connected port
      */
-    protected synchronized void removeLinkEdge(@Const @Ref String link, AbstractPort partnerPort) {
-        for (LinkEdge current = linkEdges.get(link); current != null; current = current.getNext()) {
-            if (current.getPortHandle() == partnerPort.getHandle()) {
-                current.delete();
-                return;
+    protected void removeLinkEdge(@Const @Ref String link, AbstractPort partnerPort) {
+        synchronized (registry) {
+            for (LinkEdge current = registry.linkEdges.get(link); current != null; current = current.getNext()) {
+                if (current.getPortHandle() == partnerPort.getHandle()) {
+                    current.delete();
+                    return;
+                }
             }
         }
     }
@@ -769,8 +822,10 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      *
      * @param listener Listener to add
      */
-    public synchronized void addListener(RuntimeListener listener) {
-        listeners.add(listener);
+    public void addListener(RuntimeListener listener) {
+        synchronized (registry) {
+            registry.listeners.add(listener);
+        }
     }
 
     /**
@@ -778,8 +833,10 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      *
      * @param listener Listener to remove
      */
-    public synchronized void removeListener(RuntimeListener listener) {
-        listeners.remove(listener);
+    public void removeListener(RuntimeListener listener) {
+        synchronized (registry) {
+            registry.listeners.remove(listener);
+        }
     }
 
     /**
@@ -790,7 +847,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      */
     @Inline
     public FrameworkElement getElement(int handle) {
-        FrameworkElement fe = handle >= 0 ? ports.get(handle) : elements.get(handle);
+        FrameworkElement fe = handle >= 0 ? registry.ports.get(handle) : registry.elements.get(handle);
         if (fe == null) {
             return null;
         }
@@ -823,7 +880,9 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param element Framework element that will be initialized soon
      */
     void preElementInit(FrameworkElement element) {
-        listeners.notify(element, null, RuntimeListener.PRE_INIT);
+        synchronized (registry) {
+            registry.listeners.notify(element, null, RuntimeListener.PRE_INIT);
+        }
     }
 
     /**
@@ -836,31 +895,33 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * (should only be called by FrameworkElement class)
      */
     void runtimeChange(byte changeType, FrameworkElement element) {
-        if (!shuttingDown()) {
+        synchronized (registry) {
+            if (!shuttingDown()) {
 
-            if (element.getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) {
-                if (changeType == RuntimeListener.ADD) {
-                    alternativeLinkRoots.add(element);
-                } else if (changeType == RuntimeListener.REMOVE) {
-                    alternativeLinkRoots.removeElem(element);
-                }
-            }
-
-            if (changeType == RuntimeListener.ADD && element.isPort()) { // check links
-                AbstractPort ap = (AbstractPort)element;
-                for (@SizeT int i = 0; i < ap.getLinkCount(); i++) {
-                    ap.getQualifiedLink(tempBuffer, i);
-                    String s = tempBuffer.toString();
-                    LinkEdge le = linkEdges.get(s);
-                    while (le != null) {
-                        le.linkAdded(this, s, ap);
-                        le = le.getNext();
+                if (element.getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) {
+                    if (changeType == RuntimeListener.ADD) {
+                        registry.alternativeLinkRoots.add(element);
+                    } else if (changeType == RuntimeListener.REMOVE) {
+                        registry.alternativeLinkRoots.removeElem(element);
                     }
                 }
 
-            }
+                if (changeType == RuntimeListener.ADD && element.isPort()) { // check links
+                    AbstractPort ap = (AbstractPort)element;
+                    for (@SizeT int i = 0; i < ap.getLinkCount(); i++) {
+                        ap.getQualifiedLink(registry.tempBuffer, i);
+                        String s = registry.tempBuffer.toString();
+                        LinkEdge le = registry.linkEdges.get(s);
+                        while (le != null) {
+                            le.linkAdded(this, s, ap);
+                            le = le.getNext();
+                        }
+                    }
 
-            listeners.notify(element, null, changeType);
+                }
+
+                registry.listeners.notify(element, null, changeType);
+            }
         }
     }
 
@@ -871,7 +932,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      */
     @InCpp("return util::Thread::stoppingThreads();")
     public static boolean shuttingDown() {
-        return false;
+        return instance != null && instance.isDeleted();
     }
 
     /**
@@ -902,8 +963,17 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @return Port register
      */
     @SharedPtr @Const public CoreRegister<AbstractPort> getPorts() {
-        return ports;
+        return registry.ports;
     }
+
+    /**
+     * @return Lock order of registry
+     */
+    @Const @Ptr Registry getRegistryHelper() {
+        return registry;
+    }
+
+
 
     /*Cpp
 

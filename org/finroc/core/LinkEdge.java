@@ -116,32 +116,37 @@ public class LinkEdge implements HasDestructor {
     }
 
     @Override
-    public synchronized void delete() {
-        if (sourceLink.length() > 0) {
-            RuntimeEnvironment.getInstance().removeLinkEdge(sourceLink, this);
-        }
-        if (targetLink.length() > 0) {
-            RuntimeEnvironment.getInstance().removeLinkEdge(targetLink, this);
+    public void delete() {
+        synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
+            if (sourceLink.length() > 0) {
+                RuntimeEnvironment.getInstance().removeLinkEdge(sourceLink, this);
+            }
+            if (targetLink.length() > 0) {
+                RuntimeEnvironment.getInstance().removeLinkEdge(targetLink, this);
+            }
         }
     }
 
     /**
      * Called by RuntimeEnvironment when link that this object is obviously interested in has been added/created
+     * (must only be called with lock on runtime-registry)
      *
      * @param re RuntimeEnvironment
      * @param link Link that has been added
      * @param port port linked to
      */
-    synchronized void linkAdded(RuntimeEnvironment re, String link, AbstractPort port) {
-        if (link.equals(sourceLink)) {
-            AbstractPort target = targetLink.length() > 0 ? re.getPort(targetLink) : re.getPort(portHandle);
-            if (target != null) {
-                port.connectToTarget(target);
-            }
-        } else {
-            AbstractPort source = sourceLink.length() > 0 ? re.getPort(sourceLink) : re.getPort(portHandle);
-            if (source != null) {
-                port.connectToSource(source);
+    void linkAdded(RuntimeEnvironment re, String link, AbstractPort port) {
+        synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
+            if (link.equals(sourceLink)) {
+                AbstractPort target = targetLink.length() > 0 ? re.getPort(targetLink) : re.getPort(portHandle);
+                if (target != null) {
+                    port.connectToTarget(target);
+                }
+            } else {
+                AbstractPort source = sourceLink.length() > 0 ? re.getPort(sourceLink) : re.getPort(portHandle);
+                if (source != null) {
+                    port.connectToSource(source);
+                }
             }
         }
     }

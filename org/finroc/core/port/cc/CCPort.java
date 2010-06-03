@@ -79,7 +79,11 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     @SuppressWarnings("unchecked")
     public @Ptr T getDefaultBuffer() {
         assert(!isReady()) : "please set default value _before_ initializing port";
+
+        //JavaOnlyBlock
         return (T)defaultValue.getData();
+
+        //Cpp return reinterpret_cast<T*>(this->defaultValue->getData());
     }
 
     /**

@@ -21,24 +21,26 @@
  */
 package org.finroc.core;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.GarbageCollector;
 import org.finroc.jc.HasDestructor;
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
+import org.finroc.jc.annotation.Mutable;
 import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Protected;
@@ -48,6 +50,7 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.SpinLock;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
+import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.thread.ThreadUtil;
 
 import org.finroc.core.buffer.CoreOutput;
@@ -57,15 +60,18 @@ import org.finroc.core.buffer.CoreOutput;
  *
  * Base functionality of Ports, PortSets, Modules, Groups and the Runtime.
  *
- * Everything is thread-safe as long as methods are used.
- *
  * When dealing with unknown framework elements - check isReady() to make sure
  * they are fully initialized and not already deleted.
  * Init needs to be called before framework elements can be used, as well as being visible
  * to remote runtime environments/clients.
  *
  * Framework elements are arranged in a tree.
- * They may be linked/referenced from other parts of the tree
+ * They may be linked/referenced from other parts of the tree.
+ *
+ * Everything is thread-safe as long as methods are used.
+ *
+ * To prevent deleting of framework element while using it over a longer period of time,
+ * lock it - or the complete runtime environment.
  */
 @Ptr
 @Friend( {GarbageCollector.class, ChildIterator.class, RuntimeEnvironment.class})
@@ -143,6 +149,8 @@ public class FrameworkElement implements HasDestructor {
         }
     }
 
+    //Cpp friend class Lock;
+
     /** Primary link to framework element - the place at which it actually is in FrameworkElement tree - contains description etc. */
     @PassByValue
     private final Link primary = new Link();
@@ -151,7 +159,7 @@ public class FrameworkElement implements HasDestructor {
     protected final SafeConcurrentlyIterableList<Link> children;
 
     /** RuntimeElement as TreeNode (only available if set in RuntimeSettings) */
-    @JavaOnly private final DefaultMutableTreeNode treeNode;
+    //@JavaOnly private final DefaultMutableTreeNode treeNode;
 
     /** State Constants */
     //public enum State { CONSTRUCTING, READY, DELETED };
@@ -165,8 +173,26 @@ public class FrameworkElement implements HasDestructor {
     /**
      * Element's handle in local runtime environment
      * ("normal" elements have negative handle, while ports have positive ones)
+     * Now stored in objMutex
      */
-    @Const protected final int handle;
+    //@Const protected final int handle;
+
+    /**
+     * Defines lock order in which framework elements can be locked.
+     * Generally the framework element tree is locked from root to leaves.
+     * So children's lock level needs to be larger than their parent's.
+     *
+     * The secondary component is the element's unique handle in local runtime environment.
+     * ("normal" elements have negative handle, while ports have positive ones)
+     */
+    @Mutable
+    public final MutexLockOrder objMutex;
+
+    /**
+     * Extra Mutex for changing flags
+     */
+    @CppType("util::Mutex") @PassByValue @Mutable
+    private final Object flagMutex = new Object();
 
     /** This flag is set to true when the element has been initialized */
     //private boolean initialized;
@@ -194,23 +220,25 @@ public class FrameworkElement implements HasDestructor {
     //protected Thread mainThread;
 
     @JavaOnly public FrameworkElement(@Const @Ref String description, @Ptr FrameworkElement parent) {
-        this(description, parent, CoreFlags.ALLOWS_CHILDREN);
+        this(description, parent, CoreFlags.ALLOWS_CHILDREN, -1);
     }
 
     /**
      * @param description_ Description of framework element (will be shown in browser etc.) - may not be null
      * @param parent_ Parent of framework element (only use non-initialized parent! otherwise null and addChild() later; meant only for convenience)
      * @param flags_ Any special flags for framework element
+     * @param lockOrder_ Custom value for lock order (needs to be larger than parent's) - negative indicates unused.
      */
     @SuppressWarnings("unchecked")
     @Init( {/*"description(description_.length() > 0 ? description_ : util::String(\"(anonymous)\"))",*/
         "children(getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0, getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0)"
     })
     public FrameworkElement(@Const @Ref @CppDefault("\"\"") String description_, @Ptr @CppDefault("NULL") FrameworkElement parent_,
-                            @CppDefault("CoreFlags::ALLOWS_CHILDREN") int flags_) {
+                            @CppDefault("CoreFlags::ALLOWS_CHILDREN") int flags_, @CppDefault("-1") int lockOrder_) {
         createrThreadUid = ThreadUtil.getCurrentThreadId();
         constFlags = flags_ & CoreFlags.CONSTANT_FLAGS;
         flags = flags_ & CoreFlags.NON_CONSTANT_FLAGS;
+        assert((flags_ & CoreFlags.STATUS_FLAGS) == 0);
 
         // JavaOnlyBlock
         if (description_ == null) {
@@ -219,17 +247,22 @@ public class FrameworkElement implements HasDestructor {
 
         primary.description = description_;
 
+        objMutex = new MutexLockOrder(getLockOrder(flags_, parent_, lockOrder_), getFlag(CoreFlags.IS_RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this));
+
         // JavaOnlyBlock
-        treeNode = RuntimeSettings.CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS.get() ? createTreeNode() : null;
+        //treeNode = RuntimeSettings.CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS.get() ? createTreeNode() : null;
         // save memory in case of port
         children = getFlag(CoreFlags.ALLOWS_CHILDREN) ? new SafeConcurrentlyIterableList<Link>(4, 4) :
                    SafeConcurrentlyIterableList.getEmptyInstance();
 
-        handle = getFlag(CoreFlags.IS_RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this);
         if (!getFlag(CoreFlags.IS_RUNTIME)) {
             FrameworkElement parent = (parent_ != null) ? parent_ : RuntimeEnvironment.getInstance().unrelated;
+            if (lockOrder_ < 0) {
+                lockOrder_ = parent.getLockOrder() + 1;
+            }
             parent.addChild(primary);
         }
+
 //      if (parent != null) {
 //          assert !parent.isInitialized() : "shouldn't add half-constructed objects to initialized/operating parent - could cause concurrency problems in init process";
 //          parent.addChild(primary);
@@ -237,6 +270,23 @@ public class FrameworkElement implements HasDestructor {
 
         if (RuntimeSettings.DISPLAY_CONSTRUCTION_DESTRUCTION.get()) {
             System.out.println("Constructing FrameworkElement: " + getDescription());
+        }
+    }
+
+    /**
+     * Helper for constructor (required for initializer-list in C++)
+     *
+     * @return Primary lock order
+     */
+    private static int getLockOrder(int flags, FrameworkElement parent, int lockOrder) {
+        if ((flags & CoreFlags.IS_RUNTIME) == 0) {
+            parent = (parent != null) ? parent : RuntimeEnvironment.getInstance().unrelated;
+            if (lockOrder < 0) {
+                return parent.getLockOrder() + 1;
+            }
+            return lockOrder;
+        } else {
+            return lockOrder;
         }
     }
 
@@ -266,9 +316,11 @@ public class FrameworkElement implements HasDestructor {
      * @param flag Flag to set
      */
     @SpinLock
-    protected synchronized void setFlag(int flag) {
-        assert(flag & CoreFlags.CONSTANT_FLAGS) == 0;
-        flags |= flag;
+    protected void setFlag(int flag) {
+        synchronized (flagMutex) {
+            assert(flag & CoreFlags.CONSTANT_FLAGS) == 0;
+            flags |= flag;
+        }
     }
 
     /**
@@ -277,9 +329,11 @@ public class FrameworkElement implements HasDestructor {
      * @param flag Flag to remove
      */
     @SpinLock
-    protected synchronized void removeFlag(int flag) {
-        assert(flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
-        flags &= ~flag;
+    protected void removeFlag(int flag) {
+        synchronized (flagMutex) {
+            assert(flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
+            flags &= ~flag;
+        }
     }
 
     /**
@@ -300,9 +354,9 @@ public class FrameworkElement implements HasDestructor {
     /**
      * @return RuntimeElement as TreeNode (only available if set in RuntimeSettings)
      */
-    @JavaOnly public DefaultMutableTreeNode asTreeNode() {
+    /*@JavaOnly public DefaultMutableTreeNode asTreeNode() {
         return treeNode;
-    }
+    }*/
 
     /**
      * @param managesPorts Is RuntimeElement responsible for releasing unused port values?
@@ -313,12 +367,12 @@ public class FrameworkElement implements HasDestructor {
     //mainThread = mainThread == null ? (managesPorts ? Thread.currentThread() : null) : mainThread;
     //}
 
-    /**
-     * @return Tree Node representation of this runtime object
-     */
-    @JavaOnly protected DefaultMutableTreeNode createTreeNode() {
-        return new DefaultMutableTreeNode(primary.description);
-    }
+//    /**
+//     * @return Tree Node representation of this runtime object
+//     */
+//    @JavaOnly protected DefaultMutableTreeNode createTreeNode() {
+//        return new DefaultMutableTreeNode(primary.description);
+//    }
 
     /*Cpp
     //! same as below - except that we return a const char* - this way, no memory needs to be allocated
@@ -331,7 +385,16 @@ public class FrameworkElement implements HasDestructor {
      * @return Name/Description
      */
     @ConstMethod public @Const String getDescription() {
-        return primary.description.length() == 0 ? "(anonymous)" : primary.description;
+        if (isReady() || getFlag(CoreFlags.IS_RUNTIME)) {
+            return primary.description.length() == 0 ? "(anonymous)" : primary.description;
+        } else {
+            synchronized (getRegistryLock()) { // synchronize, while description can be changed (C++ strings may not be thread safe...)
+                if (isDeleted()) {
+                    return "(deleted element)";
+                }
+                return primary.description.length() == 0 ? "(anonymous)" : primary.description;
+            }
+        }
     }
 
     /**
@@ -341,28 +404,37 @@ public class FrameworkElement implements HasDestructor {
      * @param i Link Number (0 is primary link/description)
      */
     @ConstMethod public void writeDescription(CoreOutput os, int i) {
-        os.writeString(getLink(i).description);
+        if (isReady()) {
+            os.writeString(getLink(i).description);
+        } else {
+            synchronized (getRegistryLock()) { // synchronize, while description can be changed (C++ strings may not be thread safe...)
+                os.writeString(isDeleted() ? "deleted element" : getLink(i).description);
+            }
+        }
     }
 
     /**
      * @param description New Port description
      * (only valid/possible before, element is initialized)
      */
-    public synchronized void setDescription(@Const @Ref String description) {
-        assert(isConstructing());
-        assert(isCreator());
-        primary.description = description;
+    public void setDescription(@Const @Ref String description) {
+        assert(!getFlag(CoreFlags.IS_RUNTIME));
+        synchronized (getRegistryLock()) { // synchronize, C++ strings may not be thread safe...
+            assert(isConstructing());
+            assert(isCreator());
+            primary.description = description;
+        }
 
         // JavaOnlyBlock
-        if (treeNode != null) {
+        /*if (treeNode != null) {
             treeNode.setUserObject(description);
-        }
+        }*/
     }
 
     /**
      * @return Is current thread the thread that created this object?
      */
-    private boolean isCreator() {
+    @ConstMethod private boolean isCreator() {
         return ThreadUtil.getCurrentThreadId() == createrThreadUid;
     }
 
@@ -412,62 +484,77 @@ public class FrameworkElement implements HasDestructor {
      * @param Link link to child to use
      */
     private void addChild(@Ptr Link child) {
-        assert(child.getChild().isConstructing()) : "tree structure is fixed for initialized children - is child initialized twice (?)";
-        assert(child.getChild().isCreator()) : "may only be called by child creator thread";
 
         if (child.parent == this) {
             return;
         }
 
-        // detach from former parent
-        if (child.parent != null) {
-            //assert(!child.parent.isInitialized()) : "This is truly strange - should not happen";
-            synchronized (child.parent) {
+        // lock runtime (required to perform structural changes)
+        synchronized (getRegistryLock()) {
+
+            // perform checks
+            assert(child.getChild().isConstructing()) : "tree structure is fixed for initialized children - is child initialized twice (?)";
+            assert(child.getChild().isCreator()) : "may only be called by child creator thread";
+            if (isDeleted() || (child.parent != null && child.parent.isDeleted()) || child.getChild().isDeleted()) {
+                throw new RuntimeException("Child has been deleted or has deleted parent. Thread exit is likely the intended behaviour.");
+            }
+            if (child.parent != null) {
+                assert(child.getChild().lockAfter(child.parent)) : "lockOrder level of child needs to be higher than of former parent";
+            }
+            assert(child.getChild().lockAfter(this)) : "lockOrder level of child needs to be higher than of parent";
+            // avoid cycles
+            assert child.getChild() != this;
+            assert(!this.isChildOf(child.getChild()));
+
+            // detach from former parent
+            if (child.parent != null) {
+                //assert(!child.parent.isInitialized()) : "This is truly strange - should not happen";
                 child.parent.children.remove(child);
 
                 // JavaOnlyBlock
-                if (treeNode != null) {
+                /*if (treeNode != null) {
                     child.parent.treeNode.remove(treeNode);
-                }
+                }*/
             }
-        }
 
-        synchronized (children) {
-            synchronized (child.getChild().children) {
-
-                // avoid cycles
-                assert child.getChild() != this;
-                assert(!this.isChildOf(child.getChild()));
-
-                // Check if child with same name already exists and possibly rename (?)
-                if (getFlag(CoreFlags.AUTO_RENAME)) {
-                    String childDesc = child.getDescription();
-                    int postfixIndex = 1;
-                    @Ptr ArrayWrapper<Link> ch = children.getIterable();
-                    for (int i = 0, n = ch.size(); i < n; i++) {
-                        @Ptr Link re = ch.get(i);
-                        if (re != null && re.getDescription().equals(childDesc)) {
-                            // name clash
-                            /*if (postfixIndex == 1) {
+            // Check if child with same name already exists and possibly rename (?)
+            if (getFlag(CoreFlags.AUTO_RENAME)) {
+                String childDesc = child.getDescription();
+                int postfixIndex = 1;
+                @Ptr ArrayWrapper<Link> ch = children.getIterable();
+                for (int i = 0, n = ch.size(); i < n; i++) {
+                    @Ptr Link re = ch.get(i);
+                    if (re != null && re.getDescription().equals(childDesc)) {
+                        // name clash
+                        /*if (postfixIndex == 1) {
                             System.out.println("Warning: name conflict in " + getUid() + " - " + child.getDescription());
-                            }*/
-                            re.getChild().setDescription(childDesc + "[" + postfixIndex + "]");
-                            postfixIndex++;
-                            continue;
-                        }
+                        }*/
+                        re.getChild().setDescription(childDesc + "[" + postfixIndex + "]");
+                        postfixIndex++;
+                        continue;
                     }
                 }
-
-                child.parent = this;
-                children.add(child, false);
-                // child.init(); - do this separately
-
-                // JavaOnlyBlock
-                if (treeNode != null) {
-                    treeNode.add(child.getChild().treeNode);
-                }
             }
+
+            child.parent = this;
+            children.add(child, false);
+            // child.init(); - do this separately
+
+            // JavaOnlyBlock
+            /*if (treeNode != null) {
+                 treeNode.add(child.getChild().treeNode);
+            }*/
         }
+    }
+
+    /**
+     * Can this framework element be locked after the specified one has been locked?
+     *
+     * @param fe Specified other framework element
+     * @return Answer
+     */
+    @ConstMethod public boolean lockAfter(@Const FrameworkElement fe) {
+        return objMutex.validAfter(fe.objMutex);
     }
 
 //  /**
@@ -500,30 +587,40 @@ public class FrameworkElement implements HasDestructor {
      * @return Framework element - or null if non-existent
      */
     protected FrameworkElement getChildElement(@Const @Ref String name, int nameIndex, boolean onlyGloballyUniqueChildren, FrameworkElement root) {
-        if (name.charAt(nameIndex) == '/') {
-            return root.getChildElement(name, nameIndex + 1, onlyGloballyUniqueChildren, root);
-        }
 
-        onlyGloballyUniqueChildren &= (!getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK));
-        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
-        for (int i = 0, n = iterable.size(); i < n; i++) {
-            @Ptr Link child = iterable.get(i);
-            if (child != null && name.regionMatches(nameIndex, child.description, 0, child.description.length()) && (!child.getChild().isDeleted())) {
-                if (name.length() == nameIndex + child.description.length()) {
-                    if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
-                        return child.getChild();
+        // lock runtime (might not be absolutely necessary... ensures, however, that result is valid)
+        synchronized (getRegistryLock()) {
+
+            if (isDeleted()) {
+                return null;
+            }
+
+            if (name.charAt(nameIndex) == '/') {
+                return root.getChildElement(name, nameIndex + 1, onlyGloballyUniqueChildren, root);
+            }
+
+            onlyGloballyUniqueChildren &= (!getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK));
+            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            for (int i = 0, n = iterable.size(); i < n; i++) {
+                @Ptr Link child = iterable.get(i);
+                if (child != null && name.regionMatches(nameIndex, child.description, 0, child.description.length()) && (!child.getChild().isDeleted())) {
+                    if (name.length() == nameIndex + child.description.length()) {
+                        if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
+                            return child.getChild();
+                        }
                     }
-                }
-                if (name.charAt(nameIndex + child.description.length()) == '/') {
-                    FrameworkElement result = child.getChild().getChildElement(name, nameIndex + child.description.length() + 1, onlyGloballyUniqueChildren, root);
-                    if (result != null) {
-                        return result;
+                    if (name.charAt(nameIndex + child.description.length()) == '/') {
+                        FrameworkElement result = child.getChild().getChildElement(name, nameIndex + child.description.length() + 1, onlyGloballyUniqueChildren, root);
+                        if (result != null) {
+                            return result;
+                        }
+                        // continue, because links may contain '/'... (this is slightly ugly... better solution? TODO)
                     }
-                    // continue, because links may contain '/'... (this is slightly ugly... better solution? TODO)
                 }
             }
+            return null;
+
         }
-        return null;
     }
 
     /**
@@ -532,16 +629,25 @@ public class FrameworkElement implements HasDestructor {
      * @param parent Parent framework element
      * @param linkName name of link
      */
-    protected synchronized void link(FrameworkElement parent, @Const @Ref String linkName) {
+    protected void link(FrameworkElement parent, @Const @Ref String linkName) {
         assert(isCreator()) : "may only be called by creator thread";
-        @Managed Link l = new Link();
-        l.description = linkName;
-        l.parent = null; // will be set in addChild
-        Link lprev = getLinkInternal(getLinkCount() - 1);
-        assert lprev.next == null;
-        lprev.next = l;
-        parent.addChild(l);
-        //RuntimeEnvironment.getInstance().link(this, linkName);
+        assert(lockAfter(parent));
+
+        // lock runtime (required to perform structural changes)
+        synchronized (getRegistryLock()) {
+            if (isDeleted() || parent.isDeleted()) {
+                throw new RuntimeException("Element and/or parent has been deleted. Thread exit is likely the intended behaviour.");
+            }
+
+            @Managed Link l = new Link();
+            l.description = linkName;
+            l.parent = null; // will be set in addChild
+            Link lprev = getLinkInternal(getLinkCount() - 1);
+            assert lprev.next == null;
+            lprev.next = l;
+            parent.addChild(l);
+            //RuntimeEnvironment.getInstance().link(this, linkName);
+        }
     }
 
     @Protected
@@ -549,6 +655,7 @@ public class FrameworkElement implements HasDestructor {
         assert(getFlag(CoreFlags.DELETED) || getFlag(CoreFlags.IS_RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
         System.out.println("FrameworkElement destructor: " + getDescription());
         if (!getFlag(CoreFlags.IS_RUNTIME)) {
+            // synchronizes on runtime - so no elements will be deleted while runtime is locked
             RuntimeEnvironment.getInstance().unregisterElement(this);
         }
 
@@ -568,10 +675,13 @@ public class FrameworkElement implements HasDestructor {
      *
      * This must be called prior to using framework elements - and in order to them being published.
      */
-    public synchronized void init() {
-        synchronized (RuntimeEnvironment.getInstance()) {
+    public void init() {
+        synchronized (getRuntime().getRegistryLock()) {
             //SimpleList<FrameworkElement> publishThese = new SimpleList<FrameworkElement>();
-            //assert(getFlag(CoreFlags.IS_RUNTIME) || getParent().isReady());
+            // assert(getFlag(CoreFlags.IS_RUNTIME) || getParent().isReady());
+            if (isDeleted()) {
+                throw new RuntimeException("Cannot initialize deleted element");
+            }
 
             initImpl();
 
@@ -581,6 +691,25 @@ public class FrameworkElement implements HasDestructor {
                 publishThese.get(i).publishUpdatedInfo(RuntimeListener.ADD);
             }*/
         }
+    }
+
+    /**
+     * Helper method for deleting.
+     * For some elements we need to lock runtime registry before locking this element.
+     *
+     * @return Returns runtime registry if this is the case - otherwise this-pointer.
+     */
+    @CppType("util::MutexLockOrder") @ConstMethod @Ref
+    private Object runtimeLockHelper() {
+
+        if (objMutex.validAfter(getRuntime().getRegistryHelper().objMutex)) {
+            return getRegistryLock();
+        }
+
+        //JavaOnlyBlock
+        return this;
+
+        //Cpp return this->objMutex;
     }
 
 //  /**
@@ -602,45 +731,46 @@ public class FrameworkElement implements HasDestructor {
     /**
      * Initializes element and all child elements that were created by this thread
      * (helper method for init())
-     * (may only be called privately in synchronized context)
+     * (may only be called in runtime-registry-synchronized context)
      */
-    private synchronized void initImpl() {
+    private void initImpl() {
         //System.out.println("init: " + toString() + " " + parent.toString());
         assert(!isDeleted()) : "Deleted element cannot be reinitialized";
 
-        synchronized (children) {
+        boolean initThis = !isReady() && isCreator();
 
-            boolean initThis = !isReady() && isCreator();
+        if (initThis) {
+            preChildInit();
+            RuntimeEnvironment.getInstance().preElementInit(this);
+        }
 
-            if (initThis) {
-                preChildInit();
-                RuntimeEnvironment.getInstance().preElementInit(this);
-            }
-
-            if (initThis || isReady()) {
-                @Ptr ArrayWrapper<Link> iterable = children.getIterable();
-                for (int i = 0, n = iterable.size(); i < n; i++) {
-                    @Ptr Link child = iterable.get(i);
-                    if (child != null && child.isPrimaryLink()) {
-                        child.getChild().initImpl();
-                    }
+        if (initThis || isReady()) {
+            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            for (int i = 0, n = iterable.size(); i < n; i++) {
+                @Ptr Link child = iterable.get(i);
+                if (child != null && child.isPrimaryLink() && (!child.getChild().isDeleted())) {
+                    child.getChild().initImpl();
                 }
             }
+        }
 
-            if (initThis) {
-                postChildInit();
-                //System.out.println("Setting Ready " + toString() + " Thread: " + ThreadUtil.getCurrentThreadId());
+        if (initThis) {
+            postChildInit();
+            //System.out.println("Setting Ready " + toString() + " Thread: " + ThreadUtil.getCurrentThreadId());
+            synchronized (flagMutex) {
                 flags |= CoreFlags.READY;
             }
         }
+
     }
 
     /**
      * Initializes element and all child elements that were created by this thread
      * (helper method for init())
-     * (may only be called privately in synchronized context)
+     * (may only be called in runtime-registry-synchronized context)
      */
     private void checkPublish() {
+
         if (isReady()) {
 
             if (!getFlag(CoreFlags.PUBLISHED) && allParentsReady()) {
@@ -654,16 +784,18 @@ public class FrameworkElement implements HasDestructor {
                 @Ptr ArrayWrapper<Link> iterable = children.getIterable();
                 for (int i = 0, n = iterable.size(); i < n; i++) {
                     @Ptr Link child = iterable.get(i);
-                    if (child != null /*&& child.isPrimaryLink()*/) {
+                    if (child != null && (!child.getChild().isDeleted()) /*&& child.isPrimaryLink()*/) {
                         child.getChild().checkPublish();
                     }
                 }
             }
         }
+
     }
 
     /**
      * @return Have all parents (including link parents) been initialized?
+     * (may only be called in runtime-registry-synchronized context)
      */
     private boolean allParentsReady() {
         if (getFlag(CoreFlags.IS_RUNTIME)) {
@@ -686,6 +818,7 @@ public class FrameworkElement implements HasDestructor {
      * so final initialization can be made.
      *
      * Called before children are initialized
+     * (called in runtime-registry-synchronized context)
      */
     @Virtual protected void preChildInit() {}
 
@@ -695,6 +828,7 @@ public class FrameworkElement implements HasDestructor {
      * so final initialization can be made.
      *
      * Called before children are initialized
+     * (called in runtime-registry-synchronized context)
      */
     @Virtual protected void postChildInit() {}
 
@@ -710,78 +844,92 @@ public class FrameworkElement implements HasDestructor {
      *
      * @param dontDetach Don't detach this link from parent (typically, because parent will clear child list)
      */
-    private synchronized void managedDelete(Link dontDetach) {
+    private void managedDelete(Link dontDetach) {
 
-        if (RuntimeSettings.DISPLAY_CONSTRUCTION_DESTRUCTION.get()) {
-            System.out.println("FrameworkElement managedDelete: " + getQualifiedName());
-        }
+        synchronized (runtimeLockHelper()) {
+            synchronized (this) {
 
-        synchronized (children) {
-            assert !getFlag(CoreFlags.DELETED);
-            assert((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
-
-            flags = (flags | CoreFlags.DELETED) & ~CoreFlags.READY;
-
-            // remove children
-            deleteChildren();
-
-            // remove element itself
-            prepareDelete();
-            publishUpdatedInfo(RuntimeListener.REMOVE);
-
-            // remove from hierarchy
-            for (Link l = primary; l != null;) {
-                if (l != dontDetach && l.parent != null) {
-                    l.parent.children.remove(l);
+                if (isDeleted()) { // can happen if two threads delete concurrently - no problem, since this is - if at all - called when GarbageCollector-safety period has just started
+                    return;
                 }
-                l = l.next;
+
+                if (RuntimeSettings.DISPLAY_CONSTRUCTION_DESTRUCTION.get()) {
+                    System.out.println("FrameworkElement managedDelete: " + getQualifiedName());
+                }
+
+                // synchronizes on runtime - so no elements will be deleted while runtime is locked
+                synchronized (getRegistryLock()) {
+
+                    System.out.println("Deleting " + toString() + " (" + hashCode() + ")");
+                    assert !getFlag(CoreFlags.DELETED);
+                    assert((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
+
+                    synchronized (flagMutex) {
+                        flags = (flags | CoreFlags.DELETED) & ~CoreFlags.READY;
+                    }
+
+                    if (!getFlag(CoreFlags.IS_RUNTIME)) {
+                        RuntimeEnvironment.getInstance().markElementDeleted(this);
+                    }
+                }
+
+                // perform custom cleanup (stopping/deleting threads can be done here)
+                prepareDelete();
+
+                // remove children (thread-safe, because delete flag is set - and addChild etc. checks that)
+                deleteChildren();
+
+                // synchronized on runtime for removement from hierarchy
+                synchronized (getRegistryLock()) {
+
+                    // remove element itself
+                    publishUpdatedInfo(RuntimeListener.REMOVE);
+
+                    // remove from hierarchy
+                    for (Link l = primary; l != null;) {
+                        if (l != dontDetach && l.parent != null) {
+                            l.parent.children.remove(l);
+                        }
+                        l = l.next;
+                    }
+
+                    // TODO
+                    //              // JavaOnlyBlock
+                    //              if (treeNode != null) {
+                    //                  parent.treeNode.remove(treeNode);
+                    //              }
+
+                    primary.parent = null;
+
+                }
             }
-
-            // TODO
-//              // JavaOnlyBlock
-//              if (treeNode != null) {
-//                  parent.treeNode.remove(treeNode);
-//              }
-
-            primary.parent = null;
         }
 
         // add garbage collector task
-        //Cpp lock1._unlock();
         GarbageCollector.deleteDeferred(this);
     }
 
     /**
      * Deletes all children of this framework element.
+     *
+     * (may only be called in runtime-registry-synchronized context)
      */
-    public void deleteChildren() {
-//      deleteRange(0, childEntryCount());
-//  }
-//
-//  /**
-//   * Deletes a range of children of this framework element
-//   *
-//   * @param start Start index
-//   * @param end End index (exclusive-9
-//   */
-//  public void deleteRange(@SizeT int start, @SizeT int end) {
+    private void deleteChildren() {
 
-        synchronized (children) {
-            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
-            for (int i = 0, n = iterable.size(); i < n; i++) {
-                @Ptr Link child = iterable.get(i);
-                if (child != null /*&& child.getChild().isReady()*/) {
-                    child.getChild().managedDelete(child);
-                }
-            }
-
-            children.clear();
-
-            // JavaOnlyBlock
-            if (treeNode != null) {
-                treeNode.removeAllChildren();
+        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+        for (int i = 0, n = iterable.size(); i < n; i++) {
+            @Ptr Link child = iterable.get(i);
+            if (child != null /*&& child.getChild().isReady()*/) {
+                child.getChild().managedDelete(child);
             }
         }
+
+        children.clear();
+
+        // JavaOnlyBlock
+        /*if (treeNode != null) {
+            treeNode.removeAllChildren();
+        }*/
     }
 
     /**
@@ -790,16 +938,48 @@ public class FrameworkElement implements HasDestructor {
      * The final deletion will be done by the GarbageCollector thread after
      * a few seconds (to ensure no other thread is working on this object
      * any more).
+     *
+     * Is called _BEFORE_ prepareDelete of children
+     *
+     * (is called with lock on this framework element and possibly all of its parent,
+     *  but not runtime-registry. Keep this in mind when cleaning up & joining threads.
+     *  This is btw the place to do that.)
+     *
      */
     @Virtual protected void prepareDelete() {}
 
     /**
-     * @return RuntimeEnvironment this object belongs to (Null if there's no runtime as parent element)
+     * (for convenience)
+     * @return The one and only RuntimeEnvironment
      */
     @InCppFile
     @ConstMethod public RuntimeEnvironment getRuntime() {
         //return getParent(RuntimeEnvironment.class);
         return RuntimeEnvironment.getInstance();
+    }
+
+    /**
+     * (for convenience)
+     * @return Registry of the one and only RuntimeEnvironment - Structure changing operations need to be synchronized on this object!
+     * (Only lock runtime for minimal periods of time!)
+     */
+    @InCppFile @CppType("util::MutexLockOrder")
+    @InCpp("return RuntimeEnvironment::getInstance()->getRegistryHelper()->objMutex;")
+    @ConstMethod @Ref public RuntimeEnvironment.Registry getRegistryLock() {
+        //return getParent(RuntimeEnvironment.class);
+        return RuntimeEnvironment.getInstance().getRegistryHelper();
+    }
+
+    /**
+     * (for convenience)
+     * @return List with all thread local caches - Some cleanup methods require that this is locked
+     * (Only lock runtime for minimal periods of time!)
+     */
+    @InCppFile @CppType("util::MutexLockOrder")
+    @InCpp("return RuntimeEnvironment::getInstance()->getRegistryHelper()->infosLock->objMutex;")
+    @ConstMethod @Ref public SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
+        //return getParent(RuntimeEnvironment.class);
+        return RuntimeEnvironment.getInstance().getRegistryHelper().infosLock;
     }
 
     /**
@@ -810,14 +990,20 @@ public class FrameworkElement implements HasDestructor {
      */
     @SuppressWarnings("unchecked")
     @JavaOnly public <T extends FrameworkElement> T getParent(Class<T> c) {
-        FrameworkElement result = primary.parent;
-        while (!(c.isAssignableFrom(result.getClass()))) {
-            result = result.primary.parent;
-            if (result == null) {
-                break;
+        synchronized (getRegistryLock()) { // not really necessary after element has been initialized
+            if (isDeleted()) {
+                return null;
             }
+
+            FrameworkElement result = primary.parent;
+            while (!(c.isAssignableFrom(result.getClass()))) {
+                result = result.primary.parent;
+                if (result == null || result.isDeleted()) {
+                    break;
+                }
+            }
+            return (T)result;
         }
-        return (T)result;
     }
 
     /**
@@ -832,7 +1018,12 @@ public class FrameworkElement implements HasDestructor {
      * @return Parent of framework element using specified link
      */
     @ConstMethod public FrameworkElement getParent(int linkIndex) {
-        return getLink(linkIndex).parent;
+        synchronized (getRegistryLock()) { // absolutely safe this way
+            if (isDeleted()) {
+                return null;
+            }
+            return getLink(linkIndex).parent;
+        }
     }
 
     /**
@@ -843,19 +1034,25 @@ public class FrameworkElement implements HasDestructor {
      * @return Answer
      */
     @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re) {
-        for (@Const Link l = primary; l != null; l = l.next) {
-            if (l.parent == re) {
-                return true;
-            } else if (l.parent == null) {
-                continue;
-            } else {
-                if (l.parent.isChildOf(re)) {
+        synchronized (getRegistryLock()) { // absolutely safe this way
+            if (isDeleted()) {
+                return false;
+            }
+            for (@Const Link l = primary; l != null; l = l.next) {
+                if (l.parent == re) {
                     return true;
+                } else if (l.parent == null) {
+                    continue;
+                } else {
+                    if (l.parent.isChildOf(re)) {
+                        return true;
+                    }
                 }
             }
+            return false;
         }
-        return false;
     }
+
 
 //  /**
 //   * @return Returns the element's uid, which is the concatenated description of it and all parents.
@@ -1152,6 +1349,7 @@ public class FrameworkElement implements HasDestructor {
 
     /**
      * @return Number of children (includes ones that are not initialized yet)
+     * (thread-safe, however, call with runtime registry lock to get exact result when other threads might concurrently add/remove children)
      */
     @ConstMethod public @SizeT int childCount() {
         int count = 0;
@@ -1222,7 +1420,14 @@ public class FrameworkElement implements HasDestructor {
      * ("normal" elements have negative handle, while ports have positive ones)
      */
     @ConstMethod @Inline public int getHandle() {
-        return handle;
+        return objMutex.getSecondary();
+    }
+
+    /**
+     * @return Order value in which element needs to be locked (higher means later/after)
+     */
+    @ConstMethod @Inline public int getLockOrder() {
+        return objMutex.getPrimary();
     }
 
     /**
@@ -1233,8 +1438,22 @@ public class FrameworkElement implements HasDestructor {
         @Ptr ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             Link child = iterable.get(i);
-            if (child.getDescription().equals(name)) {
-                return child.getChild();
+            if (child.getChild().isReady()) {
+                if (child.getDescription().equals(name)) {
+                    return child.getChild();
+                }
+            } else {
+                synchronized (getRegistryLock()) {
+                    if (isDeleted()) {
+                        return null;
+                    }
+                    if (child.getChild().isDeleted()) {
+                        continue;
+                    }
+                    if (child.getDescription().equals(name)) {
+                        return child.getChild();
+                    }
+                }
             }
         }
         return null;
@@ -1285,7 +1504,7 @@ public class FrameworkElement implements HasDestructor {
      * @param sb StringBuilder that will store result
      */
     @Inline @ConstMethod public void getQualifiedName(@Ref StringBuilder sb) {
-        getQualifiedName(sb, 0);
+        getQualifiedName(sb, primary);
     }
 
     /**
@@ -1328,7 +1547,7 @@ public class FrameworkElement implements HasDestructor {
      * @return Is this link globally unique?
      */
     @Inline @ConstMethod public boolean getQualifiedLink(@Ref StringBuilder sb) {
-        return getQualifiedLink(sb, 0);
+        return getQualifiedLink(sb, primary);
     }
 
     /**
@@ -1366,6 +1585,25 @@ public class FrameworkElement implements HasDestructor {
      * @return Is this a globally unique link?
      */
     @ConstMethod private boolean getQualifiedName(@Ref StringBuilder sb, @Const Link start, boolean forceFullLink) {
+        if (isReady()) {
+            return getQualifiedNameImpl(sb, start, forceFullLink);
+        } else {
+            synchronized (getRegistryLock()) { // synchronize while element is under construction
+                return getQualifiedNameImpl(sb, start, forceFullLink);
+            }
+        }
+    }
+
+    /**
+     * Very efficient implementation of above.
+     * (StringBuilder may be reused)
+     *
+     * @param sb StringBuilder that will store result
+     * @param start Link to start with
+     * @param forceFullLink Return full link from root (even if object has shorter globally unique link?)
+     * @return Is this a globally unique link?
+     */
+    @ConstMethod private boolean getQualifiedNameImpl(@Ref StringBuilder sb, @Const Link start, boolean forceFullLink) {
         @SizeT int length = 0;
         boolean abortAtLinkRoot = false;
         for (@Const Link l = start; l.parent != null && !(abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)); l = l.parent.primary) {
@@ -1391,20 +1629,27 @@ public class FrameworkElement implements HasDestructor {
     /**
      * @param linkIndex Index of link (0 = primary)
      * @return Link with specified index
+     * (should be called in synchronized context)
      */
     @ConstMethod public @Ptr @Const Link getLink(@SizeT int linkIndex) {
-        @Const Link l = primary;
-        for (@SizeT int i = 0; i < linkIndex; i++) {
-            l = l.next;
-            if (l == null) {
+        synchronized (getRegistryLock()) { // absolutely safe this way
+            if (isDeleted()) {
                 return null;
             }
+            @Const Link l = primary;
+            for (@SizeT int i = 0; i < linkIndex; i++) {
+                l = l.next;
+                if (l == null) {
+                    return null;
+                }
+            }
+            return l;
         }
-        return l;
     }
 
     /**
      * same as above, but non-const
+     * (should be called in synchronized context)
      */
     private @Ptr Link getLinkInternal(@SizeT int linkIndex) {
         Link l = primary;
@@ -1419,8 +1664,26 @@ public class FrameworkElement implements HasDestructor {
 
     /**
      * @return Number of links to this port
+     * (should be called in synchronized context)
      */
     @ConstMethod public @SizeT int getLinkCount() {
+        if (isReady()) {
+            return getLinkCountHelper();
+        } else {
+            synchronized (getRegistryLock()) { // absolutely safe this way
+                return getLinkCountHelper();
+            }
+        }
+    }
+
+    /**
+     * @return Number of links to this port
+     * (should be called in synchronized context)
+     */
+    @ConstMethod private @SizeT int getLinkCountHelper() {
+        if (isDeleted()) {
+            return 0;
+        }
         @SizeT int i = 0;
         for (@Const Link l = primary; l != null; l = l.next) {
             i++;
@@ -1465,7 +1728,7 @@ public class FrameworkElement implements HasDestructor {
      * (should only be called by FrameworkElement class)
      */
     @InCppFile
-    protected synchronized void publishUpdatedInfo(byte changeType) {
+    protected void publishUpdatedInfo(byte changeType) {
         RuntimeEnvironment.getInstance().runtimeChange(changeType, this);
     }
 
@@ -1492,21 +1755,30 @@ public class FrameworkElement implements HasDestructor {
     @Virtual
     protected void printStructure(int indent) {
 
-        // print element info
-        for (int i = 0; i < indent; i++) {
-            System.out.print(" ");
-        }
-        System.out.print(getDescription());
-        System.out.print(" (");
-        System.out.print(isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing");
-        System.out.println(")");
+        synchronized (getRegistryLock()) {
 
-        // print child element info
-        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
-        for (int i = 0, n = iterable.size(); i < n; i++) {
-            Link child = iterable.get(i);
-            if (child != null) {
-                child.getChild().printStructure(indent + 2);
+            // print element info
+            for (int i = 0; i < indent; i++) {
+                System.out.print(" ");
+            }
+
+            if (isDeleted()) {
+                System.out.println("deleted FrameworkElement");
+                return;
+            }
+
+            System.out.print(getDescription());
+            System.out.print(" (");
+            System.out.print(isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing");
+            System.out.println(")");
+
+            // print child element info
+            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            for (int i = 0, n = iterable.size(); i < n; i++) {
+                Link child = iterable.get(i);
+                if (child != null) {
+                    child.getChild().printStructure(indent + 2);
+                }
             }
         }
     }
@@ -1519,6 +1791,15 @@ public class FrameworkElement implements HasDestructor {
      * @return Result
      */
     public boolean descriptionEquals(String other) {
-        return primary.description.equals(other);
+        if (isReady()) {
+            return primary.description.equals(other);
+        } else {
+            synchronized (getRegistryLock()) {
+                if (isDeleted()) {
+                    return false;
+                }
+                return primary.description.equals(other);
+            }
+        }
     }
 }

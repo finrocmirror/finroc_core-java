@@ -81,7 +81,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
      * @param index handle
      * @param elem Framework to put to that position
      */
-    public void put(int handle, @Const T elem) {
+    public synchronized void put(int handle, @Const T elem) {
         int lv1Block = (handle & LEVEL_ONE_MASK) >> LEVEL_ONE_SHIFT;
         int lv2Block = handle & LEVEL_TWO_MASK;
         @Ptr ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
@@ -97,7 +97,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
     /**
      * @param i Handle of element to remove
      */
-    public void remove(int handle) {
+    public synchronized void remove(int handle) {
         int lv1Block = (handle & LEVEL_ONE_MASK) >> LEVEL_ONE_SHIFT;
         int lv2Block = handle & LEVEL_TWO_MASK;
         @Ptr ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
@@ -110,7 +110,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
      * Wrapper for simpler java/c++ conversion
      */
     @InCpp("return elements.get(index);")
-    public @Ptr ArrayWrapper<T> getLvl2Element(int index) {
+    private @Ptr ArrayWrapper<T> getLvl2Element(int index) {
         return elements.get(index);
     }
 
@@ -118,7 +118,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
      * Wrapper for simpler java/c++ conversion
      */
     @InCpp("elements.set(index, elem);")
-    public void setLvl2Element(int index, @Ptr ArrayWrapper<T> elem) {
+    private void setLvl2Element(int index, @Ptr ArrayWrapper<T> elem) {
         elements.set(index, elem);
     }
 

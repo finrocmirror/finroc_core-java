@@ -21,7 +21,9 @@
  */
 package org.finroc.core.port.rpc;
 
+import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.ThreadLocalCache;
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 
@@ -38,6 +40,9 @@ public class MethodCallSyncher {
 
     /** PreAllocated array of (initially empty) MethodCallSyncher classes */
     private static final MethodCallSyncher[] slots = new MethodCallSyncher[MAX_THREADS];
+
+    /** Network writer threads need to be notified afterwards */
+    public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 300);
 
     public static void staticInit() {
         //JavaOnlyBlock

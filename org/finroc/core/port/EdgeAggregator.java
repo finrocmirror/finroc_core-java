@@ -23,6 +23,7 @@ package org.finroc.core.port;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.LockOrderLevels;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
@@ -51,7 +52,7 @@ public class EdgeAggregator extends FrameworkElement {
 
     /** see FrameworkElement for parameter description */
     public EdgeAggregator(@Const @Ref @CppDefault("\"\"") String description_, @Ptr @CppDefault("NULL") FrameworkElement parent_, @CppDefault("0") int flags_) {
-        super(description_, parent_, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR);
+        super(description_, parent_, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
     }
 
     /**

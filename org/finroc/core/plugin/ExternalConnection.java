@@ -27,6 +27,7 @@ import org.finroc.jc.annotation.Virtual;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 
 /**
@@ -59,7 +60,7 @@ public abstract class ExternalConnection extends FrameworkElement {
      * @param defaultAddress Default connection address (some string)
      */
     public ExternalConnection(String description, String defaultAddress) {
-        super(description, RuntimeEnvironment.getInstance(), CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT);
+        super(description, RuntimeEnvironment.getInstance(), CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
         lastAddress = defaultAddress;
     }
 

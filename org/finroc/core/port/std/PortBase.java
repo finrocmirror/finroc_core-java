@@ -185,6 +185,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         if (queue != null) {
             queue.delete();
         }
+        super.delete();
     }
 
     /**

@@ -29,6 +29,7 @@ import org.finroc.jc.container.SimpleList;
  *
  * A class that loads the plugins it can find.
  */
+@JavaOnly
 public interface PluginLoader {
 
     /**

@@ -83,9 +83,9 @@ public class NetworkTestSuite {
         }
     }
 
-    public static final boolean CC_TESTS = true, STD_TESTS = false;
-    public static final boolean BB_TESTS = false;
-    public static final boolean PUSH_TESTS = false, PULL_PUSH_TESTS = true, REVERSE_PUSH_TESTS = false, Q_TESTS = false;
+    public static final boolean CC_TESTS = false, STD_TESTS = false;
+    public static final boolean BB_TESTS = true;
+    public static final boolean PUSH_TESTS = false, PULL_PUSH_TESTS = false, REVERSE_PUSH_TESTS = false, Q_TESTS = false;
     public final String blackboardName, partnerBlackboardName;
     public static final short PUBLISH_FREQ = 200, RECV_FREQ = 1000;
     public final int stopCycle;

@@ -34,7 +34,7 @@ import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 public abstract class InterfaceNetPort extends InterfacePort {
 
     public InterfaceNetPort(PortCreationInfo pci) {
-        super(pci, Type.Network);
+        super(pci, Type.Network, -1);
     }
 
     /**

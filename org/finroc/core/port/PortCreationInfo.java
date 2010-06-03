@@ -74,6 +74,9 @@ public class PortCreationInfo {
     /** Port name/description */
     public String description = "";
 
+    /** Lock order */
+    public int lockOrder = -1;
+
     /** Default value of port */
     //public PortData defaultValue;
 
@@ -106,6 +109,12 @@ public class PortCreationInfo {
         this.parent = parent;
         this.dataType = dataType;
         this.flags = flags;
+    }
+
+    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Ptr DataType dataType) {
+        this.description = description;
+        this.parent = parent;
+        this.dataType = dataType;
     }
 
     public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, int flags) {
@@ -177,6 +186,7 @@ public class PortCreationInfo {
         dataType = p.dataType;
         description = p.description;
         flags = p.flags;
+        lockOrder = p.lockOrder;
         managesPorts = p.managesPorts;
         maxQueueSize = p.maxQueueSize;
         minNetUpdateInterval = p.minNetUpdateInterval;
@@ -237,4 +247,9 @@ public class PortCreationInfo {
         return pci2;
     }
 
+    public PortCreationInfo lockOrderDerive(int lockOrder) {
+        PortCreationInfo pci2 = new PortCreationInfo(this);
+        pci2.lockOrder = lockOrder;
+        return pci2;
+    }
 }

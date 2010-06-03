@@ -205,6 +205,7 @@ public class CCPortDataContainer<T extends CCPortData> extends ReusableTL implem
 
     /**
      * (may be called by any thread)
+     * (Needs to be called with lock on ThreadLocalCache::infos)
      * Removes read lock
      */
     @InCppFile
@@ -221,20 +222,14 @@ public class CCPortDataContainer<T extends CCPortData> extends ReusableTL implem
 
     /**
      * (Should only be called by port related classes)
-     * Release method to call after owner thread has terminated
+     * (Needs to be called with lock on ThreadLocalCache::infos)
+     * Release-method to call after owner thread has terminated
      */
-    public synchronized void postThreadReleaseLock() {
+    public void postThreadReleaseLock() {
         refCounter--;
         assert(refCounter >= 0);
         if (refCounter == 0) {
-            /*Cpp
-            lock1._unlock();
-            delete this;  // my favourite statement :-)
-            */
-
-            //JavaOnlyBlock
-            super.unregister();
-
+            this.delete(); // my favourite statement :-)
         }
     }
 

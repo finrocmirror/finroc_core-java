@@ -27,6 +27,7 @@ import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -60,8 +61,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /** Edges ending at this port */
     protected final EdgeList<CCPortBase> edgesDest = new EdgeList<CCPortBase>();
 
-    /** default value - invariant: must never be null if used */
-    protected final CCPortDataRef defaultValue;
+    /** default value - invariant: must never be null if used (must always be copied, too) */
+    protected final CCInterThreadContainer<?> defaultValue;
 
     /**
      * current value (set by main thread) - invariant: must never be null - sinnvoll(?)
@@ -110,6 +111,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param pci PortCreationInformation
      */
     //@Init("queue(getFlag(PortFlags::HAS_QUEUE) ? new finroc::util::WonderQueue<CCInterThreadContainer<> >() : NULL)")
+    @InitInBody("value")
     public CCPortBase(PortCreationInfo pci) {
         super(pci);
         assert(pci.dataType.isCCType());
@@ -131,12 +133,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 //          defaultTmp = Serializer.clone(pci.defaultValue);
 //      }
 //      pDefaultValue = defaultTmp;
-        defaultValue = createDefaultValue(pci.dataType).getCurrentRef();
-        defaultValue.getContainer().addLock();
+        defaultValue = createDefaultValue(pci.dataType);
         //pDefaultValue = pdm.getData();
         //PortDataCreationInfo.get().reset();
         //pdm.setLocks(2); // one... so it will stay read locked... and another one for pValue
-        value = defaultValue;
+        //value = defaultValue;
 
         // standard assign?
         standardAssign = !getFlag(PortFlags.NON_STANDARD_ASSIGN) && (!getFlag(PortFlags.HAS_QUEUE));
@@ -145,33 +146,45 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
             queue.init();
         }
         propagateStrategy(null, null); // initialize strategy
+
+        // set initial value to default
+        ThreadLocalCache tc = ThreadLocalCache.get();
+        CCPortDataContainer<?> c = getUnusedBuffer(tc);
+        c.assign(defaultValue.getDataPtr());
+        c.addLock();
+        value = c.getCurrentRef();
+        tc.lastWrittenToPort[portIndex] = c;
     }
 
     // helper for direct member initialization in C++
-    private static @Ptr CCPortDataContainer<?> createDefaultValue(DataType dt) {
-        return (CCPortDataContainer<?>)dt.createInstance();
+    private static @Ptr CCInterThreadContainer<?> createDefaultValue(DataType dt) {
+        return (CCInterThreadContainer<?>)dt.createInterThreadInstance();
     }
 
     public synchronized void delete() {
         ThreadLocalCache.get(); // Initialize ThreadLocalCache - if this has not already happened for GarbageCollector
         ThreadLocalCache.deleteInfoForPort(portIndex);
-        defaultValue.getContainer().postThreadReleaseLock(); // thread safe, since called deferred - when no one else should access this port anymore
+        defaultValue.recycle2();
         if (ownedData != null) {
-            ownedData.postThreadReleaseLock();
+            synchronized (getThreadLocalCacheInfosLock()) {
+                ownedData.postThreadReleaseLock();
+            }
         }
         // do not release lock on current value - this is done in one of the statements above
 
         if (queue != null) {
             queue.delete();
         }
+        super.delete();
     }
 
     /**
      * Transfers data ownership to port after a thread has been deleted
+     * (Needs to be called with lock on ThreadLocalCache::infos)
      *
      * @param portDataContainer port data container to transfer ownership of
      */
-    public synchronized void transferDataOwnership(CCPortDataContainer<?> portDataContainer) {
+    public void transferDataOwnership(CCPortDataContainer<?> portDataContainer) {
         CCPortDataContainer<?> current = value.getContainer();
         if (current == portDataContainer) { // ownedData is outdated and can be deleted
             if (ownedData != null) {
@@ -488,7 +501,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Set current value to default value
      */
     private void applyDefaultValue() {
-        publish(ThreadLocalCache.get(), defaultValue.getContainer());
+        //publish(ThreadLocalCache.get(), defaultValue.getContainer());
+        ThreadLocalCache tc = ThreadLocalCache.getFast();
+        CCPortDataContainer<?> c = getUnusedBuffer(tc);
+        c.assign(defaultValue.getDataPtr());
+        publish(tc, c);
     }
 
     /**

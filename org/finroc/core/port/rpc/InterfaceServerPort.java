@@ -40,9 +40,13 @@ public class InterfaceServerPort extends InterfacePort {
         super(description, parent, type, Type.Server);
     }
 
-
     public InterfaceServerPort(String description, FrameworkElement parent, DataType type, @Ptr AbstractMethodCallHandler ch, @CppDefault("0") int customFlags) {
         super(description, parent, type, Type.Server, customFlags);
+        setCallHandler(ch);
+    }
+
+    public InterfaceServerPort(String description, FrameworkElement parent, DataType type, @Ptr AbstractMethodCallHandler ch, int customFlags, int lockLevel) {
+        super(description, parent, type, Type.Server, customFlags, lockLevel);
         setCallHandler(ch);
     }
 

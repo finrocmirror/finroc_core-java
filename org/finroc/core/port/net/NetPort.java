@@ -226,6 +226,7 @@ public abstract class NetPort implements PortListener, CCPortListener {
      * @param timestamp Time stamp
      */
     public void receiveDataFromStream(CoreInput ci, long timestamp, byte changedFlag) {
+        assert(getPort().isReady());
         if (wrapped.getDataType().isStdType() || wrapped.getDataType().isTransactionType()) {
             StdNetPort pb = (StdNetPort)wrapped;
             ci.setBufferSource(pb);
@@ -465,7 +466,7 @@ public abstract class NetPort implements PortListener, CCPortListener {
                     CCInterThreadContainer<?> c;
 
                     //JavaOnlyBlock
-                    c = pc.<CCInterThreadContainer<?>>getParam(0);
+                    c = pc. < CCInterThreadContainer<? >> getParam(0);
 
                     //Cpp pc->getParam(0, c);
 

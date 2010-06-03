@@ -69,7 +69,10 @@ public class CoreRegister<T> {
     /** Array with elements */
     private final ArrayWrapper<T> elements = new ArrayWrapper<T>(MAX_ELEMENTS);
 
-    /** Array with current uid for every element index */
+    /** Marks deleted elements in array below */
+    private final static int DELETE_MARK = 0x40000000;
+
+    /** Array with current uid for every element index (the second bit from the front is used to mark deleted elements) */
     private final IntArrayWrapper elementUid = new IntArrayWrapper(MAX_ELEMENTS);
 
     /** number of elements in register */
@@ -101,6 +104,7 @@ public class CoreRegister<T> {
 
         // get new uid for this slot and update uid table
         int curUid = elementUid.get(currentElementIndex);
+        assert(curUid <= MAX_UID);
         curUid++;
         if (curUid >= MAX_UID) {
             curUid = 0;
@@ -143,13 +147,29 @@ public class CoreRegister<T> {
     /**
      * Get element by raw index.
      * Shouldn't be used - normally.
-     * Some framework-internal mechanism need it.
+     * Some framework-internal mechanism (ThreadLocalCache cleanup) needs it.
      *
      * @param index Raw Index of element
      * @return Element
      */
     @ConstMethod public T getByRawIndex(int index) {
         return elements.get(index);
+    }
+
+    /**
+     * Mark specified framework element as (soon completely) deleted
+     *
+     * get() won't return it anymore.
+     * getByRawIndex() , however, will.
+     *
+     * @param handle Handle of element
+     */
+    public synchronized void markDeleted(int handle) {
+        int index = handle & ELEM_INDEX_MASK;
+        int uid = (handle & ELEM_UID_MASK) >> UID_SHIFT;
+        assert(elements.get(index) != null);
+        assert(elementUid.get(index) == uid);
+        elementUid.set(index, uid | DELETE_MARK);
     }
 
     /**
@@ -160,8 +180,10 @@ public class CoreRegister<T> {
     public synchronized void remove(int handle) {
         int index = handle & ELEM_INDEX_MASK;
         int uid = (handle & ELEM_UID_MASK) >> UID_SHIFT;
-        if (elementUid.get(index) == uid) {
+        int cleanCurUid = elementUid.get(index) & MAX_UID;
+        if (cleanCurUid == uid) {
             elements.set(index, null);
+            elementUid.set(index, cleanCurUid);
             elemCount--;
         } else {
             throw new RuntimeException("Element removed twice or does not exist");

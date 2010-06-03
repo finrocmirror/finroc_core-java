@@ -21,9 +21,11 @@
  */
 package org.finroc.core.port;
 
+import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PortDataBufferPool;
 import org.finroc.core.portdatabase.DataType;
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.SpinLock;
@@ -40,6 +42,9 @@ public class MultiTypePortDataBufferPool {
 
     /** list contains pools for different data types... new pools are added when needed */
     private final SimpleList<PortDataBufferPool> pools = new SimpleList<PortDataBufferPool>(2);
+
+    /** Mutex lock order - needs to be locked before AllocationRegister */
+    public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 20);
 
     /**
      * @param dataType DataType of returned buffer.

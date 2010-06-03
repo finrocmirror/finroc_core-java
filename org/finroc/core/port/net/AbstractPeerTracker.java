@@ -21,14 +21,18 @@
  */
 package org.finroc.core.port.net;
 
+import org.finroc.core.LockOrderLevels;
+import org.finroc.core.RuntimeEnvironment;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.ListenerManager;
+import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
-import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.net.IPSocketAddress;
 
 /**
@@ -47,12 +51,19 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     protected TrackerListenerManager listeners = new TrackerListenerManager();
 
     /** Peer tracker instances that are used - can be multiple */
-    @SharedPtr private static SimpleList<AbstractPeerTracker> instances = new SimpleList<AbstractPeerTracker>();
+    @SharedPtr private static SimpleListWithMutex<AbstractPeerTracker> instances = new SimpleListWithMutex<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
+
+    /** Mutex for tracker - order: should be locked after runtime */
+    public final MutexLockOrder objMutex;
 
     /** "Lock" to above - for safe deinitialization */
-    @SharedPtr private SimpleList<AbstractPeerTracker> instancesLock = instances;
+    @SharedPtr private SimpleListWithMutex<AbstractPeerTracker> instancesLock = instances;
 
-    public AbstractPeerTracker() {
+    /**
+     * @param lockOrder Lock order of tracker - should be locked after runtime
+     */
+    public AbstractPeerTracker(int lockOrder) {
+        objMutex = new MutexLockOrder(lockOrder);
         synchronized (instances) {
             instances.add(this);
         }
@@ -61,15 +72,27 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     /**
      * @param listener Listener to remove
      */
-    public synchronized void removeListener(Listener listener) {
-        listeners.remove(listener);
+    public void removeListener(Listener listener) {
+
+        // make sure: listener list can only be modified, while there aren't any other connection events being processed
+        synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
+            synchronized (this) {
+                listeners.remove(listener);
+            }
+        }
     }
 
     /**
      * @param listener Listener to add
      */
-    public synchronized void addListener(Listener listener) {
-        listeners.add(listener);
+    public void addListener(Listener listener) {
+
+        // make sure: listener list can only be modified, while there aren't any other connection events being processed
+        synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
+            synchronized (this) {
+                listeners.add(listener);
+            }
+        }
     }
 
     /**
@@ -83,7 +106,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     }
 
     /**
-     * Called by subclass when TCP node has been discovered
+     * Called by subclass when TCP node has been stopped/removed/deleted
      *
      * @param isa Node's network address
      * @param name Node's name
@@ -95,6 +118,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     /**
      * Listens to discovery and removal of TCP nodes
      */
+    @Ptr
     public interface Listener {
 
         /**
@@ -103,15 +127,27 @@ public abstract class AbstractPeerTracker implements HasDestructor {
          * @param isa Node's network address
          * @param name Node's name
          */
-        public void nodeDiscovered(@Const @Ptr IPSocketAddress isa, @Const @Ptr String name);
+        public void nodeDiscovered(@Const @Ref IPSocketAddress isa, @Const @Ref String name);
 
         /**
-         * Called when TCP node has been deleted
+         * Called when TCP node has been stopped/deleted
          *
          * @param isa Node's network address
          * @param name Node's name
+         * @return Object to post-process without any locks (null if no post-processing necessary)
+         *
+         * (Called with runtime and Peer Tracker lock)
          */
-        public void nodeRemoved(@Const @Ptr IPSocketAddress isa, @Const @Ptr String name);
+        public @Ptr Object nodeRemoved(@Const @Ref IPSocketAddress isa, @Const @Ref String name);
+
+        /**
+         * Called when TCP node has been deleted - and object for post-processing has been returned in method above
+         *
+         * @param obj Object to post-process
+         *
+         * (Called without/after runtime and Peer Tracker lock)
+         */
+        public void nodeRemovedPostLockProcess(@Ptr Object obj);
     }
 
     @AtFront
