@@ -28,6 +28,7 @@ import org.finroc.jc.ListenerManager;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.Mutable;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
@@ -53,14 +54,15 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     /** Peer tracker instances that are used - can be multiple */
     @SharedPtr private static SimpleListWithMutex<AbstractPeerTracker> instances = new SimpleListWithMutex<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
 
-    /** Mutex for tracker - order: should be locked after runtime */
+    /** Mutex for tracker */
+    @Mutable
     public final MutexLockOrder objMutex;
 
     /** "Lock" to above - for safe deinitialization */
     @SharedPtr private SimpleListWithMutex<AbstractPeerTracker> instancesLock = instances;
 
     /**
-     * @param lockOrder Lock order of tracker - should be locked after runtime
+     * @param lockOrder Lock order of tracker
      */
     public AbstractPeerTracker(int lockOrder) {
         objMutex = new MutexLockOrder(lockOrder);
@@ -179,7 +181,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
      * @param name Name
      * @param port Port
      */
-    public synchronized void registerServer(String networkName, String name, int port) {
+    public void registerServer(String networkName, String name, int port) {
         synchronized (instances) {
             for (@SizeT int i = 0; i < instances.size(); i++) {
                 instances.get(i).registerServerImpl(networkName, name, port);
@@ -202,7 +204,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
      * @param networkName Network name
      * @param name Name
      */
-    public synchronized void unregisterServer(String networkName, String name) {
+    public void unregisterServer(String networkName, String name) {
         synchronized (instances) {
             for (@SizeT int i = 0; i < instances.size(); i++) {
                 instances.get(i).unregisterServerImpl(networkName, name);
