@@ -1034,8 +1034,21 @@ public class FrameworkElement implements HasDestructor {
      * @return Answer
      */
     @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re) {
+        return isChildOf(re, false);
+    }
+
+    /**
+     * Is Runtime element a child of the specified Runtime element?
+     * (also considers links)
+     *
+     * @param re Possible parent of this Runtime element
+     * @param ignoreDeleteFlag Perform check even if delete flag is already set on object (deprecated in C++!)
+     * @return Answer
+     */
+    @Protected
+    @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re, boolean ignoreDeleteFlag) {
         synchronized (getRegistryLock()) { // absolutely safe this way
-            if (isDeleted()) {
+            if ((!ignoreDeleteFlag) && isDeleted()) {
                 return false;
             }
             for (@Const Link l = primary; l != null; l = l.next) {

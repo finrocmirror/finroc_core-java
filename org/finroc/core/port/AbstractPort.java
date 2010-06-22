@@ -367,11 +367,13 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     @SuppressWarnings("unchecked")
     public void disconnectFrom(@Ptr AbstractPort target) {
+        boolean found = false;
         synchronized (getRegistryLock()) {
             @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
                 if (it.get(i) == target) {
                     removeInternal(this, target);
+                    found = true;
                 }
             }
 
@@ -379,10 +381,13 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             for (int i = 0, n = it.size(); i < n; i++) {
                 if (it.get(i) == target) {
                     removeInternal(target, this);
+                    found = true;
                 }
             }
         }
-        System.out.println("edge not found in AbstractPort::disconnectFrom()");
+        if (!found) {
+            System.out.println("edge not found in AbstractPort::disconnectFrom()");
+        }
         // not found: throw error message?
     }
 
@@ -1164,5 +1169,12 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     @ConstMethod public int getConnectionCount() {
         return edgesDest.countElements() + edgesSrc.countElements();
+    }
+
+    /**
+     * @return Does port have any link edges?
+     */
+    public boolean hasLinkEdges() {
+        return linkEdges != null && linkEdges.size() > 0;
     }
 }
