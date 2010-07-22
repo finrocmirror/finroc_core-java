@@ -31,6 +31,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Struct;
+import org.finroc.jc.container.SimpleList;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
@@ -93,11 +94,14 @@ public class FrameworkElementInfo {
     /** Minimum network update interval */
     private short minNetUpdateTime;
 
+    /** Stores outgoing connection destination ports - if this is a port */
+    private SimpleList<Integer> connections = new SimpleList<Integer>();
+
     /** Register Data type */
     //@ConstPtr
     //public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(FrameworkElementInfo.class);
 
-    public static final byte PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT;
+    public static final byte PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR;
 
     @Init("links()")
     public FrameworkElementInfo() {
@@ -159,6 +163,10 @@ public class FrameworkElementInfo {
             tp.writeShort(port.getDataType().getUid());
             tp.writeShort(port.getStrategy());
             tp.writeShort(port.getMinNetUpdateInterval());
+
+            if (!elementFilter.isPortOnlyFilter()) {
+                port.serializeOutgoingConnections(tp);
+            }
         }
     }
 
@@ -216,6 +224,13 @@ public class FrameworkElementInfo {
             type = typeLookup.getLocalType(is.readShort());
             strategy = is.readShort();
             minNetUpdateTime = is.readShort();
+
+            if (!portOnlyClient) {
+                byte cnt = is.readByte();
+                for (int i = 0; i < cnt; i++) {
+                    connections.add(is.readInt());
+                }
+            }
         }
     }
 
@@ -229,6 +244,7 @@ public class FrameworkElementInfo {
         strategy = 0;
         minNetUpdateTime = 0;
         linkCount = 0;
+        connections.clear();
     }
 
     /**
@@ -358,5 +374,15 @@ public class FrameworkElementInfo {
         default:
             return "INVALID OPCODE";
         }
+    }
+
+    /**
+     * Get outgoing connection's destination handles
+     *
+     * @param copyTo List to copy result of get operation to
+     */
+    @ConstMethod public void getConnections(@Ref SimpleList<Integer> copyTo) {
+        copyTo.clear();
+        copyTo.addAll(connections);
     }
 }

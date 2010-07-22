@@ -1742,7 +1742,9 @@ public class FrameworkElement implements HasDestructor {
      */
     @InCppFile
     protected void publishUpdatedInfo(byte changeType) {
-        RuntimeEnvironment.getInstance().runtimeChange(changeType, this);
+        if (changeType == RuntimeListener.ADD || getFlag(CoreFlags.PUBLISHED)) {
+            RuntimeEnvironment.getInstance().runtimeChange(changeType, this);
+        }
     }
 
     /**

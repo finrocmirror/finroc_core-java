@@ -49,6 +49,7 @@ import org.finroc.core.LinkEdge;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.RuntimeSettings;
+import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PortDataImpl;
@@ -354,6 +355,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     @SuppressWarnings("unchecked")
     @Virtual protected void rawConnectToTarget(@Ptr AbstractPort target) {
         EdgeAggregator.edgeAdded(this, target);
+        publishUpdatedInfo(RuntimeListener.CHANGE);
 
         // JavaOnlyBlock
         edgesSrc.add(target, false);
@@ -394,6 +396,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     @SuppressWarnings("unchecked")
     private static void removeInternal(AbstractPort src, AbstractPort dest) {
         EdgeAggregator.edgeRemoved(src, dest);
+        src.publishUpdatedInfo(RuntimeListener.CHANGE);
 
         //JavaOnlyBlock
         dest.edgesDest.remove(src);
@@ -648,9 +651,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     }
                 }
             }
-            if (isInitialized()) {
-                this.publishUpdatedInfo(RuntimeListener.CHANGE);
-            }
+            this.publishUpdatedInfo(RuntimeListener.CHANGE);
         }
     }
 
@@ -792,9 +793,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * Send information about changed Minimum Network Update Interval to clients.
      */
     protected void commitUpdateTimeChange() {
-        if (isInitialized()) {
-            publishUpdatedInfo(RuntimeListener.CHANGE);
-        }
+        publishUpdatedInfo(RuntimeListener.CHANGE);
         /*if (isShared() && (portSpecific || minNetUpdateTime <= 0)) {
             RuntimeEnvironment.getInstance().getSettings().getSharedPorts().commitUpdateTimeChange(getIndex(), getMinNetUpdateInterval());
         }*/
@@ -1176,5 +1175,20 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public boolean hasLinkEdges() {
         return linkEdges != null && linkEdges.size() > 0;
+    }
+
+    /**
+     * Serializes target handles of all outgoing connection destinations to stream
+     * [byte: number of connections][int handle1]...[int handle n]
+     *
+     * @param co Output Stream
+     */
+    @SuppressWarnings("unchecked")
+    public void serializeOutgoingConnections(CoreOutput co) {
+        co.writeByte((byte)edgesSrc.size());
+        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+        for (int i = 0, n = it.size(); i < n; i++) {
+            co.writeInt(it.get(i).getHandle());
+        }
     }
 }
