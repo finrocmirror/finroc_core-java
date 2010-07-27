@@ -31,8 +31,14 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.finroc.core.RuntimeSettings;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogLevel;
+import org.finroc.log.LogStream;
 
 /**
  * @author max
@@ -40,7 +46,7 @@ import org.finroc.jc.container.SimpleList;
  * Loads plugins when code is compiled and packed in jar files.
  */
 @JavaOnly
-public class JavaReleasePluginLoader implements PluginLoader {
+public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
 
     /** Class loader for plugins */
     private PluginClassLoader classLoader;
@@ -63,7 +69,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
                 try {
                     allJars.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
-                    e.printStackTrace();
+                    log(LogLevel.LL_WARNING, Plugins.logDomain, "Error finding plugin", e);
                 }
             }
         }
@@ -78,8 +84,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
                 result.add(loadPlugin(jf.getManifest(), pluginJar.getAbsolutePath()));
                 jf.close();
             } catch (Exception e) {
-                System.err.println("Error loading plugin: " + pluginJar.getName());
-                e.printStackTrace();
+                log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugin: " + pluginJar.getName(), e);
             }
         }
 
@@ -104,7 +109,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
         if (!Plugin.class.isAssignableFrom(c)) {
             throw new Exception(className + " is not a plugin class.");
         }
-        System.out.println("Found plugin: " + className);
+        log(LogLevel.LL_DEBUG, Plugins.logDomain, "Found plugin: " + className);
 
         Plugin plugin = c.newInstance();
         return plugin;
@@ -120,7 +125,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
             try {
                 classLoader = new PluginClassLoader(jars.toArray(new URL[0]));
             } catch (Exception e) {
-                e.printStackTrace();
+                log(LogLevel.LL_ERROR, Plugins.logDomain, e);
             }
         } else {
             for (URL url : jars) {
@@ -142,22 +147,28 @@ public class JavaReleasePluginLoader implements PluginLoader {
          */
         PluginClassLoader(URL[] jars) throws Exception {
             super(jars);
-            System.out.print("Constructed PluginClassLoader: ");
+            LogStream ls = Plugins.logDomain.getLogStream(LogLevel.LL_DEBUG, getLogDescription());
+            ls.append("Constructed PluginClassLoader: ");
             for (URL url : jars) {
-                System.out.print(url.toString() + " ");
+                ls.append(url.toString() + " ");
             }
-            System.out.println();
+            ls.close();
         }
 
         @Override
         protected void addURL(URL url) {
-            System.out.println("PluginClassLoader: Adding " + url.toString());
+            Plugins.logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
             for (URL u : getURLs()) {
                 if (u.equals(url)) {
                     return;
                 }
             }
             super.addURL(url);
+        }
+
+        @CppType("char*") @Const
+        private static String getLogDescription() {
+            return "PluginClassLoader";
         }
     }
 

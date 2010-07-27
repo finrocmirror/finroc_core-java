@@ -23,11 +23,15 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.container.ConcurrentMap;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.ThreadLocalCache;
@@ -70,6 +74,10 @@ public abstract class TransactionalSet<K, B extends TransactionalSet.Entry<K>> e
 
     /** After this period pending commands will be ignored */
     public final int PENDING_COMMAND_TIMEOUT = 10000;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"stream_ports\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     @SuppressWarnings("unchecked")
     public TransactionalSet(String description, boolean input, boolean output, boolean local,
@@ -154,7 +162,7 @@ public abstract class TransactionalSet<K, B extends TransactionalSet.Entry<K>> e
             try {
                 commitData(transaction);
             } catch (Exception e) {
-                e.printStackTrace();
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
             }
         }
     }
@@ -237,7 +245,7 @@ public abstract class TransactionalSet<K, B extends TransactionalSet.Entry<K>> e
 
     @Override
     public PortData pullRequest(PortBase origin, byte addLocks) {
-        ConcurrentMap<K,B>.MapIterator it = set.getIterator();
+        ConcurrentMap<K, B>.MapIterator it = set.getIterator();
         TransactionPacket tp = output.getUnusedBuffer();
         tp.initialPacket = true;
         while (it.next()) {

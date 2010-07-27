@@ -43,6 +43,9 @@ import org.finroc.jc.annotation.Superclass2;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
@@ -146,6 +149,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     /** Constant for bulk and express flag */
     private static final int BULK_N_EXPRESS = PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT;
+
+    /** Log domain for initial pushing */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(initialPushLog, \"initial_pushes\");")
+    public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
 
     /**
      * @param pci PortCreationInformation
@@ -312,9 +319,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 target.propagateStrategy(null, this);
                 newConnection(target);
                 target.newConnection(this);
-                if (RuntimeSettings.DISPLAY_EDGE_CREATION.get()) {
-                    System.out.println("creating Edge from " + getQualifiedName() + " to " + target.getQualifiedName());
-                }
+                log(LogLevel.LL_DEBUG_VERBOSE_1, edgeLog, "creating Edge from " + getQualifiedName() + " to " + target.getQualifiedName());
 
                 // check whether we need an initial reverse push
                 considerInitialReversePush(target);
@@ -331,7 +336,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private void considerInitialReversePush(AbstractPort target) {
         if (isReady() && target.isReady()) {
             if (reversePushStrategy() && edgesSrc.countElements() == 1) {
-                System.out.println("Performing initial reverse push from " + target.getQualifiedName() + " to " + getQualifiedName());
+                initialPushLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Performing initial reverse push from " + target.getQualifiedName() + " to " + getQualifiedName());
                 target.initialPushTo(this, true);
             }
         }
@@ -388,7 +393,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             }
         }
         if (!found) {
-            System.out.println("edge not found in AbstractPort::disconnectFrom()");
+            edgeLog.log(LogLevel.LL_DEBUG_WARNING, getLogDescription(), "edge not found in AbstractPort::disconnectFrom()");
         }
         // not found: throw error message?
     }
@@ -645,7 +650,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 for (int i = 0, n = it.size(); i < n; i++) {
                     AbstractPort ap = it.get(i);
                     if (ap != null && ap.isReady()) {
-                        System.out.println("Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
+                        initialPushLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
                         ap.initialPushTo(this, true);
                         break;
                     }
@@ -916,7 +921,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 }
                 if (sourcePort) {
                     if (isReady() && pushWanter.isReady()) {
-                        System.out.println("Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
+                        initialPushLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
                         initialPushTo(pushWanter, false);
                     }
                     pushWanter = null;
@@ -1061,7 +1066,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public void setMaxQueueLength(int queueLength) {
         if (!getFlag(PortFlags.HAS_QUEUE)) {
-            System.out.println("warning: tried to set queue length on port without queue");
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "warning: tried to set queue length on port without queue - ignoring");
             return;
         }
         synchronized (getRegistryLock()) {

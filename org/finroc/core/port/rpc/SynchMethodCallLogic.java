@@ -21,9 +21,14 @@
  */
 package org.finroc.core.port.rpc;
 
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
@@ -33,6 +38,10 @@ import org.finroc.core.port.ThreadLocalCache;
  * (possibly over the net & without blocking further threads etc.)
  */
 public class SynchMethodCallLogic {
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     /**
      * Perform synchronous call. Thread will wait for return value (until timeout has passed).
@@ -72,7 +81,7 @@ public class SynchMethodCallLogic {
             try {
                 mcs.wait(timeout);
             } catch (InterruptedException e) {
-                System.out.println("Synch method call interrupted... this shouldn't happen... usually");
+                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Synch method call interrupted... this shouldn't happen... usually");
             }
 
             // reset stuff for next call
@@ -83,13 +92,21 @@ public class SynchMethodCallLogic {
             if (ret == null) {
 
                 // JavaOnlyBlock
-                System.out.println("Thread " + Thread.currentThread().toString() + ": Call timed out");
+                logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Thread " + Thread.currentThread().toString() + ": Call timed out");
 
                 // (recycling is job of receiver)
                 throw new MethodCallException(MethodCallException.Type.TIMEOUT);
             }
         }
         return ret;
+    }
+
+    /**
+     * @return Description for logging
+     */
+    @CppType("char*") @Const
+    private static String getLogDescription() {
+        return "SynchMethodCallLogic";
     }
 
     /**

@@ -36,7 +36,10 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.stream.MemoryBuffer;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.ThreadLocalCache;
@@ -104,6 +107,10 @@ public abstract class AbstractCall extends SerializableReusable {
 
     /** For incoming commands: Is it possible to deserialize parameters in paramStorage? */
     private boolean deserializableParameters = false;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     /**
      * @return Destination port handle - only used while call is enqueued in network queue
@@ -636,7 +643,7 @@ public abstract class AbstractCall extends SerializableReusable {
      */
     public void deserializeParamaters() {
         if (!deserializableParameters) {
-            System.out.println("warning: double deserialization of parameters");
+            logDomain.log(LogLevel.LL_DEBUG_WARNING, getLogDescription(), "warning: double deserialization of parameters");
             return;
         }
         deserializableParameters = false;

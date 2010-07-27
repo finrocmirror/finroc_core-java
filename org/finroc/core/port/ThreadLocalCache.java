@@ -65,7 +65,11 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.ReusablesPool;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.container.SimpleListWithMutex;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
 import org.finroc.jc.thread.ThreadUtil;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 /**
  * @author max
@@ -86,7 +90,7 @@ import org.finroc.jc.thread.ThreadUtil;
 @ForwardDecl( {MethodCallSyncher.class/*, MethodCall.class, PullCall.class*/})
 @CppInclude( {"MethodCallSyncher.h"/*, "MethodCall.h"*/})
 @Include("RuntimeEnvironment.h")
-public class ThreadLocalCache {
+public class ThreadLocalCache extends LogUser {
 
     // maybe TODO: reuse old ThreadLocalInfo objects for other threads - well - would cause a lot of "Verschnitt"
 
@@ -202,6 +206,10 @@ public class ThreadLocalCache {
     /** Port Register - we need to have this for clean thread cleanup */
     @Const @SharedPtr public final CoreRegister<AbstractPort> portRegister = RuntimeEnvironment.getInstance().getPorts();
 
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"thread_local_cache\");")
+    protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_local_cache");
+
     private ThreadLocalCache(/*@SizeT int index*/) {
         infosLock = infos;
         //this.index = index;
@@ -209,7 +217,7 @@ public class ThreadLocalCache {
         threadUid = threadUidCounter.getAndIncrement();
         threadId = ThreadUtil.getCurrentThreadId();
 
-        //Cpp printf("Creating ThreadLocalCache %p %s\n", this, util::Thread::currentThread()->getName().getCString());
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
     }
 
     @InCppFile
@@ -246,7 +254,7 @@ public class ThreadLocalCache {
      */
     private void finalDelete() {
 
-        //Cpp printf("Deleting ThreadLocalCache %p\n", this);
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting ThreadLocalCache");
 
         /** Return MethodCallSyncher to pool */
         if (methodSyncher != null && (!RuntimeEnvironment.shuttingDown())) {

@@ -26,6 +26,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.thread.ThreadUtil;
+import org.finroc.log.LogLevel;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.thread.CoreLoopThreadBase;
 
@@ -62,7 +63,7 @@ public class StreamCommitThread extends CoreLoopThreadBase {
 //  }
 
     public void stopThread() {
-        System.out.println("Stopping StreamCommitThread\n");
+        logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Stopping StreamCommitThread");
         super.stopThread();
         instance = null;
     }

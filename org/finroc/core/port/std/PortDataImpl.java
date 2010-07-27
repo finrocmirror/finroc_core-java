@@ -36,6 +36,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.log.LogUser;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObject;
@@ -59,7 +60,7 @@ import org.finroc.core.portdatabase.TypedObject;
 @PostInclude("PortDataReference.h")
 //@HAppend({"}", "#include \"core/port/PortDataReference.h\"", "namespace core {"})
 @Superclass(TypedObject.class)
-public abstract class PortDataImpl implements PortData {
+public abstract class PortDataImpl extends LogUser implements PortData {
 
     /** Number of reference to port data */
     @JavaOnly public final static @SizeT int NUMBER_OF_REFERENCES = 4;

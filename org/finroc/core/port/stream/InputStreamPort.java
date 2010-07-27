@@ -27,6 +27,10 @@ import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.Port;
 import org.finroc.core.port.std.PortQueueFragment;
 import org.finroc.core.port.std.PublishCache;
+import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 /**
  * @author max
@@ -48,6 +52,10 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
      * User of input stream
      */
     private final InputPacketProcessor<T> user;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"stream_ports\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     public InputStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<T> user) {
         super(processPCI(pci, description));
@@ -75,8 +83,7 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
         try {
             return user.processPacket(data);
         } catch (Exception e) {
-            System.err.println("Error while processing packet");
-            e.printStackTrace();
+            log(LogLevel.LL_WARNING, logDomain, "Error while processing packet: ", e);
         }
         return false;
     }

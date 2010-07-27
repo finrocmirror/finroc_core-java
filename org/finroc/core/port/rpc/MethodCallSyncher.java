@@ -24,8 +24,13 @@ package org.finroc.core.port.rpc;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.jc.MutexLockOrder;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 /**
  * @author max
@@ -33,7 +38,7 @@ import org.finroc.jc.annotation.SizeT;
  * Thread local class for forwarding method return values
  * back to calling thread.
  */
-public class MethodCallSyncher {
+public class MethodCallSyncher extends LogUser {
 
     /** Maximum number of active/alive threads that perform synchronous method calls */
     private static final @SizeT int MAX_THREADS = 127;
@@ -43,6 +48,10 @@ public class MethodCallSyncher {
 
     /** Network writer threads need to be notified afterwards */
     public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 300);
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public static void staticInit() {
         //JavaOnlyBlock
@@ -159,7 +168,7 @@ public class MethodCallSyncher {
     public synchronized void returnValue(AbstractCall mc) {
 
         // JavaOnlyBlock
-        System.out.println("Thread " + Thread.currentThread().toString() + " returning result of method call to thread " + thread.toString());
+        log(LogLevel.LL_DEBUG_VERBOSE_2, logDomain, "Thread " + Thread.currentThread().toString() + " returning result of method call to thread " + thread.toString());
 
         if (getThreadUid() != mc.getThreadUid()) {
             mc.genericRecycle();
@@ -168,7 +177,7 @@ public class MethodCallSyncher {
         if (currentMethodCallIndex != mc.getMethodCallIndex()) {
 
             // JavaOnlyBlock
-            System.out.println("Thread " + Thread.currentThread().toString() + " cannot return result of method call to thread " + thread.toString() + ": seems to have timed out");
+            log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Thread " + Thread.currentThread().toString() + " cannot return result of method call to thread " + thread.toString() + ": seems to have timed out");
 
             mc.genericRecycle();
             return; // outdated method result - timeout could have elapsed

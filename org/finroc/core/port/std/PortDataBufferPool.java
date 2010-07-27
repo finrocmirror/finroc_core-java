@@ -26,7 +26,9 @@ import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.container.ReusablesPoolCR;
+import org.finroc.log.LogStream;
 import org.finroc.core.portdatabase.DataType;
 
 /**
@@ -107,29 +109,30 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
      * Prints info about all elements in pool to console
      *
      * @param indent Indentation
+     * @param output
      */
-    @ConstMethod public void printStructure(int indent) {
+    @ConstMethod public void printStructure(int indent, @Ref LogStream output) {
         for (int i = 0; i < indent; i++) {
-            System.out.print(" ");
+            output.append(" ");
         }
-        System.out.println("PortDataBufferPool (" + dataType.getName() + ")");
-        printElement(indent + 2, getLastCreated());
+        output.appendln("PortDataBufferPool (" + dataType.getName() + ")");
+        printElement(indent + 2, getLastCreated(), output);
     }
 
     /**
      * Helper for above
      */
-    @ConstMethod private void printElement(int indent, @Const PortDataManager pdm) {
+    @ConstMethod private void printElement(int indent, @Const PortDataManager pdm, @Ref LogStream output) {
         if (pdm == null) {
             return;
         }
-        printElement(indent, pdm.getNextInBufferPool());
+        printElement(indent, pdm.getNextInBufferPool(), output);
         for (int i = 0; i < indent; i++) {
-            System.out.print(" ");
+            output.append(" ");
         }
         //System.out.print("PortDataManager (");
         //System.out.print(pdm.getCurrentRefCounter().get());
         //System.out.print(" locks): ");
-        System.out.println(pdm.toString());
+        output.appendln(pdm.toString());
     }
 }

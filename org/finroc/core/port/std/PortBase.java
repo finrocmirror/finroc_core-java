@@ -38,6 +38,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.log.LogStream;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.MultiTypePortDataBufferPool;
@@ -1013,12 +1014,12 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     }
 
     @Override
-    protected void printStructure(int indent) {
-        super.printStructure(indent);
+    protected void printStructure(int indent, LogStream output) {
+        super.printStructure(indent, output);
         if (bufferPool != null) {
-            bufferPool.printStructure(indent + 2);
+            bufferPool.printStructure(indent + 2, output);
         } else if (multiBufferPool != null) {
-            multiBufferPool.printStructure(indent + 2);
+            multiBufferPool.printStructure(indent + 2, output);
         }
     }
 

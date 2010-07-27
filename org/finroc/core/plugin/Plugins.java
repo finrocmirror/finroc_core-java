@@ -26,11 +26,17 @@ import java.lang.reflect.Modifier;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.util.Files;
 
@@ -59,6 +65,11 @@ public class Plugins { /*implements HTTPResource*/
 
     /** Plugin loader implementation */
     @JavaOnly @SharedPtr private PluginLoader pluginLoader;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"plugins\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("plugins");
+
 //
 //  /** PluginsListener */
 //  private final List<PluginsListener> pluginsListener = new ArrayList<PluginsListener>();
@@ -199,8 +210,13 @@ public class Plugins { /*implements HTTPResource*/
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
+    }
+
+    @CppType("char*") @Const
+    private static String getLogDescription() {
+        return "Plugins";
     }
 
     /**

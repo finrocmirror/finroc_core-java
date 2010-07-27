@@ -23,7 +23,11 @@ package org.finroc.core.plugin;
 
 import javax.swing.JOptionPane;
 
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
@@ -54,6 +58,10 @@ public abstract class ExternalConnection extends FrameworkElement {
 
     /** Is this the first connect ? */
     private boolean firstConnect = true;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"connections\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
     /**
      * @param description Description of class
@@ -112,7 +120,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnectImpl();
         } catch (Exception e) {
-            e.printStackTrace();
+            log(LogLevel.LL_WARNING, logDomain, e);
 
             //JavaOnlyBlock
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error disconnecting", JOptionPane.ERROR_MESSAGE);
@@ -159,7 +167,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnect();
         } catch (Exception e) {
-            e.printStackTrace();
+            log(LogLevel.LL_ERROR, logDomain, e);
         }
         super.prepareDelete();
     }

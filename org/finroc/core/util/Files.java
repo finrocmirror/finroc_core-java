@@ -45,7 +45,11 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 /**
  * @author max
@@ -54,6 +58,10 @@ import org.finroc.jc.annotation.JavaOnly;
  */
 @JavaOnly
 public class Files {
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"files\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("files");
 
     /**
      * Reads All lines from a text file
@@ -319,7 +327,7 @@ public class Files {
      * @param classLoader Classloader to use
      * @return List of Java classes found in the package
      */
-    public static List<Class<?>> getPackageClasses(Class<?> caller, String folder, ClassLoader classLoader) throws Exception {
+    public static List < Class<? >> getPackageClasses(Class<?> caller, String folder, ClassLoader classLoader) throws Exception {
 
         // determine package name
         String pack = caller.getPackage().getName();
@@ -330,7 +338,7 @@ public class Files {
         }
         pack += "." + temp;
 
-        List<Class<?>> result = new ArrayList<Class<?>>();
+        List < Class<? >> result = new ArrayList < Class<? >> ();
 
         if (!pack.endsWith(".")) {
             pack += ".";
@@ -374,7 +382,7 @@ public class Files {
         try {
             return new URL(dirName);
         } catch (Exception e) {
-            e.printStackTrace();
+            logDomain.log(LogLevel.LL_ERROR, "Files", e);
         }
         return null;
     }

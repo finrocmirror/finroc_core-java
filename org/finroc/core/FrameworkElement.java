@@ -33,6 +33,7 @@ import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Include;
@@ -42,6 +43,7 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Mutable;
 import org.finroc.jc.annotation.NoSuperclass;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Protected;
 import org.finroc.jc.annotation.Ptr;
@@ -51,7 +53,12 @@ import org.finroc.jc.annotation.SpinLock;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.container.SimpleListWithMutex;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
 import org.finroc.jc.thread.ThreadUtil;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
+import org.finroc.log.LogStream;
 
 import org.finroc.core.buffer.CoreOutput;
 
@@ -78,8 +85,18 @@ import org.finroc.core.buffer.CoreOutput;
 @ForwardDecl( {RuntimeEnvironment.class})
 @Include( {"datatype/CoreNumber.h", "rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h"})
 @CppInclude( {"RuntimeEnvironment.h"})
+@HAppend( {"inline std::ostream& operator << (std::ostream& output, const FrameworkElement* lu) {",
+           "    lu->streamQualifiedName(output);",
+           "    output << \" (\" << ((void*)lu) << \")\";",
+           "    return output;",
+           "}",
+           "inline std::ostream& operator << (std::ostream& output, const FrameworkElement& lu) {",
+           "    output << (&lu);",
+           "    return output;",
+           "}"
+          })
 //@HPrepend({"class NumberPort;", "class RuntimeEnvironment;"})
-public class FrameworkElement implements HasDestructor {
+public class FrameworkElement extends LogUser implements HasDestructor {
 
     /** Uid of thread that created this framework element */
     @Const protected final long createrThreadUid;
@@ -219,6 +236,14 @@ public class FrameworkElement implements HasDestructor {
     /** Main Thread. This thread can write to the runtime element's ports without synchronization */
     //protected Thread mainThread;
 
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"framework_elements\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("framework_elements");
+
+    /** Log domain for edges */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(edgeLog, \"edges\");")
+    public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
+
     @JavaOnly public FrameworkElement(@Const @Ref String description, @Ptr FrameworkElement parent) {
         this(description, parent, CoreFlags.ALLOWS_CHILDREN, -1);
     }
@@ -268,9 +293,7 @@ public class FrameworkElement implements HasDestructor {
 //          parent.addChild(primary);
 //      }
 
-        if (RuntimeSettings.DISPLAY_CONSTRUCTION_DESTRUCTION.get()) {
-            System.out.println("Constructing FrameworkElement: " + getDescription());
-        }
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Constructing FrameworkElement");
     }
 
     /**
@@ -374,12 +397,19 @@ public class FrameworkElement implements HasDestructor {
 //        return new DefaultMutableTreeNode(primary.description);
 //    }
 
-    /*Cpp
-    //! same as below - except that we return a const char* - this way, no memory needs to be allocated
-    const char* getCDescription() {
-        return primary.description.length() == 0 ? "(anonymous)" : primary.description.getCString();
-    }
+
+    /**
+     *  same as below -
+     *  except that we return a const char* in C++ - this way, no memory needs to be allocated
      */
+    @Const @CppType("char*") @ConstMethod
+    public String getCDescription() {
+
+        //JavaOnlyBlock
+        return getDescription();
+
+        //Cpp return primary.description.length() == 0 ? "(anonymous)" : primary.description.getCString();
+    }
 
     /**
      * @return Name/Description
@@ -653,7 +683,7 @@ public class FrameworkElement implements HasDestructor {
     @Protected
     public void delete() {
         assert(getFlag(CoreFlags.DELETED) || getFlag(CoreFlags.IS_RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
-        System.out.println("FrameworkElement destructor: " + getDescription());
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement destructor");
         if (!getFlag(CoreFlags.IS_RUNTIME)) {
             // synchronizes on runtime - so no elements will be deleted while runtime is locked
             RuntimeEnvironment.getInstance().unregisterElement(this);
@@ -775,7 +805,7 @@ public class FrameworkElement implements HasDestructor {
 
             if (!getFlag(CoreFlags.PUBLISHED) && allParentsReady()) {
                 setFlag(CoreFlags.PUBLISHED);
-                System.out.println("Publishing " + getQualifiedName());
+                log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Publishing");
                 publishUpdatedInfo(RuntimeListener.ADD);
             }
 
@@ -853,14 +883,13 @@ public class FrameworkElement implements HasDestructor {
                     return;
                 }
 
-                if (RuntimeSettings.DISPLAY_CONSTRUCTION_DESTRUCTION.get()) {
-                    System.out.println("FrameworkElement managedDelete: " + getQualifiedName());
-                }
+                log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement managedDelete");
 
                 // synchronizes on runtime - so no elements will be deleted while runtime is locked
                 synchronized (getRegistryLock()) {
 
-                    System.out.println("Deleting " + toString() + " (" + hashCode() + ")");
+                    log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting");
+                    //System.out.println("Deleting " + toString() + " (" + hashCode() + ")");
                     assert !getFlag(CoreFlags.DELETED);
                     assert((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
 
@@ -1759,40 +1788,50 @@ public class FrameworkElement implements HasDestructor {
      * Helper for Debugging: Prints structure below this framework element to console
      */
     public void printStructure() {
-        printStructure(0);
+        printStructure(LogLevel.LL_USER);
+    }
+
+    /**
+     * Helper for Debugging: Prints structure below this framework element to log domain
+     *
+     * @param ll Loglevel with which to print
+     */
+    public void printStructure(LogLevel ll) {
+        LogStream ls = logDomain.getLogStream(ll, getLogDescription());
+        ls.appendln("");
+        printStructure(0, ls);
+        ls.close();
     }
 
     /**
      * Helper for above
      *
      * @param indent Current indentation level
+     * @param output Only used in C++ for streaming
      */
     @Virtual
-    protected void printStructure(int indent) {
+    protected void printStructure(int indent, @Ref LogStream output) {
 
         synchronized (getRegistryLock()) {
 
             // print element info
             for (int i = 0; i < indent; i++) {
-                System.out.print(" ");
+                output.append(" ");
             }
 
             if (isDeleted()) {
-                System.out.println("deleted FrameworkElement");
+                output.appendln("deleted FrameworkElement");
                 return;
             }
 
-            System.out.print(getDescription());
-            System.out.print(" (");
-            System.out.print(isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing");
-            System.out.println(")");
+            output.append(getCDescription()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
 
             // print child element info
             @Ptr ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
                 Link child = iterable.get(i);
                 if (child != null) {
-                    child.getChild().printStructure(indent + 2);
+                    child.getChild().printStructure(indent + 2, output);
                 }
             }
         }
@@ -1817,4 +1856,32 @@ public class FrameworkElement implements HasDestructor {
             }
         }
     }
+
+    @InCpp("return *this;") @NonVirtual
+    public @ConstMethod @Const @Ref @CppType("FrameworkElement") String getLogDescription() {
+        if (getFlag(CoreFlags.IS_RUNTIME)) {
+            return "Runtime";
+        } else {
+            return getQualifiedName();
+        }
+    }
+
+    /*Cpp
+    // for efficient streaming of fully-qualified framework element name
+    void streamQualifiedName(std::ostream& output) const {
+        if (!getFlag(CoreFlags::IS_RUNTIME)) {
+            streamQualifiedParent(output);
+        }
+        output << getCDescription();
+    }
+
+    void streamQualifiedParent(std::ostream& output) const {
+        const FrameworkElement* parent = getParent();
+        if (parent != NULL && (!parent->getFlag(CoreFlags::IS_RUNTIME))) {
+            parent->streamQualifiedParent(output);
+            output << parent->getCDescription();
+            output << "/";
+        }
+    }
+     */
 }

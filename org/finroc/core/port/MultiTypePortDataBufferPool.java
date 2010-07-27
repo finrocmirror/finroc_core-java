@@ -27,9 +27,11 @@ import org.finroc.core.port.std.PortDataBufferPool;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.SpinLock;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.log.LogStream;
 
 /**
  * @author max
@@ -89,13 +91,13 @@ public class MultiTypePortDataBufferPool {
      *
      * @param indent Current indentation
      */
-    public void printStructure(int indent) {
+    public void printStructure(int indent, @Ref LogStream output) {
         for (int i = 0; i < indent; i++) {
-            System.out.print(" ");
+            output.append(" ");
         }
-        System.out.println("MultiTypePortDataBufferPool:");
+        output.appendln("MultiTypePortDataBufferPool:");
         for (@SizeT int i = 0, n = pools.size(); i < n; i++) {
-            pools.get(i).printStructure(indent + 2);
+            pools.get(i).printStructure(indent + 2, output);
         }
     }
 

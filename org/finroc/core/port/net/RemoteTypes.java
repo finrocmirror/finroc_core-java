@@ -24,8 +24,14 @@ package org.finroc.core.port.net;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
+import org.finroc.log.LogStream;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
@@ -37,7 +43,11 @@ import org.finroc.core.portdatabase.DataTypeRegister;
  *
  * This class aggregates information about types used in remote runtime environments.
  */
-public class RemoteTypes implements HasDestructor {
+public class RemoteTypes extends LogUser implements HasDestructor {
+
+    /** Log domain for edges */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"remote_types\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("remote_types");
 
     /** Entry in remote type register */
     @AtFront @PassByValue @Friend(RemoteTypes.class)
@@ -93,17 +103,19 @@ public class RemoteTypes implements HasDestructor {
         globalDefault = ci.readShort();
         types = new Entry[ci.readShort()];
         short next = ci.readShort();
-        System.out.println("Connection Partner knows types:");
+        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
+        ls.appendln("Connection Partner knows types:");
         while (next != -1) {
             short time = ci.readShort();
             String name = ci.readString();
             DataType local = DataTypeRegister.getInstance().getDataType(name);
-            System.out.println("- " + name + " (" + next + ") - " + (local != null ? "available here, too" : "not available here"));
+            ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null ? "available here, too" : "not available here"));
             Entry e = new Entry(time, local);
             types[next] = e;
 
             next = ci.readShort();
         }
+        ls.close();
     }
 
     /**
@@ -171,7 +183,7 @@ public class RemoteTypes implements HasDestructor {
         assert(initialized()) : "Not initialized";
         Entry e = types[uid];
         if (e == null) {
-            System.out.println("RemoteTypes: Unknown type " + uid);
+            log(LogLevel.LL_DEBUG_WARNING, logDomain, "RemoteTypes: Unknown type " + uid);
             return null;
         }
         return e.localDataType;

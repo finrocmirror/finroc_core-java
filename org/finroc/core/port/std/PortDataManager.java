@@ -41,6 +41,9 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.Reusable;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.portdatabase.DataType;
 
@@ -61,7 +64,7 @@ import org.finroc.core.portdatabase.DataType;
               "size_t PortDataManager::REF_COUNTERS_OFFSET = ((char*)&(PortDataManager::PROTOTYPE.refCounters[0])) - ((char*)&(PortDataManager::PROTOTYPE));",
               "PortDataManager::~PortDataManager() {",
               "    delete data;",
-              "    printf(\"Deleting Manager %p\\n\", this);",
+              "    _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, << \"Deleting Manager\");",
               "}"
              })
 
@@ -133,6 +136,10 @@ public class PortDataManager extends Reusable {
     /** incremented every time buffer is reused */
     protected volatile int reuseCounter = 0;
 
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"port_data\");")
+    protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
+
     /*Cpp
     virtual ~PortDataManager();
      */
@@ -156,12 +163,12 @@ public class PortDataManager extends Reusable {
             refCounters[i] = new RefCounter(this);
         }
         data = (PortData)dt.createInstance();
-        System.out.println("Creating Manager " + hashCode());
 
         /*Cpp
         data = (PortData*)dt->createInstance();
-        printf("Creating Manager %p\n", this);
          */
+
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager");
 
         pdci.reset();
         pdci.initUnitializedObjects();
@@ -460,7 +467,7 @@ public class PortDataManager extends Reusable {
 
             // JavaOnlyBlock
             int newVal = addAndGet(-count);
-            assert (newVal >= 0) : "too many locks released";
+            assert(newVal >= 0) : "too many locks released";
             if (newVal == 0) {
                 getManager().dangerousDirectRecycle();
                 //getManager().reuseCounter++;

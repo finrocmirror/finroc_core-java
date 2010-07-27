@@ -24,7 +24,11 @@ package org.finroc.core.port.rpc;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.thread.Task;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.ThreadLocalCache;
@@ -71,6 +75,10 @@ public class PullCall extends AbstractCall implements Task {
 
     /** when received through network and executed in separate thread: Port to call pull on and port to send result back over */
     public NetPort port;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public PullCall() {
         super(/*MAX_CALL_DEPTH*/);
@@ -173,7 +181,7 @@ public class PullCall extends AbstractCall implements Task {
         assert(port != null);
         synchronized (port.getPort()) {
             if (!port.getPort().isReady()) {
-                System.out.println("pull call received for port that will soon be deleted");
+                log(LogLevel.LL_DEBUG, logDomain, "pull call received for port that will soon be deleted");
                 recycle();
             }
 
@@ -204,7 +212,7 @@ public class PullCall extends AbstractCall implements Task {
                 setStatusReturn();
                 port.sendCallReturn(this);
             } else {
-                System.out.println("pull call received for port with invalid data type");
+                log(LogLevel.LL_WARNING, logDomain, "pull call received for port with invalid data type");
                 recycle();
             }
         }

@@ -30,10 +30,14 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
 
 /**
  * @author max
@@ -51,7 +55,7 @@ import org.finroc.jc.annotation.Ref;
 @Friend(PortInterface.class)
 @Include("ParameterUtil.h")
 @CppInclude("PortInterface.h")
-public abstract class AbstractMethod {
+public abstract class AbstractMethod extends LogUser {
 
     /** Method name */
     private String name;
@@ -73,6 +77,10 @@ public abstract class AbstractMethod {
 
     /** PortInterface to which this method belongs */
     protected PortInterface type;
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public AbstractMethod(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread) {
         this.name = name;

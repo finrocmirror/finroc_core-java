@@ -32,6 +32,8 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.util.Files;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogLevel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -41,7 +43,7 @@ import org.w3c.dom.NodeList;
  *
  */
 @JavaOnly
-public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
+public class JavaDebugPluginLoader extends LogUser implements PluginLoader, FilenameFilter {
 
     /** Finroc repository root */
     private File finrocRepRoot;
@@ -79,16 +81,16 @@ public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
                             if (!Plugin.class.isAssignableFrom(c)) {
                                 throw new Exception(className + " is not a plugin class.");
                             }
-                            System.out.println("Found plugin: " + className);
+                            log(LogLevel.LL_DEBUG, Plugins.logDomain, "Found plugin: " + className);
                             result.add((Plugin)c.newInstance());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugin", e);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugins", e);
         }
 
         return result;

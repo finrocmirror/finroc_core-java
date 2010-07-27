@@ -36,6 +36,10 @@ import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.port.rpc.method.PortInterface;
 import org.finroc.core.port.std.PortData;
@@ -66,7 +70,7 @@ import org.finroc.core.port.std.PortData;
 })
 
 @Ptr
-public class DataTypeRegister { /*extends FrameworkElement*/
+public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
 
     /** Map with data types [Uid] = Type; size is 128KB (large, but very efficient compared to java.util Maps) */
     private final DataType[] dataTypes = new DataType[DataType.MAX_TYPES];
@@ -100,6 +104,10 @@ public class DataTypeRegister { /*extends FrameworkElement*/
 //          throw new RuntimeException(e);
 //      }
 //  }
+
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"data_types\");")
+    private static final LogDomain logDomain = LogDefinitions.finrocUtil.getSubDomain("data_types");
 
     /** Singleton instance */
     @JavaOnly private static DataTypeRegister instance;
@@ -240,7 +248,7 @@ public class DataTypeRegister { /*extends FrameworkElement*/
 
         // JavaOnlyBlock
         initialLookup.put(dt.getJavaClass(), dt);
-        System.out.println("Adding data type: " + dt.getName());
+        log(LogLevel.LL_DEBUG, logDomain, "Adding data type: " + dt.getName());
 
         //Cpp initialLookup[dt->rttiName] = dt;
         //Cpp assert(initialLookup[dt->rttiName] == dt);

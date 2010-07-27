@@ -37,6 +37,7 @@ import org.finroc.jc.annotation.NoMatching;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.log.LogLevel;
 
 @AutoVariants( {
     "Void4Method; 4 p;Void4Handler;handleCall;P1, P2, P3, P4;p1, p2, p3, p4;<>,;, );p1Name, p2Name, p3Name, p4Name",
@@ -174,7 +175,7 @@ public class Void4Method<HANDLER extends Void4Handler<P1, P2, P3, P4>, P1, P2, P
             handler2.handleVoidCall(this, p1, p2, p3, p4);
         } catch (MethodCallException e) {
             // don't send anything back
-            e.printStackTrace();
+            log(LogLevel.LL_ERROR, logDomain, e);
         }
         call.recycle();
     }

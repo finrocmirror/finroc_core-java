@@ -24,6 +24,7 @@ package org.finroc.core.port.rpc;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 
 /**
@@ -41,20 +42,25 @@ public class MethodCallException extends Exception {
     public enum Type { TIMEOUT, NO_CONNECTION, UNKNOWN_METHOD, INVALID_PARAM, PROGRAMMING_ERROR }
     private final Type type;
 
+    /** String Descriptions for above types */
+    //private final String[] descriptions = new String[]{"Timeout", "No connection", "Unknown Method", "Invalid Parameter", "Programming Error" };
+
     /**
      * @param timeout Timeout exception (or rather connection exception)?
      */
+    @JavaOnly
     public MethodCallException(Type type) {
         this.type = type;
     }
 
+    @JavaOnly
     public MethodCallException(int type2) {
-
-        // JavaOnlyBlock
         this.type = Type.values()[type2];
-
-        //Cpp this->type = static_cast<Type>(type2);
     }
+
+    /*Cpp
+    MethodCallException(int type_, const char* func = NULL, const char* file = NULL, const int line = -1) : Exception("", func, file, line), type(static_cast<Type>(type_)) {}
+     */
 
     @ConstMethod public Type getType() {
         return type;

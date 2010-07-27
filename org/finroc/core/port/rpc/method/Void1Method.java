@@ -38,6 +38,7 @@ import org.finroc.jc.annotation.NoMatching;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.log.LogLevel;
 
 
 /**
@@ -131,7 +132,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
             handler2.handleVoidCall(this, p1);
         } catch (MethodCallException e) {
             // don't send anything back
-            e.printStackTrace();
+            log(LogLevel.LL_ERROR, logDomain, e);
         }
         call.recycle();
     }

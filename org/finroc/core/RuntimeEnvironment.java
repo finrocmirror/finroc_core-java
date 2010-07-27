@@ -46,6 +46,7 @@ import org.finroc.jc.container.ConcurrentMap;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.stream.ChunkedBuffer;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.datatype.Constant;
 import org.finroc.core.datatype.Unit;
@@ -795,7 +796,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
                     prev = current;
                     current = current.getNext();
                 }
-                System.out.println("warning: Could not remove link edge for link: " + link);
+                log(LogLevel.LL_DEBUG_WARNING, logDomain, "warning: Could not remove link edge for link: " + link);
             }
         }
     }
@@ -972,8 +973,6 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
     @Const @Ptr Registry getRegistryHelper() {
         return registry;
     }
-
-
 
     /*Cpp
 

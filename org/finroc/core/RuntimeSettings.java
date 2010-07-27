@@ -25,11 +25,17 @@ import java.io.File;
 import java.nio.ByteOrder;
 
 import org.finroc.jc.AutoDeleter;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.cc.CCPortBase;
@@ -115,7 +121,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     @JavaOnly private final static Boolean debugging = new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin");
 
     /** Debug Settings */
-    public static final BoolSetting DISPLAY_MODULE_UPDATES = inst.add("DISPLAY_MODULE_UPDATES", false, true);
+    /*public static final BoolSetting DISPLAY_MODULE_UPDATES = inst.add("DISPLAY_MODULE_UPDATES", false, true);
     public static final BoolSetting DISPLAY_MCA_MODULE_UPDATES = inst.add("DISPLAY_MCA_MODULE_UPDATES", false, true);
     public static final BoolSetting DISPLAY_MCA_MESSAGES = inst.add("DISPLAY_MCA_MESSAGES", true, true);
     public static final BoolSetting DISPLAY_MCA_BB_MESSAGES = inst.add("DISPLAY_MCA_BB_MESSAGES", false, true);
@@ -124,9 +130,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     public static final BoolSetting DISPLAY_BUFFER_ALLOCATION = inst.add("DISPLAY_BUFFER_ALLOCATION", false, true);
     public static final BoolSetting DISPLAY_INCOMING_PORT_INFO = inst.add("DISPLAY_INCOMING_PORT_INFO", false, true);
     public static final BoolSetting LOG_LOOP_TIMES = inst.add("LOG_LOOP_TIMES", false, true);
-    public static final BoolSetting DISPLAY_CONSOLE = inst.add("DISPLAY_CONSOLE", false, true);
-    public static final BoolSetting DISPLAY_CONSTRUCTION_DESTRUCTION = inst.add("DISPLAY_CONSTRUCTION_DESTRUCTION", true, true);
-    public static final BoolSetting DISPLAY_EDGE_CREATION = inst.add("DISPLAY_EDGE_CREATION", false, true);
+    public static final BoolSetting DISPLAY_CONSOLE = inst.add("DISPLAY_CONSOLE", false, true);*/
 
     /** Loop time for buffer tracker (in ms) */
     //public static final IntSetting BUFFER_TRACKER_LOOP_TIME = inst.add("BUFFER_TRACKER_LOOP_TIME", 140, true);
@@ -160,12 +164,21 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     @PassByValue
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
 
+    /** Log domain for this class */
+    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"settings\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("settings");
+
     /**
      * @return Absolute Root Directory of Runtime (location of finroc_core.jar)
      */
     @JavaOnly public static File getRootDir() {
-        System.out.println("Root dir is " + rootDir);
+        logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Root dir is " + rootDir);
         return rootDir;
+    }
+
+    @CppType("char*") @Const
+    private static String getLogDescription() {
+        return "RuntimeSettings";
     }
 
     /**
