@@ -55,6 +55,7 @@ import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.log.LogUser;
 
 /**
  * @author max
@@ -64,7 +65,7 @@ import org.finroc.jc.annotation.Virtual;
  */
 @SuppressWarnings("unchecked")
 @Ptr
-public abstract class NetPort implements PortListener, CCPortListener {
+public abstract class NetPort extends LogUser implements PortListener, CCPortListener {
 
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
