@@ -34,6 +34,7 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleListWithMutex;
+import org.finroc.jc.log.LogUser;
 import org.finroc.jc.net.IPSocketAddress;
 
 /**
@@ -43,7 +44,7 @@ import org.finroc.jc.net.IPSocketAddress;
  * Peer trackers look for other systems on the network that can be connected to.
  */
 @Ptr
-public abstract class AbstractPeerTracker implements HasDestructor {
+public abstract class AbstractPeerTracker extends LogUser implements HasDestructor {
 
     /** callIDs */
     private static final byte DISCOVERED = 0, REMOVED = 1;
