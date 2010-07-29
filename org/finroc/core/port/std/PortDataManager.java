@@ -64,7 +64,7 @@ import org.finroc.core.portdatabase.DataType;
               "size_t PortDataManager::REF_COUNTERS_OFFSET = ((char*)&(PortDataManager::PROTOTYPE.refCounters[0])) - ((char*)&(PortDataManager::PROTOTYPE));",
               "PortDataManager::~PortDataManager() {",
               "    delete data;",
-              "    _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, << \"Deleting Manager\");",
+              "    _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager\");",
               "}"
              })
 
@@ -137,7 +137,7 @@ public class PortDataManager extends Reusable {
     protected volatile int reuseCounter = 0;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"port_data\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_data\");")
     protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
 
     /*Cpp

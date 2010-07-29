@@ -46,7 +46,7 @@ import org.finroc.core.portdatabase.DataTypeRegister;
 public class RemoteTypes extends LogUser implements HasDestructor {
 
     /** Log domain for edges */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"remote_types\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"remote_types\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("remote_types");
 
     /** Entry in remote type register */

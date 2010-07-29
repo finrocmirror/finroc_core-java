@@ -165,7 +165,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"settings\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"settings\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("settings");
 
     /**

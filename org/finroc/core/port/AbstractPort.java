@@ -151,7 +151,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private static final int BULK_N_EXPRESS = PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT;
 
     /** Log domain for initial pushing */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(initialPushLog, \"initial_pushes\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(initialPushLog, \"initial_pushes\");")
     public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
 
     /**

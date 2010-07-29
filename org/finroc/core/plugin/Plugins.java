@@ -67,7 +67,7 @@ public class Plugins { /*implements HTTPResource*/
     @JavaOnly @SharedPtr private PluginLoader pluginLoader;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"plugins\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"plugins\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("plugins");
 
 //

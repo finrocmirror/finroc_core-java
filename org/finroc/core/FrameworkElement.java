@@ -237,11 +237,11 @@ public class FrameworkElement extends LogUser implements HasDestructor {
     //protected Thread mainThread;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"framework_elements\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"framework_elements\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("framework_elements");
 
     /** Log domain for edges */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(edgeLog, \"edges\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"edges\");")
     public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
 
     @JavaOnly public FrameworkElement(@Const @Ref String description, @Ptr FrameworkElement parent) {

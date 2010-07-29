@@ -60,7 +60,7 @@ public abstract class ExternalConnection extends FrameworkElement {
     private boolean firstConnect = true;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"connections\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"connections\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
     /**

@@ -60,7 +60,7 @@ import org.finroc.log.LogLevel;
 public class Files {
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"files\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"files\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("files");
 
     /**

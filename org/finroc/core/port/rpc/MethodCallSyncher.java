@@ -50,7 +50,7 @@ public class MethodCallSyncher extends LogUser {
     public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 300);
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"rpc\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public static void staticInit() {

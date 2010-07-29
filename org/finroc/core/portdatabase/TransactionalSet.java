@@ -76,7 +76,7 @@ public abstract class TransactionalSet<K, B extends TransactionalSet.Entry<K>> e
     public final int PENDING_COMMAND_TIMEOUT = 10000;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"stream_ports\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"stream_ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     @SuppressWarnings("unchecked")

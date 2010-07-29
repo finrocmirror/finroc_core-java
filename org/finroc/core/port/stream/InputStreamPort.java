@@ -54,7 +54,7 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
     private final InputPacketProcessor<T> user;
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"stream_ports\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"stream_ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     public InputStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<T> user) {

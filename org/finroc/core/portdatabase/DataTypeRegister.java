@@ -106,7 +106,7 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
 //  }
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"data_types\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"data_types\");")
     private static final LogDomain logDomain = LogDefinitions.finrocUtil.getSubDomain("data_types");
 
     /** Singleton instance */

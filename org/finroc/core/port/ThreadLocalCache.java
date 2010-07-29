@@ -207,7 +207,7 @@ public class ThreadLocalCache extends LogUser {
     @Const @SharedPtr public final CoreRegister<AbstractPort> portRegister = RuntimeEnvironment.getInstance().getPorts();
 
     /** Log domain for this class */
-    @InCpp("_CREATE_NAMED_LOGGING_DOMAIN(logDomain, \"thread_local_cache\");")
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"thread_local_cache\");")
     protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_local_cache");
 
     private ThreadLocalCache(/*@SizeT int index*/) {
