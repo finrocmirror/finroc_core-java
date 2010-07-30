@@ -65,7 +65,8 @@ import org.finroc.core.portdatabase.DataType;
               "PortDataManager::~PortDataManager() {",
               "    delete data;",
               "    _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager\");",
-              "}"
+              "}",
+              "rrlib::logging::LogDomainSharedPointer initDomainDummy = PortDataManager::_V_logDomain();"
              })
 
 public class PortDataManager extends Reusable {
@@ -138,7 +139,7 @@ public class PortDataManager extends Reusable {
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_data\");")
-    protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
 
     /*Cpp
     virtual ~PortDataManager();
