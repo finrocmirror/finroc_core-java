@@ -50,7 +50,7 @@ public class InterfaceServerPort extends InterfacePort {
         setCallHandler(ch);
     }
 
-    private void setCallHandler(@Ptr AbstractMethodCallHandler handler) {
+    protected void setCallHandler(@Ptr AbstractMethodCallHandler handler) {
         this.handler = handler;
     }
 

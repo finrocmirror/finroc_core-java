@@ -35,8 +35,8 @@ import org.finroc.jc.annotation.Ptr;
 @Inline @NoCpp @Ptr
 public interface RuntimeListener {
 
-    /** Constants for Change type (element added, element changed, element removed) */
-    static final byte ADD = 1, CHANGE = 2, REMOVE = 3;
+    /** Constants for Change type (element added, element changed, element removed, edges changed) */
+    static final byte ADD = 1, CHANGE = 2, REMOVE = 3, EDGE_CHANGE = 4;
 
     /** Call ID before framework element is initialized */
     static final byte PRE_INIT = -1;

@@ -21,7 +21,10 @@
  */
 package org.finroc.core.port.net;
 
+import java.util.List;
+
 import org.finroc.core.CoreFlags;
+import org.finroc.core.FrameworkElement;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
@@ -52,6 +55,7 @@ import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InitInBody;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Virtual;
@@ -891,4 +895,16 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             }
         }
     }
+
+    /**
+     * @return Targets of remote edges
+     */
+    @JavaOnly
+    public abstract List<FrameworkElement> getRemoteEdgeDestinations();
+
+    /**
+     * @return Sources of remote edges
+     */
+    //@JavaOnly
+    //public abstract List<FrameworkElement> getRemoteEdgeSources();
 }

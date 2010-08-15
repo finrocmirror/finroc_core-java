@@ -40,6 +40,7 @@ import org.finroc.core.RuntimeListener;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.DataType;
 
@@ -101,7 +102,11 @@ public class FrameworkElementInfo {
     //@ConstPtr
     //public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(FrameworkElementInfo.class);
 
-    public static final byte PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR;
+    /** mask for non-ports and non-edge-aggregators */
+    private static final int PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR;
+
+    /** mask for non-ports and non-edge-aggregators */
+    private static final int EDGE_AGG_PARENT_FLAGS_TO_STORE = PARENT_FLAGS_TO_STORE | EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS;
 
     @Init("links()")
     public FrameworkElementInfo() {
@@ -148,6 +153,9 @@ public class FrameworkElementInfo {
                     if (elementFilter.accept(parent, tmp)) {
                         // serialize 1 for another link - ORed with CoreFlags for parent LINK_ROOT and GLOBALLY_UNIQUE
                         tp.writeByte(1 | (parent.getAllFlags() & PARENT_FLAGS_TO_STORE));
+                        if (parent.getFlag(CoreFlags.EDGE_AGGREGATOR)) {
+                            tp.writeByte((parent.getAllFlags() & EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS) >> 8);
+                        }
                         fe.writeDescription(tp, i);
                         tp.writeInt(parent.getHandle());
                     }
@@ -164,11 +172,14 @@ public class FrameworkElementInfo {
             tp.writeShort(port.getStrategy());
             tp.writeShort(port.getMinNetUpdateInterval());
 
-            if (!elementFilter.isPortOnlyFilter()) {
+            if (elementFilter.isAcceptAllFilter()) {
                 port.serializeOutgoingConnections(tp);
+            } else if (!elementFilter.isPortOnlyFilter()) {
+                tp.writeByte(0);
             }
         }
     }
+
 
 //  /**
 //   * Serialize data type update information
@@ -207,8 +218,11 @@ public class FrameworkElementInfo {
         if (opCode == RuntimeListener.ADD) {
             while ((next = is.readByte()) != 0) {
                 @Ptr LinkInfo li = links[linkCount];
-                li.name = is.readString();
                 li.extraFlags = next & PARENT_FLAGS_TO_STORE;
+                if ((li.extraFlags & CoreFlags.EDGE_AGGREGATOR) > 0) {
+                    li.extraFlags |= (((int)is.readByte()) << 8);
+                }
+                li.name = is.readString();
                 if (!portOnlyClient) {
                     li.parent = is.readInt();
                 } else {
@@ -371,6 +385,8 @@ public class FrameworkElementInfo {
             return "CHANGE";
         case RuntimeListener.REMOVE:
             return "REMOVE";
+        case RuntimeListener.EDGE_CHANGE:
+            return "EDGE_CHANGE";
         default:
             return "INVALID OPCODE";
         }
@@ -384,5 +400,16 @@ public class FrameworkElementInfo {
     @ConstMethod public void getConnections(@Ref SimpleList<Integer> copyTo) {
         copyTo.clear();
         copyTo.addAll(connections);
+    }
+
+    /**
+     * @param extraFlags all flags
+     * @return Flags relevant for a remote parent framework element
+     */
+    public static int filterParentFlags(int extraFlags) {
+        if ((extraFlags & CoreFlags.EDGE_AGGREGATOR) != 0) {
+            return extraFlags & EDGE_AGG_PARENT_FLAGS_TO_STORE;
+        }
+        return extraFlags & PARENT_FLAGS_TO_STORE;
     }
 }

@@ -46,6 +46,18 @@ import org.finroc.jc.container.SafeConcurrentlyIterableList;
 @Include("rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h")
 public class EdgeAggregator extends FrameworkElement {
 
+    /** Is this edge aggregator an interface of its parent (one of possibly many) */
+    public static final int IS_INTERFACE = CoreFlags.FIRST_CUSTOM_CONST_FLAG;
+
+    /** Hint for displaying in finstruct: Is this sensor data only? */
+    public static final int SENSOR_DATA = CoreFlags.FIRST_CUSTOM_CONST_FLAG << 1;
+
+    /** Hint for displaying in finstruct: Is this controller data only? */
+    public static final int CONTROLLER_DATA = CoreFlags.FIRST_CUSTOM_CONST_FLAG << 2;
+
+    /** All flags introduced by edge aggregator class */
+    public static final int ALL_EDGE_AGGREGATOR_FLAGS = IS_INTERFACE | SENSOR_DATA | CONTROLLER_DATA;
+
     /** List of emerging aggregated edges */
     @CppType("util::SafeConcurrentlyIterableList<AggregatedEdge*, 5, true>")
     private SafeConcurrentlyIterableList<AggregatedEdge> emergingEdges = new SafeConcurrentlyIterableList<AggregatedEdge>(0, 5);
@@ -143,6 +155,7 @@ public class EdgeAggregator extends FrameworkElement {
             ae.edgeCount--;
             if (ae.edgeCount == 0) {
                 emergingEdges.remove(ae);
+                ae.delete();
             }
             return;
         }

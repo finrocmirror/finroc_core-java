@@ -93,6 +93,14 @@ public class FrameworkElementTreeFilter implements CoreSerializable {
     }
 
     /**
+     * @return Is this a filter that accepts all framework elements?
+     * (e.g. the finstruct one is)
+     */
+    @ConstMethod public boolean isAcceptAllFilter() {
+        return (relevantFlags & (~CoreFlags.STATUS_FLAGS)) == 0;
+    }
+
+    /**
      * @param element Framework element
      * @param tmp Temporary, currently unused string buffer
      * @return Is framework element accepted by filter?

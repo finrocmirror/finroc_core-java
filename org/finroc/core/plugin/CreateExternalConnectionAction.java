@@ -38,6 +38,14 @@ public interface CreateExternalConnectionAction {
 
     public @Managed ExternalConnection createExternalConnection() throws Exception;
 
+    /** Does connection transfer info about remote edges? */
+    public final static int REMOTE_EDGE_INFO = 1 << 0;
+
+    /**
+     * @return Connection properties/capabilities (see flags above)
+     */
+    public int getFlags();
+
 //  /** Constructor to invoke */
 //  private Class<? extends ExternalConnection> c;
 //

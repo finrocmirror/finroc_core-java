@@ -54,7 +54,6 @@ import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.log.LogDefinitions;
-import org.finroc.jc.log.LogUser;
 import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
@@ -96,7 +95,7 @@ import org.finroc.core.buffer.CoreOutput;
            "}"
           })
 //@HPrepend({"class NumberPort;", "class RuntimeEnvironment;"})
-public class FrameworkElement extends LogUser implements HasDestructor {
+public class FrameworkElement extends Annotatable {
 
     /** Uid of thread that created this framework element */
     @Const protected final long createrThreadUid;
@@ -682,6 +681,7 @@ public class FrameworkElement extends LogUser implements HasDestructor {
 
     @Protected
     public void delete() {
+        super.delete();
         assert(getFlag(CoreFlags.DELETED) || getFlag(CoreFlags.IS_RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement destructor");
         if (!getFlag(CoreFlags.IS_RUNTIME)) {

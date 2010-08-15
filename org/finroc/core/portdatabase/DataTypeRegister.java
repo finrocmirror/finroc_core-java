@@ -310,7 +310,7 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
      * @return Data type
      */
     @InCpp("return initialLookup[typeid(*portData).name()];")
-    public DataType lookupDataType(PortData portData) {
+    public DataType lookupDataType(TypedObject portData) {
         return initialLookup.get(portData.getClass());
     }
 

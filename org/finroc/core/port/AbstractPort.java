@@ -360,7 +360,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     @SuppressWarnings("unchecked")
     @Virtual protected void rawConnectToTarget(@Ptr AbstractPort target) {
         EdgeAggregator.edgeAdded(this, target);
-        publishUpdatedInfo(RuntimeListener.CHANGE);
+        publishUpdatedInfo(RuntimeListener.EDGE_CHANGE);
 
         // JavaOnlyBlock
         edgesSrc.add(target, false);
@@ -401,7 +401,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     @SuppressWarnings("unchecked")
     private static void removeInternal(AbstractPort src, AbstractPort dest) {
         EdgeAggregator.edgeRemoved(src, dest);
-        src.publishUpdatedInfo(RuntimeListener.CHANGE);
+        src.publishUpdatedInfo(RuntimeListener.EDGE_CHANGE);
 
         //JavaOnlyBlock
         dest.edgesDest.remove(src);

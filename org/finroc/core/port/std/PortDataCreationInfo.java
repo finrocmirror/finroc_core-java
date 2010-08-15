@@ -47,7 +47,7 @@ import org.finroc.jc.container.SimpleList;
 @CppInclude("PortDataImpl.h")
 public class PortDataCreationInfo {
 
-    /** Manager that will handle/menage currently created port data */
+    /** Manager that will handle/manage currently created port data */
     private @Ptr PortDataManager manager;
 
     /** List with port data objects whose data types need to be set */
