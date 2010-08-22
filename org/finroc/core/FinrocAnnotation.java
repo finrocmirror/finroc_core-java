@@ -60,4 +60,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
         assert type != null : "Unknown Object type";
     }
 
+    @Override
+    public void delete() {
+    }
 }

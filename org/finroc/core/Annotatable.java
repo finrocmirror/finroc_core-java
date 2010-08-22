@@ -23,6 +23,7 @@ package org.finroc.core;
 
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.jc.HasDestructor;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.log.LogUser;
 
@@ -71,6 +72,25 @@ public class Annotatable extends LogUser implements HasDestructor {
         }
         return null;
     }
+
+    /**
+     * Get annotation of specified type
+     *
+     * @param c Data type of annotation we're looking for
+     */
+    @SuppressWarnings("unchecked")
+    @JavaOnly
+    public <C extends FinrocAnnotation> C getAnnotation(Class<C> c) {
+        FinrocAnnotation ann = firstAnnotation;
+        while (ann != null) {
+            if (c.isAssignableFrom(ann.getClass())) {
+                return (C)ann;
+            }
+            ann = ann.nextAnnotation;
+        }
+        return null;
+    }
+
 
     @Override
     public void delete() {
