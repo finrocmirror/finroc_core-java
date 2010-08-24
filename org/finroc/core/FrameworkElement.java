@@ -1866,6 +1866,12 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
+    @JavaOnly
+    @Override
+    public int hashCode() {
+        return getHandle();
+    }
+
     /*Cpp
     // for efficient streaming of fully-qualified framework element name
     void streamQualifiedName(std::ostream& output) const {
