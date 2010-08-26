@@ -24,7 +24,6 @@ package org.finroc.core.port.net;
 import java.util.List;
 
 import org.finroc.core.CoreFlags;
-import org.finroc.core.FrameworkElement;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
@@ -900,7 +899,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
      * @return Targets of remote edges
      */
     @JavaOnly
-    public abstract List<FrameworkElement> getRemoteEdgeDestinations();
+    public abstract List<AbstractPort> getRemoteEdgeDestinations();
 
     /**
      * @return Sources of remote edges
