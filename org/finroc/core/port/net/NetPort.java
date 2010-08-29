@@ -24,6 +24,7 @@ package org.finroc.core.port.net;
 import java.util.List;
 
 import org.finroc.core.CoreFlags;
+import org.finroc.core.admin.AdminClient;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
@@ -83,7 +84,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
     private final @Ptr AbstractPort wrapped;
 
     /** Handle of Remote port */
-    public int remoteHandle;
+    protected int remoteHandle;
 
     @InitInBody("wrapped")
     public NetPort(PortCreationInfo pci, @Ptr Object belongsTo) {
@@ -900,6 +901,11 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
      */
     @JavaOnly
     public abstract List<AbstractPort> getRemoteEdgeDestinations();
+
+    /**
+     * @return Returns admin interface for this element - or null if there's no such interface
+     */
+    public abstract AdminClient getAdminInterface();
 
     /**
      * @return Sources of remote edges

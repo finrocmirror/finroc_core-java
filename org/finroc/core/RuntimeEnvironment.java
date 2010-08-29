@@ -30,6 +30,7 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.CppUnused;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
@@ -48,6 +49,7 @@ import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.stream.ChunkedBuffer;
 import org.finroc.log.LogLevel;
 
+import org.finroc.core.admin.AdminServer;
 import org.finroc.core.datatype.Constant;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.plugin.Plugins;
@@ -224,6 +226,9 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
 
         // add uninitialized child
         instance.unrelated = new FrameworkElement("Unrelated", instance);
+        @SuppressWarnings("unused")
+        @CppUnused
+        AdminServer as = new AdminServer();
         FrameworkElement.initAll();
 
         //ConfigFile.init(conffile);

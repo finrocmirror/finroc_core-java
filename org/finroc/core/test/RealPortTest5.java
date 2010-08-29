@@ -177,6 +177,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     // test 100.000.000 set and get operations with two ports over a simple edge
     public static void testSimpleEdgeBB() {
         BlackboardManager.getInstance();
+        @SuppressWarnings("unused")
         @CppUnused
         BlackboardServer server = new BlackboardServer("testbb");
         //SingleBufferedBlackboardServer server2 = new SingleBufferedBlackboardServer("testbb");

@@ -28,6 +28,7 @@ import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.std.PortData;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
@@ -67,6 +68,7 @@ public abstract class AbstractMethod extends LogUser {
     private int parameterCount = 4;
 
     /** Name for unused parameters */
+    @CppType("const char*")
     protected static final String NO_PARAM = "NO_PARAMETER";
 
     /** Handle call in extra thread by default (should be true, if call can block or needs significant time to complete) */
@@ -83,14 +85,18 @@ public abstract class AbstractMethod extends LogUser {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public AbstractMethod(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread) {
+        @InCpp("static util::String noParam(NO_PARAM);")
+        String noParam = NO_PARAM;
+
         this.name = name;
         parameterNames[0] = p1Name;
         parameterNames[1] = p2Name;
         parameterNames[2] = p3Name;
         parameterNames[3] = p4Name;
         for (int i = 0; i < 4; i++) {
-            if (parameterNames[i].equals(NO_PARAM)) {
+            if (parameterNames[i].equals(noParam)) {
                 parameterCount = i;
+                break;
             }
         }
         this.handleInExtraThread = handleInExtraThread;
