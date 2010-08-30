@@ -89,7 +89,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
     @InitInBody("wrapped")
     public NetPort(PortCreationInfo pci, @Ptr Object belongsTo) {
         // keep most these flags
-        int f = pci.flags & (PortFlags.ACCEPTS_DATA | PortFlags.MAY_ACCEPT_REVERSE_DATA | PortFlags.IS_OUTPUT_PORT |
+        int f = pci.flags & (PortFlags.ACCEPTS_DATA | PortFlags.EMITS_DATA | PortFlags.MAY_ACCEPT_REVERSE_DATA | PortFlags.IS_OUTPUT_PORT |
                              PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT | PortFlags.NON_STANDARD_ASSIGN /*| PortFlags.IS_CC_PORT | PortFlags.IS_INTERFACE_PORT*/ |
                              CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.GLOBALLY_UNIQUE_LINK);
 
