@@ -1191,10 +1191,19 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     @SuppressWarnings("unchecked")
     public void serializeOutgoingConnections(CoreOutput co) {
-        co.writeByte((byte)edgesSrc.size());
         @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+        byte count = 0;
         for (int i = 0, n = it.size(); i < n; i++) {
-            co.writeInt(it.get(i).getHandle());
+            if (it.get(i) != null) {
+                count++;
+            }
+        }
+        co.writeByte(count);
+        for (int i = 0, n = it.size(); i < n; i++) {
+            AbstractPort as = it.get(i);
+            if (as != null) {
+                co.writeInt(as.getHandle());
+            }
         }
     }
 }
