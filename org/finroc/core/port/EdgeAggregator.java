@@ -155,7 +155,7 @@ public class EdgeAggregator extends FrameworkElement {
             ae.edgeCount--;
             if (ae.edgeCount == 0) {
                 emergingEdges.remove(ae);
-                ae.delete();
+                //ae.delete(); // obsolete: already deleted by command above
             }
             return;
         }
