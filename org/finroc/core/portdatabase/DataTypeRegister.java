@@ -52,7 +52,7 @@ import org.finroc.core.port.std.PortData;
  *
  * Also implements a port set with default update times for every data type.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 @ForwardDecl( {PortData.class, PortInterface.class})
 //@CppInclude({"datatype/CoreNumber.h", "datatype/PortInfo.h"})
 @Include( {"DataTypeUtil.h", "<map>", "CppStdFactory.h", "TransactionTypeFactory.h"})

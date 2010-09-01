@@ -89,7 +89,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     //@InCpp("addPortListenerRaw(reinterpret_cast<CCPortListener<>*>(listener));")
     public void addPortListener(CCPortListener<T> listener) {
         addPortListenerRaw((CCPortListener)listener);
@@ -98,7 +98,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     //@InCpp("removePortListenerRaw(reinterpret_cast<CCPortListener<>*>(listener));")
     public void removePortListener(CCPortListener<T> listener) {
         removePortListenerRaw((CCPortListener)listener);

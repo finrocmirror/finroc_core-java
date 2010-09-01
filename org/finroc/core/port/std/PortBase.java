@@ -955,7 +955,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void addPortListenerRaw(PortListener listener) {
         portListener.add(listener);
     }
@@ -963,7 +963,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void removePortListenerRaw(PortListener listener) {
         portListener.remove(listener);
     }

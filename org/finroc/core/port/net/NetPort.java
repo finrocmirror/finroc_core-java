@@ -67,7 +67,7 @@ import org.finroc.jc.log.LogUser;
  * Port that is used for networking.
  * Uniform wrapper class for Std, CC, and Interface ports.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 @Ptr
 public abstract class NetPort extends LogUser implements PortListener, CCPortListener {
 

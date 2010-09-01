@@ -120,11 +120,11 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     protected final @Ptr @ConstPtr DataType dataType;
 
     /** Edges emerging from this port - raw lists seem the most reasonable approach here */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     @Ptr private EdgeList edgesSrc;
 
     /** Edges ending at this port */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     @Ptr private EdgeList edgesDest;
 
 //  /** Contains names of any links to this port - for efficient destruction */

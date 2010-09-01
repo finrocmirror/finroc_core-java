@@ -106,7 +106,7 @@ public class Port<T extends PortData> extends PortBase {
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void addPortListener(PortListener<T> listener) {
         super.addPortListenerRaw((PortListener)listener);
     }
@@ -114,7 +114,7 @@ public class Port<T extends PortData> extends PortBase {
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void removePortListener(PortListener<T> listener) {
         super.removePortListenerRaw((PortListener)listener);
     }

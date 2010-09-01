@@ -74,7 +74,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Data that is currently owned - used to belong to a terminated thread
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     protected @Ptr CCPortDataContainer ownedData;
 
     /**
@@ -850,7 +850,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void addPortListenerRaw(CCPortListener listener) {
         portListener.add(listener);
     }
@@ -858,7 +858,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public void removePortListenerRaw(CCPortListener listener) {
         portListener.remove(listener);
     }

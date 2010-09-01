@@ -41,7 +41,7 @@ public class JavaOnlyPortDataFactory implements PortDataFactory {
         return instance;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     @Override
     public TypedObject create(DataType type, boolean interThreadContainer) {
         return type.isCCType() ?
