@@ -22,9 +22,11 @@
 package org.finroc.core.admin;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
+import org.finroc.core.port.std.PortData;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.log.LogLevel;
@@ -93,5 +95,41 @@ public class AdminClient extends InterfaceClientPort {
             }
         }
         logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Disconnecting remote port failed");
+    }
+
+    /**
+     * Sets value of remote port
+     *
+     * @param np network port of remote port
+     * @param container Data to assign to remote port
+     */
+    public void setRemotePortValue(NetPort np, CCInterThreadContainer<?> container) {
+        if (np != null && np.getAdminInterface() == this) {
+            try {
+                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), container, null, false);
+                return;
+            } catch (MethodCallException e) {
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            }
+        }
+        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
+    }
+
+    /**
+     * Sets value of remote port
+     *
+     * @param np network port of remote port
+     * @param portData Data to assign to remote port
+     */
+    public void setRemotePortValue(NetPort np, PortData portData) {
+        if (np != null && np.getAdminInterface() == this) {
+            try {
+                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), null, portData, false);
+                return;
+            } catch (MethodCallException e) {
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            }
+        }
+        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
     }
 }

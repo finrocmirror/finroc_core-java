@@ -850,7 +850,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings( { "rawtypes", "unchecked" })
     public void addPortListenerRaw(CCPortListener listener) {
         portListener.add(listener);
     }
@@ -858,7 +858,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings( { "rawtypes", "unchecked" })
     public void removePortListenerRaw(CCPortListener listener) {
         portListener.remove(listener);
     }

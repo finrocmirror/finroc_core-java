@@ -24,6 +24,10 @@ package org.finroc.core.admin;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortFlags;
+import org.finroc.core.port.ThreadLocalCache;
+import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.port.cc.CCPortBase;
+import org.finroc.core.port.cc.CCPortDataContainer;
 import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.method.AbstractMethod;
@@ -33,6 +37,10 @@ import org.finroc.core.port.rpc.method.Void1Handler;
 import org.finroc.core.port.rpc.method.Void1Method;
 import org.finroc.core.port.rpc.method.Void2Handler;
 import org.finroc.core.port.rpc.method.Void2Method;
+import org.finroc.core.port.rpc.method.Void3Handler;
+import org.finroc.core.port.rpc.method.Void3Method;
+import org.finroc.core.port.std.PortBase;
+import org.finroc.core.port.std.PortData;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.PassByValue;
@@ -45,7 +53,7 @@ import org.finroc.log.LogLevel;
  * Administration interface server port
  */
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
-public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void1Handler<Integer> {
+public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void1Handler<Integer>, Void3Handler < Integer, CCInterThreadContainer<?>, PortData > {
 
     /** Admin interface */
     @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface");
@@ -61,6 +69,10 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     /** Disconnect All */
     @PassByValue public static Void1Method<AdminServer, Integer> DISCONNECT_ALL =
         new Void1Method<AdminServer, Integer>(METHODS, "DisconnectAll", "source port handle", false);
+
+    /** Set a port's value */
+    @PassByValue public static Void3Method < AdminServer, Integer, CCInterThreadContainer<?>, PortData > SET_PORT_VALUE =
+        new Void3Method < AdminServer, Integer, CCInterThreadContainer<?>, PortData > (METHODS, "SetPortValue", "port handle", "cc data", "port data", false);
 
     /** Data Type of method calls to this port */
     public static final DataType DATA_TYPE = DataTypeRegister.getInstance().addMethodDataType("Administration method calls", METHODS);
@@ -116,5 +128,32 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         }
         src.disconnectAll();
         logDomain.log(LogLevel.LL_USER, getLogDescription(), "Disconnected port " + src.getQualifiedName());
+    }
+
+    @Override
+    public void handleVoidCall(AbstractMethod method, Integer portHandle, CCInterThreadContainer<?> ccData, PortData portData) throws MethodCallException {
+        AbstractPort port = RuntimeEnvironment.getInstance().getPort(portHandle);
+        if (port != null && port.isReady()) {
+            synchronized (port) {
+                if (port.isReady()) {
+                    if (port.getDataType().isCCType() && ccData != null) {
+                        CCPortBase p = (CCPortBase)port;
+                        CCPortDataContainer<?> c = ThreadLocalCache.get().getUnusedBuffer(ccData.getType());
+                        c.assign(ccData.getDataPtr());
+                        p.publish(c);
+                    } else if (port.getDataType().isStdType() && portData != null) {
+                        PortBase p = (PortBase)port;
+                        p.publish(portData);
+                        portData = null;
+                    }
+                }
+            }
+        }
+        if (ccData != null) {
+            ccData.recycle2();
+        }
+        if (portData != null) {
+            portData.getManager().releaseLock();
+        }
     }
 }

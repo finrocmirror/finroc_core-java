@@ -375,7 +375,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * It should not be modified thereafter.
      * Should only be called on output ports
      *
-     * @param cnc Data buffer acquired from a port using getUnusedBuffer
+     * @param cnc Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
     @Inline public void publish(PortData data) {
         //JavaOnlyBlock
@@ -955,7 +955,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings( { "rawtypes", "unchecked" })
     public void addPortListenerRaw(PortListener listener) {
         portListener.add(listener);
     }
@@ -963,7 +963,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings( { "rawtypes", "unchecked" })
     public void removePortListenerRaw(PortListener listener) {
         portListener.remove(listener);
     }
