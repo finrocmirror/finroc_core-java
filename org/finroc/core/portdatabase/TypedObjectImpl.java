@@ -21,14 +21,20 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppName;
-import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.HAppend;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Superclass;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
 
 /**
  * @author max
@@ -42,18 +48,37 @@ import org.finroc.jc.annotation.Superclass;
  */
 @Ptr @Inline @NoCpp
 @CppName("TypedObject")
-//@HAppend("typedef TypedObjectImpl TypedObject")
-@ForwardDecl(DataType.class)
-@Superclass( {CoreSerializable.class})
-public abstract class TypedObjectImpl implements TypedObject {
+@Superclass( {CoreSerializableImpl.class})
+@HAppend( {"inline std::ostream& operator << (std::ostream& output, const TypedObject* lu) {",
+           "    output << typeid(*lu).name() << \" (\" << ((void*)lu) << \")\";",
+           "    return output;",
+           "}",
+           "inline std::ostream& operator << (std::ostream& output, const TypedObject& lu) {",
+           "    output << (&lu);",
+           "    return output;",
+           "}"
+          })
+public abstract class TypedObjectImpl extends CoreSerializableImpl implements TypedObject {
 
     /** Type of object */
     protected DataType type;
+
+    /** Log domain for serialization */
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"serialization\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("serialization");
 
     /**
      * @return Type of object
      */
     @NonVirtual @ConstMethod public DataType getType() {
         return type;
+    }
+
+    /**
+     * @return Log description (default implementation is "<class name> (<pointer>)"
+     */
+    @InCpp("return *this;") @NonVirtual
+    public @ConstMethod @Const @Ref @CppType("TypedObject") String getLogDescription() {
+        return getClass().getSimpleName() + " (@" + Integer.toHexString(hashCode()) + ")";
     }
 }

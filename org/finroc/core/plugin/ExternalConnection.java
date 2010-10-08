@@ -33,6 +33,8 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
+import org.finroc.core.parameter.StringStructureParameter;
+import org.finroc.core.parameter.StructureParameterList;
 
 /**
  * @author max
@@ -63,12 +65,16 @@ public abstract class ExternalConnection extends FrameworkElement {
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"connections\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
+    /** if set, this module automatically connects to this address */
+    private StringStructureParameter autoConnectTo = new StringStructureParameter("Autoconnect to", "");
+
     /**
      * @param description Description of class
      * @param defaultAddress Default connection address (some string)
      */
     public ExternalConnection(String description, String defaultAddress) {
         super(description, RuntimeEnvironment.getInstance(), CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
+        StructureParameterList.getOrCreate(this).add(autoConnectTo);
         lastAddress = defaultAddress;
     }
 
@@ -208,6 +214,30 @@ public abstract class ExternalConnection extends FrameworkElement {
     @Virtual
     public String getStatus(boolean detailed) {
         return getConnectionAddress();
+    }
+
+    @Override
+    public void structureParametersChanged() {
+        String s = autoConnectTo.get();
+        if (s.length() > 0) {
+            if (!s.equals(lastAddress)) {
+                if (isConnected()) {
+                    try {
+                        disconnect();
+                    } catch (Exception e) {
+                        log(LogLevel.LL_ERROR, logDomain, e);
+                    }
+                }
+                lastAddress = s;
+            }
+            if (!isConnected()) {
+                try {
+                    connect(s);
+                } catch (Exception e) {
+                    log(LogLevel.LL_ERROR, logDomain, e);
+                }
+            }
+        }
     }
 
 //  protected class ConnectionListenerManager extends WeakRefListenerManager<ConnectionListener> {

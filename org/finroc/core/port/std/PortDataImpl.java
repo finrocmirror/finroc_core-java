@@ -24,7 +24,6 @@ package org.finroc.core.port.std;
 import org.finroc.jc.annotation.Attribute;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppName;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
@@ -36,9 +35,13 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
+import org.finroc.xml.XMLNode;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.SerializationHelper;
 import org.finroc.core.portdatabase.TypedObject;
 
 /**
@@ -54,11 +57,9 @@ import org.finroc.core.portdatabase.TypedObject;
  */
 @Ptr
 //@HPrepend("__attribute__ ((aligned(16)))") // so that last 4 bits of pointer are free *g* - didn't work :-/
-@ForwardDecl(PortDataReference.class)
 @Attribute("((aligned(8)))")
 @CppName("PortData")
 @PostInclude("PortDataReference.h")
-//@HAppend({"}", "#include \"core/port/PortDataReference.h\"", "namespace core {"})
 @Superclass(TypedObject.class)
 public abstract class PortDataImpl extends LogUser implements PortData {
 
@@ -113,6 +114,10 @@ public abstract class PortDataImpl extends LogUser implements PortData {
 
     /** Constant to AND refCounter with to determine whether there's a system lock */
     //private final static int SYSTEM_LOCK_MASK = 0xFFFF;
+
+    /** Log domain for serialization */
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"serialization\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("serialization");
 
     /**
      * Constructor as base class
@@ -203,6 +208,7 @@ public abstract class PortDataImpl extends LogUser implements PortData {
 //      if (type == null) {
 //          int i = 4;
 //      }
+//      System.out.println(type);
         assert type != null : "Unknown Object type";
     }
 
@@ -275,5 +281,25 @@ public abstract class PortDataImpl extends LogUser implements PortData {
     // override toString to have it available in C++ for PortData
     public String toString() {
         return "some port data";
+    }
+
+    @Override @JavaOnly
+    public String serialize() {
+        return SerializationHelper.serializeToHexString(this);
+    }
+
+    @Override @JavaOnly
+    public void deserialize(String s) throws Exception {
+        SerializationHelper.deserializeFromHexString(this, s);
+    }
+
+    @Override @JavaOnly
+    public void serialize(XMLNode node) throws Exception {
+        node.setTextContent(serialize());
+    }
+
+    @Override @JavaOnly
+    public void deserialize(XMLNode node) throws Exception {
+        deserialize(node.getTextContent());
     }
 }

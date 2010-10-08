@@ -21,14 +21,24 @@
  */
 package org.finroc.core.admin;
 
+import java.util.ArrayList;
+
+import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.buffer.CoreInput;
+import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.buffer.MemBuffer;
+import org.finroc.core.datatype.CoreString;
+import org.finroc.core.plugin.RemoteCreateModuleAction;
 import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.net.NetPort;
+import org.finroc.core.port.net.RemoteRuntime;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.std.PortData;
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.log.LogLevel;
 
 /**
@@ -36,8 +46,7 @@ import org.finroc.log.LogLevel;
  *
  * Client port for admin interface
  */
-@ForwardDecl(NetPort.class)
-@CppInclude("port/net/NetPort.h")
+@JavaOnly
 public class AdminClient extends InterfaceClientPort {
 
     public AdminClient(String description, FrameworkElement parent) {
@@ -51,7 +60,7 @@ public class AdminClient extends InterfaceClientPort {
      * @param np2 Port2
      */
     public void connect(NetPort np1, NetPort np2) {
-        if (np1 != null && np2 != null && np1.getAdminInterface() == this && np2.getAdminInterface() == this) {
+        if (np1 != null && np2 != null && getAdminInterface(np1) == this && getAdminInterface(np2) == this) {
             try {
                 AdminServer.CONNECT.call(this, np1.getRemoteHandle(), np2.getRemoteHandle(), false);
                 return;
@@ -69,7 +78,7 @@ public class AdminClient extends InterfaceClientPort {
      * @param np2 Port2
      */
     public void disconnect(NetPort np1, NetPort np2) {
-        if (np1 != null && np2 != null && np1.getAdminInterface() == this && np2.getAdminInterface() == this) {
+        if (np1 != null && np2 != null && getAdminInterface(np1) == this && getAdminInterface(np2) == this) {
             try {
                 AdminServer.DISCONNECT.call(this, np1.getRemoteHandle(), np2.getRemoteHandle(), false);
                 return;
@@ -86,9 +95,9 @@ public class AdminClient extends InterfaceClientPort {
      * @param np1 Port1
      */
     public void disconnectAll(NetPort np1) {
-        if (np1 != null && np1.getAdminInterface() == this) {
+        if (np1 != null && getAdminInterface(np1) == this) {
             try {
-                AdminServer.DISCONNECT_ALL.call(this, np1.getRemoteHandle(), false);
+                AdminServer.DISCONNECT_ALL.call(this, np1.getRemoteHandle(), 0, false);
                 return;
             } catch (MethodCallException e) {
                 logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
@@ -104,7 +113,7 @@ public class AdminClient extends InterfaceClientPort {
      * @param container Data to assign to remote port
      */
     public void setRemotePortValue(NetPort np, CCInterThreadContainer<?> container) {
-        if (np != null && np.getAdminInterface() == this) {
+        if (np != null && getAdminInterface(np) == this) {
             try {
                 AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), container, null, false);
                 return;
@@ -122,7 +131,7 @@ public class AdminClient extends InterfaceClientPort {
      * @param portData Data to assign to remote port
      */
     public void setRemotePortValue(NetPort np, PortData portData) {
-        if (np != null && np.getAdminInterface() == this) {
+        if (np != null && getAdminInterface(np) == this) {
             try {
                 AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), null, portData, false);
                 return;
@@ -131,5 +140,138 @@ public class AdminClient extends InterfaceClientPort {
             }
         }
         logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
+    }
+
+    /**
+     * @return Module types in remote Runtime
+     */
+    @JavaOnly
+    public ArrayList<RemoteCreateModuleAction> getRemoteModuleTypes() {
+        ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
+        try {
+            MemBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
+            CoreInput ci = new CoreInput(mb);
+            while (ci.moreDataAvailable()) {
+                RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, ci.readString(), ci.readString(), result.size());
+                a.parameters.deserialize(ci);
+                result.add(a);
+            }
+            mb.getManager().releaseLock();
+            return result;
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+        return result;
+    }
+
+    @JavaOnly
+    public void createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
+        MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+        CoreOutput co = new CoreOutput(mb);
+        if (params != null) {
+            for (String p : params) {
+                co.writeString(p);
+            }
+        }
+        co.close();
+        mb.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
+
+        CoreString name2 = (CoreString)getUnusedBuffer(CoreString.TYPE);
+        name2.set(name);
+        name2.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
+
+        try {
+            AdminServer.CREATE_MODULE.call(this, cma.remoteIndex, name2, parentHandle, mb, true);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * @param np Remote port
+     * @return Admin interface for remote port
+     */
+    private AdminClient getAdminInterface(NetPort np) {
+        return RemoteRuntime.find(np).getAdminInterface();
+    }
+
+    /**
+     * Instruct finstructable group to save all changes to xml file
+     *
+     * @param remoteHandle Remote Handle of finstructable group
+     */
+    public void saveFinstructableGroup(int remoteHandle) {
+        try {
+            AdminServer.SAVE_FINSTRUCTABLE_GROUP.call(this, remoteHandle, false);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * Get annotation from remote framework element
+     *
+     * @param remoteHandle remote handle of framework element
+     * @param annType Annotation type
+     * @return Annotation - or null, if element has no annotation
+     */
+    public FinrocAnnotation getAnnotation(int remoteHandle, DataType annType) {
+        CoreString type = (CoreString)getUnusedBuffer(CoreString.TYPE);
+        type.set(annType.getName());
+        type.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
+        try {
+            MemBuffer mb = AdminServer.GET_ANNOTATION.call(this, remoteHandle, type, 5000);
+            if (mb == null) {
+                return null;
+            }
+            CoreInput ci = new CoreInput(mb);
+            DataType dt = DataTypeRegister.getInstance().getDataType(ci.readString());
+            FinrocAnnotation fa = (FinrocAnnotation)dt.getJavaClass().newInstance();
+            fa.deserialize(ci);
+            ci.close();
+            mb.getManager().releaseLock();
+            return fa;
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+        return null;
+    }
+
+    /**
+     * Set annotation of remote framework element
+     * (Creates new one - or writes data to existing one)
+     *
+     * @param remoteHandle remote handle of framework element
+     * @param ann Annotation to write
+     */
+    public void setAnnotation(int remoteHandle, FinrocAnnotation ann) {
+        MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+        CoreOutput co = new CoreOutput(mb);
+        if (ann.getType() == null) {
+            ann.initDataType();
+        }
+        co.writeString(ann.getType().getName());
+        ann.serialize(co);
+        co.close();
+        mb.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
+
+        try {
+            AdminServer.SET_ANNOTATION.call(this, remoteHandle, null, null, mb, false);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * Delete element in remote runtime
+     *
+     * @param remoteHandle remote handle of framework element
+     */
+    public void deleteElement(int remoteHandle) {
+        try {
+            AdminServer.DELETE_ELEMENT.call(this, remoteHandle, false);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
     }
 }

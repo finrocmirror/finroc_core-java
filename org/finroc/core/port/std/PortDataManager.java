@@ -25,9 +25,7 @@ import org.finroc.jc.AtomicInt;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
@@ -57,16 +55,18 @@ import org.finroc.core.portdatabase.DataType;
  * port data object.
  */
 @Friend( {PortBase.class, Port.class, PortDataImpl.class, PortDataReference.class})
-@ForwardDecl(PortDataImpl.class) @Ptr
 @Include("CombinedPointer.h")
-@CppInclude("PortDataImpl.h")
 @CppPrepend( {"PortDataManager PortDataManager::PROTOTYPE;",
               "size_t PortDataManager::REF_COUNTERS_OFFSET = ((char*)&(PortDataManager::PROTOTYPE.refCounters[0])) - ((char*)&(PortDataManager::PROTOTYPE));",
-              "PortDataManager::~PortDataManager() {",
+              "\nPortDataManager::~PortDataManager() {",
+              "    if (data != NULL) {",
+              "        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager - data:\", data);",
+              "    } else {",
+              "        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager - data: null\");",
+              "    }",
               "    delete data;",
-              "    _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager\");",
               "}",
-              "rrlib::logging::LogDomainSharedPointer initDomainDummy = PortDataManager::_V_logDomain();"
+              "rrlib::logging::LogDomainSharedPointer initDomainDummy = PortDataManager::_V_logDomain();", ""
              })
 
 public class PortDataManager extends Reusable {
@@ -107,7 +107,9 @@ public class PortDataManager extends Reusable {
     // PortDataManager prototype to obtain above offset
     static PortDataManager PROTOTYPE;
 
-    PortDataManager() {} // dummy constructor for prototype
+    PortDataManager() {
+        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, "Creating PROTOTYPE");
+    } // dummy constructor for prototype
      */
 
     /** Pointer to actual PortData (outermost buffer) */
@@ -169,7 +171,7 @@ public class PortDataManager extends Reusable {
         data = (PortData*)dt->createInstance();
          */
 
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager");
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager - data: " + data);
 
         pdci.reset();
         pdci.initUnitializedObjects();

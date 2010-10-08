@@ -25,7 +25,7 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.PassByValue;
@@ -39,7 +39,7 @@ import org.finroc.core.port.std.PortData;
  * CC Objects: If call is executed in the same runtime environment, object is stored inside
  * otherwise it is directly serialized
  */
-@Include("cc/CCInterThreadContainer.h")
+@IncludeClass(CCInterThreadContainer.class)
 @CppInclude("std/PortDataImpl.h")
 public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class CallParameter {
 

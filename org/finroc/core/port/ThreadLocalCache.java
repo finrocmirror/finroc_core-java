@@ -47,15 +47,14 @@ import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.core.thread.CoreThread;
 import org.finroc.jc.AtomicInt;
 import org.finroc.jc.FastStaticThreadLocal;
+import org.finroc.jc.GarbageCollector;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
@@ -87,9 +86,7 @@ import org.finroc.log.LogLevel;
     "util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> ThreadLocalCache::info;"
 })
 @Ptr
-@ForwardDecl( {MethodCallSyncher.class/*, MethodCall.class, PullCall.class*/})
-@CppInclude( {"MethodCallSyncher.h"/*, "MethodCall.h"*/})
-@Include("RuntimeEnvironment.h")
+@IncludeClass( {GarbageCollector.class, MethodCall.class, PullCall.class})
 public class ThreadLocalCache extends LogUser {
 
     // maybe TODO: reuse old ThreadLocalInfo objects for other threads - well - would cause a lot of "Verschnitt"
@@ -204,13 +201,14 @@ public class ThreadLocalCache extends LogUser {
     public final long threadId;
 
     /** Port Register - we need to have this for clean thread cleanup */
-    @Const @SharedPtr public final CoreRegister<AbstractPort> portRegister = RuntimeEnvironment.getInstance().getPorts();
+    @Const @SharedPtr public final CoreRegister<AbstractPort> portRegister;
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"thread_local_cache\");")
     protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_local_cache");
 
     private ThreadLocalCache(/*@SizeT int index*/) {
+        portRegister = RuntimeEnvironment.getInstance().getPorts();
         infosLock = infos;
         //this.index = index;
         //thread = Thread.currentThread();

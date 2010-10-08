@@ -22,8 +22,9 @@
 package org.finroc.core.port.std;
 
 import org.finroc.core.port.PortCreationInfo;
+import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.NonVirtual;
@@ -41,7 +42,7 @@ import org.finroc.jc.annotation.Ref;
  * In C++ code for correct casting is generated.
  */
 @Inline @NoCpp @RawTypeArgs
-@Include("DataTypeRegister.h")
+@IncludeClass(DataTypeRegister.class)
 public class Port<T extends PortData> extends PortBase {
 
     /**

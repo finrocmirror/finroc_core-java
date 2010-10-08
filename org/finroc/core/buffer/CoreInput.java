@@ -27,9 +27,7 @@ import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObject;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
@@ -43,8 +41,6 @@ import org.finroc.jc.stream.Source;
  * This is a specialized version of the StreamBuffer read view that is used
  * throughout the framework
  */
-@ForwardDecl( {AbstractPort.class, RemoteTypes.class})
-@CppInclude( {"core/port/AbstractPort.h", "core/port/net/RemoteTypes.h"})
 public class CoreInput extends InputStreamBuffer {
 
     /** Source for any buffers that are needed */

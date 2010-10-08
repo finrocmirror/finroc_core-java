@@ -28,7 +28,7 @@ import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -43,7 +43,7 @@ import org.finroc.jc.container.SafeConcurrentlyIterableList;
  *
  * This information will be valuable for efficient scheduling
  */
-@Include("rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h")
+@IncludeClass( {SafeConcurrentlyIterableList.class, AggregatedEdge.class})
 public class EdgeAggregator extends FrameworkElement {
 
     /** Is this edge aggregator an interface of its parent (one of possibly many) */
@@ -78,6 +78,7 @@ public class EdgeAggregator extends FrameworkElement {
         EdgeAggregator src = getAggregator(source);
         EdgeAggregator dest = getAggregator(target);
         if (src != null && dest != null) {
+            //System.out.println("edgeAdded: " + src.getQualifiedName() + "->" + dest.getQualifiedName() + " (because of " + source.getQualifiedName() + "->" + target.getQualifiedName() + ")");
             src.edgeAdded(dest);
         }
     }
@@ -93,6 +94,7 @@ public class EdgeAggregator extends FrameworkElement {
         EdgeAggregator src = getAggregator(source);
         EdgeAggregator dest = getAggregator(target);
         if (src != null && dest != null) {
+            //System.out.println("edgeRemoved: " + src.getQualifiedName() + "->" + dest.getQualifiedName() + " (because of " + source.getQualifiedName() + "->" + target.getQualifiedName() + ")");
             src.edgeRemoved(dest);
         }
     }
@@ -126,6 +128,7 @@ public class EdgeAggregator extends FrameworkElement {
 
         // not found
         ae = new AggregatedEdge(this, dest);
+        ae.edgeCount = 1;
         emergingEdges.add(ae, false);
     }
 
@@ -154,6 +157,7 @@ public class EdgeAggregator extends FrameworkElement {
         if (ae != null) {
             ae.edgeCount--;
             if (ae.edgeCount == 0) {
+                //System.out.println("deleting edge");
                 emergingEdges.remove(ae);
                 //ae.delete(); // obsolete: already deleted by command above
             }

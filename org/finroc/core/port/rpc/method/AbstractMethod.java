@@ -27,9 +27,7 @@ import org.finroc.core.port.rpc.InterfaceNetPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.std.PortData;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
@@ -52,10 +50,9 @@ import org.finroc.log.LogDomain;
  * These static instances contain all infos and provide all methods
  * for methods that server supports.
  */
-@ForwardDecl( {PortInterface.class, InterfaceNetPort.class}) @Ptr
+@Ptr
 @Friend(PortInterface.class)
 @Include("ParameterUtil.h")
-@CppInclude("PortInterface.h")
 public abstract class AbstractMethod extends LogUser {
 
     /** Method name */

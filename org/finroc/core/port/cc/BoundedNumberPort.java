@@ -23,6 +23,8 @@ package org.finroc.core.port.cc;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.log.LogLevel;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
@@ -73,13 +75,41 @@ public class BoundedNumberPort extends NumberPort {
                 tc.ref = container.getCurrentRef();
                 cnc.setValue(bounds.toBounds(val), cn.getUnit());
             } else if (bounds.applyDefault()) {
-                tc.data = tc.getUnusedBuffer(CoreNumber.NUM_TYPE);
+                tc.data = tc.getUnusedBuffer(CoreNumber.TYPE);
                 tc.ref = tc.data.getCurrentRef();
                 tc.data.assign((CCPortData)bounds.getOutOfBoundsDefault());
                 tc.data.setRefCounter(0); // locks will be added during assign
             }
         }
         //super.assign(tc); done anyway
+    }
+
+    /**
+     * @return the bounds of this port
+     */
+    public Bounds getBounds() {
+        return bounds;
+    }
+
+    /**
+     * Set Bounds
+     * (This is not thread-safe and must only be done in "pause mode")
+     *
+     * @param bounds2 new Bounds for this port
+     */
+    public void setBounds(@Const @Ref Bounds bounds2) {
+        bounds.set(bounds2);
+        double val = getDoubleRaw();
+        if (!bounds.inBounds(val)) {
+            if (bounds.discard()) {
+                log(LogLevel.LL_WARNING, logDomain, "Cannot discard value - applying default");
+                applyDefaultValue();
+            } else if (bounds.adjustToRange()) {
+                super.publish(bounds.toBounds(val));
+            } else if (bounds.applyDefault()) {
+                applyDefaultValue();
+            }
+        }
     }
 }
 

@@ -22,8 +22,6 @@
 package org.finroc.core.port.rpc;
 
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.thread.Task;
@@ -31,7 +29,6 @@ import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.net.NetPort;
@@ -45,8 +42,6 @@ import org.finroc.core.port.std.PortData;
  *
  * (Caller stack will contain every port in chain - pulled value will be assigned to each of them)
  */
-@ForwardDecl( {ThreadLocalCache.class, NetPort.class})
-@CppInclude( {"core/port/ThreadLocalCache.h", "net/NetPort.h"})
 public class PullCall extends AbstractCall implements Task {
 
 //  /** Maximum size of caller stack */

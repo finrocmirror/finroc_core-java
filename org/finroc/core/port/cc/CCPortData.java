@@ -23,9 +23,9 @@ package org.finroc.core.port.cc;
 
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.portdatabase.CoreSerializable;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
@@ -33,6 +33,7 @@ import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.ReinterpretCast;
 import org.finroc.jc.annotation.Superclass;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -56,7 +57,7 @@ import org.finroc.jc.annotation.Superclass;
  */
 /*@Attribute("((aligned(8)))")*/
 @Ptr @Superclass( {}) @NoSuperclass @ReinterpretCast @Inline @NoCpp
-public interface CCPortData extends CoreSerializable {
+public interface CCPortData extends TypedObject {
 
     @JavaOnly
     static DataType TYPE = DataTypeRegister.getInstance().getDataType(CCPortData.class);
@@ -94,5 +95,26 @@ public interface CCPortData extends CoreSerializable {
 
         @Override
         public void serialize(CoreOutput os) {}
+
+        @Override
+        public String serialize() {
+            return "";
+        }
+
+        @Override
+        public void deserialize(String s) {}
+
+        @Override
+        public DataType getType() {
+            return TYPE;
+        }
+
+        @Override
+        public void serialize(XMLNode node) throws Exception {
+        }
+
+        @Override
+        public void deserialize(XMLNode node) throws Exception {
+        }
     }
 }

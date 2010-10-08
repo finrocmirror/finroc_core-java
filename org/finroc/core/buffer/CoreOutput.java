@@ -24,8 +24,6 @@ package org.finroc.core.buffer;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.stream.Sink;
@@ -37,13 +35,6 @@ import org.finroc.jc.stream.OutputStreamBuffer;
  * This is a specialized version of the StreamBuffer that is used
  * throughout the framework
  */
-@ForwardDecl(CoreInput.class)
-//@CppInclude("CoreInput.h")
-//@CppPrepend({
-//  "CoreInput CoreBuffer::getInputStream(bool reset) {",
-//  "    return CoreInput(this);",
-//  "}"})
-@CppInclude("core/portdatabase/DataType.h")
 public class CoreOutput extends OutputStreamBuffer {
 
     public CoreOutput() {
@@ -73,18 +64,4 @@ public class CoreOutput extends OutputStreamBuffer {
     public void writeType(DataType dataType) {
         writeShort(dataType == null ? -1 : dataType.getUid());
     }
-
-//  //Cpp CoreInput getInputStream(bool reset);
-//
-//  @InCpp("return CoreInput(this);") @InCppFile @ConstMethod
-//  public CoreInput getInputStream(boolean reset) {
-//      return (CoreInput)getReadView(reset);
-//  }
-//
-//  @JavaOnly
-//  protected InputStreamBuffer createReadView() {
-//      return new CoreInput(this);
-//  }
-//
-//  // constructors from super class...
 }

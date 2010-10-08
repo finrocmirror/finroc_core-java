@@ -42,7 +42,7 @@ public class LinkEdge implements HasDestructor {
      */
     private final String sourceLink, targetLink;
 
-    /** If one link in null - this contains handle of partner port */
+    /** If one link is null - this contains handle of partner port */
     private final int portHandle;
 
     /** Pointer to next edge - for a singly linked list */

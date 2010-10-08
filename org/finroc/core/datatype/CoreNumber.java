@@ -25,8 +25,6 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.ConstPtr;
 import org.finroc.jc.annotation.CppDefault;
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Init;
@@ -35,6 +33,9 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.annotation.Superclass;
+import org.finroc.xml.XMLNode;
 
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
@@ -43,16 +44,17 @@ import org.finroc.core.portdatabase.Copyable;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.ExpressData;
-import org.finroc.core.portdatabase.TypedObject;
+import org.finroc.core.portdatabase.MaxStringSerializationLength;
+import org.finroc.core.portdatabase.TypedObjectImpl;
 
 /**
  * @author max
  *
  * This class stores numbers (with units) of different types.
  */
-@ForwardDecl( {Constant.class, DataType.class})
-@CppInclude( {"portdatabase/DataTypeRegister.h", "Constant.h"})
-public class CoreNumber extends Number implements CCPortData, ExpressData, Copyable<CoreNumber>, TypedObject {
+@MaxStringSerializationLength(22)
+@Superclass( {TypedObjectImpl.class, Object.class})
+public class CoreNumber extends Number implements CCPortData, ExpressData, Copyable<CoreNumber> {
 
     /** UID */
     private static final long serialVersionUID = 8;
@@ -75,25 +77,19 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
 
     /** Register Data type */
     @ConstPtr
-    public final static DataType NUM_TYPE = DataTypeRegister.getInstance().getDataType(CoreNumber.class);
+    public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreNumber.class);
 
     // All kinds of variations of constructors
     /*Cpp
     CoreNumber(const CoreNumber& from) {
         unit = from.unit;
-        type = from.type;
+        numType = from.numType;
         lval = from.lval; // will copy any type of value
-        type = NUM_TYPE;
+        type = TYPE;
     }
      */
 
-//  @InCppFile
-//  @InCpp("NUM_TYPE = DataTypeRegister::getInstance()->getDataTypeEntry<CoreNumber>();")
-//  public static void staticInit() {
-//      dataType = DataTypeRegister.getInstance().getDataTypeEntry(CoreNumber.class);
-//  }
-
-    @InCpp( {"type = NUM_TYPE;"}) @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)"})
+    @InCpp( {"type = TYPE;"}) @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)"})
     public CoreNumber() {
         unit = Unit.NO_UNIT;
         numType = Type.INT;
@@ -103,35 +99,35 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     @JavaOnly public CoreNumber(int value) {
         setValue(value);
     }
-    @InCpp( {"type = NUM_TYPE;"}) @Init( {"ival(value_)", "numType(eINT)", "unit(unit_)"})
+    @InCpp( {"type = TYPE;"}) @Init( {"ival(value_)", "numType(eINT)", "unit(unit_)"})
     public CoreNumber(int value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(long value) {
         setValue(value);
     }
-    @InCpp( {"type = NUM_TYPE;"}) @Init( {"lval(value_)", "numType(eLONG)", "unit(unit_)"})
+    @InCpp( {"type = TYPE;"}) @Init( {"lval(value_)", "numType(eLONG)", "unit(unit_)"})
     public CoreNumber(long value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(double value) {
         setValue(value);
     }
-    @InCpp( {"type = NUM_TYPE;"}) @Init( {"dval(value_)", "numType(eDOUBLE)", "unit(unit_)"})
+    @InCpp( {"type = TYPE;"}) @Init( {"dval(value_)", "numType(eDOUBLE)", "unit(unit_)"})
     public CoreNumber(double value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(float value) {
         setValue(value);
     }
-    @InCpp( {"type = NUM_TYPE;"}) @Init( {"fval(value_)", "numType(eFLOAT)", "unit(unit_)"})
+    @InCpp( {"type = TYPE;"}) @Init( {"fval(value_)", "numType(eFLOAT)", "unit(unit_)"})
     public CoreNumber(float value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(@Ptr Constant c) {
         setValue(c);
     }
-    @InCpp( {"type = NUM_TYPE;", "setValue(value_, unit_);"})
+    @InCpp( {"type = TYPE;", "setValue(value_, unit_);"})
     public CoreNumber(@Const @Ref Number value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
@@ -209,10 +205,30 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         //Cpp this->dval = value_.dval;
     }
 
+    /**
+     * (probably not real-time capable)
+     * @param c Number class in which to return value
+     * @return Returns raw numeric value
+     */
+    @SuppressWarnings("unchecked")
+    @JavaOnly
+    public <T extends Number> T value(Class<T> c) {
+        if (c == Integer.class || c == Number.class) {
+            return (T)new Integer(intValue());
+        } else if (c == Double.class) {
+            return (T)new Double(doubleValue());
+        } else if (c == Float.class) {
+            return (T)new Float(floatValue());
+        } else if (c == Long.class) {
+            return (T)new Long(longValue());
+        }
+        throw new RuntimeException("Unknown value");
+    }
 
     /*Cpp
+    // returns raw numeric value
     template <typename T>
-    T tValue() const {
+    T value() const {
         switch(numType) {
         case eINT:
             return static_cast<T>(ival);
@@ -223,7 +239,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         case eFLOAT:
             return static_cast<T>(fval);
         case eCONSTANT:
-            return static_cast<T>(unit->getValue());
+            return static_cast<T>(unit->getValue().value<T>());
         default:
             assert(false);
             return 0;
@@ -232,7 +248,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
      */
 
     @Override
-    @Inline @InCpp("return tValue<double>();") @ConstMethod
+    @Inline @InCpp("return value<double>();") @ConstMethod
     public double doubleValue() {
 
         // JavaOnlyBlock
@@ -253,7 +269,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     @Override
-    @Inline @InCpp("return tValue<float>();") @ConstMethod
+    @Inline @InCpp("return value<float>();") @ConstMethod
     public float floatValue() {
         switch (numType) {
         case INT:
@@ -272,7 +288,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     @Override
-    @Inline @InCpp("return tValue<int>();") @ConstMethod
+    @Inline @InCpp("return value<int>();") @ConstMethod
     public int intValue() {
         switch (numType) {
         case INT:
@@ -291,7 +307,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     @Override
-    @Inline @InCpp("return tValue<int64>();") @ConstMethod
+    @Inline @InCpp("return value<int64>();") @ConstMethod
     public long longValue() {
         switch (numType) {
         case INT:
@@ -493,12 +509,12 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
 
     @Override @JavaOnly
     public DataType getType() {
-        return NUM_TYPE;
+        return TYPE;
     }
 
     public static DataType getDataType() {
-        assert(NUM_TYPE != null);
-        return NUM_TYPE;
+        assert(TYPE != null);
+        return TYPE;
     }
 
     public boolean equals(Object other) {
@@ -516,5 +532,70 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
      */
     public boolean isFloatingPoint() {
         return numType == Type.FLOAT || numType == Type.DOUBLE;
+    }
+
+    @Override
+    public String serialize() {
+        return toString();
+    }
+
+    @Override
+    public void deserialize(String s) throws Exception {
+
+        // scan for unit
+        String num = s;
+        for (@SizeT int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isLetter(c)) {
+                if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (c == '-' || Character.isDigit(s.charAt(i + 1)))) {
+                    continue; // exponent in decimal notation
+                }
+                num = s.substring(0, i);
+                String unitString = s.substring(i);
+                unit = Unit.getUnit(unitString);
+                break;
+            }
+        }
+        if (num.contains(".") || num.contains("e") || num.contains("E")) {
+            try {
+                setValue(Double.parseDouble(num), unit);
+            } catch (Exception e) {
+                setValue(0);
+                throw new Exception(e);
+            }
+        } else {
+            numType = Type.LONG;
+            try {
+                long l = Long.parseLong(num);
+                if (l > ((long)Integer.MIN_VALUE) && l < ((long)Integer.MAX_VALUE)) {
+                    setValue((int)l, unit);
+                } else {
+                    setValue(l, unit);
+                }
+            } catch (Exception e) {
+                setValue(0);
+                throw new Exception(e);
+            }
+        }
+    }
+
+    /**
+     * Changes unit
+     *
+     * @param unit2 new unit
+     */
+    public void setUnit(Unit unit2) {
+        assert(unit2 != null);
+        unit = unit2;
+    }
+
+    @Override @JavaOnly
+    public void serialize(XMLNode node) throws Exception {
+        node.setTextContent(serialize());
+    }
+
+    @Override @JavaOnly
+    public void deserialize(XMLNode node) throws Exception {
+        deserialize(node.getTextContent());
     }
 }

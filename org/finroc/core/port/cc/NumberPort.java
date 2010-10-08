@@ -101,14 +101,14 @@ public class NumberPort extends CCPort<CoreNumber> {
             for(;;) {
                 CCPortDataRef* val = value;
                 CoreNumber* cn = (CoreNumber*)(val->getData());
-                T d = cn->tValue<T>();
+                T d = cn->value<T>();
                 if (val == value) {
                     return d;
                 }
             }
         } else {
             CCPortDataContainer<CoreNumber>* dc = (CCPortDataContainer<CoreNumber>*)_M_pullValueRaw();
-            T result = dc->getData()->tValue<T>();
+            T result = dc->getData()->value<T>();
             dc->releaseLock();
             return result;
         }
@@ -180,5 +180,12 @@ public class NumberPort extends CCPort<CoreNumber> {
 
     public void setDefault(float newDefault) {
         super.getDefaultBuffer().setValue(newDefault, unit);
+    }
+
+    /**
+     * @return Unit of port
+     */
+    public Unit getUnit() {
+        return unit;
     }
 }

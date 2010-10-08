@@ -25,21 +25,24 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.cc.CCPortData;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.method.PortInterface;
+import org.finroc.core.port.std.CCDataList;
+import org.finroc.core.port.std.PortDataList;
 import org.finroc.core.port.stream.Transaction;
 import org.finroc.jc.annotation.AutoPtr;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.ConstPtr;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.IncludeFirst;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.stream.OutputStreamBuffer;
 
 /**
  * @author max
@@ -53,8 +56,8 @@ import org.finroc.jc.annotation.SizeT;
              "  CCPortDataContainer<> CCPROTOTYPE;",
              "}",
              "size_t DataType::ccPortDataOffset = ((char*)&(detail::CCPROTOTYPE.data)) - ((char*)&(detail::CCPROTOTYPE));"})*/
-@Include( {"DataTypeUtil.h", "rrlib/finroc_core_utils/stream/OutputStreamBuffer.h"})
-@ForwardDecl(PortInterface.class)
+@Include( {"DataTypeUtil.h", "<boost/type_traits/is_base_of.hpp>" })
+@IncludeClass( {OutputStreamBuffer.class, CCDataList.class, PortDataList.class, ListTypeFactory.class})
 @IncludeFirst @Friend(DataTypeRegister.class)
 public class DataType { /*implements CoreSerializable*/
 
@@ -72,7 +75,9 @@ public class DataType { /*implements CoreSerializable*/
         STD,
         CC, // Is this a "cheap-copy" data type?
         METHOD, // Is this a method type
-        TRANSACTION // Is this a transaction data type?
+        TRANSACTION, // Is this a transaction data type?
+        STD_LIST, // PortDataList
+        CC_LIST // CCDataList
     }
 
     /** Type of data type */
@@ -102,6 +107,12 @@ public class DataType { /*implements CoreSerializable*/
 
     /** Related data type - custom info for special purposes (template parameters, related method calls) */
     private DataType relatedType = null;
+
+    /** List type of this data type (STD and CC types only) */
+    private DataType listType = null;
+
+    /** Element type of this type (STD_LIST and CC_LIST types only) */
+    private DataType elementType = null;
 
     /** An integer to store some custom data in */
     private int customInt = 0;
@@ -133,6 +144,11 @@ public class DataType { /*implements CoreSerializable*/
         //dataTypeUid = uid;
         name = name2;
         methods = null;
+
+        // create list type
+        if (t == Type.STD || t == Type.CC) {
+            listType = new DataType(this);
+        }
     }
 
     @JavaOnly public DataType(String name2, PortInterface methods) {
@@ -142,6 +158,21 @@ public class DataType { /*implements CoreSerializable*/
         name = name2;
         this.methods = methods;
         methods.setDataType(this);
+    }
+
+    /**
+     * Constructor for list types
+     *
+     * @param elementType Type of list elements
+     */
+    @SuppressWarnings("rawtypes")
+    @JavaOnly public DataType(DataType elementType) {
+        this.elementType = elementType;
+        type = elementType.isCCType() ? Type.CC_LIST : Type.STD_LIST;
+        factory = new ListTypeFactory();
+        name = elementType.getName() + " List";
+        methods = null;
+        javaClass = elementType.isCCType() ? CCDataList.class : PortDataList.class;
     }
 
     /**
@@ -176,10 +207,18 @@ public class DataType { /*implements CoreSerializable*/
         return eSTD;
     }
 
+    template <typename T, bool STD>
+    struct ListHelper {
+        typedef CCDataList<T> ListType;
+    };
+
+    template <typename T>
+    struct ListHelper<T, true> {
+        typedef PortDataList<T> ListType;
+    };
+
     template <typename T>
     DataType(T* dummy, util::String name_, PortDataFactory* factory_) :
-        //ccType(DataTypeUtil::getCCType(dummy)),
-        //transactionType(DataTypeUtil::getTransactionType(dummy)),
         dataTypeUid(-1),
         type(getDataTypeType(dummy)),
         //serializationMethod(getSerialization(dummy)),
@@ -188,6 +227,8 @@ public class DataType { /*implements CoreSerializable*/
         factory(factory_),
         name(name_),
         relatedType(NULL),
+        listType(NULL),
+        elementType(NULL),
         customInt(0),
         methods(NULL),
         virtualOffset(DataTypeUtil::hasVTable(dummy) ? sizeof(void*) : 0),
@@ -198,12 +239,14 @@ public class DataType { /*implements CoreSerializable*/
         //customSerializationOffset(serializationMethod == Custom ? ((char*)static_cast<util::CustomSerialization>(dummy)) - ((char*)dummy) : -700000000)
             {
                 DataTypeLookup<T>::type = this;
+
+                if (type == eCC || type == eSTD) {
+                    listType = new DataType(dummy, name_ + " List", this);
+                }
             }
 
     // for "virtual"/method call data types
     DataType(util::String name_, PortInterface* methods_) :
-        //ccType(false),
-        //transactionType(false),
         dataTypeUid(-1),
         type(eMETHOD),
         rttiName(NULL),
@@ -211,12 +254,35 @@ public class DataType { /*implements CoreSerializable*/
         factory(NULL),
         name(name_),
         relatedType(NULL),
+        listType(NULL),
+        elementType(NULL),
         customInt(0),
         methods(methods_),
         virtualOffset(0),
         sizeof_(0),
         memcpySize(0)
         {}
+
+    // for list types
+    template <typename T>
+    DataType(T* dummy, util::String name_, DataType* elType) :
+        dataTypeUid(-1),
+        type(eMETHOD),
+        rttiName(NULL),
+        updateTime(-1),
+        factory(new ListTypeFactory<typename ListHelper<T, boost::is_base_of<PortData, T>::value >::ListType>()),
+        name(name_),
+        relatedType(NULL),
+        listType(NULL),
+        elementType(elType),
+        customInt(0),
+        methods(NULL),
+        virtualOffset(0),
+        sizeof_(0),
+        memcpySize(0)
+        {
+            DataTypeLookup<typename ListHelper<T, boost::is_base_of<PortData, T>::value >::ListType>::type = this;
+        }
 
     //  SerializationMethod getSerialization(CoreSerializable* cs) {
     //      return Custom;
@@ -247,7 +313,12 @@ public class DataType { /*implements CoreSerializable*/
      * @return Create new instance of data type
      */
     @Managed @Ptr public TypedObject createInstance() {
-        return factory.create(this, false);
+        if (isListType()) {
+            assert(elementType != null);
+            return factory.create(elementType, false);
+        } else {
+            return factory.create(this, false);
+        }
     }
 
     /**
@@ -301,7 +372,7 @@ public class DataType { /*implements CoreSerializable*/
      * @return Is this a "standard" type
      */
     @ConstMethod public boolean isStdType() {
-        return type == Type.STD;
+        return type == Type.STD || type == Type.CC_LIST || type == Type.STD_LIST;
     }
 
     /**
@@ -416,5 +487,26 @@ public class DataType { /*implements CoreSerializable*/
      */
     public PortInterface getPortInterface() {
         return methods;
+    }
+
+    /**
+     * @return Is this a list type?
+     */
+    public boolean isListType() {
+        return type == Type.CC_LIST || type == Type.STD_LIST;
+    }
+
+    /**
+     * @return Element type (in list types)
+     */
+    public DataType getElementType() {
+        return elementType;
+    }
+
+    /**
+     * @return List type (for standard and cc types)
+     */
+    public DataType getListType() {
+        return listType;
     }
 }

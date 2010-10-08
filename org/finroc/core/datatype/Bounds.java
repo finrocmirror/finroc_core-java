@@ -21,7 +21,16 @@
  */
 package org.finroc.core.datatype;
 
+import org.finroc.core.buffer.CoreInput;
+import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.port.cc.CCPortData;
+import org.finroc.core.port.cc.CCPortDataImpl;
+import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 
 /**
  * @author max
@@ -30,20 +39,23 @@ import org.finroc.jc.annotation.PassByValue;
  * (Not meant to be used as port data)
  */
 @PassByValue
-public class Bounds {
+public class Bounds extends CCPortDataImpl {
 
     /** Minimum and maximum bounds - Double for simplicity & efficiency reasons */
-    private final double min, max;
+    private double min, max;
 
     /**
      * Action to perform when value is out of range
      * Apply default value when value is out of range? (or rather adjust to minimum or maximum or discard value?)
      */
     public enum OutOfBoundsAction { NONE, DISCARD, ADJUST_TO_RANGE, APPLY_DEFAULT }
-    private final OutOfBoundsAction action;
+    private OutOfBoundsAction action;
 
     /** Default value when value is out of bounds */
-    @PassByValue private final CoreNumber outOfBoundsDefault = new CoreNumber();
+    @PassByValue private CoreNumber outOfBoundsDefault = new CoreNumber();
+
+    /** Data Type */
+    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreString.class);
 
     /** dummy constructor for no bounds */
     public Bounds() {
@@ -137,5 +149,49 @@ public class Bounds {
         }
         return val;
 
+    }
+
+    @Override
+    public DataType getType() {
+        return TYPE;
+    }
+
+    @Override
+    public void serialize(CoreOutput os) {
+        os.writeDouble(min);
+        os.writeDouble(max);
+        os.writeInt(action.ordinal());
+        outOfBoundsDefault.serialize(os);
+    }
+
+    @Override
+    public void deserialize(CoreInput is) {
+        min = is.readInt();
+        max = is.readInt();
+
+        //JavaOnlyBlock
+        action = OutOfBoundsAction.values()[is.readInt()];
+
+        //Cpp action = static_cast<OutOfBoundsAction>(is.readInt());
+
+        outOfBoundsDefault.deserialize(is);
+    }
+
+    @Override
+    @JavaOnly
+    public void assign(CCPortData other) {
+        set((Bounds)other);
+    }
+
+    /**
+     * Sets bounds to new value
+     *
+     * @param newBounds new value
+     */
+    public void set(@Const @Ref Bounds newBounds) {
+        action = newBounds.action;
+        max = newBounds.max;
+        min = newBounds.min;
+        outOfBoundsDefault.setValue(newBounds.outOfBoundsDefault);
     }
 }

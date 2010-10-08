@@ -24,6 +24,9 @@ package org.finroc.core.datatype;
 import org.finroc.jc.annotation.AutoPtr;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -39,6 +42,7 @@ import org.finroc.jc.container.SimpleList;
  * Can be initialized separately from rest of framework.
  */
 @Ptr
+@CppInclude("CoreNumber.h")
 public class Unit {
 
     /** Factor regarding base unit */
@@ -263,11 +267,27 @@ public class Unit {
     /**
      * @return Value of constant - Double.NaN for normal units
      */
-    @ConstMethod @Const @Ref public Number getValue() {
+    @InCppFile
+    @ConstMethod @Const @Ref public CoreNumber getValue() {
+        //Cpp static CoreNumber defaultValue(util::Double::_cNaN);
         return defaultValue;
     }
 
     /** Default value for units */
-    @AutoPtr
-    private final static Number defaultValue = new CoreNumber(Double.NaN);
+    @JavaOnly @PassByValue
+    private final static CoreNumber defaultValue = new CoreNumber(Double.NaN);
+
+    /**
+     * @param unitString (Unique) Name of unit
+     * @return Unit - NO_UNIT if unit name could not be found
+     */
+    public static Unit getUnit(String unitString) {
+        for (@SizeT int i = 0; i < uidLookupTableTemp.size(); i++) {
+            Unit u = uidLookupTableTemp.get(i);
+            if (u.description.equals(unitString)) {
+                return u;
+            }
+        }
+        return NO_UNIT;
+    }
 }

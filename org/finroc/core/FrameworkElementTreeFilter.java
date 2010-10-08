@@ -35,7 +35,7 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.portdatabase.CoreSerializable;
+import org.finroc.core.portdatabase.CoreSerializableImpl;
 
 /**
  * @author max
@@ -45,7 +45,7 @@ import org.finroc.core.portdatabase.CoreSerializable;
  * Can be used to efficiently traverse trees of framework elements.
  */
 @PassByValue
-public class FrameworkElementTreeFilter implements CoreSerializable {
+public class FrameworkElementTreeFilter extends CoreSerializableImpl {
 
     /** Framework element's flags that are relevant */
     private int relevantFlags;

@@ -26,12 +26,14 @@ import java.lang.reflect.Modifier;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
@@ -52,6 +54,7 @@ public class Plugins { /*implements HTTPResource*/
 //  private static final String WIDGETPACKAGENAME = "widgets";
 //
     /** Plugins singleton instance */
+    @JavaOnly
     private static @SharedPtr Plugins instance;
 
     /** All Plugins that are currently available */
@@ -59,6 +62,10 @@ public class Plugins { /*implements HTTPResource*/
 
     /** List with actions to create external connections */
     private final SimpleList<CreateExternalConnectionAction> externalConnections = new SimpleList<CreateExternalConnectionAction>();
+
+    /** List with actions to create modules */
+    @JavaOnly
+    private final SimpleList<CreateModuleAction> moduleTypes = new SimpleList<CreateModuleAction>();
 
     /** Plugin manager instance */
     private final PluginManager pluginManager = new PluginManager();
@@ -123,15 +130,18 @@ public class Plugins { /*implements HTTPResource*/
      * Loads plugins
      */
     public static void staticInit() {
-        instance = new Plugins();
-        instance.findAndLoadPlugins();
+        @Ptr Plugins p = getInstance();
+        p.findAndLoadPlugins();
     }
 
     /**
      * @return Plugins singleton instance
      */
+    @InCpp( {"static Plugins instance;", "return &instance;"})
     public static @Ptr Plugins getInstance() {
-        assert(instance != null);
+        if (instance == null) {
+            instance = new Plugins();
+        }
         return instance;
     }
 
@@ -140,6 +150,7 @@ public class Plugins { /*implements HTTPResource*/
 
         // JavaOnlyBlock
         loadAllDataTypesInPackage(CoreNumber.class);
+        loadAllDataTypesInPackage(FinstructableGroup.class);
         if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
             pluginLoader = new JavaReleasePluginLoader();
         } else {
@@ -179,6 +190,7 @@ public class Plugins { /*implements HTTPResource*/
      */
     public CreateExternalConnectionAction registerExternalConnection(CreateExternalConnectionAction action) {
         externalConnections.add(action);
+        getModuleTypes().add(action);
         return action;
     }
 
@@ -225,6 +237,25 @@ public class Plugins { /*implements HTTPResource*/
     @JavaOnly
     public ClassLoader getPluginClassLoader() {
         return pluginLoader.getClassLoader();
+    }
+
+    /**
+     * @return List with modules that can be instantiated in this runtime using the standard mechanism
+     */
+    public @Ref SimpleList<CreateModuleAction> getModuleTypes() {
+        //Cpp static util::SimpleList<CreateModuleAction*> moduleTypes;
+        return moduleTypes;
+    }
+
+    /**
+     * Add Module Type
+     * (objects won't be deleted by this class)
+     *
+     * @param cma CreateModuleAction to add
+     */
+    public void addModuleType(CreateModuleAction cma) {
+        logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
+        getModuleTypes().add(cma);
     }
 
 //

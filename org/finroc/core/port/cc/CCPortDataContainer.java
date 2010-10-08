@@ -29,9 +29,7 @@ import org.finroc.jc.annotation.Attribute;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.DefaultType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
@@ -46,6 +44,7 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.VoidPtr;
 import org.finroc.jc.container.ReusableTL;
 import org.finroc.jc.thread.ThreadUtil;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -57,8 +56,6 @@ import org.finroc.jc.thread.ThreadUtil;
 /*@DefaultType("int64")*/
 @Ptr
 @Attribute("((aligned(8)))")
-@ForwardDecl( {DataType.class, CCPortDataRef.class, CCPortDataBufferPool.class})//, "typedef char CCPortData;"})
-@CppInclude( {"CCPortDataRef.h", "CCPortDataBufferPool.h"})
 @Friend( {CCPortDataBufferPool.class, CCPortBase.class})
 @Include("CombinedPointer.h")
 @DefaultType("CCPortData") @RawTypeArgs
@@ -249,6 +246,26 @@ public class CCPortDataContainer<T extends CCPortData> extends ReusableTL implem
     @Override
     public void deserialize(CoreInput is) {
         portData.deserialize(is);
+    }
+
+    @Override
+    public String serialize() {
+        return portData.serialize();
+    }
+
+    @Override
+    public void deserialize(String s) throws Exception {
+        portData.deserialize(s);
+    }
+
+    @Override
+    public void serialize(XMLNode node) throws Exception {
+        portData.serialize(node);
+    }
+
+    @Override
+    public void deserialize(XMLNode node) throws Exception {
+        portData.deserialize(node);
     }
 
     public String toString() {

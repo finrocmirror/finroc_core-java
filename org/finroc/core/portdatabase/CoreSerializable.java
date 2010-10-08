@@ -23,17 +23,23 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.CppDelegate;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
  *
- * Classes that can be cleanly serialized and deserialized to and from
- * CoreIntputStream and OtutputStreams.
+ * Classes/objects that can be cleanly serialized to
+ * CoreInputStreams and deserialized from CoreOutputStreams.
+ *
+ * And - optionally - to and from strings. If this is not supported,
+ * classes should use binary serialization and print hex string (this is the default in C++)
  */
-@ForwardDecl( {CoreOutput.class, CoreInput.class})
+@JavaOnly @CppDelegate(CoreSerializableImpl.class)
 public interface CoreSerializable {
 
     /**
@@ -48,4 +54,34 @@ public interface CoreSerializable {
      * @param readView Stream to deserialize from
      */
     public void deserialize(@Ref CoreInput is);
+
+    /**
+     * @return Object serialized as string (e.g. for xml output)
+     */
+    @ConstMethod public String serialize();
+
+    /**
+     * Deserialize object. Object has to already exists.
+     * Should be suited for reusing old objects.
+     *
+     * Parsing errors should throw an Exception - and set object to
+     * sensible (default?) value
+     *
+     * @param s String to deserialize from
+     */
+    public void deserialize(@Const @Ref String s) throws Exception;
+
+    /**
+     * Serialize object to XML
+     *
+     * @param node XML node (name shouldn't be changed, attributes "name" and "type" neither)
+     */
+    @ConstMethod public void serialize(@Ref XMLNode node) throws Exception;
+
+    /**
+     * Deserialize from XML Node
+     *
+     * @param node Node to deserialize from
+     */
+    public void deserialize(@Const @Ref XMLNode node) throws Exception;
 }

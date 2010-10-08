@@ -33,28 +33,28 @@ public class PortFlags extends CoreFlags {
     // Constant flags
 
     /** Does Port have a queue for storing incoming data? */
-    public static final int HAS_QUEUE = FIRST_CUSTOM_CONST_FLAG;
+    public static final int HAS_QUEUE = FIRST_PORT_FLAG;
 
     /** Push data immediately after port creation... mostly makes sense for singleton ports */
-    public static final int PUSH_DATA_IMMEDIATELY = FIRST_CUSTOM_CONST_FLAG << 1;
+    public static final int PUSH_DATA_IMMEDIATELY = FIRST_PORT_FLAG << 1;
 
     /** Does the flag ACCEPTS_REVERSE_DATA may change at runtime? */
-    public static final int MAY_ACCEPT_REVERSE_DATA = FIRST_CUSTOM_CONST_FLAG << 2;
+    public static final int MAY_ACCEPT_REVERSE_DATA = FIRST_PORT_FLAG << 2;
 
     /** Does port accept incoming data? - fixed */
-    public static final int ACCEPTS_DATA = FIRST_CUSTOM_CONST_FLAG << 3;
+    public static final int ACCEPTS_DATA = FIRST_PORT_FLAG << 3;
 
     /** Does port emit data (normal direction)? - fixed */
-    public static final int EMITS_DATA = FIRST_CUSTOM_CONST_FLAG << 4;
+    public static final int EMITS_DATA = FIRST_PORT_FLAG << 4;
 
     /** From it's general characteristics... is port input or output port? (for proxies from the outside group view) - fixed */
-    public static final int IS_OUTPUT_PORT = FIRST_CUSTOM_CONST_FLAG << 5;
+    public static final int IS_OUTPUT_PORT = FIRST_PORT_FLAG << 5;
 
     /** Transport data for this port through the network with low priority */
-    public static final int IS_BULK_PORT = FIRST_CUSTOM_CONST_FLAG << 6;
+    public static final int IS_BULK_PORT = FIRST_PORT_FLAG << 6;
 
     /** Does port have special ReuseQueue? - fixed, set (not unset!) automatically */
-    public static final int SPECIAL_REUSE_QUEUE = FIRST_CUSTOM_CONST_FLAG << 7;
+    public static final int SPECIAL_REUSE_QUEUE = FIRST_PORT_FLAG << 7;
 
     /**
      * Are port value assigned to ports in a non-standard way?... In this case
@@ -62,7 +62,7 @@ public class PortFlags extends CoreFlags {
      * instead of standardAssign.
      * Fixed, set automatically by port classes
      */
-    public static final int NON_STANDARD_ASSIGN = FIRST_CUSTOM_CONST_FLAG << 8;
+    public static final int NON_STANDARD_ASSIGN = FIRST_PORT_FLAG << 8;
 
     /** Does port contain "cheap-copy" data? */
     //public static final int IS_CC_PORT = FIRST_CUSTOM_FLAG << 10;
@@ -71,13 +71,16 @@ public class PortFlags extends CoreFlags {
     //public static final int IS_INTERFACE_PORT = FIRST_CUSTOM_FLAG << 11;
 
 //  /** Should port have global link (the same in every Runtime - without origin server prefix) */
-//  public static final int GLOBAL_LINK = FIRST_CUSTOM_CONST_FLAG << 9;
+//  public static final int GLOBAL_LINK = FIRST_PORT_FLAG << 9;
 
     /** Transport data for this port through the network with high priority */
-    public static final int IS_EXPRESS_PORT = FIRST_CUSTOM_CONST_FLAG << 9;
+    public static final int IS_EXPRESS_PORT = FIRST_PORT_FLAG << 9;
+
+    /** Is this port volatile (meaning that it's not always there and connections to it should preferably be links) */
+    public static final int IS_VOLATILE = FIRST_PORT_FLAG << 10;
 
     /** First custom flag for special port types */
-    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_CUSTOM_CONST_FLAG << 10;
+    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_PORT_FLAG << 11;
 
     // Non-constant flags
 

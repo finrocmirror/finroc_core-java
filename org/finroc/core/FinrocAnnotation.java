@@ -25,6 +25,7 @@ import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObjectImpl;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.Ptr;
 
 /**
  * @author max
@@ -36,6 +37,9 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */
     FinrocAnnotation nextAnnotation;
+
+    /** Object that is annotated - null if annotation is not attached to an object yet */
+    @Ptr Annotatable annotated;
 
     /**
      * Add another annotation to framework element
@@ -62,5 +66,12 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
 
     @Override
     public void delete() {
+    }
+
+    /**
+     * @return Object that is annotated - null if annotation is not attached to an object yet
+     */
+    public @Ptr Annotatable getAnnotated() {
+        return annotated;
     }
 }

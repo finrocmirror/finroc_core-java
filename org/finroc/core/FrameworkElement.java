@@ -29,14 +29,12 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
@@ -60,6 +58,9 @@ import org.finroc.log.LogLevel;
 import org.finroc.log.LogStream;
 
 import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.port.ThreadLocalCache;
 
 /**
  * @author max
@@ -81,9 +82,7 @@ import org.finroc.core.buffer.CoreOutput;
  */
 @Ptr
 @Friend( {GarbageCollector.class, ChildIterator.class, RuntimeEnvironment.class})
-@ForwardDecl( {RuntimeEnvironment.class})
-@Include( {"datatype/CoreNumber.h", "rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h"})
-@CppInclude( {"RuntimeEnvironment.h"})
+@IncludeClass(SafeConcurrentlyIterableList.class)
 @HAppend( {"inline std::ostream& operator << (std::ostream& output, const FrameworkElement* lu) {",
            "    lu->streamQualifiedName(output);",
            "    output << \" (\" << ((void*)lu) << \")\";",
@@ -94,7 +93,6 @@ import org.finroc.core.buffer.CoreOutput;
            "    return output;",
            "}"
           })
-//@HPrepend({"class NumberPort;", "class RuntimeEnvironment;"})
 public class FrameworkElement extends Annotatable {
 
     /** Uid of thread that created this framework element */
@@ -547,7 +545,7 @@ public class FrameworkElement extends Annotatable {
             }
 
             // Check if child with same name already exists and possibly rename (?)
-            if (getFlag(CoreFlags.AUTO_RENAME)) {
+            if (getFlag(CoreFlags.AUTO_RENAME) && (!getFlag(CoreFlags.IS_PORT))) {
                 String childDesc = child.getDescription();
                 int postfixIndex = 1;
                 @Ptr ArrayWrapper<Link> ch = children.getIterable();
@@ -1032,6 +1030,32 @@ public class FrameworkElement extends Annotatable {
                 }
             }
             return (T)result;
+        }
+    }
+
+    /**
+     * Returns first parent that has the specified flags
+     *
+     * @param flags Flags to look for
+     * @return Parent or null
+     */
+    public FrameworkElement getParentWithFlags(int flags) {
+        if (primary.parent == null) {
+            return null;
+        }
+        synchronized (getRegistryLock()) { // not really necessary after element has been initialized
+            if (isDeleted()) {
+                return null;
+            }
+
+            FrameworkElement result = primary.parent;
+            while (!((result.getAllFlags() & flags) == flags)) {
+                result = result.primary.parent;
+                if (result == null || result.isDeleted()) {
+                    break;
+                }
+            }
+            return result;
         }
     }
 
@@ -1870,6 +1894,34 @@ public class FrameworkElement extends Annotatable {
     @Override
     public int hashCode() {
         return getHandle();
+    }
+
+    /**
+     * Called whenever a structure parameter on this framework element changed
+     * (can be overridden to handle this event)
+     */
+    @Virtual
+    public void structureParametersChanged() {}
+
+    /**
+     * Releases all automatically acquired locks
+     */
+    public void releaseAutoLocks() {
+        ThreadLocalCache.getFast().releaseAllLocks();
+    }
+
+    /**
+     * Mark element as finstructed
+     * (should only be called by AdminServer and CreateModuleActions)
+     *
+     * @param createAction Action with which framework element was created
+     */
+    @InCppFile
+    public void setFinstructed(CreateModuleAction createAction) {
+        assert(!getFlag(CoreFlags.FINSTRUCTED));
+        StructureParameterList list = StructureParameterList.getOrCreate(this);
+        list.setCreateAction(createAction);
+        setFlag(CoreFlags.FINSTRUCTED);
     }
 
     /*Cpp

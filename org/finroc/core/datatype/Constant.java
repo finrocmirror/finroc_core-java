@@ -89,7 +89,7 @@ public final class Constant extends Unit {
     }
 
     @Override
-    public Number getValue() {
+    public CoreNumber getValue() {
         return value;
     }
 

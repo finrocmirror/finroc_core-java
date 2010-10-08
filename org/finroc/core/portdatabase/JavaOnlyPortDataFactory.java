@@ -31,12 +31,17 @@ import org.finroc.core.port.std.PortDataCreationInfo;
 /**
  * @author max
  *
+ * Default factory for Data types in Java
  */
 @JavaOnly
 public class JavaOnlyPortDataFactory implements PortDataFactory {
 
+    /** singleton instance */
     private static JavaOnlyPortDataFactory instance = new JavaOnlyPortDataFactory();
 
+    /**
+     * @return singleton instance
+     */
     public static JavaOnlyPortDataFactory getInstance() {
         return instance;
     }
@@ -54,14 +59,32 @@ public class JavaOnlyPortDataFactory implements PortDataFactory {
 //              : (TypedObject)rawCreate(type);
     }
 
-    private Object rawCreate(DataType type) {
+    /**
+     * Create object of specified type
+     * (Creates default type for interfaces)
+     *
+     * @param type Data type
+     * @return Created object
+     */
+    public static Object rawCreate(DataType type) {
+        return rawCreate(type.getJavaClass());
+    }
+
+    /**
+     * Create object of specified type
+     * (Creates default type for interfaces)
+     *
+     * @param type Java Class of type
+     * @return Created object
+     */
+    public static Object rawCreate(Class<?> type) {
         Object result = null;
         try {
-            if (!(type.getJavaClass().isInterface() || Modifier.isAbstract(type.getJavaClass().getModifiers()))) {
-                result = type.getJavaClass().newInstance();
+            if (!(type.isInterface() || Modifier.isAbstract(type.getModifiers()))) {
+                result = type.newInstance();
             } else { // whoops we have an interface - look for inner class that implements interface
-                for (Class<?> cl : type.getJavaClass().getDeclaredClasses()) {
-                    if (type.getJavaClass().isAssignableFrom(cl)) {
+                for (Class<?> cl : type.getDeclaredClasses()) {
+                    if (type.isAssignableFrom(cl)) {
                         result = cl.newInstance();
                         break;
                     }

@@ -22,7 +22,9 @@
 package org.finroc.core;
 
 import org.finroc.core.FrameworkElement.Link;
+import org.finroc.core.port.AbstractPort;
 import org.finroc.jc.ArrayWrapper;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
@@ -50,7 +52,7 @@ public class ChildIterator {
     @JavaOnly protected int pos;
 
     /** FrameworkElement that is currently iterated over */
-    @Ptr protected FrameworkElement curParent;
+    @Const @Ptr protected FrameworkElement curParent;
 
     /*Cpp
     // next element to check (in array)
@@ -67,7 +69,7 @@ public class ChildIterator {
     private int result;
 
     @Init( {"nextElem(NULL)", "last(NULL)"})
-    public ChildIterator(FrameworkElement parent) {
+    public ChildIterator(@Const FrameworkElement parent) {
         reset(parent);
     }
 
@@ -76,7 +78,7 @@ public class ChildIterator {
      * @param flags Flags that children must have in order to be considered
      */
     @Init( {"nextElem(NULL)", "last(NULL)"})
-    public ChildIterator(FrameworkElement parent, int flags) {
+    public ChildIterator(@Const FrameworkElement parent, int flags) {
         reset(parent, flags);
     }
 
@@ -86,7 +88,7 @@ public class ChildIterator {
      * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
      */
     @Init( {"nextElem(NULL)", "last(NULL)"})
-    public ChildIterator(FrameworkElement parent, int flags, int result) {
+    public ChildIterator(@Const FrameworkElement parent, int flags, int result) {
         reset(parent, flags, result);
     }
 
@@ -97,7 +99,7 @@ public class ChildIterator {
      * @param includeNonReady Include children that are not fully initialized yet?
      */
     @Init( {"nextElem(NULL)", "last(NULL)"})
-    public ChildIterator(FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+    public ChildIterator(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
         reset(parent, flags, result, includeNonReady);
     }
 
@@ -130,6 +132,21 @@ public class ChildIterator {
     }
 
     /**
+     * @return Next child that is a port - or null if there are no more children left
+     */
+    public AbstractPort nextPort() {
+        while (true) {
+            FrameworkElement result = next();
+            if (result == null) {
+                return null;
+            }
+            if (result.isPort()) {
+                return (AbstractPort)result;
+            }
+        }
+    }
+
+    /**
      * Use iterator again on same framework element
      */
     public void reset() {
@@ -142,7 +159,7 @@ public class ChildIterator {
      *
      * @param parent Framework element over whose child to iterate
      */
-    public void reset(FrameworkElement parent) {
+    public void reset(@Const FrameworkElement parent) {
         reset(parent, 0, 0);
     }
 
@@ -153,7 +170,7 @@ public class ChildIterator {
      * @param parent Framework element over whose child to iterate
      * @param flags Flags that children must have in order to be considered
      */
-    public void reset(FrameworkElement parent, int flags) {
+    public void reset(@Const FrameworkElement parent, int flags) {
         reset(parent, flags, flags);
     }
 
@@ -165,7 +182,7 @@ public class ChildIterator {
      * @param flags Relevant flags
      * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
      */
-    public void reset(FrameworkElement parent, int flags, int result) {
+    public void reset(@Const FrameworkElement parent, int flags, int result) {
         reset(parent, flags, result, false);
     }
 
@@ -178,7 +195,8 @@ public class ChildIterator {
      * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
      * @param includeNonReady Include children that are not fully initialized yet?
      */
-    public void reset(FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+    public void reset(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+        assert(parent != null);
         this.flags = flags | CoreFlags.DELETED;
         this.result = result;
         if (!includeNonReady) {

@@ -65,4 +65,15 @@ public class PortDataDelegate extends PortDataImpl {
     public void serialize(CoreOutput os) {
         forObject.serialize(os);
     }
+
+    @Override
+    public String serialize() {
+        return forObject.serialize();
+    }
+
+    @Override
+    public void deserialize(String s) throws Exception {
+        forObject.deserialize(s);
+    }
+
 }

@@ -21,8 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.thread.Task;
@@ -45,9 +43,6 @@ import org.finroc.core.portdatabase.DataType;
  * 3 long parameters and 2 object parameters. This should be
  * sufficient - since anything can be put into custom objects.
  */
-//@Friend({InterfacePort.class, InterfaceClientPort.class})
-@ForwardDecl( {InterfaceNetPort.class, AbstractMethod.class})
-@CppInclude( {"rpc/InterfaceNetPort.h", "method/PortInterface.h"})
 public class MethodCall extends AbstractCall implements Task {
 
 //  /** Maximum size of caller stack */

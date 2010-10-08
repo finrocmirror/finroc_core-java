@@ -23,13 +23,12 @@ package org.finroc.core.port.rpc;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
@@ -56,9 +55,8 @@ import org.finroc.core.portdatabase.SerializableReusable;
  * This is the base abstract class for (possibly synchronous) calls
  * (such as Pull-Calls and method calls)
  */
-@ForwardDecl(MethodCallSyncher.class)
-@CppInclude( {"MethodCallSyncher.h"})
-@Include( {"MethodCallException.h", "portdatabase/DataTypeRegister.h", "ParameterUtil.h"})
+@IncludeClass( {MethodCallException.class, DataTypeRegister.class })
+@Include("ParameterUtil.h")
 @Friend( {MethodCallSyncher.class, SynchMethodCallLogic.class})
 public abstract class AbstractCall extends SerializableReusable {
 

@@ -21,9 +21,11 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.Reusable;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -56,4 +58,23 @@ public abstract class SerializableReusable extends Reusable implements CoreSeria
         super.recycle();
     }
 
+    @Override @JavaOnly
+    public String serialize() {
+        return SerializationHelper.serializeToHexString(this);
+    }
+
+    @Override @JavaOnly
+    public void deserialize(String s) throws Exception {
+        SerializationHelper.deserializeFromHexString(this, s);
+    }
+
+    @Override @JavaOnly
+    public void serialize(XMLNode node) throws Exception {
+        node.setTextContent(serialize());
+    }
+
+    @Override @JavaOnly
+    public void deserialize(XMLNode node) throws Exception {
+        deserialize(node.getTextContent());
+    }
 }

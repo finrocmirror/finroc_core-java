@@ -24,7 +24,6 @@ package org.finroc.core.port;
 import org.finroc.core.Annotatable;
 import org.finroc.jc.AtomicInt64;
 import org.finroc.jc.Time;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
@@ -39,7 +38,6 @@ import org.finroc.jc.annotation.SizeT;
  * The start EdgeAggregator owns objects of this type.
  */
 @Inline @NoCpp @Ptr
-@ForwardDecl(EdgeAggregator.class)
 public class AggregatedEdge extends Annotatable {
 
     /** Number of aggregated edges */

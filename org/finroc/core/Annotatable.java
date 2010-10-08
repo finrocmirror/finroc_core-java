@@ -24,6 +24,7 @@ package org.finroc.core;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.log.LogUser;
 
@@ -46,10 +47,12 @@ public class Annotatable extends LogUser implements HasDestructor {
      *
      * @param ann Annotation
      */
-    public synchronized void addAnnotation(FinrocAnnotation ann) {
+    public synchronized void addAnnotation(@Managed FinrocAnnotation ann) {
         if (ann.getType() == null) {
             ann.initDataType();
         }
+        assert(ann.annotated == null) : "Already used as annotation in other object. Not allowed (double deleteting etc.)";
+        ann.annotated = this;
         if (firstAnnotation == null) {
             firstAnnotation = ann;
         } else {

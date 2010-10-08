@@ -22,20 +22,26 @@
 package org.finroc.core.buffer;
 
 import org.finroc.jc.annotation.ConstPtr;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.stream.MemoryBuffer;
+import org.finroc.xml.XMLNode;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PortDataDelegate;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortDataReference;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.SerializationHelper;
+import org.finroc.core.portdatabase.MaxStringSerializationLength;
 
 /**
  * @author max
  *
  * Memory buffer that can be used as port data
  */
+@IncludeClass( {CoreInput.class, CoreOutput.class})
+@MaxStringSerializationLength(-1)
 public class MemBuffer extends MemoryBuffer implements PortData {
 
     @JavaOnly private PortDataDelegate delegate;
@@ -77,16 +83,29 @@ public class MemBuffer extends MemoryBuffer implements PortData {
         super.serialize(os);
     }
 
-//  public void deserializeBase(InputStreamBuffer is) {
-//      super.deserialize(is);
-//  }
-//
-//  @ConstMethod public void serializeBase(@Ref OutputStreamBuffer os) {
-//      super.serialize(os);
-//  }
+    @Override @JavaOnly
+    public String serialize() {
+        return SerializationHelper.serializeToHexString(this);
+    }
+
+    @Override @JavaOnly
+    public void deserialize(String s) throws Exception {
+        SerializationHelper.deserializeFromHexString(this, s);
+    }
 
     @Override
     public void handleRecycle() {
         // do nothing
     }
+
+    @Override @JavaOnly
+    public void serialize(XMLNode node) throws Exception {
+        node.setTextContent(serialize());
+    }
+
+    @Override @JavaOnly
+    public void deserialize(XMLNode node) throws Exception {
+        deserialize(node.getTextContent());
+    }
+
 }

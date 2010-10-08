@@ -27,7 +27,6 @@ import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.Time;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.CppUnused;
@@ -57,6 +56,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.rpc.MethodCallSyncher;
 import org.finroc.core.port.stream.StreamCommitThread;
+import org.finroc.core.portdatabase.SerializationHelper;
 
 /**
  * @author max
@@ -74,9 +74,7 @@ import org.finroc.core.port.stream.StreamCommitThread;
                  "    RuntimeEnvironment::shutdown();",
                  "}"
              })
-//@Include("port/ThreadLocalCache.h")
-@ForwardDecl( {LinkEdge.class, ThreadLocalCache.class})
-@CppInclude("LinkEdge.h")
+@ForwardDecl( {ThreadLocalCache.class})
 @Friend(LinkEdge.class)
 public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*/
 
@@ -201,6 +199,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
         assert(!shuttingDown());
 
         // Finish initializing static members of classes
+        SerializationHelper.staticInit(); // can safely be done first
         Unit.staticInit(); // can safely be done first
         Constant.staticInit(); // needs to be done after unit
 //      CoreNumber.staticInit(); // can be after data type register has been created
@@ -230,6 +229,9 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
         @CppUnused
         AdminServer as = new AdminServer();
         FrameworkElement.initAll();
+
+        // init thread-local-cache for main thread */
+        ThreadLocalCache.get();
 
         //ConfigFile.init(conffile);
         RuntimeSettings.staticInit(); // can be done now... or last
@@ -812,7 +814,7 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param link Link
      * @param partnerPort connected port
      */
-    protected void removeLinkEdge(@Const @Ref String link, AbstractPort partnerPort) {
+    public void removeLinkEdge(@Const @Ref String link, AbstractPort partnerPort) {
         synchronized (registry) {
             for (LinkEdge current = registry.linkEdges.get(link); current != null; current = current.getNext()) {
                 if (current.getPortHandle() == partnerPort.getHandle()) {
@@ -851,7 +853,6 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      * @param handle Handle of framework element
      * @return Pointer to framework element - or null if it has been deleted
      */
-    @Inline
     public FrameworkElement getElement(int handle) {
         FrameworkElement fe = handle >= 0 ? registry.ports.get(handle) : registry.elements.get(handle);
         if (fe == null) {

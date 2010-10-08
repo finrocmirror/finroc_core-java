@@ -27,13 +27,11 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.ConstPtr;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.DefaultType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
@@ -55,7 +53,6 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortData;
-import org.finroc.core.port.std.PortDataImpl;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.TypedObject;
 
@@ -73,9 +70,7 @@ import org.finroc.core.portdatabase.TypedObject;
  * In many cases this (non-blocking) behaviour is intended.
  * However, to avoid that, synchronize to runtime before calling.
  */
-@ForwardDecl( {LinkEdge.class, EdgeAggregator.class, NetPort.class, PortDataImpl.class})
-@Include( {"rrlib/finroc_core_utils/container/SafeConcurrentlyIterableList.h", "core/RuntimeSettings.h"})
-@CppInclude( {"LinkEdge.h", "EdgeAggregator.h", "net/NetPort.h"})
+@IncludeClass( {SafeConcurrentlyIterableList.class, RuntimeSettings.class})
 @CppPrepend( {"AbstractPort::~AbstractPort() {",
               "    if (asNetPort() != NULL) {",
               "        NetPort* nt = asNetPort();",
@@ -219,35 +214,54 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * disconnects all edges
      */
-    @SuppressWarnings("unchecked")
     public void disconnectAll() {
+        disconnectAll(true, true);
+    }
+
+    /**
+     * disconnects all edges
+     *
+     * @param incoming disconnect incoming edges?
+     * @param outgoing disconnect outgoing edges?
+     */
+    @SuppressWarnings("unchecked")
+    public void disconnectAll(boolean incoming, boolean outgoing) {
 
         synchronized (getRegistryLock()) {
 
             // remove link edges
             if (linkEdges != null) {
                 for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-                    linkEdges.get(i).delete();
+                    LinkEdge le = linkEdges.get(i);
+                    if ((incoming && le.getSourceLink().length() > 0) || (outgoing && le.getTargetLink().length() > 0)) {
+                        linkEdges.remove(i);
+                        le.delete();
+                        i--;
+                    }
                 }
-                linkEdges.clear();
             }
+            assert((!incoming) || (!outgoing) || (linkEdges == null) || (linkEdges.size() == 0));
 
             @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
-            for (int i = 0, n = it.size(); i < n; i++) {
-                AbstractPort target = it.get(i);
-                if (target == null) {
-                    continue;
+            if (outgoing) {
+                for (int i = 0, n = it.size(); i < n; i++) {
+                    AbstractPort target = it.get(i);
+                    if (target == null) {
+                        continue;
+                    }
+                    removeInternal(this, target);
                 }
-                removeInternal(this, target);
             }
 
-            it = edgesDest.getIterable();
-            for (int i = 0, n = it.size(); i < n; i++) {
-                AbstractPort target = it.get(i);
-                if (target == null) {
-                    continue;
+            if (incoming) {
+                it = edgesDest.getIterable();
+                for (int i = 0, n = it.size(); i < n; i++) {
+                    AbstractPort target = it.get(i);
+                    if (target == null) {
+                        continue;
+                    }
+                    removeInternal(target, this);
                 }
-                removeInternal(target, this);
             }
         }
     }
@@ -1177,6 +1191,20 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     }
 
     /**
+     * @return Number of connections to this port (incoming and outgoing)
+     */
+    @ConstMethod public int getIncomingConnectionCount() {
+        return edgesDest.countElements();
+    }
+
+    /**
+     * @return Number of connections to this port (incoming and outgoing)
+     */
+    @ConstMethod public int getOutgoingConnectionCount() {
+        return edgesSrc.countElements();
+    }
+
+    /**
      * @return Does port have any link edges?
      */
     public boolean hasLinkEdges() {
@@ -1206,4 +1234,82 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             }
         }
     }
+
+    /**
+     * Get all ports that this port is connected to
+     *
+     * @param result List to write results to
+     * @param outgoingEdges Consider outgoing edges
+     * @param incomingEdges Consider incoming edges
+     */
+    @SuppressWarnings("unchecked")
+    public void getConnectionPartners(@Ref SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges) {
+        result.clear();
+        @Ptr ArrayWrapper<AbstractPort> it = null;
+
+        if (outgoingEdges) {
+            it = edgesSrc.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
+                AbstractPort target = it.get(i);
+                if (target == null) {
+                    continue;
+                }
+                result.add(target);
+            }
+        }
+
+        if (incomingEdges) {
+            it = edgesDest.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
+                AbstractPort target = it.get(i);
+                if (target == null) {
+                    continue;
+                }
+                result.add(target);
+            }
+        }
+    }
+
+    /**
+     * @return Is this port volatile (meaning that it's not always there and connections to it should preferably be links)?
+     */
+    public boolean isVolatile() {
+        return getFlag(PortFlags.IS_VOLATILE);
+    }
+
+    /**
+     * Disconnect from port with specified link (removes link edges
+     *
+     * @param link Qualified link of connection partner
+     */
+    public void disconnectFrom(@Const @Ref String link) {
+        synchronized (getRegistryLock()) {
+            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+                LinkEdge le = linkEdges.get(i);
+                if (le.getSourceLink().equals(link) || le.getTargetLink().equals(link)) {
+                    le.delete();
+                }
+            }
+
+            AbstractPort ap = getRuntime().getPort(link);
+            if (ap != null) {
+                disconnectFrom(this);
+            }
+        }
+    }
+
+    /**
+     * @return List with all link edges (must not be modified)
+     */
+    public @Ptr SimpleList<LinkEdge> getLinkEdges() {
+        return linkEdges;
+    }
+
+    /**
+     * Publish current data in the specified other port
+     * (in a safe way)
+     *
+     * @param destination other port
+     */
+    public abstract void forwardData(AbstractPort other);
 }

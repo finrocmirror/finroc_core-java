@@ -26,13 +26,14 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.core.CoreRegister;
 import org.finroc.core.RuntimeSettings;
@@ -51,7 +52,7 @@ import org.finroc.core.portdatabase.DataType;
  * concerning calling threads (that they are called only once at the same time)
  * This has to be done by all public methods.
  */
-@Include("rrlib/finroc_core_utils/container/tSafeConcurrentlyIterableList.h")
+@IncludeClass(SafeConcurrentlyIterableList.class)
 @Friend(CCPort.class)// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
 public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
@@ -500,7 +501,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Set current value to default value
      */
-    private void applyDefaultValue() {
+    protected void applyDefaultValue() {
         //publish(ThreadLocalCache.get(), defaultValue.getContainer());
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataContainer<?> c = getUnusedBuffer(tc);
@@ -946,5 +947,13 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Override
     protected void clearQueueImpl() {
         queue.clear(true);
+    }
+
+    @Override
+    public void forwardData(AbstractPort other) {
+        assert(other.getDataType().isCCType());
+        CCPortDataContainer<?> c = getLockedUnsafeInContainer();
+        ((CCPortBase)other).publish(c);
+        c.releaseLock();
     }
 }

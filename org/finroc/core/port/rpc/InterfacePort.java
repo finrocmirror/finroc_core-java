@@ -31,7 +31,6 @@ import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.jc.ArrayWrapper;
-import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 
@@ -46,7 +45,7 @@ import org.finroc.jc.annotation.SizeT;
  * One source may have multiple targets. However, a target may only
  * have one source in order to receive only one return value.
  */
-@Include("rrlib/finroc_core_utils/container/tSafeConcurrentlyIterableList.h")
+//@IncludeClass(SafeConcurrentlyIterableList.class)
 public class InterfacePort extends AbstractPort {
 
     /** Edges emerging from this port */
@@ -371,6 +370,11 @@ public class InterfacePort extends AbstractPort {
 
     @Override
     protected void setMaxQueueLengthImpl(int length) {
+        // do nothing in interface port
+    }
+
+    @Override
+    public void forwardData(AbstractPort other) {
         // do nothing in interface port
     }
 }

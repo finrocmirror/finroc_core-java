@@ -24,7 +24,6 @@ package org.finroc.core.port.net;
 import java.util.List;
 
 import org.finroc.core.CoreFlags;
-import org.finroc.core.admin.AdminClient;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
@@ -54,6 +53,7 @@ import org.finroc.core.port.std.PullRequestHandler;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
@@ -69,6 +69,7 @@ import org.finroc.jc.log.LogUser;
  */
 @SuppressWarnings("rawtypes")
 @Ptr
+@IncludeClass(PullCall.class)
 public abstract class NetPort extends LogUser implements PortListener, CCPortListener {
 
     /** Default timeout for pulling data over the net */
@@ -91,11 +92,11 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         // keep most these flags
         int f = pci.flags & (PortFlags.ACCEPTS_DATA | PortFlags.EMITS_DATA | PortFlags.MAY_ACCEPT_REVERSE_DATA | PortFlags.IS_OUTPUT_PORT |
                              PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT | PortFlags.NON_STANDARD_ASSIGN /*| PortFlags.IS_CC_PORT | PortFlags.IS_INTERFACE_PORT*/ |
-                             CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.GLOBALLY_UNIQUE_LINK);
+                             CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.FINSTRUCTED);
 
         // set either emit or accept data
         f |= ((f & PortFlags.IS_OUTPUT_PORT) > 0) ? PortFlags.EMITS_DATA : PortFlags.ACCEPTS_DATA;
-        f |= CoreFlags.NETWORK_ELEMENT;
+        f |= CoreFlags.NETWORK_ELEMENT | PortFlags.IS_VOLATILE;
         if ((f & PortFlags.IS_OUTPUT_PORT) == 0) { // we always have a queue with (remote) input ports - to be able to switch
             f |= PortFlags.HAS_QUEUE;
             if (pci.maxQueueSize > 1) {
@@ -901,11 +902,6 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
      */
     @JavaOnly
     public abstract List<AbstractPort> getRemoteEdgeDestinations();
-
-    /**
-     * @return Returns admin interface for this element - or null if there's no such interface
-     */
-    public abstract AdminClient getAdminInterface();
 
     /**
      * @return Sources of remote edges

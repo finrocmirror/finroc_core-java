@@ -21,7 +21,6 @@
  */
 package org.finroc.core.plugin;
 
-import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.SharedPtr;
@@ -32,19 +31,20 @@ import org.finroc.jc.annotation.SharedPtr;
  * Class to create Module using empty standard constructor
  */
 @SharedPtr
-public interface CreateExternalConnectionAction {
-
-    @ConstMethod @Const public String toString();
-
-    public @Managed ExternalConnection createExternalConnection() throws Exception;
+public interface CreateExternalConnectionAction extends CreateModuleAction {
 
     /** Does connection transfer info about remote edges? */
     public final static int REMOTE_EDGE_INFO = 1 << 0;
 
     /**
+     * @return Created Action
+     */
+    @ConstMethod public @Managed ExternalConnection createExternalConnection() throws Exception;
+
+    /**
      * @return Connection properties/capabilities (see flags above)
      */
-    public int getFlags();
+    @ConstMethod public int getFlags();
 
 //  /** Constructor to invoke */
 //  private Class<? extends ExternalConnection> c;

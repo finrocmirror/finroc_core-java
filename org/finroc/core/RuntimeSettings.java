@@ -26,11 +26,10 @@ import java.nio.ByteOrder;
 
 import org.finroc.jc.AutoDeleter;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.log.LogDefinitions;
@@ -57,8 +56,7 @@ import org.finroc.core.util.Files;
  *
  * staticInit() should be called after runtime and data types have been initialized.
  */
-@ForwardDecl(CCPortBase.class)
-@CppInclude( {"port/cc/NumberPort.h"})
+@Include("settings/NumberSetting.h")
 public class RuntimeSettings extends Settings implements CCPortListener<CoreNumber> {
 
     /** Singleton Instance */

@@ -25,7 +25,7 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
-import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -48,8 +48,7 @@ import org.finroc.core.datatype.Unit;
  * Initialization of ports etc. will start as soon as init() is
  * called (this should not be done from static initializations)
  */
-@ForwardDecl(FrameworkElement.class)
-@CppInclude( {"FrameworkElement.h", "RuntimeEnvironment.h"})
+@CppInclude( { "RuntimeEnvironment.h"})
 @CppPrepend( {"Settings::~Settings() {",
               "    if (isStatic) {",
               "        RuntimeEnvironment::shutdown();",
@@ -63,6 +62,7 @@ import org.finroc.core.datatype.Unit;
               "    settings.clear();",
               "}"
              })
+@Include("NumberSetting.h")
 public class Settings {
 
     /** Prefix of keys in config file */

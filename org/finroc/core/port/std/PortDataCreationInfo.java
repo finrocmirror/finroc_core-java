@@ -23,8 +23,6 @@ package org.finroc.core.port.std;
 
 import org.finroc.jc.FastStaticThreadLocal;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppInclude;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.container.SimpleList;
 
@@ -43,8 +41,6 @@ import org.finroc.jc.container.SimpleList;
  * Using this class, not that many parameters need to be passed through
  * the constructors.
  */
-@ForwardDecl(PortDataImpl.class)
-@CppInclude("PortDataImpl.h")
 public class PortDataCreationInfo {
 
     /** Manager that will handle/manage currently created port data */

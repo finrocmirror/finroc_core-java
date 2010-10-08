@@ -26,7 +26,7 @@ import org.finroc.core.port.rpc.RPCThread.RPCThreadContainer;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.container.WonderQueue;
@@ -38,7 +38,7 @@ import org.finroc.jc.thread.ThreadUtil;
  *
  * Thread pool for remote procedure calls.
  */
-@Include("RPCThread.h")
+@IncludeClass(RPCThread.class)
 public class RPCThreadPool {
 
     /** Singleton instance */

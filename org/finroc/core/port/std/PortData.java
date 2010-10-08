@@ -21,8 +21,6 @@
  */
 package org.finroc.core.port.std;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObject;
@@ -63,15 +61,23 @@ public interface PortData extends TypedObject {
      */
     public void handleRecycle();
 
-    @JavaOnly
-    public class EmptyPortData extends PortDataImpl {
-
-        static DataType TYPE = DataTypeRegister.getInstance().getDataType(EmptyPortData.class, "EmptyPortData");
-
-        @Override
-        public void deserialize(CoreInput is) {}
-
-        @Override
-        public void serialize(CoreOutput os) {}
-    }
+//    @JavaOnly
+//    public class EmptyPortData extends EmptyPortDataImpl {
+//
+//        static DataType TYPE = DataTypeRegister.getInstance().getDataType(EmptyPortData.class, "EmptyPortData");
+//
+//        @Override
+//        public void deserialize(CoreInput is) {}
+//
+//        @Override
+//        public void serialize(CoreOutput os) {}
+//
+//      @Override
+//      public String serialize() {
+//          return "";
+//      }
+//
+//      @Override
+//      public void deserialize(String s) {}
+//    }
 }

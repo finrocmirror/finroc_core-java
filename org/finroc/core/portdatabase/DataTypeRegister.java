@@ -28,9 +28,9 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
@@ -41,8 +41,8 @@ import org.finroc.jc.log.LogUser;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 
+import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.port.rpc.method.PortInterface;
-import org.finroc.core.port.std.PortData;
 
 /**
  * @author max
@@ -53,10 +53,8 @@ import org.finroc.core.port.std.PortData;
  * Also implements a port set with default update times for every data type.
  */
 @SuppressWarnings("rawtypes")
-@ForwardDecl( {PortData.class, PortInterface.class})
-//@CppInclude({"datatype/CoreNumber.h", "datatype/PortInfo.h"})
 @Include( {"DataTypeUtil.h", "<map>", "CppStdFactory.h", "TransactionTypeFactory.h"})
-//@HPrepend("class PortData;")
+@IncludeClass(FinrocAnnotation.class)
 @CppInclude("RuntimeEnvironment.h")
 @CppPrepend( {
     "DataTypeRegister::~DataTypeRegister() {",
@@ -144,12 +142,27 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
     }
 
     /*Cpp
+
+    template <typename T, bool TRANSACTION, bool STD, bool ANN>
+    class FactoryHelper : public CppCCFactory<T> {};
+
+    template <typename T>
+    class FactoryHelper<T, false, false, true> : public NullFactory {};
+
+    template <typename T, bool ANN>
+    class FactoryHelper<T, false, true, ANN> : public CppStdFactory<T> {};
+
+    template <typename T, bool STD, bool ANN>
+    class FactoryHelper<T, true, STD, ANN> : public TransactionTypeFactory<T> {};
+
+    template <typename T>
+    class Factory : public FactoryHelper<T, boost::is_base_of<Transaction, T>::value, boost::is_base_of<PortData, T>::value, boost::is_base_of<FinrocAnnotation, T>::value> {};
+
     template <typename T>
     DataType* getDataType(const util::String& name) {
         DataType* dt = DataTypeLookup<T>::type;
         if (dt == NULL) {
-            bool transaction = DataTypeUtil::getTransactionType((T*)1000);
-            dt = addDataType(new DataType((T*)1000, name, transaction ? (PortDataFactory*)new TransactionTypeFactory<T>() : (PortDataFactory*)new CppStdFactory<T>()));
+            dt = addDataType(new DataType((T*)1000, name, new Factory<T>()));
         }
         return dt;
     }
@@ -252,6 +265,12 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
 
         //Cpp initialLookup[dt->rttiName] = dt;
         //Cpp assert(initialLookup[dt->rttiName] == dt);
+
+        // uid for list type?
+        if (dt.getListType() != null) {
+            addDataType(dt.getListType());
+        }
+
         return dt;
     }
 
@@ -311,7 +330,11 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
      */
     @InCpp("return initialLookup[typeid(*portData).name()];")
     public DataType lookupDataType(TypedObject portData) {
-        return initialLookup.get(portData.getClass());
+        DataType dt = initialLookup.get(portData.getClass()); // TODO: remove again
+        if (dt == null) {
+            System.out.println("no entry for type :" + portData.getClass());
+        }
+        return dt;
     }
 
     /**

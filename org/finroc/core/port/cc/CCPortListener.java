@@ -26,7 +26,7 @@ import java.util.EventListener;
 import org.finroc.jc.ListenerManager;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.DefaultType;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
@@ -38,7 +38,7 @@ import org.finroc.jc.annotation.RawTypeArgs;
  * Can register at cc port to receive callbacks whenever the port's value changes
  */
 @DefaultType("CCPortData") @Ptr @RawTypeArgs
-@Include("CCPortData.h") @Inline @NoCpp
+@IncludeClass(CCPortData.class) @Inline @NoCpp
 public interface CCPortListener<T extends CCPortData> extends EventListener {
 
     /**

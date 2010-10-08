@@ -25,9 +25,7 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.DefaultType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.NonVirtual;
@@ -43,9 +41,6 @@ import org.finroc.jc.annotation.Virtual;
  */
 @Ptr
 @PostInclude("NumberSetting.h")
-@ForwardDecl( {FrameworkElement.class, AbstractPort.class})
-@CppInclude("FrameworkElement.h")
-//@HAppend("#include \"libraries/core/settings/NumberSetting.h\"")
 @DefaultType("AbstractPort")
 @Friend(Settings.class)
 public abstract class Setting {

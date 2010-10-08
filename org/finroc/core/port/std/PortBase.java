@@ -29,7 +29,7 @@ import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
@@ -38,6 +38,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.log.LogStream;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.AbstractPort;
@@ -57,7 +58,7 @@ import org.finroc.core.portdatabase.DataType;
  * This has to be done by all public methods.
  */
 @Friend(Port.class)
-@Include("rrlib/finroc_core_utils/container/tSafeConcurrentlyIterableList.h")
+@IncludeClass(SafeConcurrentlyIterableList.class)
 public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** Edges emerging from this port */
@@ -82,7 +83,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /** Pool with reusable buffers that are published to this port... by any thread */
     protected @Ptr PortDataBufferPool bufferPool;
 
-    /** Pool with different types of reusable buffers that are published to this port... by any thread - either of these pointers in null*/
+    /** Pool with different types of reusable buffers that are published to this port... by any thread - either of these pointers in null */
     protected @Ptr MultiTypePortDataBufferPool multiBufferPool;
 
     /**
@@ -377,7 +378,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param cnc Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
-    @Inline public void publish(PortData data) {
+    @Inline public void publish(@Const PortData data) {
         //JavaOnlyBlock
         publishImpl(data, false, CHANGED);
 
@@ -391,7 +392,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param reverse Value received in reverse direction?
      * @param changedConstant changedConstant to use
      */
-    @Inline protected void publish(PortData data, boolean reverse, byte changedConstant) {
+    @Inline protected void publish(@Const PortData data, boolean reverse, byte changedConstant) {
         //JavaOnlyBlock
         publishImpl(data, reverse, changedConstant);
 
@@ -424,7 +425,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param reverse Publish in reverse direction? (typical is forward)
      * @param changedConstant changedConstant to use
      */
-    @Inline private void publishImpl(PortData data, boolean reverse, byte changedConstant) {
+    @Inline private void publishImpl(@Const PortData data, boolean reverse, byte changedConstant) {
         assert data.getType() != null : "Port data type not initialized";
         assert data.getManager() != null : "Only port data obtained from a port can be sent";
         assert isInitialized();
@@ -1082,5 +1083,12 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Override
     protected void clearQueueImpl() {
         queue.clear(true);
+    }
+
+    @Override
+    public void forwardData(AbstractPort other) {
+        assert(other.getDataType().isStdType());
+        ((PortBase)other).publish(getAutoLockedRaw());
+        releaseAutoLocks();
     }
 }

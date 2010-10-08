@@ -21,10 +21,14 @@
  */
 package org.finroc.core.port.net;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.log.LogDefinitions;
@@ -58,6 +62,10 @@ public class RemoteTypes extends LogUser implements HasDestructor {
 
         /** local data type that represents the same time - null if there is noch such type in local runtime environment */
         private DataType localDataType = null;
+
+        /** name of remote type */
+        @JavaOnly
+        private String name;
 
         public Entry() {}
 
@@ -112,6 +120,9 @@ public class RemoteTypes extends LogUser implements HasDestructor {
             ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null ? "available here, too" : "not available here"));
             Entry e = new Entry(time, local);
             types[next] = e;
+
+            //JavaOnlyBlock
+            e.name = name;
 
             next = ci.readShort();
         }
@@ -187,5 +198,19 @@ public class RemoteTypes extends LogUser implements HasDestructor {
             return null;
         }
         return e.localDataType;
+    }
+
+    /**
+     * @return List with remote data type names
+     */
+    @JavaOnly
+    public List<String> getRemoteTypeNames() {
+        ArrayList<String> result = new ArrayList<String>();
+        for (Entry e : types) {
+            if (e != null) {
+                result.add(e.name);
+            }
+        }
+        return result;
     }
 }

@@ -29,8 +29,8 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.DefaultType;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
@@ -40,6 +40,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.VoidPtr;
 import org.finroc.jc.container.Reusable;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -49,7 +50,7 @@ import org.finroc.jc.container.Reusable;
  * It is also very simple - no lock counting.
  * It is mainly used for queueing CCPortData.
  */
-@ForwardDecl( {DataType.class})//, "typedef char CCPortData;"})
+@IncludeClass( {CCPortData.class, DataType.class})
 @DefaultType("CCPortData") @Inline @NoCpp @RawTypeArgs
 public class CCInterThreadContainer<T extends CCPortData> extends Reusable implements CCContainerBase {
 
@@ -123,6 +124,26 @@ public class CCInterThreadContainer<T extends CCPortData> extends Reusable imple
     @Override
     public void deserialize(CoreInput is) {
         portData.deserialize(is);
+    }
+
+    @Override
+    public String serialize() {
+        return portData.serialize();
+    }
+
+    @Override
+    public void deserialize(String s) throws Exception {
+        portData.deserialize(s);
+    }
+
+    @Override
+    public void serialize(XMLNode node) throws Exception {
+        portData.serialize(node);
+    }
+
+    @Override
+    public void deserialize(XMLNode node) throws Exception {
+        portData.deserialize(node);
     }
 
     public String toString() {

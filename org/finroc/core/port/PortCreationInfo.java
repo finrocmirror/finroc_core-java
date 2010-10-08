@@ -22,7 +22,6 @@
 package org.finroc.core.port;
 
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
@@ -41,7 +40,6 @@ import org.finroc.core.portdatabase.DataTypeRegister;
  * This way, only one constructor is needed per Port class.
  */
 @PassByValue
-@ForwardDecl(FrameworkElement.class)
 public class PortCreationInfo {
 
     /** number of send buffers */
