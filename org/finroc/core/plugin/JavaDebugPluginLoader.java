@@ -23,6 +23,7 @@ package org.finroc.core.plugin;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -57,14 +58,31 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
         SimpleList<Plugin> result = new SimpleList<Plugin>();
 
         // idea/implementation: search for plugin-classes in make.xml files
-        finrocRepRoot = RuntimeSettings.getRootDir();
-        while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "jcore" + File.separator + "make.xml").exists()) {
-            finrocRepRoot = finrocRepRoot.getParentFile();
+        try {
+            finrocRepRoot = RuntimeSettings.getRootDir();
+            while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "sources/java/core" + File.separator + "make.xml").exists()) {
+                finrocRepRoot = finrocRepRoot.getParentFile();
+            }
+        } catch (NullPointerException e) {
+            // ok, we are in an external location - try reading .project file
+            try {
+                finrocRepRoot = RuntimeSettings.getRootDir().getParentFile();
+                List<String> lines = Files.readLines(new File(finrocRepRoot.getAbsolutePath() + "/.project"));
+                for (String line : lines) {
+                    line = line.trim();
+                    if (line.endsWith("/sources/java/core</location>")) {
+                        finrocRepRoot = new File(line.substring(line.indexOf(">") + 1, line.indexOf("/sources/java/core</location>")).trim());
+                        break;
+                    }
+                }
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
 
         // now find all make.xml files
         try {
-            List<File> files = Files.getAllFiles(finrocRepRoot, this, false, false);
+            List<File> files = Files.getAllFiles(new File(finrocRepRoot + "/sources/java"), this, false, false);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dbuilder = factory.newDocumentBuilder();
             for (File file : files) {
@@ -101,8 +119,7 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
         File f = new File(dir.getAbsolutePath() + File.separator + name);
         if (f.isDirectory()) {
             if (f.getAbsolutePath().length() > finrocRepRoot.getAbsolutePath().length()) {
-                String d = f.getAbsolutePath().substring(finrocRepRoot.getAbsolutePath().length() + 1);
-                return d.startsWith("plugins") || d.startsWith("libraries") || d.startsWith("tools") || d.startsWith("projects");
+                return !f.getName().startsWith(".");
             }
         }
         return name.equals("make.xml");
