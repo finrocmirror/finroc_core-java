@@ -75,6 +75,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
      * be used in both. This flag indicates, whether the Java modules are
      * used together with a C++ core.
      */
+    @JavaOnly
     public static final boolean CPP_CORE = false;
 
     /** Display warning, if loop times of CoreLoopThreads are exceeded? */
@@ -87,13 +88,13 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     //public static final IntSetting MAX_THREADS = inst.add("MAX_THREADS", 256, false); // only required during initialization
 
     /** Default number of loop threads */
-    public static final IntSetting NUM_OF_LOOP_THREADS = inst.add("NUM_OF_LOOP_THREADS", 8, false);
+    //public static final IntSetting NUM_OF_LOOP_THREADS = inst.add("NUM_OF_LOOP_THREADS", 8, false);
 
     /** Default number of self updating loop threads */
     //public static final IntSetting SELF_UPDATING_LOOP_THREADS = inst.add("SELF_UPDATING_LOOP_THREADS", 8, false);
 
     /** Default number of event threads */
-    public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
+    //public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
 
     /** Maximum queue size for reference queues in ports */
     //public static final int MAX_PORT_REFERENCE_QUEUE_SIZE = getInt("MAX_PORT_REFERENCE_QUEUE_SIZE", Integer.MAX_VALUE);
@@ -137,10 +138,10 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     public static final IntSetting STREAM_THREAD_CYCLE_TIME = inst.add("STREAM_THREAD_CYCLE_TIME", 200, true);
 
     /** Create tree node for every RuntimeElement class? (needed for tree view as in GUI) */
-    @JavaOnly public static final BoolSetting CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS = inst.add("CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS", false, false);
+    //@JavaOnly public static final BoolSetting CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS = inst.add("CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS", false, false);
 
     /** > 0 if Runtime is instantiated in Java Applet - contains bit size of server CPU */
-    public static final IntSetting runningInApplet = inst.add("RUNNING_IN_APPLET", 0, false);
+    //public static final IntSetting runningInApplet = inst.add("RUNNING_IN_APPLET", 0, false);
 
     /**
      * Period in ms after which garbage collector will delete objects... any threads

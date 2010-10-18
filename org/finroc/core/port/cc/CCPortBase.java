@@ -23,6 +23,7 @@ package org.finroc.core.port.cc;
 
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
@@ -261,9 +262,9 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     @Inline protected void publish(ThreadLocalCache tc, CCPortDataContainer<?> data) {
         //JavaOnlyBlock
-        publishImpl(tc, data, false, CHANGED);
+        publishImpl(tc, data, false, CHANGED, false);
 
-        //Cpp publishImpl<false, CHANGED>(tc, data, false, CHANGED);
+        //Cpp publishImpl<false, CHANGED, false>(tc, data);
     }
 
     /**
@@ -276,27 +277,42 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     @Inline protected void publish(ThreadLocalCache tc, CCPortDataContainer<?> data, boolean reverse, byte changedConstant) {
         //JavaOnlyBlock
-        publishImpl(tc, data, reverse, changedConstant);
+        publishImpl(tc, data, reverse, changedConstant, false);
 
         /*Cpp
         if (!reverse) {
             if (changedConstant == CHANGED) {
-                publishImpl<false, CHANGED>(tc, data, false, CHANGED);
+                publishImpl<false, CHANGED, false>(tc, data);
             } else {
-                publishImpl<false, CHANGED_INITIAL>(tc, data, false, CHANGED_INITIAL);
+                publishImpl<false, CHANGED_INITIAL, false>(tc, data);
             }
         } else {
             if (changedConstant == CHANGED) {
-                publishImpl<true, CHANGED>(tc, data, true, CHANGED);
+                publishImpl<true, CHANGED, false>(tc, data);
             } else {
-                publishImpl<true, CHANGED_INITIAL>(tc, data, true, CHANGED_INITIAL);
+                publishImpl<true, CHANGED_INITIAL, false>(tc, data);
             }
         }
         */
     }
 
+    /**
+     * Publish buffer through port
+     * (not in normal operation, but from browser; difference: listeners on this port will be notified)
+     *
+     * @param buffer Buffer with data (must be owned by current thread)
+     */
+    public void browserPublish(CCPortDataContainer<?> buffer) {
+        assert(buffer.getOwnerThread() == ThreadUtil.getCurrentThreadId());
+        ThreadLocalCache tc = ThreadLocalCache.get();
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT>
+        //JavaOnlyBlock
+        publishImpl(tc, buffer, false, CHANGED, true);
+
+        //Cpp publishImpl<false, CHANGED, true>(tc, buffer);
+    }
+
+    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT, bool _cINFORM_LISTENERS>
     /**
      * Publish data
      *
@@ -304,13 +320,15 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param data Data to publish
      * @param reverse Value received in reverse direction?
      * @param changedConstant changedConstant to use
+     * @param informListeners Inform this port's listeners on change? (usually only when value comes from browser)
      */
-    @Inline private void publishImpl(ThreadLocalCache tc, CCPortDataContainer<?> data, boolean reverse, byte changedConstant) {
+    @Inline private void publishImpl(ThreadLocalCache tc, CCPortDataContainer<?> data, @CppDefault("false") boolean reverse, @CppDefault("CHANGED") byte changedConstant, @CppDefault("false") boolean informListeners) {
         @InCpp("") final boolean REVERSE = reverse;
         @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
+        @InCpp("") final boolean INFORM_LISTENERS = informListeners;
 
         assert data.getType() != null : "Port data type not initialized";
-        assert isInitialized() : "Port not initialized";
+        assert isInitialized() || INFORM_LISTENERS : "Port not initialized";
 
         @Ptr ArrayWrapper<CCPortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
 
@@ -318,6 +336,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         tc.data = data;
         tc.ref = data.getCurrentRef();
         assign(tc);
+
+        // inform listeners?
+        if (INFORM_LISTENERS) {
+            notifyListeners(tc);
+        }
 
         // later optimization (?) - unroll loops for common short cases
         for (@SizeT int i = 0; i < dests.size(); i++) {
@@ -955,5 +978,15 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         CCPortDataContainer<?> c = getLockedUnsafeInContainer();
         ((CCPortBase)other).publish(c);
         c.releaseLock();
+    }
+
+    /**
+     * @return Does port contain default value?
+     */
+    public boolean containsDefaultValue() {
+        CCInterThreadContainer<?> c = getInInterThreadContainer();
+        boolean result = c.getType() == defaultValue.getType() && c.contentEquals(defaultValue.getDataPtr());
+        c.recycle2();
+        return result;
     }
 }

@@ -74,6 +74,16 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     }
 
     /**
+     * Set default value
+     * This must be done before the port is used/initialized.
+     *
+     * @param t new default
+     */
+    public void setDefault(@Const @Ref T t) {
+        defaultValue.assign(t);
+    }
+
+    /**
      * @return Buffer with default value. Can be used to change default value
      * for port. However, this should be done before the port is used.
      */

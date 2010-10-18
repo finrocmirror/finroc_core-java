@@ -26,6 +26,7 @@ import org.finroc.jc.AtomicPtr;
 import org.finroc.jc.FastStaticThreadLocal;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
@@ -380,9 +381,9 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     @Inline public void publish(@Const PortData data) {
         //JavaOnlyBlock
-        publishImpl(data, false, CHANGED);
+        publishImpl(data, false, CHANGED, false);
 
-        //Cpp publishImpl<false, CHANGED>(data, false, CHANGED);
+        //Cpp publishImpl<false, CHANGED, false>(data);
     }
 
     /**
@@ -394,26 +395,40 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     @Inline protected void publish(@Const PortData data, boolean reverse, byte changedConstant) {
         //JavaOnlyBlock
-        publishImpl(data, reverse, changedConstant);
+        publishImpl(data, reverse, changedConstant, false);
 
         /*Cpp
         if (!reverse) {
             if (changedConstant == CHANGED) {
-                publishImpl<false, CHANGED>(data, false, CHANGED);
+                publishImpl<false, CHANGED, false>(data);
             } else {
-                publishImpl<false, CHANGED_INITIAL>(data, false, CHANGED_INITIAL);
+                publishImpl<false, CHANGED_INITIAL, false>(data);
             }
         } else {
             if (changedConstant == CHANGED) {
-                publishImpl<true, CHANGED>(data, true, CHANGED);
+                publishImpl<true, CHANGED, false>(data);
             } else {
-                publishImpl<true, CHANGED_INITIAL>(data, true, CHANGED_INITIAL);
+                publishImpl<true, CHANGED_INITIAL, false>(data);
             }
         }
         */
     }
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT>
+    /**
+     * Publish buffer through port
+     * (not in normal operation, but from browser; difference: listeners on this port will be notified)
+     *
+     * @param buffer Buffer with data (must be owned by current thread)
+     */
+    public void browserPublish(@Const PortData data) {
+
+        //JavaOnlyBlock
+        publishImpl(data, false, CHANGED, true);
+
+        //Cpp publishImpl<false, CHANGED, true>(data);
+    }
+
+    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT, bool _cINFORM_LISTENERS>
     /**
      * (only for use by port classes)
      *
@@ -424,14 +439,16 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param cnc Data buffer acquired from a port using getUnusedBuffer
      * @param reverse Publish in reverse direction? (typical is forward)
      * @param changedConstant changedConstant to use
+     * @param informListeners Inform this port's listeners on change? (usually only when value comes from browser)
      */
-    @Inline private void publishImpl(@Const PortData data, boolean reverse, byte changedConstant) {
-        assert data.getType() != null : "Port data type not initialized";
-        assert data.getManager() != null : "Only port data obtained from a port can be sent";
-        assert isInitialized();
-
+    @Inline private void publishImpl(@Const PortData data, @CppDefault("false") boolean reverse, @CppDefault("CHANGED") byte changedConstant, @CppDefault("false") boolean informListeners) {
         @InCpp("") final boolean REVERSE = reverse;
         @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
+        @InCpp("") final boolean INFORM_LISTENERS = informListeners;
+
+        assert data.getType() != null : "Port data type not initialized";
+        assert data.getManager() != null : "Only port data obtained from a port can be sent";
+        assert isInitialized() || INFORM_LISTENERS;
 
         // assign
         @Ptr ArrayWrapper<PortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
@@ -445,13 +462,18 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
             cacheTL.set(pc);
         }
 
-        pc.lockEstimate = 1 + dests.size();
+        pc.lockEstimate = 2 + dests.size(); // 2 to make things safe with respect to listeners
         pc.setLocks = 0; // this port
         pc.curRef = data.getCurReference();
         pc.curRefCounter = pc.curRef.getRefCounter();
         pc.curRefCounter.setOrAddLocks((byte)pc.lockEstimate);
         assert(pc.curRef.isLocked());
         assign(pc);
+
+        // inform listeners?
+        if (INFORM_LISTENERS) {
+            notifyListeners(pc);
+        }
 
         // later optimization (?) - unroll loops for common short cases
         for (@SizeT int i = 0; i < dests.size(); i++) {
@@ -519,8 +541,8 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     protected void addLock(@Ref PublishCache pc) {
         pc.setLocks++;
-        if (pc.setLocks > pc.lockEstimate) {
-            pc.lockEstimate = pc.setLocks;
+        if (pc.setLocks >= pc.lockEstimate) { // make lockEstimate bigger than setLocks to make notifyListeners() safe
+            pc.lockEstimate++;
             pc.curRefCounter.addLock();
         }
     }
@@ -1090,5 +1112,12 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         assert(other.getDataType().isStdType());
         ((PortBase)other).publish(getAutoLockedRaw());
         releaseAutoLocks();
+    }
+
+    /**
+     * @return Does port contain default value?
+     */
+    public boolean containsDefaultValue() {
+        return value.get().getData() == defaultValue;
     }
 }

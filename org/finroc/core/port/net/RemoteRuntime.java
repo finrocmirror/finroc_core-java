@@ -24,8 +24,6 @@ package org.finroc.core.port.net;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.admin.AdminClient;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.CppDefault;
@@ -118,15 +116,5 @@ public class RemoteRuntime extends FinrocAnnotation {
             return find(parent);
         }
         return null;
-    }
-
-    @Override
-    public void serialize(CoreOutput os) {
-        throw new RuntimeException("Unsupported");
-    }
-
-    @Override
-    public void deserialize(CoreInput is) {
-        throw new RuntimeException("Unsupported");
     }
 }

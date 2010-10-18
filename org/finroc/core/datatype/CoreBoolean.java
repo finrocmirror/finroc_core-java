@@ -27,6 +27,9 @@ import org.finroc.core.port.cc.CCPortData;
 import org.finroc.core.port.cc.CCPortDataImpl;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.PassByValue;
 
 /**
  * @author max
@@ -40,6 +43,20 @@ public class CoreBoolean extends CCPortDataImpl {
 
     /** value */
     private boolean value;
+
+    /** Instances for True and false */
+    @Const @PassByValue public static final CoreBoolean TRUE = new CoreBoolean(true), FALSE = new CoreBoolean(false);
+
+    public CoreBoolean() {
+
+        //JavaOnlyBlock
+        type = TYPE;
+    }
+
+    public CoreBoolean(boolean value) {
+        this();
+        this.value = value;
+    }
 
     @Override
     public DataType getType() {
@@ -69,5 +86,16 @@ public class CoreBoolean extends CCPortDataImpl {
     @Override
     public void assign(CCPortData other) {
         value = ((CoreBoolean)other).value;
+    }
+
+    public static @Const CoreBoolean getInstance(boolean value) {
+        return value ? TRUE : FALSE;
+    }
+
+    /**
+     * @return Current value
+     */
+    @ConstMethod public boolean get() {
+        return value;
     }
 }

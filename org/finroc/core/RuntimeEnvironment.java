@@ -33,7 +33,6 @@ import org.finroc.jc.annotation.CppUnused;
 import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Mutable;
 import org.finroc.jc.annotation.PassByValue;

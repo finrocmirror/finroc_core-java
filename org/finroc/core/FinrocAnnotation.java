@@ -21,6 +21,8 @@
  */
 package org.finroc.core;
 
+import org.finroc.core.buffer.CoreInput;
+import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObjectImpl;
 import org.finroc.jc.HasDestructor;
@@ -30,7 +32,10 @@ import org.finroc.jc.annotation.Ptr;
 /**
  * @author max
  *
- * Base class for all finroc element annotations
+ * Base class for all finroc element annotations.
+ *
+ * If annotation should be available over the net (e.g. in finstruct),
+ * the serialization methods need to be overridden.
  */
 @Friend(FrameworkElement.class)
 public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
@@ -73,5 +78,15 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
      */
     public @Ptr Annotatable getAnnotated() {
         return annotated;
+    }
+
+    @Override
+    public void serialize(CoreOutput os) {
+        throw new RuntimeException("Unsupported");
+    }
+
+    @Override
+    public void deserialize(CoreInput is) {
+        throw new RuntimeException("Unsupported");
     }
 }

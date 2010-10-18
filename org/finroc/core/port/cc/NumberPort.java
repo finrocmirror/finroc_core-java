@@ -83,6 +83,7 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @param d New Value
      */
     @Inline public void publish(int d) {
+        CCPortDataRef value = this.value;
         if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData()).isInt(d, unit)) {
             return;
         }

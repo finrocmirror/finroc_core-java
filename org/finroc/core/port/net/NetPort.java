@@ -198,7 +198,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
 
     /**
      * Prepares element for deletion.
-     * Port, for instance, are removed from edge lists etc.
+     * Ports, for instance, are removed from edge lists etc.
      * The final deletion will be done by the GarbageCollector thread after
      * a few seconds (to ensure no other thread is working on this object
      * any more).
