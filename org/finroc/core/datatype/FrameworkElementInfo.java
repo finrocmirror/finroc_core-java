@@ -70,6 +70,9 @@ public class FrameworkElementInfo {
     /** UID */
     private static final long serialVersionUID = 22;
 
+    /** EDGE_CHANGE Opcode */
+    public static final byte EDGE_CHANGE = RuntimeListener.REMOVE + 1;
+
     /** Infos about links to this port - currently in fixed array for efficiency reasons - 4 should be enough */
     @InCpp("LinkInfo links[4];")
     private LinkInfo[] links = new LinkInfo[] {new LinkInfo(), new LinkInfo(), new LinkInfo(), new LinkInfo()};
@@ -390,7 +393,7 @@ public class FrameworkElementInfo {
             return "CHANGE";
         case RuntimeListener.REMOVE:
             return "REMOVE";
-        case RuntimeListener.EDGE_CHANGE:
+        case EDGE_CHANGE:
             return "EDGE_CHANGE";
         default:
             return "INVALID OPCODE";

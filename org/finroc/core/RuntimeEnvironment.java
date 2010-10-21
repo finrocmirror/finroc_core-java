@@ -896,11 +896,12 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
      *
      * @param changeType Type of change (see Constants in Transaction class)
      * @param element FrameworkElement that changed
+     * @param edgeTarget Target of edge, in case of EDGE_CHANGE
      *
      * (Is called in synchronized (Runtime & Element) context in local runtime... so method should not block)
      * (should only be called by FrameworkElement class)
      */
-    void runtimeChange(byte changeType, FrameworkElement element) {
+    void runtimeChange(byte changeType, FrameworkElement element, AbstractPort edgeTarget) {
         synchronized (registry) {
             if (!shuttingDown()) {
 

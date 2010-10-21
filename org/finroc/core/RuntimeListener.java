@@ -21,7 +21,9 @@
  */
 package org.finroc.core;
 
+import org.finroc.core.port.AbstractPort;
 import org.finroc.jc.ListenerManager;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
@@ -36,7 +38,7 @@ import org.finroc.jc.annotation.Ptr;
 public interface RuntimeListener {
 
     /** Constants for Change type (element added, element changed, element removed, edges changed) */
-    static final byte ADD = 1, CHANGE = 2, REMOVE = 3, EDGE_CHANGE = 4;
+    static final byte ADD = 1, CHANGE = 2, REMOVE = 3;
 
     /** Call ID before framework element is initialized */
     static final byte PRE_INIT = -1;
@@ -46,10 +48,22 @@ public interface RuntimeListener {
      *
      * @param changeType Type of change (see Constants)
      * @param element FrameworkElement that changed
+     * @param edgeTarget Target of edge, in case of EDGE_CHANGE
      *
      * (Is called in synchronized (Runtime & Element) context in local runtime... so method should not block)
      */
     public void runtimeChange(byte changeType, FrameworkElement element);
+
+    /**
+     * Called whenever an edge was added/removed
+     *
+     * @param changeType Type of change (see Constants)
+     * @param source Source of edge
+     * @param target Target of edge
+     *
+     * (Is called in synchronized (Runtime & Element) context in local runtime... so method should not block)
+     */
+    public void runtimeEdgeChange(byte changeType, AbstractPort source, AbstractPort target);
 }
 
 /**
@@ -60,6 +74,17 @@ class RuntimeListenerManager extends ListenerManager<FrameworkElement, Object, R
 
     @Override
     public void singleNotify(RuntimeListener listener, FrameworkElement origin, Object parameter, int callId) {
-        listener.runtimeChange((byte)callId, origin);
+        if (parameter != null) {
+            byte changeType = (byte)callId;
+            AbstractPort src = (AbstractPort)origin;
+            @Const AbstractPort dest = (AbstractPort)parameter;
+
+            //JavaOnlyBlock
+            listener.runtimeEdgeChange(changeType, src, dest);
+
+            //Cpp listener->runtimeEdgeChange(changeType, src, const_cast<AbstractPort*>(dest));
+        } else {
+            listener.runtimeChange((byte)callId, origin);
+        }
     }
 }

@@ -22,6 +22,7 @@
 package org.finroc.core.port.stream;
 
 import org.finroc.jc.ArrayWrapper;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
@@ -36,6 +37,7 @@ import org.finroc.core.thread.CoreLoopThreadBase;
  * This thread performs update tasks for streams
  */
 @Ptr
+@IncludeClass(SafeConcurrentlyIterableList.class)
 public class StreamCommitThread extends CoreLoopThreadBase {
 
     /** Singleton instance */

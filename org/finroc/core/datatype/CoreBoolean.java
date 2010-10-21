@@ -98,4 +98,11 @@ public class CoreBoolean extends CCPortDataImpl {
     @ConstMethod public boolean get() {
         return value;
     }
+
+    /**
+     * @param newValue New Value
+     */
+    public void set(boolean newValue) {
+        value = newValue;
+    }
 }

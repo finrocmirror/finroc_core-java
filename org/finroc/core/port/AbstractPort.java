@@ -384,7 +384,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         target->edgesDest->add(this, false);
         */
 
-        publishUpdatedInfo(RuntimeListener.EDGE_CHANGE);
+        publishUpdatedEdgeInfo(RuntimeListener.ADD, target);
     }
 
     @SuppressWarnings("unchecked")
@@ -436,7 +436,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             dest.strategy = -1;
         }
 
-        src.publishUpdatedInfo(RuntimeListener.EDGE_CHANGE);
+        src.publishUpdatedEdgeInfo(RuntimeListener.ADD, dest);
         dest.propagateStrategy(null, null);
         src.propagateStrategy(null, null);
     }

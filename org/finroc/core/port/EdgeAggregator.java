@@ -181,4 +181,11 @@ public class EdgeAggregator extends FrameworkElement {
         ar.publishCount.addAndGet(1);
         ar.publishSize.addAndGet(estimatedDataSize);
     }
+
+    /**
+     * @return Array with emerging edges. Can be iterated over concurrently.
+     */
+    public @Ptr ArrayWrapper<AggregatedEdge> getEmergingEdges() {
+        return emergingEdges.getIterable();
+    }
 }

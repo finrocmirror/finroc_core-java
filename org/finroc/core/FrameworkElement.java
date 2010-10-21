@@ -60,6 +60,7 @@ import org.finroc.log.LogStream;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
@@ -1787,6 +1788,21 @@ public class FrameworkElement extends Annotatable {
 //  }
 
     /**
+     * Publish updated edge information
+     *
+     * @param changeType Type of change (see Constants in RuntimeListener class)
+     * @param target Target of edge (this is source)
+     *
+     * (should only be called by AbstractPort class)
+     */
+    @InCppFile
+    protected void publishUpdatedEdgeInfo(byte changeType, AbstractPort target) {
+        if (getFlag(CoreFlags.PUBLISHED)) {
+            RuntimeEnvironment.getInstance().runtimeChange(changeType, this, target);
+        }
+    }
+
+    /**
      * Publish updated port information
      *
      * @param changeType Type of change (see Constants in RuntimeListener class)
@@ -1796,7 +1812,7 @@ public class FrameworkElement extends Annotatable {
     @InCppFile
     protected void publishUpdatedInfo(byte changeType) {
         if (changeType == RuntimeListener.ADD || getFlag(CoreFlags.PUBLISHED)) {
-            RuntimeEnvironment.getInstance().runtimeChange(changeType, this);
+            RuntimeEnvironment.getInstance().runtimeChange(changeType, this, null);
         }
     }
 

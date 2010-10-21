@@ -21,7 +21,6 @@
  */
 package org.finroc.core.port.stream;
 
-import org.finroc.core.RuntimeListener;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.portdatabase.TypedObjectImpl;
@@ -45,7 +44,7 @@ import org.finroc.jc.annotation.Ref;
 public abstract class Transaction extends TypedObjectImpl {
 
     /** Some basic opcodes */
-    public static final byte ADD = RuntimeListener.ADD, CHANGE = RuntimeListener.CHANGE, REMOVE = RuntimeListener.REMOVE;
+    public static final byte ADD = 1, CHANGE = 2, REMOVE = 3;
 
     /** Op code of transaction */
     public byte opCode;
