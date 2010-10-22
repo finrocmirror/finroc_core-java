@@ -37,7 +37,6 @@ import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
-import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
@@ -58,7 +57,7 @@ import org.finroc.xml.XMLNode;
  * XML file.
  * Changes made using finstruct can be saved back to these files.
  */
-public class FinstructableGroup extends FrameworkElement implements FrameworkElementTreeFilter.Callback {
+public class FinstructableGroup extends FrameworkElement implements FrameworkElementTreeFilter.Callback<XMLNode> {
 
     /** contains name of XML to use */
     private StringStructureParameter xmlFile = new StringStructureParameter("XML file", "");
@@ -69,9 +68,6 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     /** Log domain for edges */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"finstructable\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("finstructable");
-
-    /** Temporary variable for save operation: XML root node */
-    @Ptr private XMLNode rootTmp;
 
     /** Temporary variable for save operation: List to store connected ports in */
     private SimpleList<AbstractPort> connectTmp = new SimpleList<AbstractPort>();
@@ -313,12 +309,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 serializeChildren(root, this);
 
                 // serialize edges
-                rootTmp = root;
                 linkTmp = getQualifiedName() + "/";
                 FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
-                StringBuilder sb = new StringBuilder();
-                filter.traverseElementTree(this, this, sb);
-                rootTmp = null;
+                filter.traverseElementTree(this, this, root);
                 doc.writeToFile(currentXmlFile);
                 log(LogLevel.LL_USER, logDomain, "Saving successful");
             } catch (XML2WrapperException e) {
@@ -331,7 +324,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe) {
+    public void treeFilterCallback(FrameworkElement fe, XMLNode root) {
         assert(fe.isPort());
         AbstractPort ap = (AbstractPort)fe;
         ap.getConnectionPartners(connectTmp, true, false);
@@ -361,7 +354,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
 
             // save edge
-            XMLNode edge = rootTmp.addChildNode("edge");
+            XMLNode edge = root.addChildNode("edge");
             edge.setAttribute("src", getEdgeLink(ap));
             edge.setAttribute("dest", getEdgeLink(ap2));
         }
@@ -372,12 +365,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 LinkEdge le = ap.getLinkEdges().get(i);
                 if (le.getSourceLink().length() > 0) {
                     // save edge
-                    XMLNode edge = rootTmp.addChildNode("edge");
+                    XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(le.getSourceLink()));
                     edge.setAttribute("dest", getEdgeLink(ap));
                 } else {
                     // save edge
-                    XMLNode edge = rootTmp.addChildNode("edge");
+                    XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(ap));
                     edge.setAttribute("dest", getEdgeLink(le.getTargetLink()));
                 }

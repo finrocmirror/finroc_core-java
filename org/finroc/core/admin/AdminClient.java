@@ -274,4 +274,44 @@ public class AdminClient extends InterfaceClientPort {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
     }
+
+    /**
+     * Starts execution of all executable elements in remote runtime
+     */
+    public void startExecution() {
+        try {
+            AdminServer.START_EXECUTION.call(this, false);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * Stops execution of all executable elements in remote runtime
+     */
+    public void pauseExecution() {
+        try {
+            AdminServer.PAUSE_EXECUTION.call(this, false);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * @param remoteHandle remote handle of framework element to query
+     * @return Is framework element currently executing (e.g. true, if parent ThreadContainer is executing)
+     * @throws Throws Exception if remote element is no longer available - or has no Executable parent
+     */
+    public boolean isExecuting(int remoteHandle) throws Exception {
+        try {
+            int result = AdminServer.IS_RUNNING.call(this, remoteHandle, 2000);
+            if (result < 0) {
+                throw new Exception("element N/A");
+            }
+            return result == 1;
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            throw e;
+        }
+    }
 }

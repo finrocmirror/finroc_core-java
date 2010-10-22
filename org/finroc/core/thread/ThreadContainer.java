@@ -38,7 +38,7 @@ import org.finroc.log.LogLevel;
  * Contains thread that executes OrderedPeriodicTasks of all children.
  * Execution in performed in the order of the graph.
  */
-public class ThreadContainer extends Group {
+public class ThreadContainer extends Group implements StartAndPausable {
 
     /** Should this container contain a real-time thread? */
     private final BoolStructureParameter rtThread = new BoolStructureParameter("Realtime Thread", false);
@@ -64,10 +64,11 @@ public class ThreadContainer extends Group {
     public ThreadContainer(String description, FrameworkElement parent) {
         super(description, parent);
         StructureParameterList.getOrCreate(this).add(rtThread);
+        addAnnotation(new ExecutionControl(this));
     }
 
     @Override
-    public synchronized void delete() {
+    public void delete() {
         if (thread != null) {
             stopThread();
             joinThread();
@@ -75,10 +76,8 @@ public class ThreadContainer extends Group {
         super.delete();
     }
 
-    /**
-     * Start thread in thread container
-     */
-    public synchronized void startThread() {
+    @Override
+    public void startExecution() {
         assert(thread == null);
         thread = ThreadUtil.getThreadSharedPtr(new ThreadContainerThread(this, cycleTime.get(), warnOnCycleTimeExceed.get()));
         if (rtThread.get()) {
@@ -89,16 +88,22 @@ public class ThreadContainer extends Group {
     /**
      * Stop thread in thread container (does not block - call join thread to block until thread has terminated)
      */
-    public synchronized void stopThread() {
+    private void stopThread() {
         if (thread != null) {
             thread.stopThread();
         }
     }
 
+    @Override
+    public void pauseExecution() {
+        stopThread();
+        joinThread();
+    }
+
     /**
      * Block until thread has stopped
      */
-    public synchronized void joinThread() {
+    public void joinThread() {
         if (thread != null) {
             try {
                 thread.join();
@@ -107,6 +112,15 @@ public class ThreadContainer extends Group {
             }
             thread = null;
         }
+    }
+
+    @Override
+    public boolean isExecuting() {
+        ThreadContainerThread t = thread;
+        if (t != null) {
+            return t.isRunning();
+        }
+        return false;
     }
 
 }

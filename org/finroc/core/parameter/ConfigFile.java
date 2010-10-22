@@ -46,7 +46,7 @@ import org.finroc.xml.XMLNode;
  *
  * Configuration File. Is a tree of nodes with values as leafs
  */
-public class ConfigFile extends FinrocAnnotation implements FrameworkElementTreeFilter.Callback {
+public class ConfigFile extends FinrocAnnotation implements FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Data Type */
     public static DataType TYPE = DataTypeRegister.getInstance().getDataType(ConfigFile.class);
@@ -56,9 +56,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
 
     /** File name of configuration file */
     private String filename;
-
-    /** Used to tell FrameworkElementTreeFilter.Callback whether we're currently loading or saving parameters */
-    private boolean loadingParameters;
 
     /** Separator entries are divided with */
     private static final String SEPARATOR = "/";
@@ -104,9 +101,8 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         FrameworkElement ann = (FrameworkElement)getAnnotated();
         assert(ann != null);
         synchronized (ann.getRegistryLock()) { // nothing should change while we're doing this
-            loadingParameters = false;
             FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
-            fet.traverseElementTree(ann, this, tempBuffer);
+            fet.traverseElementTree(ann, this, false, tempBuffer);
         }
 
         // write new tree to file
@@ -120,15 +116,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @return ConfigFile - or null if none could be found
      */
     public static ConfigFile find(FrameworkElement element) {
-        ConfigFile cf = (ConfigFile)element.getAnnotation(TYPE);
-        if (cf != null) {
-            return cf;
-        }
-        FrameworkElement parent = element.getParent();
-        if (parent != null) {
-            return find(parent);
-        }
-        return null;
+        return (ConfigFile)findParentWithAnnotation(element, TYPE);
     }
 
     /**
@@ -138,14 +126,13 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         FrameworkElement ann = (FrameworkElement)getAnnotated();
         assert(ann != null);
         synchronized (ann.getRegistryLock()) { // nothing should change while we're doing this
-            loadingParameters = true;
             FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
-            fet.traverseElementTree(ann, this, tempBuffer);
+            fet.traverseElementTree(ann, this, true, tempBuffer);
         }
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe) {
+    public void treeFilterCallback(FrameworkElement fe, Boolean loadingParameters) {
         if (find(fe) == this) { // Does element belong to this configuration file?
             ParameterInfo pi = (ParameterInfo)fe.getAnnotation(ParameterInfo.TYPE);
             if (pi != null) {

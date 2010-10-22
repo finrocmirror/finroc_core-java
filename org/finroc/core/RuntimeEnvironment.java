@@ -56,6 +56,7 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.rpc.MethodCallSyncher;
 import org.finroc.core.port.stream.StreamCommitThread;
 import org.finroc.core.portdatabase.SerializationHelper;
+import org.finroc.core.thread.ExecutionControl;
 
 /**
  * @author max
@@ -75,7 +76,7 @@ import org.finroc.core.portdatabase.SerializationHelper;
              })
 @ForwardDecl( {ThreadLocalCache.class})
 @Friend(LinkEdge.class)
-public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*/
+public class RuntimeEnvironment extends FrameworkElement implements FrameworkElementTreeFilter.Callback<Boolean> { /*implements Runtime*/
 
     /**
      * Contains diverse registers/lookup tables of runtime.
@@ -501,29 +502,41 @@ public class RuntimeEnvironment extends FrameworkElement { /*implements Runtime*
 //      }
 //  }
 //
-//  /**
-//   * Start executing Modules
-//   */
-//  public synchronized void startExecution() {
-//      for (int i = 0; i < loopThreads.size(); i++) {
-//          loopThreads.get(i).continueThread();
-//      }
-//      for (int i = 0; i < eventThreads.size(); i++) {
-//          eventThreads.get(i).continueThread();
-//      }
-//  }
-//
-//  /**
-//   * Start executing Modules
-//   */
-//  public synchronized void stopExecution() {
-//      for (int i = 0; i < loopThreads.size(); i++) {
-//          loopThreads.get(i).pauseThread();
-//      }
-//      for (int i = 0; i < eventThreads.size(); i++) {
-//          eventThreads.get(i).pauseThread();
-//      }
-//  }
+
+    /**
+     * Start executing all Modules and Thread Containers in runtime
+     */
+    public void startExecution() {
+        synchronized (registry) {
+            @PassByValue FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
+            fet.traverseElementTree(this, this, true);
+        }
+    }
+
+    /**
+     * Stop executing all Modules and Thread Containers in runtime
+     */
+    public void stopExecution() {
+        synchronized (registry) {
+            @PassByValue FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
+            fet.traverseElementTree(this, this, false);
+        }
+    }
+
+    @Override
+    public void treeFilterCallback(FrameworkElement fe, Boolean start) {
+
+        // callback from startExecution() or stopExecution()
+        ExecutionControl ec = (ExecutionControl)fe.getAnnotation(ExecutionControl.TYPE);
+        if (ec != null) {
+            if (start) {
+                ec.start();
+            } else {
+                ec.pause();
+            }
+        }
+    }
+
 
     @JavaOnly public static void main(String[] args) {
         getInstance();

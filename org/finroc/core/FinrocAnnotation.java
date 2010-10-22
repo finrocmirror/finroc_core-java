@@ -23,6 +23,7 @@ package org.finroc.core;
 
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObjectImpl;
 import org.finroc.jc.HasDestructor;
@@ -88,5 +89,24 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
     @Override
     public void deserialize(CoreInput is) {
         throw new RuntimeException("Unsupported");
+    }
+
+    /**
+     * Searches for parent with annotation of specified type
+     *
+     * @param fe Framework element to start searching at
+     * @param type Data Type
+     * @return Annotation of first parent that has one - or null
+     */
+    protected static FinrocAnnotation findParentWithAnnotation(FrameworkElement fe, DataType type) {
+        FinrocAnnotation ann = fe.getAnnotation(type);
+        if (ann != null) {
+            return ann;
+        }
+        FrameworkElement parent = fe.getParent();
+        if (parent != null) {
+            return findParentWithAnnotation(parent, type);
+        }
+        return null;
     }
 }

@@ -107,14 +107,6 @@ public class RemoteRuntime extends FinrocAnnotation {
      * @return RemoteRuntime object - or null if none could be found
      */
     public static RemoteRuntime find(FrameworkElement remoteElement) {
-        RemoteRuntime rr = (RemoteRuntime)remoteElement.getAnnotation(TYPE);
-        if (rr != null) {
-            return rr;
-        }
-        FrameworkElement parent = remoteElement.getParent();
-        if (parent != null) {
-            return find(parent);
-        }
-        return null;
+        return (RemoteRuntime)FinrocAnnotation.findParentWithAnnotation(remoteElement, TYPE);
     }
 }

@@ -25,6 +25,7 @@ import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
@@ -156,22 +157,39 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
     /**
      * Traverse (part of) element tree.
      * Only follows primary links (no links - this way, we don't have duplicates)
+     * (creates temporary StringBuilder => might not be suitable for real-time)
      *
      * @param <T> Type of callback class
      * @param root Root element of tree
-     * @param callback Callback class instance
+     * @param callback Callback class instance (needs to have method 'TreeFilterCallback(tFrameworkElement* fe, P customParam)')
+     * @param customParam Custom parameter
+     */
+    @Inline @RawTypeArgs
+    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @PassByValue P customParam) {
+        @PassByValue StringBuilder sb = new StringBuilder();
+        traverseElementTree(root, callback, customParam, sb);
+    }
+
+    /**
+     * Traverse (part of) element tree.
+     * Only follows primary links (no links - this way, we don't have duplicates)
+     *
+     * @param <T> Type of callback class
+     * @param root Root element of tree
+     * @param callback Callback class instance (needs to have method 'TreeFilterCallback(tFrameworkElement* fe, P customParam)')
+     * @param customParam Custom parameter
      * @param tmp Temporary StringBuilder buffer
      */
     @Inline @RawTypeArgs
-    @ConstMethod public <T extends Callback> void traverseElementTree(FrameworkElement root, @Ptr T callback, @Ref StringBuilder tmp) {
+    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @PassByValue P customParam, @Ref StringBuilder tmp) {
         if (accept(root, tmp)) {
-            callback.treeFilterCallback(root);
+            callback.treeFilterCallback(root, customParam);
         }
         @Const @Ptr ArrayWrapper<FrameworkElement.Link> children = root.getChildren();
         for (int i = 0, n = children.size(); i < n; i++) {
             FrameworkElement.Link link = children.get(i);
             if (link != null && link.getChild() != null && link.isPrimaryLink()) {
-                traverseElementTree(link.getChild(), callback, tmp);
+                traverseElementTree(link.getChild(), callback, customParam, tmp);
             }
         }
     }
@@ -181,15 +199,18 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
      *
      * @author max
      */
-    public interface Callback {
+    @JavaOnly
+    public interface Callback<P> {
 
         /**
          * When traversing trees, called for every framework element that matches criteria
          * (Method is non-virtual for efficiency reasons)
          *
          * @param fe Framework element that is currently being visited
+         * @param customParam Custom parameter
          */
         @NonVirtual
-        public void treeFilterCallback(FrameworkElement fe);
+        public void treeFilterCallback(FrameworkElement fe, P customParam);
     }
+
 }

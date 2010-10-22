@@ -23,7 +23,7 @@ import org.finroc.log.LogLevel;
 
 /** ThreadContainer thread class */
 @SharedPtr
-public class ThreadContainerThread extends CoreLoopThreadBase implements RuntimeListener, FrameworkElementTreeFilter.Callback {
+public class ThreadContainerThread extends CoreLoopThreadBase implements RuntimeListener, FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Thread container that thread belongs to */
     private final ThreadContainer threadContainer;
@@ -71,7 +71,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
 
                 // find tasks
                 tasks.clear();
-                filter.traverseElementTree(this.threadContainer, this, tmp);
+                filter.traverseElementTree(this.threadContainer, this, null, tmp);
 
                 // create task graph
                 for (@SizeT int i = 0; i < tasks.size(); i++) {
@@ -144,7 +144,10 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe) {
+    public void treeFilterCallback(FrameworkElement fe, Boolean unused) {
+        if (ExecutionControl.find(fe).getAnnotated() != threadContainer) { // don't handle elements in nested thread containers
+            return;
+        }
         FinrocAnnotation ann = fe.getAnnotation(PeriodicFrameworkElementTask.TYPE);
         if (ann != null) {
             PeriodicFrameworkElementTask task = (PeriodicFrameworkElementTask)ann;

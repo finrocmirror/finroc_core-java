@@ -45,10 +45,14 @@ import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.method.AbstractMethod;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 import org.finroc.core.port.rpc.method.Method0Handler;
+import org.finroc.core.port.rpc.method.Method1Handler;
 import org.finroc.core.port.rpc.method.Method2Handler;
 import org.finroc.core.port.rpc.method.Port0Method;
+import org.finroc.core.port.rpc.method.Port1Method;
 import org.finroc.core.port.rpc.method.Port2Method;
 import org.finroc.core.port.rpc.method.PortInterface;
+import org.finroc.core.port.rpc.method.Void0Handler;
+import org.finroc.core.port.rpc.method.Void0Method;
 import org.finroc.core.port.rpc.method.Void1Handler;
 import org.finroc.core.port.rpc.method.Void1Method;
 import org.finroc.core.port.rpc.method.Void2Handler;
@@ -61,6 +65,7 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.thread.ExecutionControl;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
@@ -77,7 +82,7 @@ import org.finroc.log.LogLevel;
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemBuffer >,
         Void3Handler < Integer, CCInterThreadContainer<?>, PortData > , Method0Handler<MemBuffer>, Void1Handler<Integer>,
-            Method2Handler< MemBuffer, Integer, CoreString> {
+            Method2Handler< MemBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer> {
 
     /** Admin interface */
     @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface");
@@ -121,6 +126,18 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     /** Delete element */
     @PassByValue public static Void1Method<AdminServer, Integer> DELETE_ELEMENT =
         new Void1Method<AdminServer, Integer>(METHODS, "Delete Framework element", "handle", false);
+
+    /** Start/Resume application execution */
+    @PassByValue public static Void0Method<AdminServer> START_EXECUTION =
+        new Void0Method<AdminServer>(METHODS, "Start execution", false);
+
+    /** Stop/Pause application execution */
+    @PassByValue public static Void0Method<AdminServer> PAUSE_EXECUTION =
+        new Void0Method<AdminServer>(METHODS, "Pause execution", false);
+
+    /** Is framework element with specified handle currently executing? */
+    @PassByValue public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
+        new Port1Method<AdminServer, Integer, Integer>(METHODS, "Is Framework element running", "handle", false);
 
     /** Data Type of method calls to this port */
     public static final DataType DATA_TYPE = DataTypeRegister.getInstance().addMethodDataType("Administration method calls", METHODS);
@@ -380,4 +397,30 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             return buf;
         }
     }
+
+    @Override
+    public void handleVoidCall(AbstractMethod method) throws MethodCallException {
+        assert(method == START_EXECUTION || method == PAUSE_EXECUTION);
+        if (method == START_EXECUTION) {
+            getRuntime().startExecution();
+        } else if (method == PAUSE_EXECUTION) {
+            getRuntime().stopExecution();
+        }
+
+    }
+
+    @Override
+    public Integer handleCall(AbstractMethod method, Integer handle) throws MethodCallException {
+        assert(method == IS_RUNNING);
+        FrameworkElement fe = getRuntime().getElement(handle);
+        if (fe != null && (fe.isReady())) {
+            ExecutionControl ec = ExecutionControl.find(fe);
+            if (ec == null) {
+                return 0;
+            }
+            return ec.isRunning() ? 1 : 0;
+        }
+        return -1;
+    }
+
 }
