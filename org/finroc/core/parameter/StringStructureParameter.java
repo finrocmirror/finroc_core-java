@@ -22,7 +22,8 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreString;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 
@@ -34,16 +35,16 @@ import org.finroc.jc.annotation.NoCpp;
 @Inline @NoCpp
 public class StringStructureParameter extends StructureParameter<CoreString> {
 
-    public StringStructureParameter(String name, boolean constParameter, boolean constructorPrototype, String defaultValue) {
-        super(name, CoreString.TYPE, constParameter, constructorPrototype, defaultValue);
+    public StringStructureParameter(String name, boolean constructorPrototype, @CppDefault("\"\"") String defaultValue) {
+        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), constructorPrototype, defaultValue);
     }
 
     public StringStructureParameter(String name, String defaultValue) {
-        super(name, CoreString.TYPE, defaultValue);
+        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), defaultValue);
     }
 
-    public StringStructureParameter(String name, DataType type) {
-        super(name, CoreString.TYPE);
+    public StringStructureParameter(String name) {
+        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), "");
     }
 
     /**
@@ -59,4 +60,24 @@ public class StringStructureParameter extends StructureParameter<CoreString> {
     public void get(StringBuilder sb) {
         getValue().get(sb);
     }
+
+    /* (non-Javadoc)
+     * @see org.finroc.core.parameter.StructureParameter#deepCopy()
+     */
+    @Override
+    public StructureParameterBase deepCopy() {
+        return new StringStructureParameter(getName(), false, "");
+    }
+
+    /**
+     * Interprets/returns value in other (cloned) list
+     *
+     * @param list other list
+     * @return Value in other list
+     */
+    /*public String interpretSpec(StructureParameterList list) {
+        StringStructureParameter param = (StringStructureParameter)list.get(listIndex);
+        assert(param.getType() == getType());
+        return param.get();
+    }*/
 }

@@ -22,6 +22,7 @@
 package org.finroc.core.plugin;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
@@ -41,10 +42,10 @@ public interface CreateModuleAction {
      *
      * @param name Name of instantiated module
      * @param parent Parent of instantiated module
-     * @param parameters Parameters
+     * @param params Parameters
      * @return Created Module (or Group)
      */
-    @ConstMethod public FrameworkElement createModule(String name, FrameworkElement parent, StructureParameterList params) throws Exception;
+    @ConstMethod public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception;
 
     /**
      * @return Returns types of parameters that the create method requires

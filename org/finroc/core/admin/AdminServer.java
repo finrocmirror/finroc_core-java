@@ -30,6 +30,7 @@ import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.MemBuffer;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.finstructable.FinstructableGroup;
+import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateModuleAction;
@@ -271,7 +272,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
 
     @Override
     public void handleVoidCall(AbstractMethod method, Integer cmaIndex, CoreString name, Integer parentHandle, MemBuffer paramsBuffer) throws MethodCallException {
-        StructureParameterList params = null;
+        ConstructorParameters params = null;
         if (method == SET_ANNOTATION) {
             assert(name == null);
             FrameworkElement elem = RuntimeEnvironment.getInstance().getElement(cmaIndex);
@@ -297,34 +298,36 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
 
         } else if (method == CREATE_MODULE) {
             try {
-                CreateModuleAction cma = Plugins.getInstance().getModuleTypes().get(cmaIndex);
-                FrameworkElement parent = RuntimeEnvironment.getInstance().getElement(parentHandle);
-                if (parent == null || (!parent.isReady())) {
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling remote module creation.");
-                } else {
-                    logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module " + parent.getQualifiedLink() + "/" + name.toString());
+                synchronized (getRegistryLock()) {
+                    CreateModuleAction cma = Plugins.getInstance().getModuleTypes().get(cmaIndex);
+                    FrameworkElement parent = RuntimeEnvironment.getInstance().getElement(parentHandle);
+                    if (parent == null || (!parent.isReady())) {
+                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling remote module creation.");
+                    } else {
+                        logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module " + parent.getQualifiedLink() + "/" + name.toString());
 
-                    if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
-                        params = cma.getParameterTypes().cloneList();
-                        @PassByValue CoreInput ci = new CoreInput(paramsBuffer);
-                        for (@SizeT int i = 0; i < params.size(); i++) {
-                            StructureParameterBase param = params.get(i);
-                            String s = ci.readString();
-                            try {
-                                param.set(s);
-                            } catch (Exception e) {
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error parsing '" + s + "' for parameter " + param.getName());
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                        if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
+                            params = cma.getParameterTypes().instantiate();
+                            @PassByValue CoreInput ci = new CoreInput(paramsBuffer);
+                            for (@SizeT int i = 0; i < params.size(); i++) {
+                                StructureParameterBase param = params.get(i);
+                                String s = ci.readString();
+                                try {
+                                    param.set(s);
+                                } catch (Exception e) {
+                                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error parsing '" + s + "' for parameter " + param.getName());
+                                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                                }
                             }
+                            ci.close();
                         }
-                        ci.close();
-                    }
-                    FrameworkElement created = cma.createModule(name.toString(), parent, params);
-                    created.setFinstructed(cma);
-                    created.init();
-                    params = null;
+                        FrameworkElement created = cma.createModule(name.toString(), parent, params);
+                        created.setFinstructed(cma, params);
+                        created.init();
+                        params = null;
 
-                    logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module succeeded");
+                        logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module succeeded");
+                    }
                 }
             } catch (Exception e) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);

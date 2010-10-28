@@ -24,6 +24,7 @@ package org.finroc.core.plugin;
 import java.lang.reflect.Constructor;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
@@ -87,7 +88,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
 
     @Override
     @InCpp("return new T(name, parent);")
-    public FrameworkElement createModule(String name, FrameworkElement parent, StructureParameterList params) throws Exception {
+    public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception {
         return constructor.newInstance(name, parent);
     }
 

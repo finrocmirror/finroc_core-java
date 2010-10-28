@@ -29,6 +29,7 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.HAppend;
@@ -58,6 +59,7 @@ import org.finroc.log.LogLevel;
 import org.finroc.log.LogStream;
 
 import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateModuleAction;
 import org.finroc.core.port.AbstractPort;
@@ -84,6 +86,7 @@ import org.finroc.core.port.ThreadLocalCache;
 @Ptr
 @Friend( {GarbageCollector.class, ChildIterator.class, RuntimeEnvironment.class})
 @IncludeClass(SafeConcurrentlyIterableList.class)
+@CppInclude("parameter/ConstructorParameters.h")
 @HAppend( {"inline std::ostream& operator << (std::ostream& output, const FrameworkElement* lu) {",
            "    lu->streamQualifiedName(output);",
            "    output << \" (\" << ((void*)lu) << \")\";",
@@ -1931,13 +1934,17 @@ public class FrameworkElement extends Annotatable {
      * (should only be called by AdminServer and CreateModuleActions)
      *
      * @param createAction Action with which framework element was created
+     * @param params Parameters that module was created with (may be null)
      */
     @InCppFile
-    public void setFinstructed(CreateModuleAction createAction) {
+    public void setFinstructed(CreateModuleAction createAction, ConstructorParameters params) {
         assert(!getFlag(CoreFlags.FINSTRUCTED));
         StructureParameterList list = StructureParameterList.getOrCreate(this);
         list.setCreateAction(createAction);
         setFlag(CoreFlags.FINSTRUCTED);
+        if (params != null) {
+            addAnnotation(params);
+        }
     }
 
     /*Cpp

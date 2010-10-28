@@ -22,8 +22,9 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreBoolean;
-import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 
 /**
@@ -34,9 +35,20 @@ import org.finroc.jc.annotation.NoCpp;
 @Inline @NoCpp
 public class BoolStructureParameter extends StructureParameter<CoreBoolean> {
 
+    @JavaOnly
+    public BoolStructureParameter(String name) {
+        this(name, false, false);
+    }
+
+    public BoolStructureParameter(String name, boolean defaultValue, boolean constructorPrototype) {
+        super(name, DataTypeRegister.getInstance().getDataType(CoreBoolean.class), constructorPrototype, "");
+        if (!constructorPrototype) {
+            set(defaultValue);
+        }
+    }
+
     public BoolStructureParameter(String name, boolean defaultValue) {
-        super(name, CoreNumber.TYPE);
-        set(defaultValue);
+        this(name, defaultValue, false);
     }
 
     /**
@@ -52,4 +64,21 @@ public class BoolStructureParameter extends StructureParameter<CoreBoolean> {
     public void set(boolean newValue) {
         super.getValue().set(newValue);
     }
+
+    @Override
+    public StructureParameterBase deepCopy() {
+        return new BoolStructureParameter(getName(), false, false);
+    }
+
+    /**
+     * Interprets/returns value in other (cloned) list
+     *
+     * @param list other list
+     * @return Value in other list
+     */
+    /*public boolean interpretSpec(StructureParameterList list) {
+        BoolStructureParameter param = (BoolStructureParameter)list.get(listIndex);
+        assert(param.getType() == getType());
+        return param.get();
+    }*/
 }

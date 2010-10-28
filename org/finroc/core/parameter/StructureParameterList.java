@@ -37,6 +37,8 @@ import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.log.LogLevel;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -87,7 +89,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     @JavaOnly
     public StructureParameterList(@Ptr StructureParameterBase... params) {
         for (StructureParameterBase param : params) {
-            parameters.add(param);
+            add(param);
         }
     }
 
@@ -96,7 +98,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
         super.delete();
     }
 
-    /** Clear list */
+    /** Clear list (deletes parameters) */
     private void clear() {
         for (int i = parameters.size() - 1; i >= 0; i--) {
             parameters.remove(i).delete();
@@ -123,7 +125,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             for (@SizeT int i = 0; i < newSize; i++) {
                 StructureParameterBase param = new StructureParameterBase();
                 param.deserialize(is);
-                parameters.add(param);
+                add(param);
             }
 
             //Cpp assert(false && "not supported");
@@ -166,18 +168,20 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     }
 
     /**
-     * Clone parameter list - deep-copy without values
+     * If this is constructor parameter prototype: create instance that can be filled with values
+     * (More or less clones parameter list (deep-copy without values))
      *
      * @return Cloned list
      */
-    @ConstMethod public StructureParameterList cloneList() {
-        StructureParameterList c = new StructureParameterList();
+    @ConstMethod public ConstructorParameters instantiate() {
+        ConstructorParameters cp = new ConstructorParameters();
+        StructureParameterList c = cp;
         c.createAction = createAction;
         for (@SizeT int i = 0; i < parameters.size(); i++) {
             StructureParameterBase p = parameters.get(i);
-            c.parameters.add(new StructureParameterBase(p.getName(), p.getType(), p.isConstParameter(), true));
+            c.add(p.deepCopy());
         }
-        return c;
+        return cp;
     }
 
     /**
@@ -187,6 +191,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
      */
     public void add(StructureParameterBase param) {
         if (param != null) {
+            param.listIndex = parameters.size();
             parameters.add(param);
         }
     }
@@ -219,5 +224,31 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             fe.addAnnotation(result);
         }
         return result;
+    }
+
+    // only used in FinstructableGroup
+    @Override
+    public void serialize(XMLNode node) throws Exception {
+        for (@SizeT int i = 0; i < size(); i++) {
+            XMLNode p = node.addChildNode("parameter");
+            StructureParameterBase param = get(i);
+            p.setAttribute("name", param.getName());
+            param.serialize(p);
+        }
+    }
+
+    // only used in FinstructableGroup
+    @Override
+    public void deserialize(XMLNode node) throws Exception {
+        @PassByValue SimpleList<XMLNode> vec = new SimpleList<XMLNode>();
+        vec.addAll(node.getChildren());
+        if (vec.size() != size()) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
+        }
+        int count = Math.min(vec.size(), size());
+        for (int i = 0; i < count; i++) {
+            StructureParameterBase param = get(i);
+            param.deserialize(vec.get(i));
+        }
     }
 }

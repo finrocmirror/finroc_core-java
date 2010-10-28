@@ -35,8 +35,10 @@ import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
@@ -50,7 +52,7 @@ import org.finroc.xml.XMLNode;
  * Structure Parameter class
  * (Generic base class without template type)
  */
-@Ptr
+@Ptr @Friend(StructureParameterList.class)
 public class StructureParameterBase extends CoreSerializableImpl implements HasDestructor {
 
     /** Name of parameter */
@@ -65,8 +67,8 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     /** Current parameter value (in CreateModuleAction-prototypes this is null) - CC type */
     protected @Ptr CCInterThreadContainer<?> ccValue;
 
-    /** Constant parameter (usually the case, with constructor parameters) */
-    private boolean constParameter;
+    /** Index in parameter list */
+    protected int listIndex;
 
     /** If this is a remote parameter: value as string */
     @JavaOnly
@@ -89,13 +91,11 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     /**
      * @param name Name of parameter
      * @param type DataType of parameter
-     * @param constParameter Constant parameter (usually the case, with constructor parameters)
      * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
      */
-    public StructureParameterBase(String name, DataType type, boolean constParameter, boolean constructorPrototype) {
+    public StructureParameterBase(String name, DataType type, boolean constructorPrototype) {
         this.name = name;
         this.type = type;
-        this.constParameter = constParameter;
 
         if (!constructorPrototype) {
             createBuffer(type);
@@ -109,7 +109,6 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     public void serialize(CoreOutput os) {
         os.writeString(name);
         os.writeString(type.getName());
-        os.writeBoolean(constParameter);
         TypedObject val = valPointer();
 
         //JavaOnlyBlock
@@ -132,13 +131,11 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
             //JavaOnlyBlock
             name = is.readString();
             type = DataTypeRegister.getInstance().getDataType(is.readString());
-            constParameter = is.readBoolean();
 
             //Cpp assert(false && "not supported");
         } else {
             is.readString();
             is.readString();
-            is.readBoolean();
         }
         if (is.readBoolean()) {
             try {
@@ -213,7 +210,6 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
             }
 
         } else {
-            assert(!constParameter);
             assert(type != null);
             DataType dt = SerializationHelper.getTypedStringDataType(type, s);
             TypedObject val = valPointer();
@@ -266,14 +262,7 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     }
 
     /**
-     * @return Constant parameter (usually the case, with constructor parameters)
-     */
-    public boolean isConstParameter() {
-        return constParameter;
-    }
-
-    /**
-     * @return Remote value as string if data type is not null
+     * @return Remote value if data type is not null
      */
     @JavaOnly
     public TypedObject getValueRaw() {
@@ -309,5 +298,13 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
             val = valPointer();
         }
         val.deserialize(node);
+    }
+
+    /**
+     * (should be overridden by subclasses)
+     * @return Deep copy of parameter (without value)
+     */
+    public @Managed StructureParameterBase deepCopy() {
+        throw new RuntimeException("Unsupported");
     }
 }

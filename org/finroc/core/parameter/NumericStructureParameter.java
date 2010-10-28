@@ -25,6 +25,7 @@ import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
@@ -50,20 +51,30 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
     /** Default value */
     private T defaultVal;
 
+    public NumericStructureParameter(String name, T defaultValue, boolean constructorPrototype) {
+        this(name, defaultValue, constructorPrototype, new Bounds());
+    }
+
     public NumericStructureParameter(String name, T defaultValue) {
-        this(name, defaultValue, new Bounds());
+        this(name, defaultValue, false, new Bounds());
     }
 
     @SuppressWarnings("unchecked")
-    public NumericStructureParameter(String name, T defaultValue, Bounds bounds) {
-        super(name, CoreNumber.TYPE);
+    public NumericStructureParameter(String name, T defaultValue, boolean constructorPrototype, Bounds bounds) {
+        super(name, DataTypeRegister.getInstance().getDataType(CoreNumber.class), constructorPrototype);
         this.bounds = bounds;
 
         //JavaOnlyBlock
         numClass = (Class<T>)defaultValue.getClass();
 
         defaultVal = defaultValue;
-        set(defaultValue);
+        if (!constructorPrototype) {
+            set(defaultValue);
+        }
+    }
+
+    public NumericStructureParameter(String name, T defaultValue, Bounds bounds2) {
+        this(name, defaultValue, false, bounds2);
     }
 
     /**
@@ -132,4 +143,22 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
         }
         getBuffer().setValue(cn);
     }
+
+    @Override
+    public StructureParameterBase deepCopy() {
+        return new NumericStructureParameter<T>(getName(), defaultVal, false, bounds);
+    }
+
+    /**
+     * Interprets/returns value in other (cloned) list
+     *
+     * @param list other list
+     * @return Value in other list
+     */
+    /*@SuppressWarnings("unchecked")
+    public T interpretSpec(StructureParameterList list) {
+        NumericStructureParameter<T> param = (NumericStructureParameter<T>)list.get(listIndex);
+        assert(param.getType() == getType());
+        return param.get();
+    }*/
 }

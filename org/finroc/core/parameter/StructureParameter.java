@@ -22,10 +22,12 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.HPrepend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
@@ -60,21 +62,36 @@ import org.finroc.jc.annotation.Ref;
     "};",
 })
 @RawTypeArgs
+@IncludeClass(DataTypeRegister.class)
 public class StructureParameter<T extends TypedObject> extends StructureParameterBase {
 
     //Cpp typedef StructureParameterBufferHelper<T, boost::is_base_of<PortData, T>::value> Helper;
 
+    /*Cpp
+    StructureParameter(const util::String& name) :
+         StructureParameterBase(name, DataTypeRegister::getInstance()->getDataType<T>(), false)
+    {}
+     */
+
     /**
      * @param name Name of parameter
      * @param type DataType of parameter
-     * @param constParameter Constant parameter (usually the case, with constructor parameters)
-     * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
+     * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
+     */
+    public StructureParameter(@Const @Ref String name, DataType type, boolean constructorPrototype) {
+        super(name, type, constructorPrototype);
+    }
+
+    /**
+     * @param name Name of parameter
+     * @param type DataType of parameter
+     * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      * @param defaultValue Default value
      */
-    public StructureParameter(@Const @Ref String name, DataType type, boolean constParameter, boolean constructorPrototype, @Const @Ref String defaultValue) {
-        super(name, type, constParameter, constructorPrototype);
+    public StructureParameter(@Const @Ref String name, DataType type, boolean constructorPrototype, @Const @Ref String defaultValue) {
+        super(name, type, constructorPrototype);
         String dv = defaultValue;
-        if (dv.length() > 0) {
+        if ((!constructorPrototype) && dv.length() > 0) {
             try {
                 set(dv);
             } catch (Exception e) {
@@ -92,7 +109,7 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @param defaultValue Default value
      */
     public StructureParameter(@Const @Ref String name, DataType type, @Const @Ref String defaultValue) {
-        this(name, type, false, false, defaultValue);
+        this(name, type, false, defaultValue);
     }
 
     /**
@@ -112,4 +129,22 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
     public @Ptr T getValue() {
         return (T)super.getValueRaw();
     }
+
+    @Override
+    public StructureParameterBase deepCopy() {
+        return new StructureParameter<T>(getName(), getType(), false, "");
+    }
+
+    /**
+     * Interprets/returns value in other (cloned) list
+     *
+     * @param list other list
+     * @return Value in other list
+     */
+    /*@SuppressWarnings("unchecked")
+    public T interpret(StructureParameterList list) {
+        StructureParameter<T> param = (StructureParameter<T>)list.get(listIndex);
+        assert(param.getType() == getType());
+        return param.getValue();
+    }*/
 }

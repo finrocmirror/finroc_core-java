@@ -26,8 +26,8 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.LinkEdge;
+import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StringStructureParameter;
-import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateModuleAction;
 import org.finroc.core.plugin.Plugins;
@@ -37,6 +37,7 @@ import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
@@ -185,39 +186,42 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 return;
             }
 
-            // get parameter node
+            // read parameters
             @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
             children.addAll(node.getChildren());
-            XMLNode parameters = children.get(0);
-            String pName = parameters.getName();
-            if (!pName.equals("parameters")) {
-                log(LogLevel.LL_WARNING, logDomain, "Failed to instantiate element. No parameters found. Skipping...");
-                return;
+            int idx = 0;
+            @Ptr XMLNode parameters = null;
+            @Ptr XMLNode constructorParams = null;
+            XMLNode xn = children.get(idx);
+            String pName = xn.getName();
+            if (pName.equals("constructor")) {
+                constructorParams = xn;
+                idx++;
+                xn = children.get(idx);
+                pName = xn.getName();
+            }
+            if (pName.equals("parameters")) {
+                parameters = xn;
+                idx++;
             }
 
             // create mode
-            boolean standardFinrocModule = (action.getParameterTypes() == null) || (action.getParameterTypes().size() == 0);
             FrameworkElement created = null;
-            if (standardFinrocModule) {
-
-                // mode1: Finroc standard module with empty constructor that creates its parameters by itself
-                created = action.createModule(name, parent, null);
-                created.setFinstructed(action);
-                created.init();
-                deserializeParameterList(parameters, (StructureParameterList)created.getAnnotation(StructureParameterList.TYPE));
+            ConstructorParameters spl = null;
+            if (constructorParams != null) {
+                spl = action.getParameterTypes().instantiate();
+                spl.deserialize(constructorParams);
+            }
+            created = action.createModule(name, parent, spl);
+            created.setFinstructed(action, spl);
+            created.init();
+            if (parameters != null) {
+                ((StructureParameterList)created.getAnnotation(StructureParameterList.TYPE)).deserialize(parameters);
                 created.structureParametersChanged();
-            } else {
-
-                // mode2: module that already needs parameters for constructor
-                StructureParameterList spl = action.getParameterTypes().cloneList();
-                deserializeParameterList(parameters, spl);
-                created = action.createModule(name, parent, spl);
-                created.setFinstructed(action);
-                created.init();
             }
 
             // continue with children
-            for (@SizeT int i = 1; i < children.size(); i++) {
+            for (@SizeT int i = idx; i < children.size(); i++) {
                 XMLNode node2 = children.get(i);
                 String name2 = node2.getName();
                 if (name2.equals("element")) {
@@ -233,26 +237,6 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         } catch (Exception e) {
             log(LogLevel.LL_WARNING, logDomain, "Failed to instantiate element. Skipping...");
             log(LogLevel.LL_WARNING, logDomain, e);
-        }
-    }
-
-    /**
-     * Deserialize parameter list
-     *
-     * @param node XML node containing parameters
-     * @param params StructureParameterList to deserialize values of
-     */
-    private void deserializeParameterList(XMLNode node, StructureParameterList params) throws Exception {
-
-        @PassByValue SimpleList<XMLNode> vec = new SimpleList<XMLNode>();
-        vec.addAll(node.getChildren());
-        if (vec.size() != params.size()) {
-            log(LogLevel.LL_WARNING, logDomain, "Parameter list size and number of xml parameters differ. Trying anyway");
-        }
-        int count = Math.min(vec.size(), params.size());
-        for (int i = 0; i < count; i++) {
-            StructureParameterBase param = params.get(i);
-            param.deserialize(vec.get(i));
         }
     }
 
@@ -412,7 +396,8 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         FrameworkElement fe = null;
         while ((fe = ci.next()) != null) {
             StructureParameterList spl = (StructureParameterList)fe.getAnnotation(StructureParameterList.TYPE);
-            if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED) && spl != null) {
+            ConstructorParameters cps = (ConstructorParameters)fe.getAnnotation(ConstructorParameters.TYPE);
+            if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED)) {
 
                 // serialize framework element
                 XMLNode n = node.addChildNode("element");
@@ -420,12 +405,13 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 CreateModuleAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
                 n.setAttribute("group", cma.getModuleGroup());
                 n.setAttribute("type", cma.getName());
-                XMLNode pn = n.addChildNode("parameters");
-                for (@SizeT int i = 0; i < spl.size(); i++) {
-                    XMLNode p = pn.addChildNode("parameter");
-                    StructureParameterBase param = spl.get(i);
-                    p.setAttribute("name", param.getName());
-                    param.serialize(p);
+                if (cps != null) {
+                    XMLNode pn = n.addChildNode("constructor");
+                    cps.serialize(pn);
+                }
+                if (spl != null) {
+                    XMLNode pn = n.addChildNode("parameters");
+                    spl.serialize(pn);
                 }
 
                 // serialize its children
