@@ -92,7 +92,12 @@ public class EnumValue extends CCPortDataImpl {
 
     @Override
     public void deserialize(String s) throws Exception {
-        value = Integer.parseInt(s.substring(0, s.indexOf("|")));
+        if (s.contains("|")) {
+            value = Integer.parseInt(s.substring(0, s.indexOf("|")));
+        } else {
+            value = Integer.parseInt(s);
+            return;
+        }
 
         //JavaOnlyBlock
         stringConstants.clear();

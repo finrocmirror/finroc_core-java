@@ -164,8 +164,17 @@ public class AdminClient extends InterfaceClientPort {
         return result;
     }
 
+    /**
+     * Create Module in remote runtime environment
+     *
+     * @param cma Remote create module action (retrieved from getRemoteModuleTypes())
+     * @param name Name of new module
+     * @param parentHandle Remote handle of parent module
+     * @param params Parameters
+     * @return Did module creation succeed?
+     */
     @JavaOnly
-    public void createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
+    public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
         MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
         CoreOutput co = new CoreOutput(mb);
         if (params != null) {
@@ -182,9 +191,11 @@ public class AdminClient extends InterfaceClientPort {
 
         try {
             AdminServer.CREATE_MODULE.call(this, cma.remoteIndex, name2, parentHandle, mb, true);
+            return true;
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
+        return false;
     }
 
     /**

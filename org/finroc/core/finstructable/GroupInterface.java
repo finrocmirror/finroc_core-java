@@ -44,10 +44,10 @@ import org.finroc.jc.annotation.PassByValue;
 public class GroupInterface extends EdgeAggregator {
 
     /** Classifies data in this interface */
-    private enum DataClassification { SENSOR_DATA, CONTROLLER_DATA, ANY }
+    public enum DataClassification { SENSOR_DATA, CONTROLLER_DATA, ANY }
 
     /** Which types of ports can be created in this interface? */
-    private enum PortDirection { INPUT_ONLY, OUTPUT_ONLY, BOTH }
+    public enum PortDirection { INPUT_ONLY, OUTPUT_ONLY, BOTH }
 
     /** List of ports */
     private StructureParameter<PortCreationList> ports = new StructureParameter<PortCreationList>("Ports", PortCreationList.TYPE);

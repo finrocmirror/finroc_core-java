@@ -215,7 +215,21 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     }
 
     public ConstructorCreateModuleAction(String group, String typeName, Class <? extends FrameworkElement > c, String paramNames) {
-        this(group, typeName, c.getConstructors()[0], paramNames);
+        this(group, typeName, getConstructor(c, paramNames.split(",").length), paramNames);
+    }
+
+    /**
+     * @param c Class
+     * @param params Number of parameters
+     * @return Constructor with specified number of parameters
+     */
+    private static Constructor getConstructor(Class <? extends FrameworkElement > c, int params) {
+        for (Constructor con : c.getConstructors()) {
+            if (con.getParameterTypes().length == (params + 2)) {
+                return con;
+            }
+        }
+        throw new RuntimeException("Constructor not found");
     }
 
     @SuppressWarnings("unchecked")
@@ -224,14 +238,14 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
 
         constructor = c;
         Class<?>[] ps = c.getParameterTypes();
-        String[] psn2 = paramNames.split(paramNames);
+        String[] psn2 = paramNames.split(",");
         assert(String.class.equals(ps[0])) : "First parameter must be name";
         assert(FrameworkElement.class.equals(ps[1])) : "Second parameter must be parent";
         Class<?>[] ps2 = new Class[13];
         String[] psn = new String[13];
         for (int i = 0; i < 12; i++) {
-            ps2[i + 1] = (i + 2 > ps.length ? null : ps[i + 2]);
-            psn[i + 1] = (i > psn2.length ? ("Parameter " + (i + 1)) : psn2[i].trim());
+            ps2[i + 1] = (i + 2 >= ps.length ? null : ps[i + 2]);
+            psn[i + 1] = (i >= psn2.length ? ("Parameter " + (i + 1)) : psn2[i].trim());
         }
 
         p1 = createParam(ps2[1], psn[1]);
@@ -250,7 +264,9 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
 
     @SuppressWarnings( { "unchecked" })
     private StructureParameterBase createParam(Class<?> c, String name) {
-        if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c) || c.equals(CoreBoolean.class)) {
+        if (c == null) {
+            return null;
+        } else if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c) || c.equals(CoreBoolean.class)) {
             return new BoolStructureParameter(name, false, true);
         } else if (c.equals(CoreNumber.class) || c.equals(int.class) || c.equals(double.class) || c.equals(float.class) || c.equals(long.class) || Number.class.isAssignableFrom(c)) {
             return new NumericStructureParameter(name, 0);
