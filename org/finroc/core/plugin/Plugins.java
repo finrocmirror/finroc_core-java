@@ -254,7 +254,7 @@ public class Plugins { /*implements HTTPResource*/
      * @param cma CreateModuleAction to add
      */
     public void addModuleType(CreateModuleAction cma) {
-        logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
+        logDomain.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
         getModuleTypes().add(cma);
     }
 

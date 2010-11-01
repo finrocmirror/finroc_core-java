@@ -261,7 +261,7 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
 
         // JavaOnlyBlock
         initialLookup.put(dt.getJavaClass(), dt);
-        log(LogLevel.LL_DEBUG, logDomain, "Adding data type: " + dt.getName());
+        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Adding data type: " + dt.getName());
 
         //Cpp initialLookup[dt->rttiName] = dt;
         //Cpp assert(initialLookup[dt->rttiName] == dt);
