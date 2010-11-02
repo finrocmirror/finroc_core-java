@@ -241,6 +241,7 @@ public abstract class AbstractCall extends SerializableReusable {
         if (skipParameters) {
             return;
         }
+        this.is.setTypeTranslation(is.getTypeTranslation());
         paramStorage.deserialize(is);
         int respSize = is.readByte();
         assert(responsibilities.size() == 0);

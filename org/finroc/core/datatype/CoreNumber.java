@@ -241,7 +241,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         case eCONSTANT:
             return static_cast<T>(unit->getValue().value<T>());
         default:
-            assert(false);
+            assert(false && "Possibly not a CoreNumber at this memory address?");
             return 0;
         }
     }
