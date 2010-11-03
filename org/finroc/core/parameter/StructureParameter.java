@@ -59,7 +59,7 @@ import org.finroc.jc.annotation.Ref;
     "  static T* get(PortData* pd, CCInterThreadContainer<>* cc) {",
     "    return (T*)pd;",
     "  }",
-    "};",
+    "};"
 })
 @RawTypeArgs
 @IncludeClass(DataTypeRegister.class)
