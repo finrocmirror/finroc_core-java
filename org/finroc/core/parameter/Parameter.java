@@ -53,7 +53,7 @@ public class Parameter<T extends PortData> extends Port<T> {
     public Parameter(@Const @Ref String description, FrameworkElement parent, @CppDefault("NULL") DataType dt) {
         super(new PortCreationInfo(description, parent, dt, PortFlags.INPUT_PORT));
         info = new ParameterInfo();
-        addAnnotation(info);
+        super.addAnnotation(info);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class Parameter<T extends PortData> extends Port<T> {
         try {
             info.loadValue(true);
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, logDomain, e);
+            log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
         }
     }
 }

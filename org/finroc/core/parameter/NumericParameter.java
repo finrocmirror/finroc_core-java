@@ -52,8 +52,12 @@ public class NumericParameter<T extends Number> extends BoundedNumberPort implem
         info.setConfigEntry(configEntry);
     }
 
+    public NumericParameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds b) {
+        this(description, parent, Unit.NO_UNIT, defaultValue, b);
+    }
+
     public NumericParameter(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, Bounds b) {
-        super(new PortCreationInfo(description, parent, PortFlags.INPUT_PORT), b);
+        super(new PortCreationInfo(description, parent, PortFlags.INPUT_PORT, u), b);
         info = new ParameterInfo();
         addAnnotation(info);
         super.getDefaultBuffer().setValue(defaultValue, u);

@@ -194,4 +194,18 @@ public class Bounds extends CCPortDataImpl {
         min = newBounds.min;
         outOfBoundsDefault.setValue(newBounds.outOfBoundsDefault);
     }
+
+    /**
+     * @return Minimum value
+     */
+    public double getMin() {
+        return min;
+    }
+
+    /**
+     * @return Maximum value
+     */
+    public double getMax() {
+        return max;
+    }
 }

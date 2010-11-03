@@ -163,4 +163,20 @@ public class CCInterThreadContainer<T extends CCPortData> extends Reusable imple
     public boolean isInterThreadContainer() {
         return true;
     }
+
+    /*Cpp
+    void setData(const T& data) {
+        setData(&data);
+    }
+     */
+
+    /**
+     * Assign new value to container
+     *
+     * @param data new value
+     */
+    public void setData(@Const @Ptr T data) {
+        portData.assign((CCPortData)data);
+    }
+
 }

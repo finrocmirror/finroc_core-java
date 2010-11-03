@@ -195,6 +195,17 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
             setValue(value.doubleValue());
         }
     }
+
+    /*Cpp
+    void setValue(uint32_t t) {
+        setValue((int32_t)t);
+    }
+    void setValue(uint32_t t, Unit* u) {
+        setValue((int32_t)t, u);
+    }
+     */
+
+
     public void setValue(@Const @Ref CoreNumber value) {
         this.unit = value.unit;
         this.numType = value.numType;

@@ -300,4 +300,19 @@ public class CCPortDataContainer<T extends CCPortData> extends ReusableTL implem
     public boolean isOwnerThread() {
         return ThreadUtil.getCurrentThreadId() == ownerThread;
     }
+
+    /*Cpp
+    void setData(const T& data) {
+        setData(&data);
+    }
+     */
+
+    /**
+     * Assign new value to container
+     *
+     * @param data new value
+     */
+    public void setData(@Const @Ptr T data) {
+        portData.assign((CCPortData)data);
+    }
 }

@@ -80,7 +80,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      * @param t new default
      */
     public void setDefault(@Const @Ref T t) {
-        defaultValue.assign(t);
+        defaultValue.assign((CCPortData)t);
     }
 
     /**
@@ -161,5 +161,16 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     @SuppressWarnings("unchecked")
     public @Const @Inline T getAutoLocked() {
         return (T)getAutoLockedRaw();
+    }
+
+    /**
+     * Publish data
+     *
+     * @param t Data to publish
+     */
+    public void publish(@Const @Ref T t) {
+        CCPortDataContainer<T> c = getUnusedBuffer();
+        c.setData(t);
+        publish(c);
     }
 }

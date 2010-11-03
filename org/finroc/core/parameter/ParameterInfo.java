@@ -119,6 +119,9 @@ public class ParameterInfo extends FinrocAnnotation {
         synchronized (ann.getRegistryLock()) {
             if (ann != null && (ignoreReady || ann.isReady())) {
                 ConfigFile cf = ConfigFile.find(ann);
+                if (cf == null) {
+                    return;
+                }
                 if (cf.hasEntry(configEntry)) {
                     XMLNode node = cf.getEntry(configEntry, false);
                     if (ann.getDataType().isCCType()) {

@@ -45,15 +45,15 @@ public class CCParameter<T extends CCPortData> extends CCPort<T> {
     /** Paramater info */
     private final ParameterInfo info;
 
-    public CCParameter(@Const @Ref String description, FrameworkElement parent, @Const T defaultValue, @Const @Ref String configEntry, @CppDefault("NULL") DataType dt) {
+    public CCParameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @Const @Ref String configEntry, @CppDefault("NULL") DataType dt) {
         this(description, parent, defaultValue, dt);
         info.setConfigEntry(configEntry);
     }
 
-    public CCParameter(@Const @Ref String description, FrameworkElement parent, @Const T defaultValue, @CppDefault("NULL") DataType dt) {
+    public CCParameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @CppDefault("NULL") DataType dt) {
         super(new PortCreationInfo(description, parent, dt, PortFlags.INPUT_PORT));
         info = new ParameterInfo();
-        addAnnotation(info);
+        super.addAnnotation(info);
         setDefault(defaultValue);
     }
 
@@ -63,7 +63,7 @@ public class CCParameter<T extends CCPortData> extends CCPort<T> {
         try {
             info.loadValue(true);
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, logDomain, e);
+            log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
         }
     }
 }
