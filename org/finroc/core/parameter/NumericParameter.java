@@ -29,6 +29,7 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.cc.BoundedNumberPort;
 import org.finroc.core.port.cc.CCPortBase;
+import org.finroc.core.port.cc.CCPortDataContainer;
 import org.finroc.core.port.cc.CCPortListener;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ref;
@@ -99,5 +100,15 @@ public class NumericParameter<T extends Number> extends BoundedNumberPort implem
      */
     public T get() {
         return currentValue;
+    }
+
+    /**
+     * @param b new value
+     */
+    public void set(T v) {
+        CCPortDataContainer<CoreNumber> cb = getUnusedBuffer();
+        cb.getData().setValue(v, getUnit());
+        super.publish((CCPortDataContainer<?>)cb);
+        currentValue = v;
     }
 }

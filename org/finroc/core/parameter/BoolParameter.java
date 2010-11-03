@@ -24,6 +24,7 @@ package org.finroc.core.parameter;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.port.cc.CCPortBase;
+import org.finroc.core.port.cc.CCPortDataContainer;
 import org.finroc.core.port.cc.CCPortListener;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Inline;
@@ -63,5 +64,15 @@ public class BoolParameter extends CCParameter<CoreBoolean> implements CCPortLis
      */
     public boolean get() {
         return currentValue;
+    }
+
+    /**
+     * @param b new value
+     */
+    public void set(boolean b) {
+        CCPortDataContainer<CoreBoolean> cb = getUnusedBuffer();
+        cb.getData().set(b);
+        publish(cb);
+        currentValue = b;
     }
 }

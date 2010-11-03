@@ -28,6 +28,7 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
@@ -79,6 +80,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      *
      * @param t new default
      */
+    @NonVirtual
     public void setDefault(@Const @Ref T t) {
         assert(!isReady()) : "please set default value _before_ initializing port";
         defaultValue.assign((CCPortData)t);

@@ -183,6 +183,10 @@ public class NumberPort extends CCPort<CoreNumber> {
         super.setDefault(new CoreNumber(newDefault, unit));
     }
 
+    public void setDefault(CoreNumber newDefault) {
+        super.setDefault(newDefault);
+    }
+
     /**
      * @return Unit of port
      */
