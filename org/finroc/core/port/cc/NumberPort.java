@@ -168,19 +168,19 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @param newDefault New default value
      */
     public void setDefault(double newDefault) {
-        super.getDefaultBuffer().setValue(newDefault, unit);
+        super.setDefault(new CoreNumber(newDefault, unit));
     }
 
     public void setDefault(int newDefault) {
-        super.getDefaultBuffer().setValue(newDefault, unit);
+        super.setDefault(new CoreNumber(newDefault, unit));
     }
 
     public void setDefault(long newDefault) {
-        super.getDefaultBuffer().setValue(newDefault, unit);
+        super.setDefault(new CoreNumber(newDefault, unit));
     }
 
     public void setDefault(float newDefault) {
-        super.getDefaultBuffer().setValue(newDefault, unit);
+        super.setDefault(new CoreNumber(newDefault, unit));
     }
 
     /**

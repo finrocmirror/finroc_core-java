@@ -99,6 +99,17 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     @JavaOnly public CoreNumber(int value) {
         setValue(value);
     }
+
+    /*Cpp
+    CoreNumber(uint32_t value_, Unit* unit_ = &Unit::NO_UNIT) :
+        ival(value_),
+        num_type(eINT),
+        unit(unit_)
+    {
+      type = TYPE;
+    }
+    */
+
     @InCpp( {"type = TYPE;"}) @Init( {"ival(value_)", "numType(eINT)", "unit(unit_)"})
     public CoreNumber(int value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
@@ -197,10 +208,10 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     /*Cpp
-    void setValue(uint32_t t) {
+    void setValue(const uint32_t& t) {
         setValue((int32_t)t);
     }
-    void setValue(uint32_t t, Unit* u) {
+    void setValue(const uint32_t& t, Unit* u) {
         setValue((int32_t)t, u);
     }
      */

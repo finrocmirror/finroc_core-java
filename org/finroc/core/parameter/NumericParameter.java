@@ -60,7 +60,9 @@ public class NumericParameter<T extends Number> extends BoundedNumberPort implem
         super(new PortCreationInfo(description, parent, PortFlags.INPUT_PORT, u), b);
         info = new ParameterInfo();
         addAnnotation(info);
-        super.getDefaultBuffer().setValue(defaultValue, u);
+        super.setDefault(new CoreNumber(defaultValue, u));
+        currentValue = defaultValue;
+        addPortListener(this);
     }
 
     @Override

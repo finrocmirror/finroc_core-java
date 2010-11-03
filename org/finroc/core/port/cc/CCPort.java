@@ -80,21 +80,11 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      * @param t new default
      */
     public void setDefault(@Const @Ref T t) {
-        defaultValue.assign((CCPortData)t);
-    }
-
-    /**
-     * @return Buffer with default value. Can be used to change default value
-     * for port. However, this should be done before the port is used.
-     */
-    @SuppressWarnings("unchecked")
-    public @Ptr T getDefaultBuffer() {
         assert(!isReady()) : "please set default value _before_ initializing port";
-
-        //JavaOnlyBlock
-        return (T)defaultValue.getData();
-
-        //Cpp return reinterpret_cast<T*>(this->defaultValue->getData());
+        defaultValue.assign((CCPortData)t);
+        CCPortDataContainer<T> c = getUnusedBuffer();
+        c.setData(t);
+        browserPublish((CCPortDataContainer<?>)c);
     }
 
     /**

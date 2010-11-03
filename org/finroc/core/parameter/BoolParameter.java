@@ -43,10 +43,14 @@ public class BoolParameter extends CCParameter<CoreBoolean> implements CCPortLis
 
     public BoolParameter(@Const @Ref String description, FrameworkElement parent, boolean defaultValue, @Const @Ref String configEntry) {
         super(description, parent, CoreBoolean.getInstance(defaultValue), configEntry, CoreBoolean.TYPE);
+        currentValue = defaultValue;
+        addPortListener(this);
     }
 
     public BoolParameter(@Const @Ref String description, FrameworkElement parent, boolean defaultValue) {
         super(description, parent, CoreBoolean.getInstance(defaultValue), CoreBoolean.TYPE);
+        currentValue = defaultValue;
+        addPortListener(this);
     }
 
     @Override
