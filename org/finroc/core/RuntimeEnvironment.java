@@ -940,7 +940,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
 
                 }
 
-                registry.listeners.notify(element, null, changeType);
+                registry.listeners.notify(element, edgeTarget, changeType);
             }
         }
     }

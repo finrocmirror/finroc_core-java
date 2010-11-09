@@ -61,23 +61,9 @@ public interface PortData extends TypedObject {
      */
     public void handleRecycle();
 
-//    @JavaOnly
-//    public class EmptyPortData extends EmptyPortDataImpl {
-//
-//        static DataType TYPE = DataTypeRegister.getInstance().getDataType(EmptyPortData.class, "EmptyPortData");
-//
-//        @Override
-//        public void deserialize(CoreInput is) {}
-//
-//        @Override
-//        public void serialize(CoreOutput os) {}
-//
-//      @Override
-//      public String serialize() {
-//          return "";
-//      }
-//
-//      @Override
-//      public void deserialize(String s) {}
-//    }
+    @JavaOnly
+    public class EmptyPortData extends EmptyPortDataImpl {
+
+        static DataType TYPE = DataTypeRegister.getInstance().getDataType(EmptyPortData.class, "EmptyPortData");
+    }
 }
