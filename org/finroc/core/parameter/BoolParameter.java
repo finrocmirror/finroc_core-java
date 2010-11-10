@@ -72,7 +72,7 @@ public class BoolParameter extends CCParameter<CoreBoolean> implements CCPortLis
     public void set(boolean b) {
         CCPortDataContainer<CoreBoolean> cb = getUnusedBuffer();
         cb.getData().set(b);
-        publish(cb);
+        browserPublish(cb);
         currentValue = b;
     }
 }

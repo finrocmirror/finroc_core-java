@@ -302,7 +302,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer with data (must be owned by current thread)
      */
-    public void browserPublish(CCPortDataContainer<?> buffer) {
+    public void browserPublishRaw(CCPortDataContainer<?> buffer) {
         assert(buffer.getOwnerThread() == ThreadUtil.getCurrentThreadId());
         ThreadLocalCache tc = ThreadLocalCache.get();
 

@@ -86,7 +86,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
         defaultValue.assign((CCPortData)t);
         CCPortDataContainer<T> c = getUnusedBuffer();
         c.setData(t);
-        browserPublish((CCPortDataContainer<?>)c);
+        browserPublish(c);
     }
 
     /**
@@ -164,5 +164,15 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
         CCPortDataContainer<T> c = getUnusedBuffer();
         c.setData(t);
         publish(c);
+    }
+
+    /**
+     * Publish buffer through port
+     * (not in normal operation, but from browser; difference: listeners on this port will be notified)
+     *
+     * @param buffer Buffer with data (must be owned by current thread)
+     */
+    public void browserPublish(CCPortDataContainer<T> buffer) {
+        super.browserPublishRaw((CCPortDataContainer<?>)buffer);
     }
 }

@@ -128,7 +128,7 @@ public class ParameterInfo extends FinrocAnnotation {
                         CCPortBase port = (CCPortBase)ann;
                         CCPortDataContainer<?> c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
                         c.deserialize(node);
-                        port.browserPublish(c);
+                        port.browserPublishRaw(c);
                     } else if (ann.getDataType().isStdType()) {
                         PortBase port = (PortBase)ann;
                         PortData pd = port.getUnusedBufferRaw();

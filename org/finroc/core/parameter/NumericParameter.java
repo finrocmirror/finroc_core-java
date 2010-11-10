@@ -108,7 +108,7 @@ public class NumericParameter<T extends Number> extends BoundedNumberPort implem
     public void set(T v) {
         CCPortDataContainer<CoreNumber> cb = getUnusedBuffer();
         cb.getData().setValue(v, getUnit());
-        super.publish((CCPortDataContainer<?>)cb);
+        super.browserPublish(cb);
         currentValue = v;
     }
 }

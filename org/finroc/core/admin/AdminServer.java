@@ -232,7 +232,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
                         CCPortBase p = (CCPortBase)port;
                         CCPortDataContainer<?> c = ThreadLocalCache.get().getUnusedBuffer(ccData.getType());
                         c.assign(ccData.getDataPtr());
-                        p.browserPublish(c);
+                        p.browserPublishRaw(c);
                     } else if (port.getDataType().isStdType() && portData != null) {
                         PortBase p = (PortBase)port;
                         p.browserPublish(portData);
