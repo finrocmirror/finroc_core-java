@@ -23,14 +23,12 @@ package org.finroc.core.plugin;
 
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Managed;
-import org.finroc.jc.annotation.SharedPtr;
 
 /**
  * @author max
  *
  * Class to create Module using empty standard constructor
  */
-@SharedPtr
 public interface CreateExternalConnectionAction extends CreateModuleAction {
 
     /** Does connection transfer info about remote edges? */
