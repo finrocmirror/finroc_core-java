@@ -95,11 +95,11 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
     protected StructureParameterList spl = new StructureParameterList();
 
     /** Name and group of module */
-    public final String name, group;
+    public final String name;
+    public String group;
 
-    public ConstructorCreateModuleActionBase(String group, String typeName, String paramNames) {
+    public ConstructorCreateModuleActionBase(String typeName, String paramNames) {
         this.name = typeName;
-        this.group = group;
         Plugins.getInstance().addModuleType(this);
 
         /*Cpp
@@ -210,12 +210,12 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     /** wrapped constructor */
     private final Constructor<?> constructor;
 
-    public ConstructorCreateModuleAction(String group, Class <? extends FrameworkElement > c, String paramNames) {
-        this(group, c.getSimpleName(), c.getConstructors()[0], paramNames);
+    public ConstructorCreateModuleAction(Class <? extends FrameworkElement > c, String paramNames) {
+        this(c.getSimpleName(), c.getConstructors()[0], paramNames);
     }
 
-    public ConstructorCreateModuleAction(String group, String typeName, Class <? extends FrameworkElement > c, String paramNames) {
-        this(group, typeName, getConstructor(c, paramNames.split(",").length), paramNames);
+    public ConstructorCreateModuleAction(String typeName, Class <? extends FrameworkElement > c, String paramNames) {
+        this(typeName, getConstructor(c, paramNames.split(",").length), paramNames);
     }
 
     /**
@@ -233,9 +233,10 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     }
 
     @SuppressWarnings("unchecked")
-    public ConstructorCreateModuleAction(String group, String typeName, Constructor<?> c, String paramNames) {
-        super(group, typeName, paramNames);
+    public ConstructorCreateModuleAction(String typeName, Constructor<?> c, String paramNames) {
+        super(typeName, paramNames);
 
+        this.group = Plugins.getInstance().getContainingJarFile(c.getDeclaringClass());
         constructor = c;
         Class<?>[] ps = c.getParameterTypes();
         String[] psn2 = paramNames.split(",");

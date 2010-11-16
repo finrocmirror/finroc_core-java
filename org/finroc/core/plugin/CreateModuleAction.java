@@ -26,6 +26,8 @@ import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.Ptr;
 
 /**
@@ -35,6 +37,7 @@ import org.finroc.jc.annotation.Ptr;
  * creating modules.
  */
 @Ptr
+@Include("<dlfcn.h>")
 public interface CreateModuleAction {
 
     /**
@@ -45,7 +48,7 @@ public interface CreateModuleAction {
      * @param params Parameters
      * @return Created Module (or Group)
      */
-    @ConstMethod public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception;
+    @ConstMethod public FrameworkElement createModule(String name, FrameworkElement parent, @CppDefault("NULL") ConstructorParameters params) throws Exception;
 
     /**
      * @return Returns types of parameters that the create method requires
@@ -61,4 +64,14 @@ public interface CreateModuleAction {
      * @return Name of module type to be created
      */
     @ConstMethod public String getName();
+
+    /*Cpp
+    // returns .so file in which address provided as argument is found by dladdr
+    util::String getBinary(void* addr) {
+        _Dl_info info;
+        _dladdr(addr, &info);
+        util::String tmp(info.dli_fname);
+        return tmp.substring(tmp.lastIndexOf("/") + 1);
+    }
+     */
 }

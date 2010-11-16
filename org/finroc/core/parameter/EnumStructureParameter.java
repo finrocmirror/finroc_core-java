@@ -56,7 +56,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
-    public EnumStructureParameter(@Const @Ref String name, boolean constructorPrototype, @PassByValue E defaultValue, @SharedPtr SimpleList<String> stringConstants) {
+    public EnumStructureParameter(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype, @SharedPtr SimpleList<String> stringConstants) {
         super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class), constructorPrototype);
         this.stringConstants = stringConstants;
         set(defaultValue);
@@ -120,7 +120,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
 
     @Override
     public StructureParameterBase deepCopy() {
-        return new EnumStructureParameter<E>(getName(), false, getValueForInt(0), stringConstants);
+        return new EnumStructureParameter<E>(getName(), getValueForInt(0), false, stringConstants);
     }
 
     /**

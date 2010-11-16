@@ -23,7 +23,6 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 
@@ -35,7 +34,7 @@ import org.finroc.jc.annotation.NoCpp;
 @Inline @NoCpp
 public class StringStructureParameter extends StructureParameter<CoreString> {
 
-    public StringStructureParameter(String name, boolean constructorPrototype, @CppDefault("\"\"") String defaultValue) {
+    public StringStructureParameter(String name, String defaultValue, boolean constructorPrototype) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), constructorPrototype, defaultValue);
     }
 
@@ -66,7 +65,7 @@ public class StringStructureParameter extends StructureParameter<CoreString> {
      */
     @Override
     public StructureParameterBase deepCopy() {
-        return new StringStructureParameter(getName(), false, "");
+        return new StringStructureParameter(getName(), "", false);
     }
 
     /**

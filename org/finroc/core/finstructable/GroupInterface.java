@@ -55,13 +55,13 @@ public class GroupInterface extends EdgeAggregator {
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
     private static final StandardCreateModuleAction<GroupInterface> CREATE_ACTION =
-        new StandardCreateModuleAction<GroupInterface>("core", "Default Interface", GroupInterface.class);
+        new StandardCreateModuleAction<GroupInterface>("Default Interface", GroupInterface.class);
 
     /** CreateModuleAction */
     @CppType("ConstructorCreateModuleAction<GroupInterface, GroupInterface::DataClassification, GroupInterface::PortDirection, bool, bool>")
     @SuppressWarnings("unused") @PassByValue
     private static final ConstructorCreateModuleAction COMPLEX_CREATE_ACTION =
-        new ConstructorCreateModuleAction("core", "Interface", GroupInterface.class, "Data classification, Port direction, Shared?, Unique Links");
+        new ConstructorCreateModuleAction("Interface", GroupInterface.class, "Data classification, Port direction, Shared?, Unique Links");
 
     /**
      * Default constructor

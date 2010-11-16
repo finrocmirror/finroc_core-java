@@ -35,6 +35,7 @@ import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
+import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
@@ -149,13 +150,13 @@ public class Plugins { /*implements HTTPResource*/
         //TODO do properly
 
         // JavaOnlyBlock
-        loadAllDataTypesInPackage(CoreNumber.class);
-        loadAllDataTypesInPackage(FinstructableGroup.class);
         if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
             pluginLoader = new JavaReleasePluginLoader();
         } else {
             pluginLoader = new JavaDebugPluginLoader();
         }
+        loadAllDataTypesInPackage(CoreNumber.class);
+        loadAllDataTypesInPackage(FinstructableGroup.class);
         SimpleList<Plugin> plugins = pluginLoader.findPlugins(/*Plugins.class*/);
         for (Plugin plugin : plugins.getBackend()) {
             addPlugin(plugin);
@@ -256,6 +257,58 @@ public class Plugins { /*implements HTTPResource*/
     public void addModuleType(CreateModuleAction cma) {
         logDomain.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
         getModuleTypes().add(cma);
+    }
+
+    @JavaOnly
+    /**
+     * @param c Class to find jar file of
+     * @return Returns jar file that class is in - or class will be in, when compiled
+     */
+    public String getContainingJarFile(Class<?> c) {
+        return pluginLoader.getContainingJarFile(c);
+    }
+
+    /**
+     * Returns/loads CreateModuleAction with specified name and specified .so file.
+     * (doesn't do any dynamic loading, if .so is already present)
+     *
+     * @param group Group (.jar or .so)
+     * @param name Module type name
+     * @return CreateModuleAction - null if it could not be found
+     */
+    public CreateModuleAction loadModuleType(@Const @Ref String group, @Const @Ref String name) {
+        // dynamically loaded .so files
+        //Cpp static util::SimpleList<util::String> loaded;
+
+        // try to find module among existing modules
+        @Const @Ref SimpleList<CreateModuleAction> modules = getModuleTypes();
+        for (@SizeT int i = 0; i < modules.size(); i++) {
+            CreateModuleAction cma = modules.get(i);
+            if (cma.getModuleGroup().equals(group) && cma.getName().equals(name)) {
+                return cma;
+            }
+        }
+
+        /*Cpp
+        // hmm... we didn't find it - have we already tried to load .so?
+        bool alreadyLoaded = false;
+        for (size_t i = 0; i < loaded.size(); i++) {
+            if (loaded.get(i).equals(group)) {
+                alreadyLoaded = true;
+                break;
+            }
+        }
+
+        if (!alreadyLoaded) {
+            loaded.add(group);
+            if (_dlopen(group.getCString(), _RTLD_NOW | _RTLD_GLOBAL)) {
+                return loadModuleType(group, name);
+            }
+        }
+        */
+
+        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not find/load module " + name + " in " + group);
+        return null;
     }
 
 //

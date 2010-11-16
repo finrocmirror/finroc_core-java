@@ -52,7 +52,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
     private static final StandardCreateModuleAction<ThreadContainer> CREATE_ACTION =
-        new StandardCreateModuleAction<ThreadContainer>("core", "ThreadContainer", ThreadContainer.class);
+        new StandardCreateModuleAction<ThreadContainer>("ThreadContainer", ThreadContainer.class);
 
     /** Thread - while program is running - in pause mode null */
     private ThreadContainerThread thread;

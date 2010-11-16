@@ -22,10 +22,8 @@
 package org.finroc.core.finstructable;
 
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.plugin.Plugins;
 import org.finroc.jc.annotation.Prefix;
 import org.finroc.plugin.tcp.TCPServer;
-import org.finroc.structure.Multiplexer;
 
 /**
  * @author max
@@ -41,9 +39,6 @@ public class Finstructed {
         RuntimeEnvironment re = RuntimeEnvironment.getInstance();
         TCPServer server = new TCPServer(4444, true, null);
         server.init();
-
-        //JavaOnlyBlock
-        Plugins.loadAllDataTypesInPackage(Multiplexer.class); // TODO: remove
 
         FinstructableGroup fg = new FinstructableGroup("finstructed", re, "etc/finstructed_test.xml");
         fg.init();

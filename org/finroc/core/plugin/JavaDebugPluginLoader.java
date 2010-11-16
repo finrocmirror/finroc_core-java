@@ -36,6 +36,7 @@ import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogUser;
 import org.finroc.log.LogLevel;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -49,15 +50,14 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
     /** Finroc repository root */
     private File finrocRepRoot;
 
-    /* (non-Javadoc)
-     * @see org.finroc.core.plugin.PluginLoader#findPlugins()
+    /**
+     * Tries to find finroc repository and stores result in finrocRepRoot
      */
-    @Override
-    public SimpleList<Plugin> findPlugins() {
+    private void findFinrocRepository() {
+        if (finrocRepRoot != null) {
+            return;
+        }
 
-        SimpleList<Plugin> result = new SimpleList<Plugin>();
-
-        // idea/implementation: search for plugin-classes in make.xml files
         try {
             finrocRepRoot = RuntimeSettings.getRootDir();
             while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "sources/java/core" + File.separator + "make.xml").exists()) {
@@ -79,6 +79,18 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                 e1.printStackTrace();
             }
         }
+    }
+
+    /* (non-Javadoc)
+     * @see org.finroc.core.plugin.PluginLoader#findPlugins()
+     */
+    @Override
+    public SimpleList<Plugin> findPlugins() {
+
+        SimpleList<Plugin> result = new SimpleList<Plugin>();
+
+        // idea/implementation: search for plugin-classes in make.xml files
+        findFinrocRepository();
 
         // now find all make.xml files
         try {
@@ -128,5 +140,68 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
     @Override
     public ClassLoader getClassLoader() {
         return null;
+    }
+
+    @Override
+    public String getContainingJarFile(Class<?> c) {
+        findFinrocRepository();
+
+        try {
+            final String file = c.getName().replace('.', '/') + ".java";
+            File found = null;
+
+            // find file in finroc repository
+            List<File> files = Files.getAllFiles(new File(finrocRepRoot + "/sources/java"), new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    if (new File(dir.getPath() + "/" + name).isDirectory()) {
+                        return true;
+                    }
+                    if ((dir.getAbsoluteFile() + "/" + name).endsWith(file)) {
+                        return true;
+                    }
+                    return false;
+                }
+            }, false, false);
+
+            if (files.size() == 0) {
+                log(LogLevel.LL_ERROR, Plugins.logDomain, "Cannot determine jar file name for " + file + ": Not found in finroc repository");
+            } else if (files.size() > 1) {
+                log(LogLevel.LL_WARNING, Plugins.logDomain, "Problem determining jar file name for " + file + ": Found in finroc repository multiple times (!). Taking first.");
+            }
+            found = files.get(0);
+            String dir = found.getAbsoluteFile().getParent();
+
+            // find parent directory containing make.xml
+            while (!new File(dir + "/make.xml").exists()) {
+                dir = new File(dir).getParent();
+            }
+
+            // parse XML
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dbuilder = factory.newDocumentBuilder();
+            Document doc = dbuilder.parse(dir + "/make.xml");
+
+            // this should be the first target
+            NodeList nl = doc.getElementsByTagName("finrocjavaplugin");
+            String prefix = "finroc_plugin_";
+            if (nl.getLength() == 0) {
+                nl = doc.getElementsByTagName("finrocjavalibrary");
+                prefix = "finroc_";
+            }
+            if (nl.getLength() == 0) {
+                nl = doc.getElementsByTagName("rrjavalib");
+                prefix = "rrlib_";
+            }
+            if (nl.getLength() == 0) {
+                log(LogLevel.LL_ERROR, Plugins.logDomain, "Can't find suitable target in " + dir + "/make.xml");
+                return "unknown binary";
+            }
+            return prefix + ((Element)nl.item(0)).getAttribute("name") + ".jar";
+
+        } catch (Exception e) {
+            log(LogLevel.LL_ERROR, Plugins.logDomain, "Cannot determine jar file name", e);
+            return null;
+        }
     }
 }

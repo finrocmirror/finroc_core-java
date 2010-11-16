@@ -42,7 +42,7 @@ public class Group extends EdgeAggregator {
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
     private static final StandardCreateModuleAction<Group> CREATE_ACTION =
-        new StandardCreateModuleAction<Group>("core", "Group", Group.class);
+        new StandardCreateModuleAction<Group>("Group", Group.class);
 
     public Group(String description, FrameworkElement parent) {
         super(description, parent, 0);

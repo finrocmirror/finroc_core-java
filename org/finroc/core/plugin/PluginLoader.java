@@ -42,4 +42,11 @@ public interface PluginLoader {
      */
     @JavaOnly
     public ClassLoader getClassLoader();
+
+    @JavaOnly
+    /**
+     * @param c Class to find jar file of
+     * @return Returns jar file that class is in - or class will be in, when compiled
+     */
+    public String getContainingJarFile(Class<?> c);
 }

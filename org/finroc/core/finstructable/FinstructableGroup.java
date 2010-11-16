@@ -79,7 +79,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
     private static final StandardCreateModuleAction<FinstructableGroup> CREATE_ACTION =
-        new StandardCreateModuleAction<FinstructableGroup>("core", "Finstructable Group", FinstructableGroup.class);
+        new StandardCreateModuleAction<FinstructableGroup>("Finstructable Group", FinstructableGroup.class);
 
     public FinstructableGroup(@Const @Ref String name, FrameworkElement parent) {
         super(name, parent, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
@@ -138,7 +138,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         AbstractPort srcPort = getChildPort(src);
                         AbstractPort destPort = getChildPort(dest);
                         if (srcPort == null && destPort == null) {
-                            log(LogLevel.LL_WARNING, logDomain, "Cannot edge because neither port is available: " + src + ", " + dest);
+                            log(LogLevel.LL_WARNING, logDomain, "Cannot create edge because neither port is available: " + src + ", " + dest);
                         } else if (srcPort == null || srcPort.isVolatile()) { // source volatile
                             destPort.connectToSource(qualifyLink(src));
                         } else if (destPort == null || destPort.isVolatile()) { // destination volatile
@@ -171,16 +171,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             String type = node.getStringAttribute("type");
 
             // find action
-            @Const @Ref SimpleList<CreateModuleAction> cmas = Plugins.getInstance().getModuleTypes();
-            CreateModuleAction action = null;
-            for (@SizeT int i = 0; i < cmas.size(); i++) {
-                CreateModuleAction cma = cmas.get(i);
-                if (cma.getModuleGroup().equals(group) && cma.getName().equals(type)) {
-                    action = cma;
-                    break;
-                }
-            }
-
+            CreateModuleAction action = Plugins.getInstance().loadModuleType(group, type);
             if (action == null) {
                 log(LogLevel.LL_WARNING, logDomain, "Failed to instantiate element. No module type " + group + "/" + type + " available. Skipping...");
                 return;

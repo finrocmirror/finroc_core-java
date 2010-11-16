@@ -57,13 +57,15 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
      * @param group Name of module group
      * @param typeName Name of module type
      */
-    public StandardCreateModuleAction(String group, String typeName) {
+    public StandardCreateModuleAction(String typeName) {
         this.typeName = typeName;
-        this.group = group;
         Plugins.getInstance().addModuleType(this);
+
+        //Cpp group = getBinary((void*)_M_createModule);
 
         //JavaOnlyBlock
         constructor = null;
+        this.group = null;
         assert(false) : "c++ constructor";
     }
 
@@ -72,10 +74,11 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
      * @param typeName Name of module type
      * @param moduleClass Module class (only needed in Java)
      */
-    public StandardCreateModuleAction(String group, String typeName, @Const @CppType("util::TypedClass<T>") Class<T> moduleClass) {
+    public StandardCreateModuleAction(String typeName, @Const @CppType("util::TypedClass<T>") Class<T> moduleClass) {
         this.typeName = typeName;
-        this.group = group;
         Plugins.getInstance().addModuleType(this);
+
+        //Cpp group = getBinary((void*)_M_createModuleImpl);
 
         //JavaOnlyBlock
         try {
@@ -84,10 +87,17 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
             throw new RuntimeException(e);
         }
         assert(constructor != null);
+        this.group = Plugins.getInstance().getContainingJarFile(constructor.getDeclaringClass());
     }
 
+    /*Cpp
+    static FrameworkElement* createModuleImpl(const util::String& name, FrameworkElement* parent) {
+        return new T(name, parent);
+    }
+     */
+
     @Override
-    @InCpp("return new T(name, parent);")
+    @InCpp("return createModuleImpl(name, parent);")
     public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception {
         return constructor.newInstance(name, parent);
     }

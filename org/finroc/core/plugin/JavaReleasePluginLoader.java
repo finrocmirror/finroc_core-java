@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.jc.annotation.Const;
@@ -49,6 +51,9 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
 
     /** Class loader for plugins */
     private PluginClassLoader classLoader;
+
+    /** Pattern to extract jar file */
+    private static Pattern JAR_FILE = Pattern.compile(".*/(.*[.]jar)!/.*");
 
     /* (non-Javadoc)
      * @see org.finroc.core.plugin.PluginLoader#findPlugins()
@@ -174,5 +179,21 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
     @Override
     public ClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    @Override
+    public String getContainingJarFile(Class<?> c) {
+        String url = "";
+        try {
+            url = c.getResource(c.getSimpleName() + ".class").toURI().toURL().toString();
+            Matcher m = JAR_FILE.matcher(url);
+            if (!m.matches()) {
+                throw new Exception("Cannot extract jar file");
+            }
+            return m.group(1);
+        } catch (Exception e) {
+            log(LogLevel.LL_ERROR, Plugins.logDomain, "Error extracting jar file from URL " + url, e);
+        }
+        return null;
     }
 }
