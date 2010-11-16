@@ -61,7 +61,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
         this.typeName = typeName;
         Plugins.getInstance().addModuleType(this);
 
-        //Cpp group = getBinary((void*)_M_createModule);
+        //Cpp group = getBinary((void*)_M_createModuleImpl);
 
         //JavaOnlyBlock
         constructor = null;
