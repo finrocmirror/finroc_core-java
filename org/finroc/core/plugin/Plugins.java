@@ -303,6 +303,8 @@ public class Plugins { /*implements HTTPResource*/
             loaded.add(group);
             if (_dlopen(group.getCString(), _RTLD_NOW | _RTLD_GLOBAL)) {
                 return loadModuleType(group, name);
+            } else {
+                _FINROC_LOG_MESSAGE(rrlib::logging::eLL_ERROR, logDomain, "Error from dlopen: %s", _dlerror());
             }
         }
         */
