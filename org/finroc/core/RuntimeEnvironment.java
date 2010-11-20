@@ -768,6 +768,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param edge Edge to add
      */
     protected void addLinkEdge(@Const @Ref String link, LinkEdge edge) {
+        edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding link edge connecting to " + link);
         synchronized (registry) {
             LinkEdge interested = registry.linkEdges.get(link);
             if (interested == null) {
@@ -931,6 +932,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     for (@SizeT int i = 0; i < ap.getLinkCount(); i++) {
                         ap.getQualifiedLink(registry.tempBuffer, i);
                         String s = registry.tempBuffer.toString();
+                        edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_2, getLogDescription(), "Checking link " + s + " with respect to link edges");
                         LinkEdge le = registry.linkEdges.get(s);
                         while (le != null) {
                             le.linkAdded(this, s, ap);
