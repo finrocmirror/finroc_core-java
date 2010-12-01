@@ -32,6 +32,7 @@ import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataContainer;
 import org.finroc.core.port.cc.CCPortListener;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.log.LogLevel;
 
@@ -61,7 +62,14 @@ public class NumericParameter<T extends Number> extends BoundedNumberPort implem
         super(new PortCreationInfo(description, parent, PortFlags.INPUT_PORT, u), b);
         info = new ParameterInfo();
         addAnnotation(info);
-        super.setDefault(new CoreNumber(defaultValue, u));
+        @InCpp("T d = defaultValue;")
+        double d = defaultValue.doubleValue();
+        if (b.inBounds(d)) {
+            super.setDefault(new CoreNumber(defaultValue, u));
+        } else {
+            log(LogLevel.LL_DEBUG_WARNING, logDomain, "Default value is out of bounds");
+            super.setDefault(new CoreNumber(b.toBounds(d), u));
+        }
         currentValue = defaultValue;
         addPortListener(this);
     }
