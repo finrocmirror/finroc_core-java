@@ -28,6 +28,8 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
@@ -48,6 +50,15 @@ import org.finroc.core.util.Files;
  *
  * This class is used for managing the Runtime's plugins
  */
+@CppInclude("RuntimeEnvironment.h")
+@CppPrepend( {
+    "Plugins::DLCloser::~DLCloser() {",
+    "    RuntimeEnvironment::shutdown();",
+    "    for (size_t i = 0; i < loaded.size(); i++) {",
+    "        _dlclose(loaded.get(i));",
+    "    }",
+    "}"
+})
 public class Plugins { /*implements HTTPResource*/
 
 //  /** relative path of packages that contain Widgets and Interfaces */
@@ -268,6 +279,17 @@ public class Plugins { /*implements HTTPResource*/
         return pluginLoader.getContainingJarFile(c);
     }
 
+    /*Cpp
+    // closes dlopen-ed libraries
+    class DLCloser {
+    public:
+        util::SimpleList<void*> loaded;
+
+        DLCloser() : loaded() {}
+        ~DLCloser();
+    };
+     */
+
     /**
      * Returns/loads CreateModuleAction with specified name and specified .so file.
      * (doesn't do any dynamic loading, if .so is already present)
@@ -279,6 +301,7 @@ public class Plugins { /*implements HTTPResource*/
     public CreateModuleAction loadModuleType(@Const @Ref String group, @Const @Ref String name) {
         // dynamically loaded .so files
         //Cpp static util::SimpleList<util::String> loaded;
+        //Cpp static DLCloser dlcloser;
 
         // try to find module among existing modules
         @Const @Ref SimpleList<CreateModuleAction> modules = getModuleTypes();
@@ -301,7 +324,9 @@ public class Plugins { /*implements HTTPResource*/
 
         if (!alreadyLoaded) {
             loaded.add(group);
-            if (_dlopen(group.getCString(), _RTLD_NOW | _RTLD_GLOBAL)) {
+            void* handle = _dlopen(group.getCString(), _RTLD_NOW | _RTLD_GLOBAL);
+            if (handle) {
+                dlcloser.loaded.add(handle);
                 return loadModuleType(group, name);
             } else {
                 _FINROC_LOG_MESSAGE(rrlib::logging::eLL_ERROR, logDomain, "Error from dlopen: %s", _dlerror());
