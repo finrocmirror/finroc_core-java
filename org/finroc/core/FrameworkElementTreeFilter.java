@@ -24,6 +24,8 @@ package org.finroc.core;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NonVirtual;
@@ -57,11 +59,9 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
     /** Qualified names of framework elements need to start with one of these in order to be published */
     private final @SharedPtr SimpleList<String> paths = new SimpleList<String>();
 
-    /** Constant for empty string - to allow this-constructor in c++ */
-    private static final String EMPTY_STRING = "";
 
     public FrameworkElementTreeFilter() {
-        this(CoreFlags.STATUS_FLAGS, CoreFlags.READY | CoreFlags.PUBLISHED, EMPTY_STRING);
+        this(CoreFlags.STATUS_FLAGS, CoreFlags.READY | CoreFlags.PUBLISHED, getEmptyString());
     }
 
     /**
@@ -69,7 +69,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
      * @param flagResult Result that needs to be achieved when ANDing element's flags with relevant flags (see ChildIterator)
      */
     public FrameworkElementTreeFilter(int relevantFlags, int flagResult) {
-        this(relevantFlags, flagResult, EMPTY_STRING);
+        this(relevantFlags, flagResult, getEmptyString());
     }
 
     /**
@@ -77,13 +77,18 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
      * @param flagResult Result that needs to be achieved when ANDing element's flags with relevant flags (see ChildIterator)
      * @param paths Qualified names of framework elements need to start with one of these (comma-separated list of strings)
      */
-    public FrameworkElementTreeFilter(int relevantFlags, int flagResult, String paths) {
+    public FrameworkElementTreeFilter(int relevantFlags, int flagResult, @Const @Ref String paths) {
         this.relevantFlags = relevantFlags;
         this.flagResult = flagResult;
-        this.paths.addAll(paths.split(","));
-        if (this.paths.size() == 1 && this.paths.get(0).length() == 0) {
-            this.paths.clear();
+        if (paths.length() > 0) {
+            this.paths.addAll(paths.split(","));
         }
+    }
+
+    /** Constant for empty string - to allow this-constructor in c++ */
+    @InCpp("static util::String EMPTY; return EMPTY;") @InCppFile
+    @Const @Ref private static final String getEmptyString() {
+        return "";
     }
 
     /**
