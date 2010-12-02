@@ -110,7 +110,7 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
             names.add(namesTemp[i]);
         }
         while(names.size() < 12) {
-            names.add(PARAMETER + name);
+            names.add(PARAMETER + names.size());
         }
 
         p1 = _SP1::create(names.get(0));
@@ -125,6 +125,8 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
         p10 = _SP10::create(names.get(9));
         p11 = _SP11::create(names.get(10));
         p12 = _SP12::create(names.get(11));
+
+        checkStructureParameterList();
          */
     }
 
