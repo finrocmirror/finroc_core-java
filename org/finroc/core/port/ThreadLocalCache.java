@@ -83,6 +83,10 @@ import org.finroc.log.LogLevel;
  */
 @Friend(RuntimeEnvironment.class)
 @CppPrepend( {/*"std::tr1::shared_ptr<SimpleList<ThreadLocalCache*>* ThreadLocalCache::infos;",*/
+    "// This 'lock' ensures that Thread info is deallocated after last ThreadLocalCache",
+    "util::ThreadInfoLock threadInfoLock = util::Thread::getThreadInfoLock();",
+    "// This 'lock' ensures that static AutoDeleter instance is deallocated after last ThreadLocalCache",
+    "::std::tr1::shared_ptr<util::AutoDeleter> auto_deleter_lock(util::AutoDeleter::_M_getStaticInstance());",
     "util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> ThreadLocalCache::info;"
 })
 @Ptr

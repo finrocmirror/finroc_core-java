@@ -67,7 +67,6 @@ public class StreamCommitThread extends CoreLoopThreadBase {
     public void stopThread() {
         logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Stopping StreamCommitThread");
         super.stopThread();
-        instance = null;
     }
 
     /**

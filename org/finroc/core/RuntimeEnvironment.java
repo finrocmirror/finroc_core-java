@@ -23,6 +23,7 @@ package org.finroc.core;
 
 import java.lang.ref.WeakReference;
 
+import org.finroc.jc.GarbageCollector;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.Time;
 import org.finroc.jc.annotation.AtFront;
@@ -45,6 +46,7 @@ import org.finroc.jc.container.ConcurrentMap;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.stream.ChunkedBuffer;
+import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogLevel;
 
 import org.finroc.core.admin.AdminServer;
@@ -204,6 +206,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         Constant.staticInit(); // needs to be done after unit
 //      CoreNumber.staticInit(); // can be after data type register has been created
         Time.getInstance(); // (possibly) init timing thread
+        GarbageCollector.createAndStartInstance();
 //      MethodCall.staticInit();
 //      PullCall.staticInit();
         @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")

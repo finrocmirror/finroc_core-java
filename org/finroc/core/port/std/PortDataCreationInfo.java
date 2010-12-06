@@ -21,7 +21,6 @@
  */
 package org.finroc.core.port.std;
 
-import org.finroc.jc.FastStaticThreadLocal;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.container.SimpleList;
@@ -58,8 +57,7 @@ public class PortDataCreationInfo {
     private @Const @Ptr PortData prototype;
 
     /** Stores info for each thread - wouldn't be thread-safe otherwise */
-    private static final FastStaticThreadLocal<PortDataCreationInfo, PortDataCreationInfo> info =
-        new FastStaticThreadLocal<PortDataCreationInfo, PortDataCreationInfo>();
+    private static final ThreadLocal<PortDataCreationInfo> info = new ThreadLocal<PortDataCreationInfo>();
 
     /**
      * Resets all values to null - this is the neutral, initial state
