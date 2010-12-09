@@ -26,6 +26,7 @@ import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
@@ -51,6 +52,11 @@ public class NumberPort extends CCPort<CoreNumber> {
     @Init("unit(&(Unit::NO_UNIT))")
     public NumberPort(String description, boolean outputPort) {
         this(new PortCreationInfo(description, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+    }
+
+    @Init("unit(&(Unit::NO_UNIT))")
+    public NumberPort(String description, FrameworkElement parent, boolean outputPort) {
+        this(new PortCreationInfo(description, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
 
     private static PortCreationInfo processPciNP(PortCreationInfo pci) {

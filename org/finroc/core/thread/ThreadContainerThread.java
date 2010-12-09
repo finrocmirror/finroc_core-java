@@ -37,6 +37,9 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     /** temporary list of tasks that need to be scheduled */
     private SimpleList<PeriodicFrameworkElementTask> tasks = new SimpleList<PeriodicFrameworkElementTask>();
 
+    /** temporary list of tasks that need to be scheduled - which are not sensor tasks */
+    private SimpleList<PeriodicFrameworkElementTask> nonSensorTasks = new SimpleList<PeriodicFrameworkElementTask>();
+
     /** temporary variable for scheduling algorithm: trace we're currently following */
     private SimpleList<EdgeAggregator> trace = new SimpleList<EdgeAggregator>();
 
@@ -61,6 +64,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     @InCppFile
     public void run() {
         this.threadContainer.getRuntime().addListener(this);
+        super.run();
     }
 
     @Override
@@ -71,7 +75,9 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
 
                 // find tasks
                 tasks.clear();
+                nonSensorTasks.clear();
                 filter.traverseElementTree(this.threadContainer, this, null, tmp);
+                tasks.addAll(nonSensorTasks);
 
                 // create task graph
                 for (@SizeT int i = 0; i < tasks.size(); i++) {
@@ -98,6 +104,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                                 PeriodicFrameworkElementTask next = task.nextTasks.get(j);
                                 next.previousTasks.removeElem(task);
                             }
+                            break;
                         }
                     }
                     if (found) {
@@ -135,11 +142,11 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                     }
                 }
             }
+        }
 
-            // execute tasks
-            for (@SizeT int i = 0; i < schedule.size(); i++) {
-                schedule.get(i).task.executeTask();
-            }
+        // execute tasks
+        for (@SizeT int i = 0; i < schedule.size(); i++) {
+            schedule.get(i).task.executeTask();
         }
     }
 
@@ -153,7 +160,11 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
             PeriodicFrameworkElementTask task = (PeriodicFrameworkElementTask)ann;
             task.previousTasks.clear();
             task.nextTasks.clear();
-            tasks.add(task);
+            if (task.isSenseTask()) {
+                tasks.add(task);
+            } else {
+                nonSensorTasks.add(task);
+            }
         }
     }
 

@@ -83,6 +83,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
         if (rtThread.get()) {
             ThreadUtil.makeThreadRealtime(thread);
         }
+        thread.start();
     }
 
     /**
@@ -121,6 +122,20 @@ public class ThreadContainer extends Group implements StartAndPausable {
             return t.isRunning();
         }
         return false;
+    }
+
+    /**
+     * @param period Cycle time in milliseconds
+     */
+    public void setCycleTime(int period) {
+        cycleTime.set(period);
+    }
+
+    /**
+     * @return Cycle time in milliseconds
+     */
+    public int getCycleTime() {
+        return cycleTime.get();
     }
 
 }

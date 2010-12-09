@@ -68,4 +68,11 @@ public class PeriodicFrameworkElementTask extends FinrocAnnotation {
         incoming = incomingPorts;
         outgoing = outgoingPorts;
     }
+
+    /**
+     * @return Is this a sensor task?
+     */
+    public boolean isSenseTask() {
+        return outgoing.getFlag(EdgeAggregator.SENSOR_DATA) || incoming.getFlag(EdgeAggregator.SENSOR_DATA);
+    }
 }
