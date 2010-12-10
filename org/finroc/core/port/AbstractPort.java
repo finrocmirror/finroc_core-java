@@ -155,7 +155,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     //@Init({"edgesSrc((util::SafeConcurrentlyIterableList<AbstractPort*>)edgesSrc_)",
     //     "edgesDest((util::SafeConcurrentlyIterableList<AbstractPort*>)edgesDest_)"})
     public AbstractPort(PortCreationInfo pci) {
-        super(pci.description, pci.parent, processFlags(pci), pci.lockOrder < 0 ? LockOrderLevels.PORT : pci.lockOrder);
+        super(pci.parent, pci.description, processFlags(pci), pci.lockOrder < 0 ? LockOrderLevels.PORT : pci.lockOrder);
 
         // init types
         //dataType = DataTypeRegister2.getDataTypeEntry(pci.dataType);

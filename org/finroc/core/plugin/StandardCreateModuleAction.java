@@ -82,7 +82,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
 
         //JavaOnlyBlock
         try {
-            constructor = moduleClass.getConstructor(String.class, FrameworkElement.class);
+            constructor = moduleClass.getConstructor(FrameworkElement.class, String.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -91,15 +91,15 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
     }
 
     /*Cpp
-    static FrameworkElement* createModuleImpl(const util::String& name, FrameworkElement* parent) {
-        return new T(name, parent);
+    static FrameworkElement* createModuleImpl(FrameworkElement* parent, const util::String& name) {
+        return new T(parent, name);
     }
      */
 
     @Override
-    @InCpp("return createModuleImpl(name, parent);")
-    public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception {
-        return constructor.newInstance(name, parent);
+    @InCpp("return createModuleImpl(parent, name);")
+    public FrameworkElement createModule(FrameworkElement parent, String name, ConstructorParameters params) throws Exception {
+        return constructor.newInstance(parent, name);
     }
 
     @Override

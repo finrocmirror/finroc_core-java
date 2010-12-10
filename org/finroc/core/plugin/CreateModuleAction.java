@@ -48,7 +48,7 @@ public interface CreateModuleAction {
      * @param params Parameters
      * @return Created Module (or Group)
      */
-    @ConstMethod public FrameworkElement createModule(String name, FrameworkElement parent, @CppDefault("NULL") ConstructorParameters params) throws Exception;
+    @ConstMethod public FrameworkElement createModule(FrameworkElement parent, String name, @CppDefault("NULL") ConstructorParameters params) throws Exception;
 
     /**
      * @return Returns types of parameters that the create method requires

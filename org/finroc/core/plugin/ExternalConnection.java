@@ -73,7 +73,7 @@ public abstract class ExternalConnection extends FrameworkElement {
      * @param defaultAddress Default connection address (some string)
      */
     public ExternalConnection(String description, String defaultAddress) {
-        super(description, RuntimeEnvironment.getInstance(), CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
+        super(RuntimeEnvironment.getInstance(), description, CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
         StructureParameterList.getOrCreate(this).add(autoConnectTo);
         lastAddress = defaultAddress;
     }

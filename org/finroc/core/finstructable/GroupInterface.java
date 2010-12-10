@@ -30,9 +30,11 @@ import org.finroc.core.plugin.ConstructorCreateModuleAction;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.PortFlags;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 
 /**
  * @author max
@@ -69,8 +71,8 @@ public class GroupInterface extends EdgeAggregator {
      * @param description Interface description
      * @param parent Parent element
      */
-    public GroupInterface(String description, FrameworkElement parent) {
-        super(description, parent, EdgeAggregator.IS_INTERFACE);
+    public GroupInterface(FrameworkElement parent, @Const @Ref String description) {
+        super(parent, description, EdgeAggregator.IS_INTERFACE);
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
@@ -86,8 +88,8 @@ public class GroupInterface extends EdgeAggregator {
      * @param uniqueLink Do ports habe globally unique link
      * @return flags for these parameters
      */
-    public GroupInterface(String description, FrameworkElement parent, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
-        super(description, parent, computePortFlags(dataClass, portDir, shared, uniqueLink));
+    public GroupInterface(FrameworkElement parent, @Const @Ref String description, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
+        super(parent, description, computePortFlags(dataClass, portDir, shared, uniqueLink));
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, 0, portDir == PortDirection.BOTH);
     }

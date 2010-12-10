@@ -321,7 +321,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
                             }
                             ci.close();
                         }
-                        FrameworkElement created = cma.createModule(name.toString(), parent, params);
+                        FrameworkElement created = cma.createModule(parent, name.toString(), params);
                         created.setFinstructed(cma, params);
                         created.init();
                         params = null;

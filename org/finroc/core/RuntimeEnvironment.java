@@ -46,7 +46,6 @@ import org.finroc.jc.container.ConcurrentMap;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.container.SimpleListWithMutex;
 import org.finroc.jc.stream.ChunkedBuffer;
-import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogLevel;
 
 import org.finroc.core.admin.AdminServer;
@@ -227,7 +226,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         StreamCommitThread.getInstance().start();
 
         // add uninitialized child
-        instance.unrelated = new FrameworkElement("Unrelated", instance);
+        instance.unrelated = new FrameworkElement(instance, "Unrelated");
         @SuppressWarnings("unused")
         @CppUnused
         AdminServer as = new AdminServer();
@@ -289,7 +288,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
 
     //@Init("deleteLastList(new util::SimpleList<finroc::util::Object*>())")
     private RuntimeEnvironment() {
-        super("Runtime", null, CoreFlags.ALLOWS_CHILDREN | CoreFlags.IS_RUNTIME, LockOrderLevels.RUNTIME_ROOT);
+        super(null, "Runtime", CoreFlags.ALLOWS_CHILDREN | CoreFlags.IS_RUNTIME, LockOrderLevels.RUNTIME_ROOT);
         assert instance == null;
         instance = this;
         instanceRawPtr = this;

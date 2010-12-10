@@ -47,7 +47,7 @@ public class Peer2PeerTest {
         ThreadLocalCache.get();
 
         // Create two ports
-        FrameworkElement linkTest = new FrameworkElement("linkTest");
+        FrameworkElement linkTest = new FrameworkElement(null, "linkTest");
         NumberPort output = new NumberPort(new PortCreationInfo("testOut", PortFlags.SHARED_OUTPUT_PORT));
         output.link(linkTest, "linkTestPort");
         NumberPort output2 = new NumberPort(new PortCreationInfo("testOutGlobal", PortFlags.SHARED_OUTPUT_PORT | CoreFlags.GLOBALLY_UNIQUE_LINK));

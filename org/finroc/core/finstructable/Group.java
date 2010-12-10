@@ -27,7 +27,9 @@ import org.finroc.core.parameter.StructureParameter;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.EdgeAggregator;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 
 /**
  * @author max
@@ -44,8 +46,8 @@ public class Group extends EdgeAggregator {
     private static final StandardCreateModuleAction<Group> CREATE_ACTION =
         new StandardCreateModuleAction<Group>("Group", Group.class);
 
-    public Group(String description, FrameworkElement parent) {
-        super(description, parent, 0);
+    public Group(FrameworkElement parent, @Const @Ref String description) {
+        super(parent, description, 0);
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }

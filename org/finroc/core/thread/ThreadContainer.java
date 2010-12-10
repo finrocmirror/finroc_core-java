@@ -28,7 +28,9 @@ import org.finroc.core.parameter.BoolStructureParameter;
 import org.finroc.core.parameter.NumericStructureParameter;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogLevel;
 
@@ -61,8 +63,8 @@ public class ThreadContainer extends Group implements StartAndPausable {
      * @param description Name
      * @param parent parent
      */
-    public ThreadContainer(String description, FrameworkElement parent) {
-        super(description, parent);
+    public ThreadContainer(FrameworkElement parent, @Const @Ref String description) {
+        super(parent, description);
         StructureParameterList.getOrCreate(this).add(rtThread);
         addAnnotation(new ExecutionControl(this));
     }

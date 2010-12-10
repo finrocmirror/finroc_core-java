@@ -117,7 +117,7 @@ public class Settings {
         if (initialized) {
             return;
         }
-        portRoot = new FrameworkElement(description, parent);
+        portRoot = new FrameworkElement(parent, description);
         for (int i = 0, n = settings.size(); i < n; i++) {
             Setting set = settings.get(i);
             if (set.publishAsPort()) {

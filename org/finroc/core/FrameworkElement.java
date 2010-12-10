@@ -245,8 +245,8 @@ public class FrameworkElement extends Annotatable {
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"edges\");")
     public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
 
-    @JavaOnly public FrameworkElement(@Const @Ref String description, @Ptr FrameworkElement parent) {
-        this(description, parent, CoreFlags.ALLOWS_CHILDREN, -1);
+    @JavaOnly public FrameworkElement(@Ptr FrameworkElement parent, @Const @Ref String description) {
+        this(parent, description, CoreFlags.ALLOWS_CHILDREN, -1);
     }
 
     /**
@@ -259,7 +259,7 @@ public class FrameworkElement extends Annotatable {
     @Init( {/*"description(description_.length() > 0 ? description_ : util::String(\"(anonymous)\"))",*/
         "children(getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0, getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0)"
     })
-    public FrameworkElement(@Const @Ref @CppDefault("\"\"") String description_, @Ptr @CppDefault("NULL") FrameworkElement parent_,
+    public FrameworkElement(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String description_,
                             @CppDefault("CoreFlags::ALLOWS_CHILDREN") int flags_, @CppDefault("-1") int lockOrder_) {
         createrThreadUid = ThreadUtil.getCurrentThreadId();
         constFlags = flags_ & CoreFlags.CONSTANT_FLAGS;
@@ -315,11 +315,11 @@ public class FrameworkElement extends Annotatable {
     }
 
     @JavaOnly public FrameworkElement(@Const @Ref String description) {
-        this(description, null);
+        this(null, description);
     }
 
     @JavaOnly public FrameworkElement() {
-        this("", null);
+        this(null, "");
     }
 
     /**

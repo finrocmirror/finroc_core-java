@@ -81,8 +81,8 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     private static final StandardCreateModuleAction<FinstructableGroup> CREATE_ACTION =
         new StandardCreateModuleAction<FinstructableGroup>("Finstructable Group", FinstructableGroup.class);
 
-    public FinstructableGroup(@Const @Ref String name, FrameworkElement parent) {
-        super(name, parent, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
+    public FinstructableGroup(FrameworkElement parent, @Const @Ref String name) {
+        super(parent, name, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
         addAnnotation(new StructureParameterList(xmlFile));
     }
 
@@ -93,7 +93,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param xmlFile name of XML file (relative to finroc repository) that determines contents of this group
      */
     public FinstructableGroup(@Const @Ref String name, FrameworkElement parent, @Const @Ref String xmlFile) {
-        this(name, parent);
+        this(parent, name);
         try {
             this.xmlFile.set(xmlFile);
             structureParametersChanged();
@@ -203,7 +203,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 spl = action.getParameterTypes().instantiate();
                 spl.deserialize(constructorParams);
             }
-            created = action.createModule(name, parent, spl);
+            created = action.createModule(parent, name, spl);
             created.setFinstructed(action, spl);
             created.init();
             if (parameters != null) {

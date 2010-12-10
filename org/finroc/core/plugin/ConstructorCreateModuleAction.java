@@ -242,8 +242,8 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         constructor = c;
         Class<?>[] ps = c.getParameterTypes();
         String[] psn2 = paramNames.split(",");
-        assert(String.class.equals(ps[0])) : "First parameter must be name";
-        assert(FrameworkElement.class.equals(ps[1])) : "Second parameter must be parent";
+        assert(String.class.equals(ps[1])) : "Second parameter must be name";
+        assert(FrameworkElement.class.equals(ps[0])) : "First parameter must be parent";
         Class<?>[] ps2 = new Class[13];
         String[] psn = new String[13];
         for (int i = 0; i < 12; i++) {
@@ -283,7 +283,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     }
 
     @Override
-    public FrameworkElement createModule(String name, FrameworkElement parent, ConstructorParameters params) throws Exception {
+    public FrameworkElement createModule(FrameworkElement parent, String name, ConstructorParameters params) throws Exception {
         Object[] os = new Object[getParameterTypes().size()];
         Class<?>[] ps = constructor.getParameterTypes();
         for (int i = 0; i < os.length; i++) {
