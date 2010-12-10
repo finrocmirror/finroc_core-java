@@ -378,36 +378,9 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             NetPort.this.notifyDisconnect();
         }
 
-//      protected void setCallHandler(CallHandler ch) {
-//          setCallHandler(ch);
-//      }
-
         public void updateFlags(int flags) {
             setFlag(flags & PortFlags.NON_CONSTANT_FLAGS);
         }
-
-//      @Override
-//      public boolean pullValueRaw(PullCall call, ThreadLocalCache tc) {
-//          if (isOutputPort()) { // pull to forward over the network?
-//              assert(!call.isReturning(true));
-//              sendCall(call);
-//              return false;
-//          } else { // returning pull call
-//              assert(call.isReturning(true));
-//              return super.pullValueRaw(call, tc);
-//          }
-//      }
-//
-//      @Override
-//      public void handleCallReturn(AbstractCall call) {
-//          if (isOutputPort()) {
-//              assert(call.isReturning(true));
-//              super.handleCallReturn(call);
-//          } else {
-//              assert(!call.isReturning(true));
-//              NetPort.this.sendCallReturn(call);
-//          }
-//      }
 
         @Override
         public boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
@@ -426,28 +399,11 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             }
         }
 
-//      @Override
-//      protected short getStrategyRequirement() {
-//          if (isOutputPort()) {
-//              return 0; // should be zero - since it's a proxy
-//          } else {
-//              return getStrategy();
-//          }
-//      }
-
         public void propagateStrategy(short strategy) {
             setFlag(PortFlags.PUSH_STRATEGY, strategy > 0);
             //this.strategy = strategy;
             super.setMaxQueueLength(strategy);
         }
-
-//      public boolean handlePullFromNet(PullCall mc) {
-//          return super.pullValueRaw(mc, ThreadLocalCache.getFast());
-//      }
-//
-//      public void handleCallReturnFromNet(AbstractCall mc) {
-//          super.handleCallReturn(mc);
-//      }
 
         @Override
         protected void connectionRemoved(AbstractPort partner) {
@@ -566,29 +522,6 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             setFlag(flags & PortFlags.NON_CONSTANT_FLAGS);
         }
 
-//      @Override
-//      public boolean pullValueRaw(PullCall call) {
-//          if (isOutputPort()) { // pull to forward over the network?
-//              assert(!call.isReturning(true));
-//              sendCall(call);
-//              return false;
-//          } else { // returning pull call
-//              assert(call.isReturning(true));
-//              return super.pullValueRaw(call);
-//          }
-//      }
-//
-//      @Override
-//      public void handleCallReturn(AbstractCall call) {
-//          if (isOutputPort()) {
-//              assert(call.isReturning(true));
-//              super.handleCallReturn(call);
-//          } else {
-//              assert(!call.isReturning(true));
-//              NetPort.this.sendCallReturn(call);
-//          }
-//      }
-
         @Override
         public boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
             if (isOutputPort() && isInitialized()) {
@@ -606,27 +539,10 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             }
         }
 
-//      @Override
-//      protected short getStrategyRequirement() {
-//          if (isOutputPort()) {
-//              return 0; // should be zero - since it's a proxy
-//          } else {
-//              return getStrategy();
-//          }
-//      }
-
         public void propagateStrategy(short strategy) {
             setFlag(PortFlags.PUSH_STRATEGY, strategy > 0);
             super.setMaxQueueLength(strategy);
         }
-
-//      public boolean handlePullFromNet(PullCall mc) {
-//          return super.pullValueRaw(mc);
-//      }
-//
-//      public void handleCallReturnFromNet(AbstractCall mc) {
-//          SynchMethodCallLogic.
-//      }
 
         @Override
         protected void connectionRemoved(AbstractPort partner) {
@@ -715,21 +631,6 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             return NetPort.this;
         }
 
-//      public void receiveDataFromStream(CoreInput ci) {
-//          MethodCall mc = (MethodCall)ci.readObject();
-//          if (!mc.isReturning(true)) {
-//              mc.pushCaller(belongsTo);
-//              this.sendMethodCall(mc);
-//          } else {
-//              mc.returnToCaller();
-//          }
-//      }
-
-//      @Override
-//      protected void setCallHandler(CallHandler ch) {
-//          super.setCallHandler(ch);
-//      }
-
         @Override
         protected synchronized void prepareDelete() {
             super.prepareDelete();
@@ -757,33 +658,6 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         public void updateFlags(int flags) {
             setFlag(flags & PortFlags.NON_CONSTANT_FLAGS);
         }
-
-//      @Override
-//      protected boolean handleCall(MethodCall mc, boolean deferredCall) {
-//          NetPort.this.handleCall(mc);
-//          return false;
-//      }
-//
-//      @Override
-//      public void returnValue(MethodCall mc) {
-//          super.returnValue(mc);
-//      }
-//
-//      @Override
-//      public void sendMethodCall(MethodCall mc) {
-//          super.sendMethodCall(mc);
-//      }
-//
-//      public void handleCallReturnFromNet(AbstractCall mc) {
-//          SynchMethodCallLogic.handleMethodReturn(mc);
-//      }
-//
-//      @Override
-//      public void handleMethodCall(MethodCall mc, byte methodId,
-//              boolean deferred, long int1, long int2, long int3, double dbl1,
-//              double dbl2, double dbl3, TypedObject obj1, TypedObject obj2) {
-//          assert(false) : "Programming error: should not be called";
-//      }
 
         @Override
         protected void connectionRemoved(AbstractPort partner) {
@@ -828,42 +702,6 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         portChanged();
     }
 
-//  /**
-//   * Process incoming pull call from the network
-//   *
-//   * @param mc PullCall
-//   * @return Did call immediately return with valid result? - Should often be the case
-//   */
-//  public boolean handlePullFromNet(PullCall mc) {
-//      AbstractPort ap = getPort();
-//      if (ap instanceof StdNetPort) {
-//          return ((StdNetPort)ap).handlePullFromNet(mc);
-//      } else if (ap instanceof CCNetPort) {
-//          return ((CCNetPort)ap).handlePullFromNet(mc);
-//      } else {
-//          throw new RuntimeException("Port can't handle call from net");
-//      }
-//  }
-//
-//  /**
-//   * Process incoming (pull) returning call from the network
-//   *
-//   * @param mc Call
-//   */
-//  public void handleCallReturnFromNet(AbstractCall mc) {
-//      SynchMethodCallLogic.handleMethodReturn(mc);
-//      AbstractPort ap = getPort();
-//      if (ap instanceof StdNetPort) {
-//          ((StdNetPort)ap).handleCallReturnFromNet(mc);
-//      } else if (ap instanceof CCNetPort) {
-//          ((CCNetPort)ap).handleCallReturnFromNet(mc);
-//      } else if (ap instanceof InterfaceNetPortImpl) {
-//          ((InterfaceNetPortImpl)ap).handleCallReturnFromNet(mc);
-//      } else {
-//          throw new RuntimeException("Port can't handle call return from net");
-//      }
-//  }
-
     /**
      * Process incoming (pull) returning call from the network
      *
@@ -903,9 +741,4 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
     @JavaOnly
     public abstract List<AbstractPort> getRemoteEdgeDestinations();
 
-    /**
-     * @return Sources of remote edges
-     */
-    //@JavaOnly
-    //public abstract List<FrameworkElement> getRemoteEdgeSources();
 }

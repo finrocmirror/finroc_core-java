@@ -123,16 +123,4 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
         return new EnumStructureParameter<E>(getName(), getValueForInt(0), false, stringConstants);
     }
 
-    /**
-     * Interprets/returns value in other (cloned) list
-     *
-     * @param list other list
-     * @return Value in other list
-     */
-    /*@SuppressWarnings("unchecked")
-    public E interpretSpec(StructureParameterList list) {
-        EnumStructureParameter<E> param = (EnumStructureParameter<E>)list.get(listIndex);
-        assert(param.getType() == getType());
-        return param.get();
-    }*/
 }

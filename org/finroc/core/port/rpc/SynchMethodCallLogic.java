@@ -116,26 +116,7 @@ public class SynchMethodCallLogic {
      */
     public static void handleMethodReturn(AbstractCall call) {
         // return value
-//      ThreadLocalCache tc = ThreadLocalCache.getFast();
-//      if (tc.getThreadUid() == call.getThreadUid()) { // same thread - uncritical
-//          @Ptr MethodCallSyncher mcs = tc.getMethodSyncher();
-//          if (mcs.beforeQuickReturnCheck) { // quick return
-//              mcs.methodReturn = call;
-//              return;
-//          }
-//          throw new RuntimeException("This shouldn't happen... thread waiting and returning at the same time... fishy");
-//      }
-
         @Ptr MethodCallSyncher mcs = MethodCallSyncher.get(call.getSyncherID());
         mcs.returnValue(call);
     }
-
-//  /**
-//   * Mark this call and signal that it won't
-//   *
-//   * @param call Call
-//   */
-//  public static void noQuickReturn(AbstractCall call) {
-//
-//  }
 }

@@ -142,25 +142,6 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataContainer 
         return pdm;
     }
 
-//  /**
-//   * Reclaim any returned PortDataContainers
-//   */
-//  private boolean reclaimReturnedBuffers(ThreadLocalCache tc) {
-//      ArrayWrapper<CCPortDataContainer<?>> buffer = tc.reclaimBuffer;
-//      //typically reclaim maximum of 10 buffers to make things more deterministic/predictable
-//      int n = returnedBuffers.dequeue(buffer, buffer.getCapacity());
-//      for (int i = 0; i < n; i++) {
-//          buffer.get(i).releaseLock();
-//      }
-//      return n;
-//  }
-
-//  @Override @NonVirtual
-//  public void enqueue(@Ptr CCPortDataContainer<? extends CCPortData> pd) {
-//      assert pd.refCounter == 0;
-//      super.enqueue(pd);
-//  }
-
     /**
      * Lock release for non-owner threads - appended to returnedBuffers
      *

@@ -50,20 +50,6 @@ public class StreamCommitThread extends CoreLoopThreadBase {
         instance = ThreadUtil.getThreadSharedPtr(new StreamCommitThread());
     }
 
-//  public static void staticStop() {
-//      if (instance == null) {
-//          return;
-//      }
-//      instance.stopThread();
-//      try {
-//          instance.join();
-//      } catch (InterruptedException e) {
-//          //e.printStackTrace();
-//          System.out.println("Exception in StreamCommitThread::staticStop");
-//      }
-//      instance = null;
-//  }
-
     public void stopThread() {
         logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Stopping StreamCommitThread");
         super.stopThread();

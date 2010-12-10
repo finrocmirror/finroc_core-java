@@ -108,14 +108,6 @@ public class CCInterThreadContainer<T extends CCPortData> extends Reusable imple
         return (CCPortData)portData.getData();
     }
 
-
-//  /**
-//   * @return Actual data
-//   */
-//  @OrgWrapper @ConstMethod @Const public CCPortData getDataPtr() {
-//      return (CCPortData)portData.getData();
-//  }
-
     @Override
     public void serialize(CoreOutput os) {
         portData.serialize(os);

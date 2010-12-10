@@ -35,19 +35,6 @@ import org.finroc.xml.XMLNode;
 @NoCpp
 public abstract class SerializableReusable extends Reusable implements CoreSerializable {
 
-//  /** Id of Thread responsible of recycling this object - responsibility may me transferred */
-//  public volatile long responsibleThread;
-
-//  /** Is current thread responsible of recycling object? */
-//  public boolean isResponsible() {
-//      return ThreadUtil.getCurrentThreadId() == responsibleThread;
-//  }
-//
-//  public void recycle() {
-//      responsibleThread = -1;
-//      super.recycle();
-//  }
-
     /**
      * Recycle call object - after calling this method, object is available in ReusablesPool it originated from
      *

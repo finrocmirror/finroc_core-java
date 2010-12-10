@@ -51,7 +51,7 @@ public class OutputStreamPort<T extends ChunkBuffer> extends Port<T> {
         setPullRequestHandler(listener);
     }
 
-    /*
+    /**
      * Write data buffer instantly to connected ports.
      * (only valid to call this on buffers that do not commit data deferred)
      *
@@ -61,9 +61,6 @@ public class OutputStreamPort<T extends ChunkBuffer> extends Port<T> {
         publish(data);
     }
 
-    /* (non-Javadoc)
-     * @see core.port4.Port#getUnusedBuffer()
-     */
     @Override // non-virtual, but override for user convenience
     public T getUnusedBuffer() {
         T result = super.getUnusedBuffer();

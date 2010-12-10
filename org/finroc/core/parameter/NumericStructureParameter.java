@@ -149,16 +149,4 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
         return new NumericStructureParameter<T>(getName(), defaultVal, false, bounds);
     }
 
-    /**
-     * Interprets/returns value in other (cloned) list
-     *
-     * @param list other list
-     * @return Value in other list
-     */
-    /*@SuppressWarnings("unchecked")
-    public T interpretSpec(StructureParameterList list) {
-        NumericStructureParameter<T> param = (NumericStructureParameter<T>)list.get(listIndex);
-        assert(param.getType() == getType());
-        return param.get();
-    }*/
 }

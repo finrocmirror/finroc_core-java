@@ -126,25 +126,10 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         initLists(edgesSrc, edgesDest);
 
         // init types
-        //dataType = DataTypeRegister2.getDataTypeEntry(pci.dataType);
         curDataType = dataType;
 
         // copy default value (or create new empty default)
-//      PortData defaultTmp = null;
-//      PortDataCreationInfo.get().set(dataType, null, null);
-//      if (pci.defaultValue == null) {
-//          defaultTmp = dataType.createInstance();
-//      } else {
-//          if (!dataType.accepts(pci.defaultValue.getType())) {
-//              throw new RuntimeException("Default value has invalid type");
-//          }
-//          defaultTmp = Serializer.clone(pci.defaultValue);
-//      }
-//      pDefaultValue = defaultTmp;
         defaultValue = createDefaultValue(pci.dataType);
-        //pDefaultValue = pdm.getData();
-        //PortDataCreationInfo.get().reset();
-        //pdm.setLocks(2); // one... so it will stay read locked... and another one for pValue
         value.set(defaultValue.getCurReference());
 
         // standard assign?
@@ -204,45 +189,12 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     public PortData getUnusedBufferRaw() {
         return bufferPool == null ? multiBufferPool.getUnusedBuffer(curDataType) : bufferPool.getUnusedBuffer();
-
-//      @Ptr ThreadLocalCache tli = ThreadLocalCache.get();
-//      @Ptr PortDataBufferPool pdbp = tli.getBufferPool(handle);
-//      boolean hasSQ = hasSpecialReuseQueue();
-//      if ((!hasSQ) && pdbp != null) {  // common case
-//          return pdbp.getUnusedBuffer();
-//      }
-//
-//      return getUnusedBuffer2(pdbp, tli, hasSQ);
     }
 
     public PortData getUnusedBuffer(DataType dt) {
         assert(multiBufferPool != null);
         return multiBufferPool.getUnusedBuffer(dt);
     }
-
-//  protected @Ptr PortDataImpl getUnusedBuffer2(@Managed PortDataBufferPool pdbp, ThreadLocalCache tli, boolean hasSQ) {
-//      if (pdbp == null) {
-//          pdbp = hasSQ ? new MultiTypePortDataBufferPool() : new PortDataBufferPool(dataType, 2);
-//          tli.setBufferPool(handle, pdbp);
-//      }
-//
-//      return hasSQ ? ((MultiTypePortDataBufferPool)pdbp).getUnusedBuffer(curDataType) : pdbp.getUnusedBuffer();
-//  }
-
-//  /*Cpp
-//   * protected: PortDataContainerBase lockCurrentValueForRead() {
-//   *     for(;;) {
-//   *         PortData* curValue = value;
-//   *         int iteration = (curValue & 0xF);
-//   *         int counterIndex = iteration & 0x3;
-//   *         int old = curValue->getManager()->refCounter.getAndAdd(PortDataContainerBase.refCounterIncrement[counterIndex]);
-//   *         if ((old & PortDataManager::refCounterMasks[counterIndex]) != 0 && (iteration == (old >> 28))) {
-//   *             assert counterIndex != PortDataManager::refCounterMasks[counterIndex];
-//   *             return value;
-//   *         }
-//   *     }
-//   * }
-//   */
 
     protected @Ptr @Const @ConstMethod @Inline PortData lockCurrentValueForRead() {
         return lockCurrentValueForRead((byte)1).getData();
@@ -260,84 +212,13 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         // AtomicInteger source code style
         for (;;) {
             PortDataReference curValue = value.get();
-            //PortDataManager mgr = curValue.getManager();
-            //boolean isOwner = ThreadUtil.getCurrentThreadId() == mgr.getOwnerThread();
-
-            // short cut, if locked by owner thread
-            /*if (isOwner && mgr.ownerRefCounter > 0) {
-                mgr.ownerRefCounter++;
-                return curValue;
-            }*/
 
             if (curValue.getRefCounter().tryLocks(addLocks)) {
                 // successful
                 return curValue;
             }
-
-//          // JavaOnlyBlock
-//          // obeye: thread could be preemted here... that's why we need the if-line below.
-//          int reuseCounter = mgr.reuseCounter;
-//          int counterIndex = reuseCounter & 0x3;
-//          if (curValue == value) {  // counterIndex is still the same?
-//              int old = mgr.refCounter.getAndAdd(PortDataManager.refCounterIncrement[counterIndex]);
-//              // locking successful?
-//              if ((old & PortDataManager.refCounterMasks[counterIndex]) != 0 && ((reuseCounter & LOCK_INFO_MASK) == (old >> 28))) {
-//                  assert counterIndex != PortDataManager.refCounterMasks[counterIndex] : "Reference counter overflow. Maximum of 127 locks allowed. Consider making a copy somewhere.";
-//                  if (isOwner) {
-//                      mgr.ownerRefCounter = 1;
-//                  }
-//                  return curValue;
-//              }
-//          }
-//
-//          /*Cpp
-//          int iteration = (curValueRaw & LOCK_INFO_MASK);
-//          int counterIndex = iteration & 0x3;
-//          int old = mgr->refCounter.getAndAdd(PortDataManager::refCounterIncrement[counterIndex]);
-//
-//          // locking successful?
-//          if ((old & PortDataManager::refCounterMasks[counterIndex]) != 0 && (iteration == (old & LOCK_INFO_MASK))) {
-//              assert(counterIndex != PortDataManager::refCounterMasks[counterIndex]);
-//              if (isOwner) {
-//                  mgr->ownerRefCounter = 1;
-//              }
-//              return curValue;
-//            }
-//           */
         }
     }
-
-    /*protected void getReceivers(ArrayWrapper<PortBase> buffer, PortBase origin) {
-        buffer.add(this);
-
-        ArrayWrapper<PortBase> dests = edgesSrc.getIterable();
-        for (int i = 0, n = dests.size(); i < n; i++) {
-            PortBase pb = dests.get(i);
-            if (pb != null && (pb.flags | PortFlags.PUSH_STRATEGY) > 0) {
-                pb.getReceivers(buffer, this);
-            }
-        }
-
-        dests = edgesDest.getIterable();
-        for (int i = 0, n = dests.size(); i < n; i++) {
-            PortBase pb = dests.get(i);
-            if (pb != null && pb != origin && (pb.flags | PortFlags.PUSH_STRATEGY_REVERSE) > 0) {
-                pb.getReceiversReverse(buffer);
-            }
-        }
-    }
-
-    protected void getReceiversReverse(ArrayWrapper<PortBase> buffer) {
-        buffer.add(this);
-
-        ArrayWrapper<PortBase> dests = edgesDest.getIterable();
-        for (int i = 0, n = dests.size(); i < n; i++) {
-            PortBase pb = dests.get(i);
-            if (pb != null && (pb.flags | PortFlags.PUSH_STRATEGY_REVERSE) > 0) {
-                pb.getReceiversReverse(buffer);
-            }
-        }
-    }*/
 
     /**
      * Publishes new data to port.
@@ -547,13 +428,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         }
     }
 
-//  @Inline protected void receiveReverse(@Ref PublishCache pc, PortBase origin) {
-//      assign(pc);
-//      setChanged();
-//      notifyListeners(pc);
-//      updateStatistics(pc, this, origin);
-//  }
-
     /**
      * Update statistics if this is enabled
      *
@@ -565,133 +439,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
             updateEdgeStatistics(source, target, pc.curRef.getData());
         }
     }
-
-//      @Ptr PortDataManager pdm = data.getManager();
-//      @Ptr ThreadLocalCache tli = ThreadLocalCache.get();
-//
-//      @InCpp("size_t lockInfo = pdm->reuseCounter;")
-//      @SizeT int lockInfo = 0;
-//      @SizeT int dataRaw = 0;
-//
-//      boolean isLocked = pdm.isLocked();
-//      if ((!isLocked) && ThreadUtil.getCurrentThreadId() == pdm.getOwnerThread()) { // owns ports - common case
-//
-//          if (std11CaseReceiver != null) { // common, simple and most optimized case
-//              @Ptr PortBase dest = std11CaseReceiver;
-//              pdm.setLocksAsOwner(2);
-//
-//              // assign to this port
-//              tli.newLastWrittenToPortByOwner(handle, data);
-//              dataRaw = setValueInternal(data, lockInfo);
-//
-//              // assign to destination port
-//              tli.newLastWrittenToPortByOwner(dest.getHandle(), data);
-//
-//              // JavaOnlyBlock
-//              dest.value = data;
-//
-//              //Cpp dest->value = dataRaw;
-//
-//              dest.setChanged();
-//              return;
-//          }
-//
-//          pdm.setLocksAsOwner(1); // lock from owner thread - no atomic operations needed for increasing reference counter
-//          pdm.ownerRefCounter = 1;
-//
-//          // assign data
-//          if (standardAssign) {
-//              tli.newLastWrittenToPortByOwner(handle, data);
-//              dataRaw = setValueInternal(data, lockInfo);
-//          } else {
-//              nonStandardAssign(data, tli);
-//          }
-//
-//          // send data
-//          @Ptr ArrayWrapper<PortBase> dests = edgesSrc.getIterable();
-//          for (@SizeT int i = 0, n = dests.size(); i < n; i++) {
-//              @Ptr PortBase pb = dests.get(i);
-//              if (pb != null && pb.getFlag(PortFlags.PUSH_STRATEGY)) {
-//                  pb.receiveAsOwner(data, dataRaw, this, tli);
-//              }
-//          }
-//      } else {
-//
-//          // initial lock
-//          if (isLocked) {
-//              pdm.addReadLock();
-//          } else {
-//              pdm.setLocks(1);
-//          }
-//
-//          // assign data
-//          if (standardAssign) {
-//              tli.newLastWrittenToPort(handle, data);
-//              dataRaw = setValueInternal(data, lockInfo);
-//          } else {
-//              nonStandardAssign(data, tli);
-//          }
-//
-//          // send data
-//          @Ptr ArrayWrapper<PortBase> dests = edgesSrc.getIterable();
-//          for (@SizeT int i = 0, n = dests.size(); i < n; i++) {
-//              @Ptr PortBase pb = dests.get(i);
-//              if (pb != null && pb.getFlag(PortFlags.PUSH_STRATEGY)) {
-//                  pb.receive(data, dataRaw, this, tli);
-//              }
-//          }
-//      }
-//  }
-
-//  protected void receiveAsOwner(@Ptr PortDataImpl data, @SizeT int dataRaw, @Ptr PortBase origin, @Ptr ThreadLocalCache tli) {
-//      if (standardAssign) {
-//          data.getManager().addOwnerLock();
-//          tli.newLastWrittenToPortByOwner(handle, data);
-//
-//          // JavaOnlyBlock
-//          value = data;
-//
-//          //Cpp value = dataRaw;
-//
-//          changed = true;
-//          notifyListeners();
-//      } else {
-//          nonStandardAssign(data, tli);
-//      }
-//
-//      @Ptr ArrayWrapper<PortBase> dests = edgesSrc.getIterable();
-//      for (int i = 0, n = dests.size(); i < n; i++) {
-//          @Ptr PortBase pb = dests.get(i);
-//          if (pb != null && (pb.flags | PortFlags.PUSH_STRATEGY) > 0) {
-//              pb.receiveAsOwner(data, dataRaw, this, tli);
-//          }
-//      }
-//
-//      dests = edgesDest.getIterable();
-//      for (int i = 0, n = dests.size(); i < n; i++) {
-//          PortBase pb = dests.get(i);
-//          if (pb != null && pb != origin && (pb.flags | PortFlags.PUSH_STRATEGY_REVERSE) > 0) {
-//              pb.receiveReverse(data, dataRaw, tli);
-//          }
-//      }
-//  }
-//
-//  private void receiveReverse(@Ptr PortDataImpl data, @SizeT int dataRaw, @Ptr ThreadLocalCache tli) {
-//      if (standardAssign) {
-//          data.getManager().addReadLock();
-//          tli.setLastWrittenToPort(handle, data);
-//
-//          // JavaOnlyBlock
-//          value = data;
-//
-//          //Cpp value = dataRaw;
-//
-//          changed = true;
-//          notifyListeners();
-//      } else {
-//          nonStandardAssign(data, tli);
-//      }
-//  }
 
     @Inline
     private void notifyListeners(PublishCache pc) {
@@ -777,8 +524,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         pullValueRawImpl(pc, intermediateAssign, true);
 
         // lock value and return
-        //pc.curRef.getManager().addLock(); we already have extra lock from pullValueRawImpl
-        //pc.setLocks++; we already have extra lock from pullValueRawImpl
         pc.releaseObsoleteLocks();
         return pc.curRef.getData();
     }
@@ -825,117 +570,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
             pc.curRefCounter = pc.curRef.getRefCounter();
             pc.setLocks++; // lock for return
         }
-
-//      PullCall pc = ThreadLocalCache.getFast().getUnusedPullCall();
-//
-//      pc.ccPull = false;
-//      pc.info.lockEstimate = intermediateAssign ? 2 : 1; // 3: 1 for call, 1 for this port, 1 for return
-//      pc.info.setLocks = 0;
-//      pc.intermediateAssign = intermediateAssign;
-//      //pullValueRaw(pc);
-//      try {
-//          addLock(pc.info); // lock for the pull call
-//          pc = SynchMethodCallLogic.<PullCall>performSynchCall(pc, this, callIndex, PULL_TIMEOUT);
-//          addLock(pc.info); // lock for the outside
-//
-//          // assign if this wasn't done yet
-//          if (!intermediateAssign) {
-//              assign(pc.info);
-//          }
-//
-//          assert(pc.info.curRef.isLocked());
-//          PortData result = pc.info.curRef.getData();
-//          pc.genericRecycle();
-//          assert(result.getCurReference().isLocked());
-//
-//          return result;
-//      } catch (MethodCallException e) {
-//
-//          // possibly timeout
-//          pc.genericRecycle();
-//          return lockCurrentValueForRead();
-//      }
     }
-
-//  @Override
-//  public void invokeCall(PullCall call) {
-//      if (pullValueRaw(call)) {
-//          SynchMethodCallLogic.handleMethodReturn(call);
-//      }
-//  }
-//
-//  /**
-//   * Pull/read current value from source port
-//   * When multiple source ports are available an arbitrary one of them is used.
-//   * (Should only be called by framework-internal classes)
-//   *
-//   * @param pc Various parameters
-//   * @return already returning pulled value (in same thread)
-//   */
-//  @Virtual public boolean pullValueRaw(PullCall call) {
-//      @Ptr PublishCache pc = call.info;
-//      @Ptr ArrayWrapper<PortBase> sources = edgesDest.getIterable();
-//      if (pullRequestHandler != null) {
-//          PortDataReference pdr = pullRequestHandler.pullRequest(this, (byte)++pc.lockEstimate).getCurReference();
-//          pc.curRef = pdr;
-//          pc.curRefCounter = pdr.getRefCounter();
-//          call.setStatusReturn();
-//          assert(pdr.getRefCounter().get() >= pc.lockEstimate);
-//          if (pc.curRef != value.get()) {
-//              assign(pc);
-//          }
-//      } else {
-//          // continue with next-best connected source port
-//          for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
-//              PortBase pb = sources.get(i);
-//              if (pb != null) {
-//                  if (call.intermediateAssign) {
-//                      pc.lockEstimate++;
-//                  }
-//                  call.pushCaller(this);
-//                  boolean returning = pb.pullValueRaw(call);
-//                  if (returning) {
-//                      @CppUnused
-//                      int x = call.popCaller(); // we're already returning, so we can remove ourselves from caller stack again
-//                      assert(x == getHandle());
-//                      if (pc.curRef != value.get()) { // exploit thread for the calls he made anyway
-//                          if (call.intermediateAssign) {
-//                              assign(pc);
-//                          }
-//                      }
-//                  }
-//                  if (call.getStatus() != AbstractCall.CONNECTION_EXCEPTION) {
-//                      return returning;
-//                  }
-//              }
-//          }
-//
-//          // no connected source port... pull current value
-//          pc.curRef = lockCurrentValueForRead((byte)pc.lockEstimate);
-//          pc.curRefCounter = pc.curRef.getRefCounter();
-//          call.setStatusReturn();
-//      }
-//      return true;
-//  }
-//
-//  @Override
-//  public void handleCallReturn(AbstractCall call) {
-//      assert(call.isReturning(true));
-//
-//      PullCall pc = (PullCall)call;
-//      if (pc.info.curRef != value.get()) {
-//          if (((PullCall)call).intermediateAssign) {
-//              assign(pc.info);
-//          }
-//      }
-//
-//      // continue assignments
-//      if (pc.callerStackSize() > 0) {
-//          pc.returnToCaller();
-//      } else {
-//          SynchMethodCallLogic.handleMethodReturn(pc);
-//      }
-//  }
 
     /**
      * @param pullRequestHandler Object that handles pull requests - null if there is none (typical case)
@@ -958,11 +593,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     private void applyDefaultValue() {
         publish(defaultValue);
     }
-
-//  @Override
-//  public TypedObject universalGetAutoLocked() {
-//      return getAutoLocked();
-//  }
 
     /**
      * Pulls port data (regardless of strategy)

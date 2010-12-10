@@ -66,7 +66,6 @@ public class CCPortDataRef {
     /**
      * @return Container of referenced data
      */
-    //@InCpp("return (CCPortDataContainer<>*)(((char*)(getData())) - offsetof(CCPortDataContainer<>, portData));")
     @InCpp("return getPointer();")
     public CCPortDataContainer<?> getContainer() {
         return portData;

@@ -42,9 +42,6 @@ public class MethodCallException extends Exception {
     public enum Type { TIMEOUT, NO_CONNECTION, UNKNOWN_METHOD, INVALID_PARAM, PROGRAMMING_ERROR }
     private final Type type;
 
-    /** String Descriptions for above types */
-    //private final String[] descriptions = new String[]{"Timeout", "No connection", "Unknown Method", "Invalid Parameter", "Programming Error" };
-
     /**
      * @param timeout Timeout exception (or rather connection exception)?
      */

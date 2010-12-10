@@ -85,7 +85,7 @@ public class RPCThreadPool {
         RPCThread.RPCThreadContainer c = unusedThreads.dequeue();
         r = (c != null) ? c.getThread() : null;
 
-        //cpp r = unusedThreads.dequeue();
+        //Cpp r = unusedThreads.dequeue();
 
         if (r == null) {
             r = new RPCThread();

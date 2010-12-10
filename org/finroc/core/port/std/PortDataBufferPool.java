@@ -99,12 +99,6 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
         return new PortDataManager(dataType, getLastCreated() == null ? null : getLastCreated().getData());
     }
 
-//  @Override
-//  public void enqueue(@Ptr PortDataManager pd) {
-//      //assert !pd.isLocked();
-//      super.enqueue(pd);
-//  }
-
     /**
      * Prints info about all elements in pool to console
      *

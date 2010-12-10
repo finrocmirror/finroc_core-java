@@ -347,11 +347,6 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         }
     }
 
-    /*@Override
-    public short getUid() {
-        return 8; //(short)serialVersionUID;
-    //}*/
-
     // number serialization:
     // (1st type byte) - last bit unit
     // -64 = 8 Byte int

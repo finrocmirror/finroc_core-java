@@ -40,9 +40,7 @@ import org.finroc.core.portdatabase.TypedObjectImpl;
  * By convention, port data is immutable while published/read-locked/referenced.
  */
 @Ptr
-//@CppName("CCPortData")
 @PostInclude("PortDataReference.h")
-//@HAppend({"}", "#include \"core/port/PortDataReference.h\"", "namespace core {"})
 @CppDelegate(CoreSerializableImpl.class)
 @JavaOnly
 public abstract class CCPortDataImpl extends TypedObjectImpl implements CCPortData {

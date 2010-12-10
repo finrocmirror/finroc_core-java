@@ -101,9 +101,6 @@ public class PortCreationList extends PortDataImpl {
     /** (Local) change listener */
     private Listener listener;
 
-    /** Further io vectors that list might be wrapping */
-    //private SimpleList<ManagedIOVector> moreIoVectors = new SimpleList<ManagedIOVector>();
-
     public PortCreationList() {}
 
     /**
@@ -315,42 +312,6 @@ public class PortCreationList extends PortDataImpl {
             }
         }
     }
-
-//    /**
-//     * Add another IO vector that will be managed by this list
-//     * (if its already in list, flags will be adjusted)
-//     *
-//     * @param ioVector IO vector to manage
-//     * @param flags Flags to use
-//     */
-//    public void addManaged(FrameworkElement ioVector, int flags) {
-//        synchronized(managed.ioVector) {
-//            for (int i = 0; i < moreIoVectors.size(); i++) {
-//                if (moreIoVectors.get(i).ioVector == ioVector) {
-//                    moreIoVectors.get(i).flags = flags;
-//                    applyChanges(moreIoVectors.get(i));
-//                    return;
-//                }
-//            }
-//            moreIoVectors.add(new ManagedIOVector(ioVector, flags));
-//            applyChanges(moreIoVectors.get(moreIoVectors.size() - 1));
-//        }
-//    }
-//
-//    /**
-//     * Remove framework element from list of managed IO vectors
-//     *
-//     * @param ioVector IO vector to remove
-//     */
-//    public void removeManaged(FrameworkElement ioVector) {
-//        synchronized(managed.ioVector) {
-//            for (int i = 0; i < moreIoVectors.size(); i++) {
-//                if (moreIoVectors.get(i).ioVector == ioVector) {
-//                    moreIoVectors.remove(i);
-//                }
-//            }
-//        }
-//    }
 
     /**
      * Add entry to list

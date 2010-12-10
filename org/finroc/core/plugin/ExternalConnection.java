@@ -240,11 +240,4 @@ public abstract class ExternalConnection extends FrameworkElement {
         }
     }
 
-//  protected class ConnectionListenerManager extends WeakRefListenerManager<ConnectionListener> {
-//
-//      @Override
-//      protected void notifyObserver(ConnectionListener observer, Object... param) {
-//          observer.connectionEvent(ExternalConnection.this, (Event)param[0]);
-//      }
-//  }
 }

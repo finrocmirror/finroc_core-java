@@ -64,15 +64,6 @@ public class PortFlags extends CoreFlags {
      */
     public static final int NON_STANDARD_ASSIGN = FIRST_PORT_FLAG << 8;
 
-    /** Does port contain "cheap-copy" data? */
-    //public static final int IS_CC_PORT = FIRST_CUSTOM_FLAG << 10;
-
-    /** Is this an interface port? */
-    //public static final int IS_INTERFACE_PORT = FIRST_CUSTOM_FLAG << 11;
-
-//  /** Should port have global link (the same in every Runtime - without origin server prefix) */
-//  public static final int GLOBAL_LINK = FIRST_PORT_FLAG << 9;
-
     /** Transport data for this port through the network with high priority */
     public static final int IS_EXPRESS_PORT = FIRST_PORT_FLAG << 9;
 
@@ -87,9 +78,6 @@ public class PortFlags extends CoreFlags {
     /** Does Port currently store incoming data in queue? - changeable - requires HAS_QUEUE */
     public static final int USES_QUEUE = FIRST_CUSTOM_NON_CONST_FLAG;
 
-//  /** Does port currently accept reverse incoming data? - changeable - requires MAY_ACCEPT_REVERSE_DATA */
-//  public static final int ACCEPTS_REVERSE_DATA = FIRST_CUSTOM_NON_CONST_FLAG << 1;
-
     /** Restore default value, if port is disconnected? - changeable */
     public static final int DEFAULT_ON_DISCONNECT = FIRST_CUSTOM_NON_CONST_FLAG << 1;
 
@@ -98,9 +86,6 @@ public class PortFlags extends CoreFlags {
 
     /** Use push strategy rather than pull strategy in reverse direction? - changeable */
     public static final int PUSH_STRATEGY_REVERSE = FIRST_CUSTOM_NON_CONST_FLAG << 3;
-
-//  /** Relevant when ports are connected - Has "initial push" been received? - changeable */
-//  public static final int INITIAL_PUSH_RECEIVED = FIRST_CUSTOM_NON_CONST_FLAG << 4;
 
     ////////// Derived Flags ////////
 

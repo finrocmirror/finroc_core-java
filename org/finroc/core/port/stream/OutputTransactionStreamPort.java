@@ -154,9 +154,6 @@ public class OutputTransactionStreamPort<T extends Transaction> extends Port<Tra
         }
     }
 
-    /* (non-Javadoc)
-     * @see core.port4.Port#getUnusedBuffer()
-     */
     @Override // non-virtual, but override for user convenience
     public TransactionPacket getUnusedBuffer() {
         TransactionPacket result = super.getUnusedBuffer();

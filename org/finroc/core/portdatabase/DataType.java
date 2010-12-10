@@ -52,10 +52,6 @@ import org.finroc.jc.stream.OutputStreamBuffer;
  * It is a single entry in the data type register.
  */
 @Inline @Ptr @ConstPtr
-/*@CppPrepend({"namespace detail {",
-             "  CCPortDataContainer<> CCPROTOTYPE;",
-             "}",
-             "size_t DataType::ccPortDataOffset = ((char*)&(detail::CCPROTOTYPE.data)) - ((char*)&(detail::CCPROTOTYPE));"})*/
 @Include( {"DataTypeUtil.h", "<boost/type_traits/is_base_of.hpp>" })
 @IncludeClass( {OutputStreamBuffer.class, CCDataList.class, PortDataList.class, ListTypeFactory.class})
 @IncludeFirst @Friend(DataTypeRegister.class)
@@ -89,12 +85,6 @@ public class DataType { /*implements CoreSerializable*/
 
     const char* const rttiName; // pointer to RTTI name - unambiguous according to gcc docs
      */
-
-    /** Methods for serialization */
-    //public enum SerializationMethod { Custom, Memcpy }
-
-    /** Is this a custom serializable data type (currently prerequisite) */
-    //@Const private final SerializationMethod serialization = SerializationMethod.Custom;
 
     /** Current default minimum network update interval for type im ms */
     private short updateTime = -1;
@@ -284,12 +274,6 @@ public class DataType { /*implements CoreSerializable*/
             DataTypeLookup<typename ListHelper<T, boost::is_base_of<PortData, T>::value >::ListType>::type = this;
         }
 
-    //  SerializationMethod getSerialization(CoreSerializable* cs) {
-    //      return Custom;
-    //  }
-    //  SerializationMethod getSerialization(void* cs) {
-    //      return Memcpy;
-    //  }
      */
 
     /**
@@ -298,16 +282,6 @@ public class DataType { /*implements CoreSerializable*/
     public short getUid() {
         return dataTypeUid;
     }
-
-//  @JavaOnly
-//  public DataType(/*short uid,*/ String name, @AutoPtr PortDataFactory factory, boolean ccType/*, SerializationMethod serialization*/) {
-//      //this.serialization = serialization;
-//      //dataTypeUid = uid;
-//      javaClass = null;
-//      this.factory = factory;
-//      this.ccType = ccType
-//      ;
-//  }
 
     /**
      * @return Create new instance of data type
@@ -438,16 +412,6 @@ public class DataType { /*implements CoreSerializable*/
     public String getName() {
         return name;
     }
-
-//  @Override
-//  public void deserialize(CoreInput is) {
-//      throw new RuntimeException("Not intended");
-//  }
-//
-//  @Override
-//  public void serialize(CoreBuffer os) {
-//      PortInfo.serializeDataType(this, os);
-//  }
 
     /**
      * @return Related data type - custom info for special purposes
