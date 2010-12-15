@@ -28,6 +28,7 @@ import org.finroc.core.port.cc.CCPortDataImpl;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
@@ -62,6 +63,14 @@ public class Bounds extends CCPortDataImpl {
         min = 0;
         max = 0;
         action = OutOfBoundsAction.NONE;
+    }
+
+    /**
+     * @param min Minimum bound
+     * @param max Maximum bound
+     */
+    public Bounds(double min, double max) {
+        this(min, max, true);
     }
 
     /**
@@ -105,35 +114,35 @@ public class Bounds extends CCPortDataImpl {
      * @param val Value
      * @return Answer
      */
-    public boolean inBounds(double val) {
+    @ConstMethod public boolean inBounds(double val) {
         return val >= min && val <= max;
     }
 
     /**
      * @return Discard values which are out of bounds?
      */
-    public boolean discard() {
+    @ConstMethod public boolean discard() {
         return action == OutOfBoundsAction.DISCARD;
     }
 
     /**
      * @return Adjust value to range?
      */
-    public boolean adjustToRange() {
+    @ConstMethod public boolean adjustToRange() {
         return action == OutOfBoundsAction.ADJUST_TO_RANGE;
     }
 
     /**
      * @return Adjust value to range?
      */
-    public boolean applyDefault() {
+    @ConstMethod public boolean applyDefault() {
         return action == OutOfBoundsAction.APPLY_DEFAULT;
     }
 
     /**
      * @return Default value when value is out of bounds
      */
-    public CoreNumber getOutOfBoundsDefault() {
+    @ConstMethod @Const public CoreNumber getOutOfBoundsDefault() {
         return outOfBoundsDefault;
     }
 
@@ -141,7 +150,7 @@ public class Bounds extends CCPortDataImpl {
      * @param val Value to adjust to range
      * @return Adjusted value
      */
-    public double toBounds(double val) {
+    @ConstMethod public double toBounds(double val) {
         if (val < min) {
             return min;
         } else if (val > max) {
@@ -198,14 +207,14 @@ public class Bounds extends CCPortDataImpl {
     /**
      * @return Minimum value
      */
-    public double getMin() {
+    @ConstMethod public double getMin() {
         return min;
     }
 
     /**
      * @return Maximum value
      */
-    public double getMax() {
+    @ConstMethod public double getMax() {
         return max;
     }
 }

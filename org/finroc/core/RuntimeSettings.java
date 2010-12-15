@@ -24,27 +24,24 @@ package org.finroc.core;
 import java.io.File;
 import java.nio.ByteOrder;
 
-import org.finroc.jc.AutoDeleter;
-import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.ForwardDecl;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
-import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
-import org.finroc.log.LogLevel;
 
+import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.parameter.ParameterBool;
+import org.finroc.core.parameter.ParameterNumeric;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortListener;
 import org.finroc.core.port.net.UpdateTimeChangeListener;
 import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.setting.BoolSetting;
-import org.finroc.core.setting.IntSetting;
-import org.finroc.core.setting.LongSetting;
-import org.finroc.core.setting.Settings;
 import org.finroc.core.util.Files;
 
 /**
@@ -56,11 +53,12 @@ import org.finroc.core.util.Files;
  *
  * staticInit() should be called after runtime and data types have been initialized.
  */
-@Include("settings/NumberSetting.h")
-public class RuntimeSettings extends Settings implements CCPortListener<CoreNumber> {
+@ForwardDecl( {ParameterBool.class, ParameterNumeric.class})
+@CppInclude( {"parameter/ParameterBool.h", "parameter/ParameterNumeric.h"})
+public class RuntimeSettings extends FrameworkElement implements CCPortListener<CoreNumber> {
 
     /** Singleton Instance */
-    private static RuntimeSettings inst = getInstance();
+    private static RuntimeSettings inst = null;
 
     /**
      * There's a Java and C++ version of this framework. Java modules can
@@ -71,16 +69,16 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     public static final boolean CPP_CORE = false;
 
     /** Display warning, if loop times of CoreLoopThreads are exceeded? */
-    public static final BoolSetting WARN_ON_CYCLE_TIME_EXCEED = inst.add("WARN_ON_CYCLE_TIME_EXCEED", true, true);
+    @Ptr public static ParameterBool WARN_ON_CYCLE_TIME_EXCEED;
 
     /** Default cycle time of CoreLoopThreads in ms*/
-    public static final LongSetting DEFAULT_CYCLE_TIME = inst.add("DEFAULT_CYCLE_TIME", 50L, true);
+    @Ptr public static ParameterNumeric<Long> DEFAULT_CYCLE_TIME;
 
     /** Default number of event threads */
     //public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
 
     /** Default minimum network update time (ms) */
-    public static final IntSetting DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = inst.add("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", 40, true);
+    @Ptr public static ParameterNumeric<Integer> DEFAULT_MINIMUM_NETWORK_UPDATE_TIME;
 
     public static final int EDGE_LIST_DEFAULT_SIZE = 0;
     public static final int EDGE_LIST_SIZE_INCREASE_FACTOR = 2;
@@ -95,7 +93,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     //public static final IntSetting BUFFER_TRACKER_LOOP_TIME = inst.add("BUFFER_TRACKER_LOOP_TIME", 140, true);
 
     /** Cycle time for stream thread */
-    public static final IntSetting STREAM_THREAD_CYCLE_TIME = inst.add("STREAM_THREAD_CYCLE_TIME", 200, true);
+    @Ptr public static ParameterNumeric<Integer> STREAM_THREAD_CYCLE_TIME;
 
     /** > 0 if Runtime is instantiated in Java Applet - contains bit size of server CPU */
     //public static final IntSetting runningInApplet = inst.add("RUNNING_IN_APPLET", 0, false);
@@ -104,7 +102,7 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
      * Period in ms after which garbage collector will delete objects... any threads
      * still working on objects while creating deletion task should be finished by then
      */
-    public static final IntSetting GARBAGE_COLLECTOR_SAFETY_PERIOD = inst.add("GARBAGE_COLLECTOR_SAFETY_PERIOD", 5000, true);
+    @Ptr public static ParameterNumeric<Integer> GARBAGE_COLLECTOR_SAFETY_PERIOD;
 
     /** ByteOrder of host that runtime is running on */
     //@JavaOnly public static ByteOrder byteOrder = processByteOrderString(ConfigFile.getInstance().getString("BYTE_ORDER", "native"));
@@ -125,13 +123,8 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
      * @return Absolute Root Directory of Runtime (location of finroc_core.jar)
      */
     @JavaOnly public static File getRootDir() {
-        logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Root dir is " + rootDir);
+        //logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Root dir is " + rootDir);
         return rootDir;
-    }
-
-    @CppType("char*") @Const
-    private static String getLogDescription() {
-        return "RuntimeSettings";
     }
 
     /**
@@ -157,7 +150,12 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     }
 
     protected RuntimeSettings() {
-        super("Settings", "Runtime", true);
+        super(RuntimeEnvironment.getInstance(), "Settings");
+        WARN_ON_CYCLE_TIME_EXCEED = new ParameterBool("WARN_ON_CYCLE_TIME_EXCEED", this, true);
+        DEFAULT_CYCLE_TIME = new ParameterNumeric<Long>("DEFAULT_CYCLE_TIME", this, 50L, new Bounds(1, 2000));
+        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = new ParameterNumeric<Integer>("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", this, 40, new Bounds(1, 2000));
+        STREAM_THREAD_CYCLE_TIME = new ParameterNumeric<Integer>("STREAM_THREAD_CYCLE_TIME", this, 200, new Bounds(1, 2000));
+        GARBAGE_COLLECTOR_SAFETY_PERIOD = new ParameterNumeric<Integer>("GARBAGE_COLLECTOR_SAFETY_PERIOD", this, 5000, new Bounds(500, 50000));
 
         // add ports with update times
         //addChild(DataTypeRegister2.getInstance());
@@ -172,15 +170,16 @@ public class RuntimeSettings extends Settings implements CCPortListener<CoreNumb
     @InCppFile
     static void staticInit() {
         //inst.sharedPorts = new SharedPorts(inst.portRoot);
-        inst.init(RuntimeEnvironment.getInstance());
-        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getPort().addPortListener(inst);
+        //inst.init(RuntimeEnvironment.getInstance());
+        getInstance();
+        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.addPortListener(inst);
     }
 
     /** @return Singleton instance */
     public static RuntimeSettings getInstance() {
         if (inst == null) {
             inst = new RuntimeSettings();
-            AutoDeleter.addStatic(inst);
+            //AutoDeleter.addStatic(inst);
         }
         return inst;
     }

@@ -25,12 +25,18 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.Port;
+import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.portdatabase.DataType;
+import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.NoOuterClass;
+import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.log.LogLevel;
 
@@ -39,30 +45,44 @@ import org.finroc.log.LogLevel;
  *
  * Parameter template class for standard types
  */
-@Inline @NoCpp
+@Inline @NoCpp @PassByValue @RawTypeArgs
 public class Parameter<T extends PortData> extends Port<T> {
 
-    /** Paramater info */
-    private final ParameterInfo info;
+    /** Special Port class to load value when initialized */
+    @AtFront @NoOuterClass @Inline @NoCpp
+    private class PortImpl extends PortBase {
 
+        /** Paramater info */
+        private final ParameterInfo info = new ParameterInfo();
+
+        public PortImpl(PortCreationInfo pci) {
+            super(pci);
+            addAnnotation(info);
+        }
+
+        @Override
+        protected void postChildInit() {
+            super.postChildInit();
+            try {
+                info.loadValue(true);
+            } catch (Exception e) {
+                log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @CppDefault("NULL") DataType dt) {
         this(description, parent, dt);
-        info.setConfigEntry(configEntry);
+        ((PortImpl)wrapped).info.setConfigEntry(configEntry);
     }
 
     public Parameter(@Const @Ref String description, FrameworkElement parent, @CppDefault("NULL") DataType dt) {
-        super(new PortCreationInfo(description, parent, dt, PortFlags.INPUT_PORT));
-        info = new ParameterInfo();
-        super.addAnnotation(info);
+        wrapped = new PortImpl(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT));
     }
 
-    @Override
-    protected void postChildInit() {
-        super.postChildInit();
-        try {
-            info.loadValue(true);
-        } catch (Exception e) {
-            log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
-        }
+    @InCpp("return dt != NULL ? dt : DataTypeRegister::getInstance()->getDataType<T>();")
+    private static DataType getType(DataType dt) {
+        return dt;
     }
 }

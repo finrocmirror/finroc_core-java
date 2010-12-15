@@ -22,8 +22,10 @@
 package org.finroc.core.port.std;
 
 import org.finroc.core.port.PortCreationInfo;
+import org.finroc.core.port.PortWrapperBase;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
@@ -36,21 +38,27 @@ import org.finroc.jc.annotation.Ref;
  * @author max
  *
  * This Port class is used in applications.
- * It kind of provides the API for PortBase
+ * It kind of provides the API for PortBase backend, which it wraps.
  * and is a generic wrapper for the type-less PortBase.
  *
  * In C++ code for correct casting is generated.
  */
 @Inline @NoCpp @RawTypeArgs
 @IncludeClass(DataTypeRegister.class)
-public class Port<T extends PortData> extends PortBase {
+public class Port<T extends PortData> extends PortWrapperBase<PortBase> {
 
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
     public Port(PortCreationInfo pci) {
-        super(processPci(pci));
+        wrapped = new PortBase(processPci(pci));
     }
+
+    /**
+     * (Constructor for derived classes)
+     * (wrapped must be set in constructor!)
+     */
+    protected Port() {}
 
     public static @Ref PortCreationInfo processPci(@Ref PortCreationInfo pci) {
         //Cpp pci.dataType = pci.dataType != NULL ? pci.dataType : DataTypeRegister::getInstance()->getDataType<T>();
@@ -70,7 +78,7 @@ public class Port<T extends PortData> extends PortBase {
 
     @SuppressWarnings("unchecked") @NonVirtual
     @Inline public @Ptr T getUnusedBuffer() {
-        return (T)super.getUnusedBufferRaw();
+        return (T)wrapped.getUnusedBufferRaw();
     }
 
     /**
@@ -79,7 +87,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public @Ptr T getDefaultBuffer() {
-        return (T)super.getDefaultBufferRaw();
+        return (T)wrapped.getDefaultBufferRaw();
     }
 
     /**
@@ -89,7 +97,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     @Const public T getLockedUnsafe() {
-        return (T)super.getLockedUnsafeRaw();
+        return (T)wrapped.getLockedUnsafeRaw();
     }
 
     /**
@@ -101,7 +109,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public @Const T getPullLockedUnsafe(boolean intermediateAssign) {
-        return (T)pullValueRaw(intermediateAssign);
+        return (T)wrapped.pullValueRaw(intermediateAssign);
     }
 
     /**
@@ -109,7 +117,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("rawtypes")
     public void addPortListener(PortListener<T> listener) {
-        super.addPortListenerRaw((PortListener)listener);
+        wrapped.addPortListenerRaw((PortListener)listener);
     }
 
     /**
@@ -117,7 +125,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("rawtypes")
     public void removePortListener(PortListener<T> listener) {
-        super.removePortListenerRaw((PortListener)listener);
+        wrapped.removePortListenerRaw((PortListener)listener);
     }
 
     /**
@@ -127,7 +135,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public void dequeueAll(@Ref PortQueueFragment<T> fragment) {
-        super.dequeueAllRaw((PortQueueFragment<PortData>) fragment);
+        wrapped.dequeueAllRaw((PortQueueFragment<PortData>) fragment);
     }
 
     /**
@@ -135,7 +143,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public @Const @Inline T getAutoLocked() {
-        return (T)getAutoLockedRaw();
+        return (T)wrapped.getAutoLockedRaw();
     }
 
     /**
@@ -150,7 +158,7 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public T dequeueSingleAutoLocked() {
-        return (T)super.dequeueSingleAutoLockedRaw();
+        return (T)wrapped.dequeueSingleAutoLockedRaw();
     }
 
     /**
@@ -165,6 +173,35 @@ public class Port<T extends PortData> extends PortBase {
      */
     @SuppressWarnings("unchecked")
     public T dequeueSingleUnsafe() {
-        return (T)super.dequeueSingleUnsafeRaw();
+        return (T)wrapped.dequeueSingleUnsafeRaw();
+    }
+
+    /**
+     * @param pullRequestHandler Object that handles pull requests - null if there is none (typical case)
+     */
+    public void setPullRequestHandler(PullRequestHandler pullRequestHandler) {
+        wrapped.setPullRequestHandler(pullRequestHandler);
+    }
+
+    /**
+     * Does port (still) have this value?
+     * (calling this is only safe, when pd is locked)
+     *
+     * @param pd Port value
+     * @return Answer
+     */
+    @ConstMethod public boolean valueIs(@Const T pd) {
+        return wrapped.valueIs(pd);
+    }
+
+    /**
+     * Publish Data Buffer. This data will be forwarded to any connected ports.
+     * It should not be modified thereafter.
+     * Should only be called on output ports
+     *
+     * @param data Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
+     */
+    @Inline public void publish(@Const T data) {
+        wrapped.publish(data);
     }
 }

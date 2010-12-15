@@ -29,6 +29,7 @@ import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.stream.InputPacketProcessor;
 import org.finroc.core.port.stream.InputTransactionStreamPort;
+import org.finroc.core.port.stream.NewConnectionHandler;
 import org.finroc.core.port.stream.OutputTransactionStreamPort;
 import org.finroc.core.port.stream.Transaction;
 import org.finroc.core.port.stream.TransactionPacket;
@@ -55,7 +56,7 @@ import org.finroc.core.port.stream.StreamCommitThread;
  *
  * This class already creates the necessary ports in a PortSet. This can be retrieved using getPortSet()
  */
-public abstract class TransactionalData<B extends Transaction> extends PortDataImpl implements InputPacketProcessor<TransactionPacket>, StreamCommitThread.Callback, PullRequestHandler {
+public abstract class TransactionalData<B extends Transaction> extends PortDataImpl implements InputPacketProcessor<TransactionPacket>, StreamCommitThread.Callback, PullRequestHandler, NewConnectionHandler {
 
     /** Port Set for Transactional Data */
     private final TDPortSet portSet;
@@ -110,15 +111,8 @@ public abstract class TransactionalData<B extends Transaction> extends PortDataI
      * Special port for input transactions
      */
     protected class InputTransactions extends InputTransactionStreamPort<B> {
-
         public InputTransactions(PortCreationInfo pci) {
-            super("input transactions", pci, TransactionalData.this);
-        }
-
-        // we have a new connection
-        @Override
-        protected void newConnection(AbstractPort partner) {
-            handleNewConnection(partner);
+            super("input transactions", pci, TransactionalData.this, TransactionalData.this);
         }
     }
 
@@ -133,7 +127,7 @@ public abstract class TransactionalData<B extends Transaction> extends PortDataI
         }
     }
 
-    @Virtual protected void handleNewConnection(AbstractPort partner) {
+    @Virtual public void handleNewConnection(AbstractPort partner) {
         handlingNewConnection = true;
         @Const TransactionPacket b = (TransactionPacket)input.getPullLockedUnsafe(false);
         this.processPacket(b);

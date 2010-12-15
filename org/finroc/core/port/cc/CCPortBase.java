@@ -54,7 +54,7 @@ import org.finroc.core.portdatabase.DataType;
  * This has to be done by all public methods.
  */
 @IncludeClass(SafeConcurrentlyIterableList.class)
-@Friend(CCPort.class)// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
+@Friend( {CCPort.class, PortNumeric.class})// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
 public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** Edges emerging from this port */
@@ -424,7 +424,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Set current value to default value
      */
-    protected void applyDefaultValue() {
+    public void applyDefaultValue() {
         //publish(ThreadLocalCache.get(), defaultValue.getContainer());
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataContainer<?> c = getUnusedBuffer(tc);

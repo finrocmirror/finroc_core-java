@@ -26,6 +26,7 @@ import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppUnused;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.buffer.CoreInput;
@@ -36,7 +37,7 @@ import org.finroc.plugin.blackboard.BlackboardServer;
 import org.finroc.plugin.blackboard.RawBlackboardClient;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
-import org.finroc.core.port.cc.NumberPort;
+import org.finroc.core.port.cc.PortNumeric;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.std.Port;
 
@@ -46,7 +47,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     private static final int NUM_OF_PORTS = 1000;
     private static final int CYCLE_TIME = 3;
 
-    static NumberPort input, output, p1, p2, p3;
+    static @SharedPtr PortNumeric input, output, p1, p2, p3;
     static RuntimeEnvironment re;
 
     private static final int CYCLES = 10000000;
@@ -56,13 +57,13 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         // set up
         //RuntimeEnvironment.initialInit(/*new ByteArrayInputStream(new byte[0])*/);
         re = RuntimeEnvironment.getInstance();
-        output = new NumberPort("test1", true);
-        input = new NumberPort("test2", false);
+        output = new PortNumeric("test1", true);
+        input = new PortNumeric("test2", false);
         output.connectToTarget(input);
-        p1 = new NumberPort("p1", false);
-        p2 = new NumberPort("p2", false);
-        p3 = new NumberPort("p3", false);
-        p3.link(RuntimeEnvironment.getInstance(), "portlink");
+        p1 = new PortNumeric("p1", false);
+        p2 = new PortNumeric("p2", false);
+        p3 = new PortNumeric("p3", false);
+        p3.getWrapped().link(RuntimeEnvironment.getInstance(), "portlink");
         FrameworkElement.initAll();
         //output.std11CaseReceiver = input;
 
@@ -71,8 +72,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         testSimpleEdge2();
         testSimpleEdgeBB();
 
-        input.managedDelete();
-        output.managedDelete();
+        input.delete();
+        output.delete();
 
         //JavaOnlyBlock
         RuntimeEnvironment.getInstance().managedDelete();

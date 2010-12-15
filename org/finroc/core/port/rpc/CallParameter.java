@@ -40,7 +40,7 @@ import org.finroc.core.port.std.PortData;
  * otherwise it is directly serialized
  */
 @IncludeClass(CCInterThreadContainer.class)
-@CppInclude("std/PortDataImpl.h")
+@CppInclude("std/PortData.h")
 public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class CallParameter {
 
     /** Constants for different types of parameters in serialization */

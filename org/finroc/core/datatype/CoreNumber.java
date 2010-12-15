@@ -25,6 +25,8 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.ConstPtr;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppFilename;
+import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Init;
@@ -52,6 +54,7 @@ import org.finroc.core.portdatabase.TypedObjectImpl;
  *
  * This class stores numbers (with units) of different types.
  */
+@CppName("Number") @CppFilename("Number")
 @MaxStringSerializationLength(22)
 @Superclass( {TypedObjectImpl.class, Object.class})
 public class CoreNumber extends Number implements CCPortData, ExpressData, Copyable<CoreNumber> {
@@ -77,11 +80,11 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
 
     /** Register Data type */
     @ConstPtr
-    public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreNumber.class);
+    public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreNumber.class, "Number");
 
     // All kinds of variations of constructors
     /*Cpp
-    CoreNumber(const CoreNumber& from) {
+    Number(const Number& from) {
         unit = from.unit;
         numType = from.numType;
         lval = from.lval; // will copy any type of value
@@ -101,7 +104,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     /*Cpp
-    CoreNumber(uint32_t value_, Unit* unit_ = &Unit::NO_UNIT) :
+    Number(uint32_t value_, Unit* unit_ = &Unit::NO_UNIT) :
         ival(value_),
         num_type(eINT),
         unit(unit_)
@@ -263,7 +266,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         case eCONSTANT:
             return static_cast<T>(unit->getValue().value<T>());
         default:
-            assert(false && "Possibly not a CoreNumber at this memory address?");
+            assert(false && "Possibly not a Number at this memory address?");
             return 0;
         }
     }

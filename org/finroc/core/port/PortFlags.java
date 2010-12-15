@@ -28,6 +28,7 @@ import org.finroc.core.CoreFlags;
  *
  * Contains Flags for Ports.
  */
+//@CppName("flags")
 public class PortFlags extends CoreFlags {
 
     // Constant flags

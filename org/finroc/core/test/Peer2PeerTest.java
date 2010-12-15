@@ -28,7 +28,7 @@ import org.finroc.plugin.tcp.TCPPeer;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.NumberPort;
+import org.finroc.core.port.cc.PortNumeric;
 
 /**
  * @author max
@@ -48,10 +48,10 @@ public class Peer2PeerTest {
 
         // Create two ports
         FrameworkElement linkTest = new FrameworkElement(null, "linkTest");
-        NumberPort output = new NumberPort(new PortCreationInfo("testOut", PortFlags.SHARED_OUTPUT_PORT));
-        output.link(linkTest, "linkTestPort");
-        NumberPort output2 = new NumberPort(new PortCreationInfo("testOutGlobal", PortFlags.SHARED_OUTPUT_PORT | CoreFlags.GLOBALLY_UNIQUE_LINK));
-        NumberPort input = new NumberPort(new PortCreationInfo("testIn", PortFlags.INPUT_PORT));
+        PortNumeric output = new PortNumeric(new PortCreationInfo("testOut", PortFlags.SHARED_OUTPUT_PORT));
+        output.getWrapped().link(linkTest, "linkTestPort");
+        PortNumeric output2 = new PortNumeric(new PortCreationInfo("testOutGlobal", PortFlags.SHARED_OUTPUT_PORT | CoreFlags.GLOBALLY_UNIQUE_LINK));
+        PortNumeric input = new PortNumeric(new PortCreationInfo("testIn", PortFlags.INPUT_PORT));
         input.connectToSource("/TCP/localhost:4444/Unrelated/testOut");
         input.connectToSource("/Unrelated/testOutGlobal");
 

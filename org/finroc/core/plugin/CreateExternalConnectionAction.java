@@ -29,7 +29,7 @@ import org.finroc.jc.annotation.Managed;
  *
  * Class to create Module using empty standard constructor
  */
-public interface CreateExternalConnectionAction extends CreateModuleAction {
+public interface CreateExternalConnectionAction extends CreateFrameworkElementAction {
 
     /** Does connection transfer info about remote edges? */
     public final static int REMOTE_EDGE_INFO = 1 << 0;

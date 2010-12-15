@@ -33,7 +33,7 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.parameter.StringStructureParameter;
+import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameterList;
 
 /**
@@ -66,7 +66,7 @@ public abstract class ExternalConnection extends FrameworkElement {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
     /** if set, this module automatically connects to this address */
-    private StringStructureParameter autoConnectTo = new StringStructureParameter("Autoconnect to", "");
+    private StructureParameterString autoConnectTo = new StructureParameterString("Autoconnect to", "");
 
     /**
      * @param description Description of class

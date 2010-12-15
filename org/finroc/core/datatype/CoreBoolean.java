@@ -29,6 +29,8 @@ import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppFilename;
+import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.PassByValue;
 
 /**
@@ -36,10 +38,11 @@ import org.finroc.jc.annotation.PassByValue;
  *
  * boolean type
  */
+@CppName("Boolean") @CppFilename("Boolean")
 public class CoreBoolean extends CCPortDataImpl {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreBoolean.class);
+    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreBoolean.class, "Boolean");
 
     /** value */
     private boolean value;

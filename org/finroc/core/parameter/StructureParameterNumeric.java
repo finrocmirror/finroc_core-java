@@ -36,7 +36,7 @@ import org.finroc.jc.annotation.Ptr;
  *
  * Numeric Structure parameter.
  */
-public class NumericStructureParameter<T extends Number> extends StructureParameter<CoreNumber> {
+public class StructureParameterNumeric<T extends Number> extends StructureParameter<CoreNumber> {
 
     /** Unit of parameter */
     private Unit unit = Unit.NO_UNIT;
@@ -51,16 +51,16 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
     /** Default value */
     private T defaultVal;
 
-    public NumericStructureParameter(String name, T defaultValue, boolean constructorPrototype) {
+    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype) {
         this(name, defaultValue, constructorPrototype, new Bounds());
     }
 
-    public NumericStructureParameter(String name, T defaultValue) {
+    public StructureParameterNumeric(String name, T defaultValue) {
         this(name, defaultValue, false, new Bounds());
     }
 
     @SuppressWarnings("unchecked")
-    public NumericStructureParameter(String name, T defaultValue, boolean constructorPrototype, Bounds bounds) {
+    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds bounds) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreNumber.class), constructorPrototype);
         this.bounds = bounds;
 
@@ -73,7 +73,7 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
         }
     }
 
-    public NumericStructureParameter(String name, T defaultValue, Bounds bounds2) {
+    public StructureParameterNumeric(String name, T defaultValue, Bounds bounds2) {
         this(name, defaultValue, false, bounds2);
     }
 
@@ -96,7 +96,7 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
      * (not real-time capable in Java)
      * @return Current value
      */
-    @InCpp( {"CoreNumber* cn = getBuffer();",
+    @InCpp( {"Number* cn = getBuffer();",
              "return cn->value<T>();"
             })
     public T get() {
@@ -146,7 +146,7 @@ public class NumericStructureParameter<T extends Number> extends StructureParame
 
     @Override
     public StructureParameterBase deepCopy() {
-        return new NumericStructureParameter<T>(getName(), defaultVal, false, bounds);
+        return new StructureParameterNumeric<T>(getName(), defaultVal, false, bounds);
     }
 
 }

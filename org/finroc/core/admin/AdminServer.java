@@ -33,7 +33,7 @@ import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
-import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortFlags;
@@ -254,9 +254,9 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         assert(method == GET_CREATE_MODULE_ACTIONS);
         MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
         CoreOutput co = new CoreOutput(mb);
-        @Const @Ref SimpleList<CreateModuleAction> moduleTypes = Plugins.getInstance().getModuleTypes();
+        @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
         for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
-            @Const @Ref CreateModuleAction cma = moduleTypes.get(i);
+            @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
             co.writeString(cma.getName());
             co.writeString(cma.getModuleGroup());
             if (cma.getParameterTypes() != null) {
@@ -299,7 +299,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         } else if (method == CREATE_MODULE) {
             try {
                 synchronized (getRegistryLock()) {
-                    CreateModuleAction cma = Plugins.getInstance().getModuleTypes().get(cmaIndex);
+                    CreateFrameworkElementAction cma = Plugins.getInstance().getModuleTypes().get(cmaIndex);
                     FrameworkElement parent = RuntimeEnvironment.getInstance().getElement(parentHandle);
                     if (parent == null || (!parent.isReady())) {
                         logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling remote module creation.");

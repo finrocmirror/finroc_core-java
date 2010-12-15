@@ -258,7 +258,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * It should not be modified thereafter.
      * Should only be called on output ports
      *
-     * @param cnc Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
+     * @param data Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
     @Inline public void publish(@Const PortData data) {
         //JavaOnlyBlock
@@ -590,7 +590,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Set current value to default value
      */
-    private void applyDefaultValue() {
+    public void applyDefaultValue() {
         publish(defaultValue);
     }
 

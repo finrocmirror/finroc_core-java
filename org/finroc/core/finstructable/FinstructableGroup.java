@@ -21,15 +21,14 @@
  */
 package org.finroc.core.finstructable;
 
-import org.finroc.core.ChildIterator;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.LinkEdge;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.StringStructureParameter;
+import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameterList;
-import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.AbstractPort;
@@ -61,7 +60,7 @@ import org.finroc.xml.XMLNode;
 public class FinstructableGroup extends FrameworkElement implements FrameworkElementTreeFilter.Callback<XMLNode> {
 
     /** contains name of XML to use */
-    private StringStructureParameter xmlFile = new StringStructureParameter("XML file", "");
+    private StructureParameterString xmlFile = new StructureParameterString("XML file", "");
 
     /** contains name of XML that is currently used (variable is used to detect changes to xmlFile parameter) */
     private String currentXmlFile = "";
@@ -171,7 +170,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             String type = node.getStringAttribute("type");
 
             // find action
-            CreateModuleAction action = Plugins.getInstance().loadModuleType(group, type);
+            CreateFrameworkElementAction action = Plugins.getInstance().loadModuleType(group, type);
             if (action == null) {
                 log(LogLevel.LL_WARNING, logDomain, "Failed to instantiate element. No module type " + group + "/" + type + " available. Skipping...");
                 return;
@@ -393,7 +392,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 // serialize framework element
                 XMLNode n = node.addChildNode("element");
                 n.setAttribute("name", fe.getCDescription());
-                CreateModuleAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
+                CreateFrameworkElementAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
                 n.setAttribute("group", cma.getModuleGroup());
                 n.setAttribute("type", cma.getName());
                 if (cps != null) {

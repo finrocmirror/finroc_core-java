@@ -42,7 +42,7 @@ import org.finroc.jc.container.SimpleList;
  * Can be initialized separately from rest of framework.
  */
 @Ptr
-@CppInclude("CoreNumber.h")
+@CppInclude("Number.h")
 public class Unit {
 
     /** Factor regarding base unit */
@@ -150,6 +150,9 @@ public class Unit {
      * @return Result
      */
     @ConstMethod public double convertTo(double value, Unit toUnit) {
+        if (this == Unit.NO_UNIT || toUnit == Unit.NO_UNIT) {
+            return value;
+        }
         return getConversionFactor(toUnit) * value;
     }
 
@@ -269,7 +272,7 @@ public class Unit {
      */
     @InCppFile
     @ConstMethod @Const @Ref public CoreNumber getValue() {
-        //Cpp static CoreNumber defaultValue(util::Double::_cNaN);
+        //Cpp static Number defaultValue(util::Double::_cNaN);
         return defaultValue;
     }
 

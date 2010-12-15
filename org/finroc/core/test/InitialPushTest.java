@@ -23,6 +23,7 @@ package org.finroc.core.test;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.buffer.CoreOutput;
@@ -30,7 +31,7 @@ import org.finroc.plugin.blackboard.BlackboardBuffer;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.NumberPort;
+import org.finroc.core.port.cc.PortNumeric;
 import org.finroc.core.port.std.Port;
 
 /**
@@ -49,9 +50,9 @@ public class InitialPushTest {
         RuntimeEnvironment.getInstance();
         Port<BlackboardBuffer> out = new Port<BlackboardBuffer>(new PortCreationInfo("StdOut", BlackboardBuffer.BUFFER_TYPE, PortFlags.OUTPUT_PORT));
         Port<BlackboardBuffer> in = new Port<BlackboardBuffer>(new PortCreationInfo("StdIn", BlackboardBuffer.BUFFER_TYPE, PortFlags.INPUT_PORT));
-        NumberPort nOut = new NumberPort(new PortCreationInfo("NumOut", PortFlags.OUTPUT_PORT));
-        NumberPort nIn = new NumberPort(new PortCreationInfo("NumIn", PortFlags.INPUT_PORT));
-        NumberPort nRevOut = new NumberPort(new PortCreationInfo("NumRevOut", PortFlags.OUTPUT_PORT | PortFlags.PUSH_STRATEGY_REVERSE));
+        PortNumeric nOut = new PortNumeric(new PortCreationInfo("NumOut", PortFlags.OUTPUT_PORT));
+        PortNumeric nIn = new PortNumeric(new PortCreationInfo("NumIn", PortFlags.INPUT_PORT));
+        PortNumeric nRevOut = new PortNumeric(new PortCreationInfo("NumRevOut", PortFlags.OUTPUT_PORT | PortFlags.PUSH_STRATEGY_REVERSE));
         FrameworkElement.initAll();
 
         // fill output ports with something
@@ -93,16 +94,16 @@ public class InitialPushTest {
         System.out.println("\nNow for a complex net...");
 
         // o1->o2
-        NumberPort o1 = new NumberPort(new PortCreationInfo("o1", PortFlags.OUTPUT_PROXY));
+        PortNumeric o1 = new PortNumeric(new PortCreationInfo("o1", PortFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o1.publish(24);
-        NumberPort o2 = new NumberPort(new PortCreationInfo("o2", PortFlags.INPUT_PROXY | PortFlags.PUSH_STRATEGY));
+        PortNumeric o2 = new PortNumeric(new PortCreationInfo("o2", PortFlags.INPUT_PROXY | PortFlags.PUSH_STRATEGY));
         FrameworkElement.initAll();
         o1.connectToTarget(o2);
         print(o2, 24);
 
         // o1->o2->o3
-        NumberPort o3 = new NumberPort(new PortCreationInfo("o3", PortFlags.INPUT_PORT));
+        PortNumeric o3 = new PortNumeric(new PortCreationInfo("o3", PortFlags.INPUT_PORT));
         o2.connectToTarget(o3);
         FrameworkElement.initAll();
         o2.setPushStrategy(false);
@@ -113,7 +114,7 @@ public class InitialPushTest {
         print(o3, 22);
 
         // o0->o1->o2->o3
-        NumberPort o0 = new NumberPort(new PortCreationInfo("o0", PortFlags.OUTPUT_PROXY));
+        PortNumeric o0 = new PortNumeric(new PortCreationInfo("o0", PortFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o0.publish(42);
         o0.connectToTarget(o1);
@@ -122,13 +123,13 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //              \            .
         //               o4->o5
-        NumberPort o4 = new NumberPort(new PortCreationInfo("o4", PortFlags.INPUT_PROXY));
-        NumberPort o5 = new NumberPort(new PortCreationInfo("o5", PortFlags.INPUT_PORT));
+        PortNumeric o4 = new PortNumeric(new PortCreationInfo("o4", PortFlags.INPUT_PROXY));
+        PortNumeric o5 = new PortNumeric(new PortCreationInfo("o5", PortFlags.INPUT_PORT));
         FrameworkElement.initAll();
         o4.connectToTarget(o5);
         o2.connectToTarget(o4);
         print(o5, 42);
-        NumberPort o6 = new NumberPort(new PortCreationInfo("o6", PortFlags.OUTPUT_PORT));
+        PortNumeric o6 = new PortNumeric(new PortCreationInfo("o6", PortFlags.OUTPUT_PORT));
         FrameworkElement.initAll();
         o6.publish(44);
         o6.connectToTarget(o0);
@@ -138,10 +139,10 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //        /     \            .
         //      o7->o8   o4->o5
-        NumberPort o7 = new NumberPort(new PortCreationInfo("o7", PortFlags.OUTPUT_PROXY));
+        PortNumeric o7 = new PortNumeric(new PortCreationInfo("o7", PortFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o7.publish(33);
-        NumberPort o8 = new NumberPort(new PortCreationInfo("o8", PortFlags.INPUT_PORT));
+        PortNumeric o8 = new PortNumeric(new PortCreationInfo("o8", PortFlags.INPUT_PORT));
         FrameworkElement.initAll();
         o7.connectToTarget(o8);
         print(o8, 33);
@@ -151,7 +152,7 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //        /     \            .
         //  o9->o7->o8   o4->o5
-        NumberPort o9 = new NumberPort(new PortCreationInfo("o9", PortFlags.OUTPUT_PORT));
+        PortNumeric o9 = new PortNumeric(new PortCreationInfo("o9", PortFlags.OUTPUT_PORT));
         FrameworkElement.initAll();
         o9.publish(88);
         o9.connectToTarget(o7);
@@ -160,7 +161,7 @@ public class InitialPushTest {
         print(o3, 44);
     }
 
-    private static void print(NumberPort o2, int i) {
+    private static void print(@Ref PortNumeric o2, int i) {
         System.out.println("Port " + o2.getDescription() + ": " + o2.getIntRaw() + " (expected: " + i + ")");
     }
 

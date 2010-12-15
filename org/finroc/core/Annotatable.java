@@ -50,6 +50,7 @@ public class Annotatable extends LogUser implements HasDestructor {
     public synchronized void addAnnotation(@Managed FinrocAnnotation ann) {
         if (ann.getType() == null) {
             ann.initDataType();
+            assert(ann.getType() != null) : "Initializing data type failed";
         }
         assert(ann.annotated == null) : "Already used as annotation in other object. Not allowed (double deleteting etc.)";
         ann.annotated = this;

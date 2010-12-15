@@ -23,6 +23,7 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
@@ -47,7 +48,7 @@ import org.finroc.log.LogDomain;
  * C++ issue: Typed objects are not automatically jc objects!
  */
 @Ptr @Inline @NoCpp
-@CppName("TypedObject")
+@CppName("TypedObject") @CppFilename("TypedObject")
 @Superclass( {CoreSerializableImpl.class})
 @HAppend( {"inline std::ostream& operator << (std::ostream& output, const TypedObject* lu) {",
            "    output << typeid(*lu).name() << \" (\" << ((void*)lu) << \")\";",

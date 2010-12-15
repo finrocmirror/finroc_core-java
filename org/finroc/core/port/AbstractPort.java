@@ -143,6 +143,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(initialPushLog, \"initial_pushes\");")
     public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
 
+    /** Log domain for this class */
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"ports\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("ports");
+
     /**
      * @param pci PortCreationInformation
      */
@@ -258,6 +262,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     /**
      * Can this port be connected to specified target port? (additional non-standard checks)
+     * (may be overridden by subclass - should usually call superclass method, too)
      *
      * @param target Target port?
      * @return Answer
@@ -270,17 +275,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         if (!dataType.isConvertibleTo(target.dataType)) {
             return false;
         }
-        return mayConnectTo2(target);
-    }
-
-    /**
-     * Can this port be connected to specified target port?
-     * (additional non-standard checks by subclass)
-     *
-     * @param target Target port?
-     * @return Answer
-     */
-    @Virtual protected boolean mayConnectTo2(AbstractPort target) {
         return true;
     }
 

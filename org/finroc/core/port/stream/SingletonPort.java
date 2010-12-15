@@ -24,8 +24,11 @@ package org.finroc.core.port.stream;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.Port;
+import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PublishCache;
+import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.InCppFile;
 
 /**
  * @author max
@@ -37,16 +40,33 @@ import org.finroc.core.port.std.PublishCache;
  */
 public class SingletonPort<T extends PortData> extends Port<T> {
 
-    /** Singleton value */
-    private final T singletonValue;
+    /** Special Port class to load value when initialized */
+    @AtFront
+    private static class PortImpl<T> extends PortBase {
+
+        /** Singleton value */
+        private final T singletonValue;
+
+        @InCppFile
+        public PortImpl(PortCreationInfo pci, T singleton) {
+            super(pci);
+            this.singletonValue = singleton;
+        }
+
+        @Override
+        protected void nonStandardAssign(PublishCache pc) {
+            if (pc.curRef.getData() != singletonValue) {
+                throw new RuntimeException("Cannot change contents of Singleton-Port");
+            }
+        }
+    }
 
     /**
      * @param pci Bundled creation information about port
      * @param singleton The Singleton object that is contained in this port
      */
     public SingletonPort(PortCreationInfo pci, T singleton) {
-        super(adjustPci(pci));
-        this.singletonValue = singleton;
+        wrapped = new PortImpl<T>(adjustPci(pci), singleton);
         publish(singleton);
     }
 
@@ -61,13 +81,6 @@ public class SingletonPort<T extends PortData> extends Port<T> {
         pci.sendBufferSize = 1;
         pci.altSendBufferSize = 0;
         pci.setFlag(PortFlags.PUSH_DATA_IMMEDIATELY | PortFlags.NON_STANDARD_ASSIGN, true);
-        return pci;
-    }
-
-    @Override
-    protected void nonStandardAssign(PublishCache pc) {
-        if (pc.curRef.getData() != singletonValue) {
-            throw new RuntimeException("Cannot change contents of Singleton-Port");
-        }
+        return Port.processPci(pci);
     }
 }

@@ -36,7 +36,7 @@ import org.finroc.jc.container.SimpleList;
  *
  * Enum structure parameter
  */
-public class EnumStructureParameter<E extends Enum<E>> extends StructureParameter<EnumValue> {
+public class StructureParameterEnum<E extends Enum<E>> extends StructureParameter<EnumValue> {
 
     /** String constants for enum values */
     @SharedPtr private SimpleList<String> stringConstants = new SimpleList<String>();
@@ -45,7 +45,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
     @JavaOnly private Class<E> enumClass;
 
     /*Cpp
-    EnumStructureParameter(const util::String& name, bool constructorPrototype = false) :
+    StructureParameterEnum(const util::String& name, bool constructorPrototype = false) :
         StructureParameter<EnumValue>(name, DataTypeRegister::getInstance()->getDataType<EnumValue>(), constructorPrototype),
         stringConstants()
     {}
@@ -56,7 +56,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
-    public EnumStructureParameter(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype, @SharedPtr SimpleList<String> stringConstants) {
+    public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype, @SharedPtr SimpleList<String> stringConstants) {
         super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class), constructorPrototype);
         this.stringConstants = stringConstants;
         set(defaultValue);
@@ -69,7 +69,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
-    public EnumStructureParameter(@Const @Ref String name, @PassByValue E defaultValue, @Const @Ref String stringConstants) {
+    public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, @Const @Ref String stringConstants) {
         super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class));
         this.stringConstants.addAll(stringConstants.split(","));
         set(defaultValue);
@@ -83,7 +83,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
     @JavaOnly
-    public EnumStructureParameter(String name, Enum defaultValue) {
+    public StructureParameterEnum(String name, Enum defaultValue) {
         super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class));
         set((E)defaultValue);
         getValue().setStringConstants(this.stringConstants);
@@ -120,7 +120,7 @@ public class EnumStructureParameter<E extends Enum<E>> extends StructureParamete
 
     @Override
     public StructureParameterBase deepCopy() {
-        return new EnumStructureParameter<E>(getName(), getValueForInt(0), false, stringConstants);
+        return new StructureParameterEnum<E>(getName(), getValueForInt(0), false, stringConstants);
     }
 
 }

@@ -22,12 +22,17 @@
 package org.finroc.core.port.stream;
 
 import org.finroc.core.buffer.ChunkBuffer;
+import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.Port;
+import org.finroc.core.port.std.PortBase;
+import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PortQueueFragment;
 import org.finroc.core.port.std.PublishCache;
+import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
@@ -43,23 +48,74 @@ import org.finroc.log.LogLevel;
  */
 public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
 
-    /**
-     * Used for dequeueing data
-     */
-    private PortQueueFragment<T> dequeueBuffer = new PortQueueFragment<T>();
+    /** Special Port class to load value when initialized */
+    @AtFront
+    protected static class PortImpl<T extends ChunkBuffer> extends PortBase {
 
-    /**
-     * User of input stream
-     */
-    private final InputPacketProcessor<T> user;
+        /**
+         * Used for dequeueing data
+         */
+        private PortQueueFragment<PortData> dequeueBuffer = new PortQueueFragment<PortData>();
+
+        /**
+         * User of input stream
+         */
+        private final InputPacketProcessor<T> user;
+
+        private NewConnectionHandler connHandler;
+
+        @InCppFile
+        public PortImpl(PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
+            super(processPci(pci));
+            this.user = user;
+            this.connHandler = connHandler;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override @InCppFile
+        protected void nonStandardAssign(PublishCache pc) {
+            if (user == null || processPacket((T)pc.curRef.getData())) {
+                super.nonStandardAssign(pc); // enqueue
+            }
+        }
+
+        protected boolean processPacket(T data) {
+            try {
+                return user.processPacket(data);
+            } catch (Exception e) {
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Error while processing packet: ", e);
+            }
+            return false;
+        }
+
+        /**
+         * Process any packet currently in queue (method only for convenience)
+         */
+        @SuppressWarnings("unchecked")
+        public void processPackets() {
+            dequeueAllRaw(dequeueBuffer);
+            PortData pdr = null;
+            while ((pdr = dequeueBuffer.dequeueUnsafe()) != null) {
+                user.processPacket((T)pdr);
+                pdr.getManager().releaseLock();
+            }
+        }
+
+        // we have a new connection
+        @Override
+        protected void newConnection(AbstractPort partner) {
+            if (connHandler != null) {
+                connHandler.handleNewConnection(partner);
+            }
+        }
+    }
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"stream_ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
-    public InputStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<T> user) {
-        super(processPCI(pci, description));
-        this.user = user;
+    public InputStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
+        wrapped = new PortImpl<T>(processPCI(pci, description), user, connHandler);
     }
 
     private static PortCreationInfo processPCI(PortCreationInfo pci, String description) {
@@ -68,35 +124,6 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
         pci.setFlag(PortFlags.HAS_AND_USES_QUEUE, true);
         pci.setFlag(PortFlags.OUTPUT_PORT, false);
         //pci.setFlag(PortFlags.ACCEPTS_REVERSE_DATA, false);
-        return pci;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected void nonStandardAssign(PublishCache pc) {
-        if (user == null || processPacket((T)pc.curRef.getData())) {
-            super.nonStandardAssign(pc); // enqueue
-        }
-    }
-
-    protected boolean processPacket(T data) {
-        try {
-            return user.processPacket(data);
-        } catch (Exception e) {
-            log(LogLevel.LL_WARNING, logDomain, "Error while processing packet: ", e);
-        }
-        return false;
-    }
-
-    /**
-     * Process any packet currently in queue (method only for convenience)
-     */
-    public void processPackets() {
-        queue.dequeueAll(dequeueBuffer);
-        T pdr = null;
-        while ((pdr = dequeueBuffer.dequeueUnsafe()) != null) {
-            user.processPacket(pdr);
-            pdr.getManager().releaseLock();
-        }
+        return Port.processPci(pci);
     }
 }

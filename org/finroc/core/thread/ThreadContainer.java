@@ -24,8 +24,8 @@ package org.finroc.core.thread;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.finstructable.Group;
-import org.finroc.core.parameter.BoolStructureParameter;
-import org.finroc.core.parameter.NumericStructureParameter;
+import org.finroc.core.parameter.StructureParameterBool;
+import org.finroc.core.parameter.StructureParameterNumeric;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.jc.annotation.Const;
@@ -43,13 +43,13 @@ import org.finroc.log.LogLevel;
 public class ThreadContainer extends Group implements StartAndPausable {
 
     /** Should this container contain a real-time thread? */
-    private final BoolStructureParameter rtThread = new BoolStructureParameter("Realtime Thread", false);
+    private final StructureParameterBool rtThread = new StructureParameterBool("Realtime Thread", false);
 
     /** Thread cycle time */
-    private final NumericStructureParameter<Integer> cycleTime = new NumericStructureParameter<Integer>("Cycle Time", 40, new Bounds(1, 60000, true));
+    private final StructureParameterNumeric<Integer> cycleTime = new StructureParameterNumeric<Integer>("Cycle Time", 40, new Bounds(1, 60000, true));
 
     /** Warn on cycle time exceed */
-    private final BoolStructureParameter warnOnCycleTimeExceed = new BoolStructureParameter("Warn on cycle time exceed", true);
+    private final StructureParameterBool warnOnCycleTimeExceed = new StructureParameterBool("Warn on cycle time exceed", true);
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue

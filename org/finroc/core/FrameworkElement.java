@@ -61,7 +61,7 @@ import org.finroc.log.LogStream;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
-import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
 
@@ -84,7 +84,7 @@ import org.finroc.core.port.ThreadLocalCache;
  * lock it - or the complete runtime environment.
  */
 @Ptr
-@Friend( {GarbageCollector.class, ChildIterator.class, RuntimeEnvironment.class})
+@Friend( {GarbageCollector.class, FrameworkElement.ChildIterator.class, RuntimeEnvironment.class})
 @IncludeClass(SafeConcurrentlyIterableList.class)
 @CppInclude("parameter/ConstructorParameters.h")
 @HAppend( {"inline std::ostream& operator << (std::ostream& output, const FrameworkElement* lu) {",
@@ -332,7 +332,7 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     *  same as below -
+     *  same as getDescription()
      *  except that we return a const char* in C++ - this way, no memory needs to be allocated
      */
     @Const @CppType("char*") @ConstMethod
@@ -1441,7 +1441,7 @@ public class FrameworkElement extends Annotatable {
      * @param other Other String
      * @return Result
      */
-    public boolean descriptionEquals(String other) {
+    @ConstMethod public boolean descriptionEquals(@Const @Ref String other) {
         if (isReady()) {
             return primary.description.equals(other);
         } else {
@@ -1483,24 +1483,6 @@ public class FrameworkElement extends Annotatable {
         ThreadLocalCache.getFast().releaseAllLocks();
     }
 
-    /**
-     * Mark element as finstructed
-     * (should only be called by AdminServer and CreateModuleActions)
-     *
-     * @param createAction Action with which framework element was created
-     * @param params Parameters that module was created with (may be null)
-     */
-    @InCppFile
-    public void setFinstructed(CreateModuleAction createAction, ConstructorParameters params) {
-        assert(!getFlag(CoreFlags.FINSTRUCTED));
-        StructureParameterList list = StructureParameterList.getOrCreate(this);
-        list.setCreateAction(createAction);
-        setFlag(CoreFlags.FINSTRUCTED);
-        if (params != null) {
-            addAnnotation(params);
-        }
-    }
-
     /*Cpp
     // for efficient streaming of fully-qualified framework element name
     void streamQualifiedName(std::ostream& output) const {
@@ -1519,4 +1501,202 @@ public class FrameworkElement extends Annotatable {
         }
     }
      */
+
+    /**
+     * Mark element as finstructed
+     * (should only be called by AdminServer and CreateModuleActions)
+     *
+     * @param createAction Action with which framework element was created
+     * @param params Parameters that module was created with (may be null)
+     */
+    @InCppFile
+    public void setFinstructed(CreateFrameworkElementAction createAction, ConstructorParameters params) {
+        assert(!getFlag(CoreFlags.FINSTRUCTED));
+        StructureParameterList list = StructureParameterList.getOrCreate(this);
+        list.setCreateAction(createAction);
+        setFlag(CoreFlags.FINSTRUCTED);
+        if (params != null) {
+            addAnnotation(params);
+        }
+    }
+
+    /**
+     * @author max
+     *
+     * Used to iterate over a framework element's children.
+     */
+    @PassByValue
+    public static class ChildIterator {
+
+        /** Array with children */
+        @JavaOnly protected ArrayWrapper<Link> array;
+
+        /** next position in array */
+        @JavaOnly protected int pos;
+
+        /** FrameworkElement that is currently iterated over */
+        @Const @Ptr protected FrameworkElement curParent;
+
+        /*Cpp
+        // next element to check (in array)
+        FrameworkElement::Link* const * nextElem;
+
+        // last element in array
+        FrameworkElement::Link* const * last;
+         */
+
+        /** Relevant flags */
+        private int flags;
+
+        /** Expected result when ANDing with flags */
+        private int result;
+
+        @Init( {"nextElem(NULL)", "last(NULL)"})
+        public ChildIterator(@Const FrameworkElement parent) {
+            reset(parent);
+        }
+
+        /**
+         * @param parent Framework element over whose child to iterate
+         * @param flags Flags that children must have in order to be considered
+         */
+        @Init( {"nextElem(NULL)", "last(NULL)"})
+        public ChildIterator(@Const FrameworkElement parent, int flags) {
+            reset(parent, flags);
+        }
+
+        /**
+         * @param parent Framework element over whose child to iterate
+         * @param flags Relevant flags
+         * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
+         */
+        @Init( {"nextElem(NULL)", "last(NULL)"})
+        public ChildIterator(@Const FrameworkElement parent, int flags, int result) {
+            reset(parent, flags, result);
+        }
+
+        /**
+         * @param parent Framework element over whose child to iterate
+         * @param flags Relevant flags
+         * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
+         * @param includeNonReady Include children that are not fully initialized yet?
+         */
+        @Init( {"nextElem(NULL)", "last(NULL)"})
+        public ChildIterator(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+            reset(parent, flags, result, includeNonReady);
+        }
+
+        /**
+         * @return Next child - or null if there are no more children left
+         */
+        @NonVirtual public FrameworkElement next() {
+            // JavaOnlyBlock
+            while (pos < array.size()) {
+                Link fe = array.get(pos);
+                if (fe != null && (fe.getChild().getAllFlags() & flags) == result) {
+                    pos++;
+                    return fe.getChild();
+                }
+                pos++;
+            }
+
+            /*Cpp
+            while(nextElem <= last) {
+                FrameworkElement::Link* nex = *nextElem;
+                if (nex != NULL && (nex->getChild()->getAllFlags() & flags) == result) {
+                    nextElem++;
+                    return nex->getChild();
+                }
+                nextElem++;
+            }
+             */
+
+            return null;
+        }
+
+        /**
+         * @return Next child that is a port - or null if there are no more children left
+         */
+        public AbstractPort nextPort() {
+            while (true) {
+                FrameworkElement result = next();
+                if (result == null) {
+                    return null;
+                }
+                if (result.isPort()) {
+                    return (AbstractPort)result;
+                }
+            }
+        }
+
+        /**
+         * Use iterator again on same framework element
+         */
+        public void reset() {
+            reset(curParent);
+        }
+
+        /**
+         * Use Iterator for different framework element
+         * (or same and reset)
+         *
+         * @param parent Framework element over whose child to iterate
+         */
+        public void reset(@Const FrameworkElement parent) {
+            reset(parent, 0, 0);
+        }
+
+        /**
+         * Use Iterator for different framework element
+         * (or same and reset)
+         *
+         * @param parent Framework element over whose child to iterate
+         * @param flags Flags that children must have in order to be considered
+         */
+        public void reset(@Const FrameworkElement parent, int flags) {
+            reset(parent, flags, flags);
+        }
+
+        /**
+         * Use Iterator for different framework element
+         * (or same and reset)
+         *
+         * @param parent Framework element over whose child to iterate
+         * @param flags Relevant flags
+         * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
+         */
+        public void reset(@Const FrameworkElement parent, int flags, int result) {
+            reset(parent, flags, result, false);
+        }
+
+        /**
+         * Use Iterator for different framework element
+         * (or same and reset)
+         *
+         * @param parent Framework element over whose child to iterate
+         * @param flags Relevant flags
+         * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
+         * @param includeNonReady Include children that are not fully initialized yet?
+         */
+        public void reset(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+            assert(parent != null);
+            this.flags = flags | CoreFlags.DELETED;
+            this.result = result;
+            if (!includeNonReady) {
+                flags |= CoreFlags.READY;
+                result |= CoreFlags.READY;
+            }
+            curParent = parent;
+
+            // JavaOnlyBlock
+            array = parent.getChildren();
+            pos = 0;
+
+            /*Cpp
+            const util::ArrayWrapper<FrameworkElement::Link*>* array = parent->getChildren();
+            nextElem = array->getPointer();
+            last = (nextElem + array->size()) - 1;
+             */
+        }
+    }
 }

@@ -38,7 +38,7 @@ import org.finroc.jc.annotation.Ptr;
  */
 @Ptr
 @Include("<dlfcn.h>")
-public interface CreateModuleAction {
+public interface CreateFrameworkElementAction {
 
     /**
      * Create Module (or Group)

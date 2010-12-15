@@ -1,6 +1,5 @@
 package org.finroc.core.thread;
 
-import org.finroc.core.ChildIterator;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
@@ -209,7 +208,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             traceOutgoing(task, ea);
                         }
                     }
-                    @PassByValue ChildIterator ci = new ChildIterator(parent, CoreFlags.READY | CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
+                    @PassByValue FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(parent, CoreFlags.READY | CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
                     FrameworkElement otherIf = null;
                     while ((otherIf = ci.next()) != null) {
                         EdgeAggregator ea = (EdgeAggregator)otherIf;

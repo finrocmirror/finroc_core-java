@@ -22,6 +22,7 @@
 package org.finroc.core.port.cc;
 
 import org.finroc.core.port.PortCreationInfo;
+import org.finroc.core.port.PortWrapperBase;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
@@ -44,14 +45,20 @@ import org.finroc.jc.annotation.Ref;
  */
 @Inline @NoCpp @RawTypeArgs
 @IncludeClass(DataTypeRegister.class)
-public class CCPort<T extends CCPortData> extends CCPortBase {
+public class CCPort<T extends CCPortData> extends PortWrapperBase<CCPortBase> {
 
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
     public CCPort(PortCreationInfo pci) {
-        super(processPci(pci));
+        wrapped = new CCPortBase(processPci(pci));
     }
+
+    /**
+     * (Constructor for derived classes)
+     * (wrapped must be set in constructor!)
+     */
+    public CCPort() {}
 
     public static @Ref PortCreationInfo processPci(@Ref PortCreationInfo pci) {
         //Cpp pci.dataType = DataTypeRegister::getInstance()->getDataType<T>();
@@ -71,7 +78,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
 
     @SuppressWarnings("unchecked")
     @Inline public @Ptr CCPortDataContainer<T> getUnusedBuffer() {
-        return (CCPortDataContainer<T>)ThreadLocalCache.get().getUnusedBuffer(dataType);
+        return (CCPortDataContainer<T>)ThreadLocalCache.get().getUnusedBuffer(wrapped.getDataType());
     }
 
     /**
@@ -83,7 +90,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     @NonVirtual
     public void setDefault(@Const @Ref T t) {
         assert(!isReady()) : "please set default value _before_ initializing port";
-        defaultValue.assign((CCPortData)t);
+        wrapped.defaultValue.assign((CCPortData)t);
         CCPortDataContainer<T> c = getUnusedBuffer();
         c.setData(t);
         browserPublish(c);
@@ -93,18 +100,16 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      * @param listener Listener to add
      */
     @SuppressWarnings("rawtypes")
-    //@InCpp("addPortListenerRaw(reinterpret_cast<CCPortListener<>*>(listener));")
     public void addPortListener(CCPortListener<T> listener) {
-        addPortListenerRaw((CCPortListener)listener);
+        wrapped.addPortListenerRaw((CCPortListener)listener);
     }
 
     /**
      * @param listener Listener to add
      */
     @SuppressWarnings("rawtypes")
-    //@InCpp("removePortListenerRaw(reinterpret_cast<CCPortListener<>*>(listener));")
     public void removePortListener(CCPortListener<T> listener) {
-        removePortListenerRaw((CCPortListener)listener);
+        wrapped.removePortListenerRaw((CCPortListener)listener);
     }
 
     /**
@@ -114,7 +119,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      */
     @SuppressWarnings("unchecked")
     public void dequeueAll(@Ref CCQueueFragment<T> fragment) {
-        super.dequeueAllRaw((CCQueueFragment<CCPortData>)fragment);
+        wrapped.dequeueAllRaw((CCQueueFragment<CCPortData>)fragment);
     }
 
     /**
@@ -129,7 +134,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      */
     @SuppressWarnings("unchecked")
     public T dequeueSingleAutoLocked() {
-        return (T)super.dequeueSingleAutoLockedRaw();
+        return (T)wrapped.dequeueSingleAutoLockedRaw();
     }
 
     /**
@@ -144,7 +149,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      */
     @SuppressWarnings("unchecked")
     public CCInterThreadContainer<T> dequeueSingleUnsafe() {
-        return (CCInterThreadContainer<T>)super.dequeueSingleUnsafeRaw();
+        return (CCInterThreadContainer<T>)wrapped.dequeueSingleUnsafeRaw();
     }
 
     /**
@@ -152,7 +157,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      */
     @SuppressWarnings("unchecked")
     public @Const @Inline T getAutoLocked() {
-        return (T)getAutoLockedRaw();
+        return (T)wrapped.getAutoLockedRaw();
     }
 
     /**
@@ -163,7 +168,7 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
     public void publish(@Const @Ref T t) {
         CCPortDataContainer<T> c = getUnusedBuffer();
         c.setData(t);
-        publish(c);
+        wrapped.publish(c);
     }
 
     /**
@@ -173,6 +178,6 @@ public class CCPort<T extends CCPortData> extends CCPortBase {
      * @param buffer Buffer with data (must be owned by current thread)
      */
     public void browserPublish(CCPortDataContainer<T> buffer) {
-        super.browserPublishRaw((CCPortDataContainer<?>)buffer);
+        wrapped.browserPublishRaw((CCPortDataContainer<?>)buffer);
     }
 }

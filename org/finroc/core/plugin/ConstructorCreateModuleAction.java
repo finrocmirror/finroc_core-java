@@ -27,11 +27,11 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.CoreString;
-import org.finroc.core.parameter.BoolStructureParameter;
+import org.finroc.core.parameter.StructureParameterBool;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.EnumStructureParameter;
-import org.finroc.core.parameter.NumericStructureParameter;
-import org.finroc.core.parameter.StringStructureParameter;
+import org.finroc.core.parameter.StructureParameterEnum;
+import org.finroc.core.parameter.StructureParameterNumeric;
+import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameter;
 import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
@@ -54,7 +54,7 @@ import org.finroc.jc.annotation.PostInclude;
 @Include("ParamType.h")
 @PostInclude("ConstructorCreateModuleActionImpl.h")
 @IncludeClass(ConstructorParameters.class)
-abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12> implements CreateModuleAction {
+abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12> implements CreateFrameworkElementAction {
 
     /*Cpp
     typedef ParamType<_P1> _SP1; typedef typename _SP1::t _SPT1;
@@ -269,13 +269,13 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         if (c == null) {
             return null;
         } else if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c) || c.equals(CoreBoolean.class)) {
-            return new BoolStructureParameter(name, false, true);
+            return new StructureParameterBool(name, false, true);
         } else if (c.equals(CoreNumber.class) || c.equals(int.class) || c.equals(double.class) || c.equals(float.class) || c.equals(long.class) || Number.class.isAssignableFrom(c)) {
-            return new NumericStructureParameter(name, 0);
+            return new StructureParameterNumeric(name, 0);
         } else if (Enum.class.isAssignableFrom(c)) {
-            return new EnumStructureParameter(name, (Enum)c.getEnumConstants()[0]);
+            return new StructureParameterEnum(name, (Enum)c.getEnumConstants()[0]);
         } else if (c.equals(String.class) || c.equals(CoreString.class)) {
-            return new StringStructureParameter(name, "");
+            return new StructureParameterString(name, "");
         } else {
             return new StructureParameter(name, DataTypeRegister.getInstance().getDataType(c), false, "");
         }
@@ -301,21 +301,21 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     @SuppressWarnings( { "unchecked" })
     private Object convertParam(Class<?> c, StructureParameterBase p) {
         if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c)) {
-            return ((BoolStructureParameter)p).get();
+            return ((StructureParameterBool)p).get();
         } else if (c.equals(int.class)) {
-            return ((NumericStructureParameter<Integer>)p).get();
+            return ((StructureParameterNumeric<Integer>)p).get();
         } else if (c.equals(double.class)) {
-            return ((NumericStructureParameter<Double>)p).get();
+            return ((StructureParameterNumeric<Double>)p).get();
         } else if (c.equals(float.class)) {
-            return ((NumericStructureParameter<Float>)p).get();
+            return ((StructureParameterNumeric<Float>)p).get();
         } else if (c.equals(long.class)) {
-            return ((NumericStructureParameter<Long>)p).get();
+            return ((StructureParameterNumeric<Long>)p).get();
         } else if (Number.class.isAssignableFrom(c)) {
-            return ((NumericStructureParameter<Long>)p).getValue();
+            return ((StructureParameterNumeric<Long>)p).getValue();
         } else if (Enum.class.isAssignableFrom(c)) {
-            return ((EnumStructureParameter)p).get();
+            return ((StructureParameterEnum)p).get();
         } else if (c.equals(String.class)) {
-            return ((StringStructureParameter)p).get();
+            return ((StructureParameterString)p).get();
         } else {
             return p.getValueRaw();
         }

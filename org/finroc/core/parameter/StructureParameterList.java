@@ -25,7 +25,7 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.plugin.CreateModuleAction;
+import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.portdatabase.DataType;
 import org.finroc.core.portdatabase.DataTypeRegister;
@@ -206,7 +206,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     /**
      * @param createAction CreateModuleAction that was used to create framework element
      */
-    public void setCreateAction(CreateModuleAction createAction) {
+    public void setCreateAction(CreateFrameworkElementAction createAction) {
         assert(this.createAction == -1);
         this.createAction = Plugins.getInstance().getModuleTypes().indexOf(createAction);
     }

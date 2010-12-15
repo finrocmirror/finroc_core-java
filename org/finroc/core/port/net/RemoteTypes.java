@@ -136,7 +136,8 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param co Output Stream to write information to
      */
     public static void serializeLocalDataTypes(DataTypeRegister dtr, CoreOutput co) {
-        co.writeShort((short)RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.get());
+        int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.get();
+        co.writeShort((short)t);
         co.writeShort(dtr.getMaxTypeIndex());
         for (short i = 0, n = (short)dtr.getMaxTypeIndex(); i < n; i++) {
             DataType dt = dtr.getDataType(i);

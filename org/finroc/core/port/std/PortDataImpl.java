@@ -23,6 +23,7 @@ package org.finroc.core.port.std;
 
 import org.finroc.jc.annotation.Attribute;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
@@ -57,7 +58,7 @@ import org.finroc.core.portdatabase.TypedObject;
  */
 @Ptr
 @Attribute("((aligned(8)))")
-@CppName("PortData")
+@CppName("PortData") @CppFilename("PortData")
 @PostInclude("PortDataReference.h")
 @Superclass(TypedObject.class)
 public abstract class PortDataImpl extends LogUser implements PortData {

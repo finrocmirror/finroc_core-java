@@ -21,18 +21,42 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.finroc.jc.annotation.Inline;
-import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.Virtual;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.PortWrapperBase;
+import org.finroc.core.port.std.PortData;
 import org.finroc.core.portdatabase.DataType;
 
 /** Base class for client interface ports */
-@Inline @NoCpp
-public class InterfaceClientPort extends InterfacePort { /* implements ReturnHandler*/
+public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
+
+    /** Special Port class to load value when initialized */
+    @AtFront
+    private class PortImpl extends InterfacePort {
+
+        @InCppFile
+        public PortImpl(String description, FrameworkElement parent, DataType type, Type client) {
+            super(description, parent, type, client);
+        }
+
+        @InCppFile
+        @Override
+        protected void newConnection(AbstractPort partner) {
+            InterfaceClientPort.this.newConnection(partner);
+        }
+
+        @InCppFile
+        @Override
+        protected void connectionRemoved(AbstractPort partner) {
+            InterfaceClientPort.this.connectionRemoved(partner);
+        }
+    }
 
     public InterfaceClientPort(String description, FrameworkElement parent, DataType type) {
-        super(description, parent, type, Type.Client);
-        //setReturnHandler(this);
+        wrapped = new PortImpl(description, parent, type, InterfacePort.Type.Client);
     }
 
     /**
@@ -40,7 +64,42 @@ public class InterfaceClientPort extends InterfacePort { /* implements ReturnHan
      */
     public boolean hasRemoteServer() {
         InterfacePort server = getServer();
-        return (server != null) && (server.getType() == Type.Network);
+        return (server != null) && (server.getType() == InterfacePort.Type.Network);
     }
 
+    /**
+     * (Usually called on client ports)
+     *
+     * @return "Server" Port that handles method call - either InterfaceServerPort or InterfaceNetPort (the latter if we have remote server)
+     */
+    public InterfacePort getServer() {
+        return wrapped.getServer();
+    }
+
+    /**
+     * (for non-cc types only)
+     * @param dt Data type of object to get buffer of
+     * @return Unused buffer of type
+     */
+    public PortData getUnusedBuffer(DataType dt) {
+        return wrapped.getUnusedBuffer(dt);
+    }
+
+    /**
+     * Called whenever a new connection to this port was established
+     * (meant to be overridden by subclasses)
+     * (called with runtime-registry lock)
+     *
+     * @param partner Port at other end of connection
+     */
+    @Virtual protected void newConnection(AbstractPort partner) {}
+
+    /**
+     * Called whenever a connection to this port was removed
+     * (meant to be overridden by subclasses)
+     * (called with runtime-registry lock)
+     *
+     * @param partner Port at other end of connection
+     */
+    @Virtual protected void connectionRemoved(AbstractPort partner) {}
 }

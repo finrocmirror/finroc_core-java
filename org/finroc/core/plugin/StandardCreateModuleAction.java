@@ -42,7 +42,7 @@ import org.finroc.jc.annotation.RawTypeArgs;
  * Modules need to have a constructor taking name and parent
  */
 @Inline @NoCpp @RawTypeArgs
-public class StandardCreateModuleAction<T extends FrameworkElement> implements CreateModuleAction {
+public class StandardCreateModuleAction<T extends FrameworkElement> implements CreateFrameworkElementAction {
 
     /** Name of module type */
     private final String group;

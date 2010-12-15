@@ -37,8 +37,8 @@ import org.finroc.core.port.PortCreationInfo;
 @NoCpp @Inline
 public class InputTransactionStreamPort<T extends Transaction> extends InputStreamPort<TransactionPacket> {
 
-    public InputTransactionStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<TransactionPacket> user) {
-        super(description, pci, user);
+    public InputTransactionStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<TransactionPacket> user, NewConnectionHandler connHandler) {
+        super(description, pci, user, connHandler);
     }
 
 }

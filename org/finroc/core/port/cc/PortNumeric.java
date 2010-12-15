@@ -22,7 +22,6 @@
 package org.finroc.core.port.cc;
 
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
@@ -39,29 +38,39 @@ import org.finroc.core.port.ThreadLocalCache;
  * Port containing numbers.
  */
 @Inline @NoCpp
-public class NumberPort extends CCPort<CoreNumber> {
+public class PortNumeric extends CCPort<CoreNumber> {
 
-    /** Unit of numerical port */
-    private final @Ptr Unit unit;
+    @Inline @NoCpp
+    public static class PortImplNum extends CCPortBase {
 
-    public NumberPort(PortCreationInfo pci) {
-        super(processPciNP(pci));
-        unit = pci.unit != null ? pci.unit : Unit.NO_UNIT;
+        /** Unit of numerical port */
+        protected final @Ptr Unit unit;
+
+        public PortImplNum(PortCreationInfo pci, Unit unit) {
+            super(pci.derive(CoreNumber.TYPE));
+            this.unit = unit != null ? unit : Unit.NO_UNIT;
+        }
+
+        public @Ptr Unit getUnit() {
+            return unit;
+        }
     }
 
-    @Init("unit(&(Unit::NO_UNIT))")
-    public NumberPort(String description, boolean outputPort) {
+    /**
+     * for subclasses
+     */
+    protected PortNumeric() {}
+
+    public PortNumeric(PortCreationInfo pci) {
+        wrapped = new PortImplNum(pci, pci.unit);
+    }
+
+    public PortNumeric(String description, boolean outputPort) {
         this(new PortCreationInfo(description, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
 
-    @Init("unit(&(Unit::NO_UNIT))")
-    public NumberPort(String description, FrameworkElement parent, boolean outputPort) {
+    public PortNumeric(String description, FrameworkElement parent, boolean outputPort) {
         this(new PortCreationInfo(description, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
-    }
-
-    private static PortCreationInfo processPciNP(PortCreationInfo pci) {
-        pci.dataType = CoreNumber.getDataType();
-        return pci;
     }
 
     /**
@@ -71,15 +80,15 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @param d New Value
      */
     @Inline public void publish(double d) {
-        CCPortDataRef value = this.value;
-        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData()).isDouble(d, unit)) {
+        CCPortDataRef value = wrapped.value;
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData()).isDouble(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCPortDataContainer<?> ccdc = super.getUnusedBuffer(tc);
+        CCPortDataContainer<?> ccdc = wrapped.getUnusedBuffer(tc);
         @Ptr CoreNumber cnc = (CoreNumber)ccdc.getDataPtr();
-        cnc.setValue(d, unit);
-        super.publish(tc, ccdc);
+        cnc.setValue(d, getUnit());
+        wrapped.publish(tc, ccdc);
     }
 
     /**
@@ -89,15 +98,15 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @param d New Value
      */
     @Inline public void publish(int d) {
-        CCPortDataRef value = this.value;
-        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData()).isInt(d, unit)) {
+        CCPortDataRef value = wrapped.value;
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData()).isInt(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCPortDataContainer<?> ccdc = super.getUnusedBuffer(tc);
+        CCPortDataContainer<?> ccdc = wrapped.getUnusedBuffer(tc);
         @Ptr CoreNumber cnc = (CoreNumber)ccdc.getDataPtr();
-        cnc.setValue(d, unit);
-        super.publish(tc, ccdc);
+        cnc.setValue(d, getUnit());
+        wrapped.publish(tc, ccdc);
     }
 
     /*Cpp
@@ -106,15 +115,15 @@ public class NumberPort extends CCPort<CoreNumber> {
     inline T getRaw() {
         if (pushStrategy()) {
             for(;;) {
-                CCPortDataRef* val = value;
-                CoreNumber* cn = (CoreNumber*)(val->getData());
+                CCPortDataRef* val = wrapped->value;
+                Number* cn = (Number*)(val->getData());
                 T d = cn->value<T>();
-                if (val == value) {
+                if (val == wrapped->value) {
                     return d;
                 }
             }
         } else {
-            CCPortDataContainer<CoreNumber>* dc = (CCPortDataContainer<CoreNumber>*)_M_pullValueRaw();
+            CCPortDataContainer<Number>* dc = (CCPortDataContainer<Number>*)wrapped->pullValueRaw();
             T result = dc->getData()->value<T>();
             dc->releaseLock();
             return result;
@@ -131,14 +140,14 @@ public class NumberPort extends CCPort<CoreNumber> {
     public double getDoubleRaw() {
         if (pushStrategy()) {
             for (;;) {
-                CCPortDataRef val = value;
+                CCPortDataRef val = wrapped.value;
                 double d = ((CoreNumber)val.getData()).doubleValue();
-                if (val == value) { // still valid??
+                if (val == wrapped.value) { // still valid??
                     return d;
                 }
             }
         } else {
-            CCPortDataContainer<CoreNumber> dc = (CCPortDataContainer<CoreNumber>)pullValueRaw();
+            CCPortDataContainer<CoreNumber> dc = (CCPortDataContainer<CoreNumber>)wrapped.pullValueRaw();
             double result = dc.getData().doubleValue();
             dc.releaseLock();
             return result;
@@ -153,14 +162,14 @@ public class NumberPort extends CCPort<CoreNumber> {
     public int getIntRaw() {
         if (pushStrategy()) {
             for (;;) {
-                CCPortDataRef val = value;
+                CCPortDataRef val = wrapped.value;
                 int d = ((CoreNumber)val.getData()).intValue();
-                if (val == value) { // still valid??
+                if (val == wrapped.value) { // still valid??
                     return d;
                 }
             }
         } else {
-            CCPortDataContainer<CoreNumber> dc = (CCPortDataContainer<CoreNumber>)pullValueRaw();
+            CCPortDataContainer<CoreNumber> dc = (CCPortDataContainer<CoreNumber>)wrapped.pullValueRaw();
             int result = dc.getData().intValue();
             dc.releaseLock();
             return result;
@@ -174,19 +183,19 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @param newDefault New default value
      */
     public void setDefault(double newDefault) {
-        super.setDefault(new CoreNumber(newDefault, unit));
+        super.setDefault(new CoreNumber(newDefault, getUnit()));
     }
 
     public void setDefault(int newDefault) {
-        super.setDefault(new CoreNumber(newDefault, unit));
+        super.setDefault(new CoreNumber(newDefault, getUnit()));
     }
 
     public void setDefault(long newDefault) {
-        super.setDefault(new CoreNumber(newDefault, unit));
+        super.setDefault(new CoreNumber(newDefault, getUnit()));
     }
 
     public void setDefault(float newDefault) {
-        super.setDefault(new CoreNumber(newDefault, unit));
+        super.setDefault(new CoreNumber(newDefault, getUnit()));
     }
 
     public void setDefault(CoreNumber newDefault) {
@@ -197,6 +206,6 @@ public class NumberPort extends CCPort<CoreNumber> {
      * @return Unit of port
      */
     public Unit getUnit() {
-        return unit;
+        return ((PortImplNum)wrapped).getUnit();
     }
 }

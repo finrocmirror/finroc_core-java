@@ -23,6 +23,7 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
+import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Superclass;
@@ -33,7 +34,7 @@ import org.finroc.xml.XMLNode;
  *
  * Default implementation of CoreSerializable
  */
-@CppName("CoreSerializable")
+@CppName("CoreSerializable") @CppFilename("CoreSerializable")
 @Superclass( {})
 public abstract class CoreSerializableImpl implements CoreSerializable {
 

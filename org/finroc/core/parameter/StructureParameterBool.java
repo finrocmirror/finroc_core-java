@@ -33,21 +33,21 @@ import org.finroc.jc.annotation.NoCpp;
  * Boolean Structure parameter.
  */
 @Inline @NoCpp
-public class BoolStructureParameter extends StructureParameter<CoreBoolean> {
+public class StructureParameterBool extends StructureParameter<CoreBoolean> {
 
     @JavaOnly
-    public BoolStructureParameter(String name) {
+    public StructureParameterBool(String name) {
         this(name, false, false);
     }
 
-    public BoolStructureParameter(String name, boolean defaultValue, boolean constructorPrototype) {
+    public StructureParameterBool(String name, boolean defaultValue, boolean constructorPrototype) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreBoolean.class), constructorPrototype, "");
         if (!constructorPrototype) {
             set(defaultValue);
         }
     }
 
-    public BoolStructureParameter(String name, boolean defaultValue) {
+    public StructureParameterBool(String name, boolean defaultValue) {
         this(name, defaultValue, false);
     }
 
@@ -67,7 +67,7 @@ public class BoolStructureParameter extends StructureParameter<CoreBoolean> {
 
     @Override
     public StructureParameterBase deepCopy() {
-        return new BoolStructureParameter(getName(), false, false);
+        return new StructureParameterBool(getName(), false, false);
     }
 
 }

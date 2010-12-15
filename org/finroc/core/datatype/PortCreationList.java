@@ -21,7 +21,6 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.ChildIterator;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.buffer.CoreInput;
@@ -153,7 +152,7 @@ public class PortCreationList extends PortDataImpl {
      */
     private static void getPorts(@Const FrameworkElement elem, @Ref SimpleList<AbstractPort> result) {
         result.clear();
-        ChildIterator ci = new ChildIterator(elem);
+        FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(elem);
         AbstractPort ap = null;
         while ((ap = ci.nextPort()) != null) {
             result.add(ap);

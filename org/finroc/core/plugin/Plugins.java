@@ -74,7 +74,7 @@ public class Plugins { /*implements HTTPResource*/
 
     /** List with actions to create modules */
     @JavaOnly
-    private final SimpleList<CreateModuleAction> moduleTypes = new SimpleList<CreateModuleAction>();
+    private final SimpleList<CreateFrameworkElementAction> moduleTypes = new SimpleList<CreateFrameworkElementAction>();
 
     /** Plugin manager instance */
     private final PluginManager pluginManager = new PluginManager();
@@ -202,8 +202,8 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with modules that can be instantiated in this runtime using the standard mechanism
      */
-    public @Ref SimpleList<CreateModuleAction> getModuleTypes() {
-        //Cpp static util::SimpleList<CreateModuleAction*> moduleTypes;
+    public @Ref SimpleList<CreateFrameworkElementAction> getModuleTypes() {
+        //Cpp static util::SimpleList<CreateFrameworkElementAction*> moduleTypes;
         return moduleTypes;
     }
 
@@ -211,9 +211,9 @@ public class Plugins { /*implements HTTPResource*/
      * Add Module Type
      * (objects won't be deleted by this class)
      *
-     * @param cma CreateModuleAction to add
+     * @param cma CreateFrameworkElementAction to add
      */
-    public void addModuleType(CreateModuleAction cma) {
+    public void addModuleType(CreateFrameworkElementAction cma) {
         logDomain.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
         getModuleTypes().add(cma);
     }
@@ -239,22 +239,22 @@ public class Plugins { /*implements HTTPResource*/
      */
 
     /**
-     * Returns/loads CreateModuleAction with specified name and specified .so file.
+     * Returns/loads CreateFrameworkElementAction with specified name and specified .so file.
      * (doesn't do any dynamic loading, if .so is already present)
      *
      * @param group Group (.jar or .so)
      * @param name Module type name
-     * @return CreateModuleAction - null if it could not be found
+     * @return CreateFrameworkElementAction - null if it could not be found
      */
-    public CreateModuleAction loadModuleType(@Const @Ref String group, @Const @Ref String name) {
+    public CreateFrameworkElementAction loadModuleType(@Const @Ref String group, @Const @Ref String name) {
         // dynamically loaded .so files
         //Cpp static util::SimpleList<util::String> loaded;
         //Cpp static DLCloser dlcloser;
 
         // try to find module among existing modules
-        @Const @Ref SimpleList<CreateModuleAction> modules = getModuleTypes();
+        @Const @Ref SimpleList<CreateFrameworkElementAction> modules = getModuleTypes();
         for (@SizeT int i = 0; i < modules.size(); i++) {
-            CreateModuleAction cma = modules.get(i);
+            CreateFrameworkElementAction cma = modules.get(i);
             if (cma.getModuleGroup().equals(group) && cma.getName().equals(name)) {
                 return cma;
             }

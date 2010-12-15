@@ -32,7 +32,7 @@ import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.cc.CCQueueFragment;
-import org.finroc.core.port.cc.NumberPort;
+import org.finroc.core.port.cc.PortNumeric;
 
 /**
  * @author max
@@ -44,7 +44,7 @@ public class RealPortQueueTest extends Thread {
     // Number of iterations
     public static int CYCLES = 10000000;
 
-    public static NumberPort output;
+    public static @SharedPtr PortNumeric output;
 
     static volatile int PUBLISH_LIMIT;
 
@@ -53,13 +53,13 @@ public class RealPortQueueTest extends Thread {
         // Create number output port and input port with queue
         RuntimeEnvironment.getInstance();
         ThreadLocalCache.get();
-        output = new NumberPort(new PortCreationInfo("output", PortFlags.OUTPUT_PORT));
+        output = new PortNumeric(new PortCreationInfo("output", PortFlags.OUTPUT_PORT));
         PortCreationInfo inputPCI = new PortCreationInfo("input", PortFlags.INPUT_PORT | PortFlags.HAS_AND_USES_QUEUE | PortFlags.PUSH_STRATEGY);
         inputPCI.maxQueueSize = 10;
-        NumberPort input = new NumberPort(inputPCI);
+        PortNumeric input = new PortNumeric(inputPCI);
         inputPCI.maxQueueSize = 0;
-        NumberPort unlimitedInput = new NumberPort(inputPCI);
-        NumberPort unlimitedInput2 = new NumberPort(inputPCI);
+        PortNumeric unlimitedInput = new PortNumeric(inputPCI);
+        PortNumeric unlimitedInput2 = new PortNumeric(inputPCI);
         output.connectToTarget(input);
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();

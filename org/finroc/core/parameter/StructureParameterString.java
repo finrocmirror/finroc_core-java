@@ -32,17 +32,17 @@ import org.finroc.jc.annotation.NoCpp;
  * String StructureParameter class for convenience
  */
 @Inline @NoCpp
-public class StringStructureParameter extends StructureParameter<CoreString> {
+public class StructureParameterString extends StructureParameter<CoreString> {
 
-    public StringStructureParameter(String name, String defaultValue, boolean constructorPrototype) {
+    public StructureParameterString(String name, String defaultValue, boolean constructorPrototype) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), constructorPrototype, defaultValue);
     }
 
-    public StringStructureParameter(String name, String defaultValue) {
+    public StructureParameterString(String name, String defaultValue) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), defaultValue);
     }
 
-    public StringStructureParameter(String name) {
+    public StructureParameterString(String name) {
         super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), "");
     }
 
@@ -65,7 +65,7 @@ public class StringStructureParameter extends StructureParameter<CoreString> {
      */
     @Override
     public StructureParameterBase deepCopy() {
-        return new StringStructureParameter(getName(), "", false);
+        return new StructureParameterString(getName(), "", false);
     }
 
 }

@@ -22,9 +22,12 @@
 package org.finroc.core.port.stream;
 
 import org.finroc.jc.AtomicPtr;
+import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.std.Port;
+import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PullRequestHandler;
 import org.finroc.core.portdatabase.CoreSerializable;
 
@@ -39,25 +42,112 @@ import org.finroc.core.portdatabase.CoreSerializable;
  *
  * (Implementation of this class is non-blocking... that's why it's slightly verbose)
  */
-public class OutputTransactionStreamPort<T extends Transaction> extends Port<TransactionPacket> implements StreamCommitThread.Callback {
+public class OutputTransactionStreamPort<T extends Transaction> extends Port<TransactionPacket> {
 
-    /**
-     * interval in which new data is commited
-     * higher values may be useful for grouping transactions.
-     */
-    protected final int commitInterval;
+    /** Special Port class to load value when initialized */
+    @AtFront
+    private static class PortImpl extends PortBase implements StreamCommitThread.Callback {
 
-    /**
-     * last time stamp of commit
-     */
-    protected long lastCommit = 0;
+        /**
+         * interval in which new data is commited
+         * higher values may be useful for grouping transactions.
+         */
+        protected final int commitInterval;
 
-    /**
-     * Stream packet that is currently written.
-     * When it is written to, this variable contains lock to this packet.
-     * When packet has been committed, variable contains null
-     */
-    protected final AtomicPtr<TransactionPacket> currentPacket = new AtomicPtr<TransactionPacket>();
+        /**
+         * last time stamp of commit
+         */
+        protected long lastCommit = 0;
+
+        /**
+         * Stream packet that is currently written.
+         * When it is written to, this variable contains lock to this packet.
+         * When packet has been committed, variable contains null
+         */
+        protected final AtomicPtr<TransactionPacket> currentPacket = new AtomicPtr<TransactionPacket>();
+
+        @InCppFile
+        public PortImpl(PortCreationInfo pci, int commitInterval) {
+            super(processPci(pci));
+            this.commitInterval = commitInterval;
+        }
+
+        @Override
+        protected void prepareDelete() {
+            StreamCommitThread.getInstance().unregister(this);
+            super.prepareDelete();
+        }
+
+        @Override
+        // called by StreamThread periodically
+        public void streamThreadCallback(long curTime) {
+            if (curTime >= lastCommit + commitInterval) {
+
+                // while loop to retry when atomic-compare-and-swap fails
+                while (true) {
+                    TransactionPacket cb = currentPacket.get();
+                    if (cb == COMMIT) {
+                        break; // none of our business
+                    }
+                    if (cb == LOCK) {
+                        if (currentPacket.compareAndSet(LOCK, COMMIT)) {
+                            break;
+                        }
+                    } else if (cb == null) {
+                        break; // none of our business
+                    } else {
+                        // we commit
+                        if (currentPacket.compareAndSet(cb, null)) {
+                            publish(cb);
+                        }
+                    }
+                }
+
+                lastCommit = curTime;
+            }
+        }
+
+        /**
+         * Writes data to stream
+         * (may not be called concurrently)
+         *
+         * @param data Data to write (is copied and can instantly be reused)
+         */
+        public void commitData(CoreSerializable data) {
+
+            // Lock packet
+            TransactionPacket cb = null;
+            TransactionPacket expect = null;
+            while (true) {
+                cb = currentPacket.get();
+                assert(cb != LOCK); // concurrent write
+                assert(cb != COMMIT); // concurrent write
+                if (cb == null) {
+                    cb = (TransactionPacket)getUnusedBufferRaw();
+                    expect = null;
+                    break;
+                } else {
+                    if (currentPacket.compareAndSet(cb, LOCK)) {
+                        expect = LOCK;
+                        break;
+                    }
+                }
+            }
+
+            // copy data to packet
+            cb.add(data);
+            //data.serialize(cb.serializer);
+
+            // Unlock packet
+            if (!currentPacket.compareAndSet(expect, cb)) {
+
+                // okay... we need to commit
+                assert(currentPacket.get() == COMMIT);
+                publish(cb);
+                currentPacket.set(null);
+            }
+        }
+    }
 
     /** ChunkedBuffer for signalling only: SIGNAL that writer currently writes to chunk */
     @PassByValue private static TransactionPacket LOCK = new TransactionPacket();
@@ -71,46 +161,17 @@ public class OutputTransactionStreamPort<T extends Transaction> extends Port<Tra
      * @param listener Listener for pull requests
      */
     public OutputTransactionStreamPort(PortCreationInfo pci, int commitInterval, PullRequestHandler listener) {
-        super(pci);
+        wrapped = new PortImpl(pci, commitInterval);
         assert(commitInterval > 0);
-        this.commitInterval = commitInterval;
         setPullRequestHandler(listener);
-        StreamCommitThread.getInstance().register(this);
+        StreamCommitThread.getInstance().register((PortImpl)wrapped);
     }
 
-    @Override
-    protected void prepareDelete() {
-        StreamCommitThread.getInstance().unregister(this);
-        super.prepareDelete();
-    }
-
-    @Override
-    // called by StreamThread periodically
-    public void streamThreadCallback(long curTime) {
-        if (curTime >= lastCommit + commitInterval) {
-
-            // while loop to retry when atomic-compare-and-swap fails
-            while (true) {
-                TransactionPacket cb = currentPacket.get();
-                if (cb == COMMIT) {
-                    break; // none of our business
-                }
-                if (cb == LOCK) {
-                    if (currentPacket.compareAndSet(LOCK, COMMIT)) {
-                        break;
-                    }
-                } else if (cb == null) {
-                    break; // none of our business
-                } else {
-                    // we commit
-                    if (currentPacket.compareAndSet(cb, null)) {
-                        publish(cb);
-                    }
-                }
-            }
-
-            lastCommit = curTime;
-        }
+    @Override // non-virtual, but override for user convenience
+    public TransactionPacket getUnusedBuffer() {
+        TransactionPacket result = super.getUnusedBuffer();
+        result.reset();
+        return result;
     }
 
     /**
@@ -120,44 +181,6 @@ public class OutputTransactionStreamPort<T extends Transaction> extends Port<Tra
      * @param data Data to write (is copied and can instantly be reused)
      */
     public void commitData(CoreSerializable data) {
-
-        // Lock packet
-        TransactionPacket cb = null;
-        TransactionPacket expect = null;
-        while (true) {
-            cb = currentPacket.get();
-            assert(cb != LOCK); // concurrent write
-            assert(cb != COMMIT); // concurrent write
-            if (cb == null) {
-                cb = getUnusedBuffer();
-                expect = null;
-                break;
-            } else {
-                if (currentPacket.compareAndSet(cb, LOCK)) {
-                    expect = LOCK;
-                    break;
-                }
-            }
-        }
-
-        // copy data to packet
-        cb.add(data);
-        //data.serialize(cb.serializer);
-
-        // Unlock packet
-        if (!currentPacket.compareAndSet(expect, cb)) {
-
-            // okay... we need to commit
-            assert(currentPacket.get() == COMMIT);
-            publish(cb);
-            currentPacket.set(null);
-        }
-    }
-
-    @Override // non-virtual, but override for user convenience
-    public TransactionPacket getUnusedBuffer() {
-        TransactionPacket result = super.getUnusedBuffer();
-        result.reset();
-        return result;
+        ((PortImpl)wrapped).commitData(data);
     }
 }

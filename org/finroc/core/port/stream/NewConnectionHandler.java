@@ -19,16 +19,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package org.finroc.core.port.stream;
 
-@Namespace("finroc::core")
-@CppLocation("core/settings")
+import org.finroc.core.port.AbstractPort;
+import org.finroc.jc.annotation.Ptr;
 
 /**
- * This package is related to convenient static settings that
- * may be published as ports.
+ * @author max
+ *
+ * Called when a port is connected
  */
-package org.finroc.core.setting;
+@Ptr
+public interface NewConnectionHandler {
 
-import org.finroc.jc.annotation.CppLocation;
-import org.finroc.jc.annotation.Namespace;
-
+    /**
+     * Called when a port is connected
+     *
+     * @param partner Partner port
+     */
+    public void handleNewConnection(AbstractPort partner);
+}

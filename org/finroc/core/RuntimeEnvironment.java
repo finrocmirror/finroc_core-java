@@ -159,16 +159,12 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         MethodCallSyncher.staticInit(); // dito
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
-        StreamCommitThread.staticInit();
 
         //JavaOnlyBlock
         new RuntimeEnvironment(); // should be done before any ports/elements are added
 
         //Cpp new RuntimeEnvironment(); // should be done before any ports/elements are added
         instance.registry.infosLock = infosLock;
-
-        // Start thread - because it needs a thread local cache
-        StreamCommitThread.getInstance().start();
 
         // add uninitialized child
         instance.unrelated = new FrameworkElement(instance, "Unrelated");
@@ -183,6 +179,10 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         //ConfigFile.init(conffile);
         RuntimeSettings.staticInit(); // can be done now... or last
 
+        StreamCommitThread.staticInit();
+        // Start thread
+        StreamCommitThread.getInstance().start();
+
         //Load plugins
         Plugins.staticInit();
         //deleteLast(RuntimeSettings.getInstance());
@@ -192,14 +192,22 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         return instance;
     }
 
-    /*Cpp
-    virtual ~RuntimeEnvironment() {
+    public void delete() {
+        super.delete();
         active = false;
-        util::Thread::stopThreads();
-        deleteChildren();
-        instanceRawPtr = NULL;
+        //Cpp util::Thread::stopThreads();
+
+        // delete all children - (runtime settings last)
+        ChildIterator ci = new ChildIterator(this);
+        FrameworkElement next = null;
+        while ((next = ci.next()) != null) {
+            if (next != RuntimeSettings.getInstance()) {
+                next.managedDelete();
+            }
+        }
+        RuntimeSettings.getInstance().managedDelete();
+        instanceRawPtr = null;
     }
-     */
 
     /**
      * (IMPORTANT: This should not be called during static initialization)
