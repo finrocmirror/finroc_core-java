@@ -50,29 +50,26 @@ public class CoreFlags {
     /** Is this object globally unique - that means: it is reachable in any runtime environment using the same name */
     public static final int GLOBALLY_UNIQUE_LINK = 1 << 1;
 
-    /** Is this a finstructable group? */
-    public final static int FINSTRUCTABLE_GROUP = 1 << 2;
-
     /** Is this the one and only Runtime environment? */
-    public final static int IS_RUNTIME = 1 << 3;
+    public final static int IS_RUNTIME = 1 << 2;
 
     /** Is this an edge aggregating framework element? */
-    public final static int EDGE_AGGREGATOR = 1 << 4;
+    public final static int EDGE_AGGREGATOR = 1 << 3;
 
     /** Is this an alternate root for links to globally unique objects (such as a remote runtime mapped into this one) */
-    public static final int ALTERNATE_LINK_ROOT = 1 << 5;
+    public static final int ALTERNATE_LINK_ROOT = 1 << 4;
 
     /** Is this a network port or framework element? */
-    public static final int NETWORK_ELEMENT = 1 << 6;
+    public static final int NETWORK_ELEMENT = 1 << 5;
 
     /** Can framework element have children - typically true */
-    public final static int ALLOWS_CHILDREN = 1 << 7;
+    public final static int ALLOWS_CHILDREN = 1 << 6;
 
     /** Should framework element be visible/available in other RuntimeEnvironments? - (TreeFilter specified by other runtime may override this) */
-    public static final int SHARED = 1 << 8;
+    public static final int SHARED = 1 << 7;
 
     /** First flag whose meaning differs between ports and non-ports */
-    public final static int FIRST_PORT_FLAG = 1 << 9;
+    public final static int FIRST_PORT_FLAG = 1 << 8;
 
     // Non-port constant flags (second 8 bit)
 
@@ -97,8 +94,11 @@ public class CoreFlags {
     /** Is this an element created by finstruct? */
     public final static int FINSTRUCTED = 1 << 25;
 
+    /** Is this a finstructable group? */
+    public final static int FINSTRUCTABLE_GROUP = 1 << 26;
+
     /** Client may use flags beginning from this */
-    public final static int FIRST_CUSTOM_NON_CONST_FLAG = 1 << 26;
+    public final static int FIRST_CUSTOM_NON_CONST_FLAG = 1 << 27;
 
     /** All status flags */
     public final static int STATUS_FLAGS = READY | PUBLISHED | DELETED;
