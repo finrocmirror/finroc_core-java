@@ -75,6 +75,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                 // find tasks
                 tasks.clear();
                 nonSensorTasks.clear();
+                schedule.clear();
                 filter.traverseElementTree(this.threadContainer, this, null, tmp);
                 tasks.addAll(nonSensorTasks);
 
