@@ -40,7 +40,7 @@ public class Finstructed {
         TCPServer server = new TCPServer(4444, true, null);
         server.init();
 
-        FinstructableGroup fg = new FinstructableGroup("finstructed", re, "etc/finstructed_test.xml");
+        FinstructableGroup fg = new FinstructableGroup(re, "finstructed", "etc/finstructed_test.xml");
         fg.init();
 
         while (true) {

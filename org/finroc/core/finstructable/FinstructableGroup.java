@@ -86,12 +86,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     /**
-     * (if the provided file does not exist, it is created, when contents are saved)
+     * (if the provided file does not exist, it is created, when contents are saved - and a warning is displayed)
      * (if the provided file exists, its contents are loaded)
      *
      * @param xmlFile name of XML file (relative to finroc repository) that determines contents of this group
      */
-    public FinstructableGroup(@Const @Ref String name, FrameworkElement parent, @Const @Ref String xmlFile) {
+    public FinstructableGroup(FrameworkElement parent, @Const @Ref String name, @Const @Ref String xmlFile) {
         this(parent, name);
         try {
             this.xmlFile.set(xmlFile);
@@ -105,8 +105,11 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public synchronized void structureParametersChanged() {
         if (!currentXmlFile.equals(xmlFile.getValue().toString())) {
             currentXmlFile = xmlFile.get();
-            if (this.childCount() == 0 && Files.exists(currentXmlFile)) {
+            //if (this.childCount() == 0) { // TODO: original intension: changing xml files to mutliple existing ones in finstruct shouldn't load all of them
+            if (Files.exists(currentXmlFile)) {
                 loadXml(currentXmlFile);
+            } else {
+                log(LogLevel.LL_WARNING, logDomain, "Cannot find XML file " + currentXmlFile + ". Creating empty group. You may edit and save this group using finstruct.");
             }
         }
     }
@@ -356,7 +359,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param link (as from link edge)
      * @return Relative link to this port (or absolute link if it is globally unique)
      */
-    private String getEdgeLink(@Const @Ref String targetLink) {
+    protected String getEdgeLink(@Const @Ref String targetLink) {
         if (targetLink.startsWith(linkTmp)) {
             return targetLink.substring(linkTmp.length());
         }
@@ -367,7 +370,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param ap Port
      * @return Relative link to this port (or absolute link if it is globally unique)
      */
-    private String getEdgeLink(AbstractPort ap) {
+    protected String getEdgeLink(AbstractPort ap) {
         FrameworkElement altRoot = ap.getParentWithFlags(CoreFlags.ALTERNATE_LINK_ROOT);
         if (altRoot != null && altRoot.isChildOf(this)) {
             return ap.getQualifiedLink();
