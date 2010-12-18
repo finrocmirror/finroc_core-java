@@ -106,7 +106,7 @@ public class FrameworkElementInfo {
     //public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(FrameworkElementInfo.class);
 
     /** mask for non-ports and non-edge-aggregators */
-    private static final int PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR | CoreFlags.FINSTRUCTABLE_GROUP;
+    private static final int PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR /*| CoreFlags.FINSTRUCTABLE_GROUP*/;
 
     /** mask for non-ports and non-edge-aggregators */
     private static final int EDGE_AGG_PARENT_FLAGS_TO_STORE = PARENT_FLAGS_TO_STORE | EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS;
