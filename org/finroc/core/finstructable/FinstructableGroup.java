@@ -87,7 +87,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
     /**
      * (if the provided file does not exist, it is created, when contents are saved - and a warning is displayed)
-     * (if the provided file exists, its contents are loaded)
+     * (if the provided file exists, its contents are loaded when group is initialized)
      *
      * @param xmlFile name of XML file (relative to finroc repository) that determines contents of this group
      */
@@ -95,10 +95,15 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         this(parent, name);
         try {
             this.xmlFile.set(xmlFile);
-            structureParametersChanged();
         } catch (Exception e) {
             log(LogLevel.LL_ERROR, logDomain, e);
         }
+    }
+
+    @Override
+    public void postChildInit() {
+        super.postChildInit();
+        structureParametersChanged();
     }
 
     @Override
