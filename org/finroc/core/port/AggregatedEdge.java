@@ -69,13 +69,13 @@ public class AggregatedEdge extends Annotatable {
      * @return How many publishes are transferred over this edge per second (average)?
      */
     public float getPublishRate() {
-        return (((float)publishCount.get()) * 1000.0f) / ((float)Math.max(1L, Time.getCoarse() - creationTime));
+        return (((float)publishCount.get()) * 1000.0f) / ((float)Math.max((long)1, Time.getCoarse() - creationTime));
     }
 
     /**
      * @return How much data (in bytes) is transferred over this edge per second (average)?
      */
     public int getDataRate() {
-        return (int)((publishSize.get() * 1000) / Math.max(1L, Time.getCoarse() - creationTime));
+        return (int)((publishSize.get() * 1000) / Math.max((long)1, Time.getCoarse() - creationTime));
     }
 }

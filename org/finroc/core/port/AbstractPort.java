@@ -722,7 +722,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public void setMinNetUpdateInterval(int interval2) {
         synchronized (getRegistryLock()) {
-            short interval = (short)Math.min(interval2, Short.MAX_VALUE);
+            short interval = (short)Math.min(interval2, (int)Short.MAX_VALUE);
             if (minNetUpdateTime != interval) {
                 minNetUpdateTime = interval;
                 commitUpdateTimeChange();

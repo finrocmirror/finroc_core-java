@@ -88,7 +88,7 @@ public abstract class PortDataImpl extends LogUser implements PortData {
     public PortDataImpl() {
         manager = PortDataCreationInfo.get().getManager();
         PortDataCreationInfo.get().addUnitializedObject(this);
-        //Cpp assert((((unsigned int)this) & 0x7) == 0); // make sure requested alignment was honoured
+        //Cpp assert((((size_t)this) & 0x7) == 0); // make sure requested alignment was honoured
     }
 
     /**

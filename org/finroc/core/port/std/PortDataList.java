@@ -26,6 +26,7 @@ import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.core.portdatabase.TypedObjectList;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
@@ -92,7 +93,7 @@ public class PortDataList<T extends PortData> extends TypedObjectList {
      * @param t New Buffer
      * @param addLock Add lock to buffer (usually we do - unless lock for this list has been added already)
      */
-    public void set(@SizeT int index, T t, boolean addLock) {
+    public void set(@SizeT int index, T t, @CppDefault("true") boolean addLock) {
         if (addLock) {
             t.getManager().getCurrentRefCounter().setOrAddLock();
         }
