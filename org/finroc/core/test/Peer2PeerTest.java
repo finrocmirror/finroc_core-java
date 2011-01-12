@@ -60,7 +60,7 @@ public class Peer2PeerTest {
         if (args.length > 0) {
             addr = args[0];
         }
-        TCPPeer peer = new TCPPeer(addr, "", TCPPeer.Mode.FULL, 4444, TCPPeer.DEFAULT_FILTER);
+        TCPPeer peer = new TCPPeer(addr, "", TCPPeer.Mode.FULL, 4444, TCPPeer.DEFAULT_FILTER, false);
         FrameworkElement.initAll();
         output.publish(4);
         output2.publish(5);

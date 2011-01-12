@@ -73,7 +73,8 @@ public class DataType { /*implements CoreSerializable*/
         METHOD, // Is this a method type
         TRANSACTION, // Is this a transaction data type?
         STD_LIST, // PortDataList
-        CC_LIST // CCDataList
+        CC_LIST, // CCDataList
+        UNKNOWN // Unknown data type
     }
 
     /** Type of data type */
@@ -148,6 +149,14 @@ public class DataType { /*implements CoreSerializable*/
         name = name2;
         this.methods = methods;
         methods.setDataType(this);
+    }
+
+    @JavaOnly public DataType(String name2) {
+        factory = null;
+        type = Type.UNKNOWN;
+        name = name2;
+        methods = null;
+        javaClass = null;
     }
 
     /**
@@ -337,9 +346,16 @@ public class DataType { /*implements CoreSerializable*/
     /**
      * @return Is this a method/interface type
      */
-    @InCpp("return factory._get() == NULL;")
     @ConstMethod public boolean isMethodType() {
-        return factory == null;
+        return type == Type.METHOD;
+    }
+
+    /**
+     * @return Is this an unknown data type?
+     */
+    @JavaOnly
+    @ConstMethod public boolean isUnknownType() {
+        return type == Type.UNKNOWN;
     }
 
     /**
@@ -360,6 +376,9 @@ public class DataType { /*implements CoreSerializable*/
 
         if (dataType == this) {
             return true;
+        }
+        if (isUnknownType() || dataType.isUnknownType()) {
+            return false;
         }
         if ((javaClass != null) == (dataType.javaClass != null)) {
             return dataType.javaClass.isAssignableFrom(javaClass);

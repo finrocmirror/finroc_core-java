@@ -108,6 +108,13 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         }
         pci.flags = f;
         this.belongsTo = belongsTo;
+
+        //JavaOnlyBlock
+        if (pci.dataType.isUnknownType()) {
+            wrapped = new UnknownTypedNetPort(pci);
+            return;
+        }
+
         wrapped = (pci.dataType.isMethodType() ? (AbstractPort)new InterfaceNetPortImpl(pci) :
                    (pci.dataType.isCCType() ? (AbstractPort)new CCNetPort(pci) :
                     (AbstractPort)new StdNetPort(pci)));
@@ -125,6 +132,12 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         int curFlags = getPort().getAllFlags() & keepFlags;
         flags &= ~(keepFlags);
         flags |= curFlags;
+
+        //JavaOnlyBlock
+        if (wrapped.getDataType().isUnknownType()) {
+            ((UnknownTypedNetPort)wrapped).updateFlags(flags);
+            return;
+        }
 
         if (wrapped.getDataType().isStdType() || wrapped.getDataType().isTransactionType()) {
             ((StdNetPort)wrapped).updateFlags(flags);
@@ -690,6 +703,88 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         public void invokeCall(MethodCall call) {
             NetPort.this.sendCall(call);
         }
+    }
+
+    /**
+     * Remote port with unknown type
+     *
+     * Artificial construct for finstruct.
+     * This way, ports with unknown types can be displayed and connected.
+     */
+    @JavaOnly
+    public class UnknownTypedNetPort extends AbstractPort {
+
+        /** Edges emerging from this port */
+        protected final EdgeList<AbstractPort> edgesSrc = new EdgeList<AbstractPort>();
+
+        /** Edges ending at this port */
+        protected final EdgeList<AbstractPort> edgesDest = new EdgeList<AbstractPort>();
+
+        public UnknownTypedNetPort(PortCreationInfo pci) {
+            super(pci);
+            assert(pci.dataType.isUnknownType());
+            initLists(edgesSrc, edgesDest);
+        }
+
+        @Override
+        public NetPort asNetPort() {
+            return NetPort.this;
+        }
+
+        @Override
+        protected synchronized void prepareDelete() {
+            super.prepareDelete();
+            NetPort.this.prepareDelete();
+        }
+
+        @Override
+        protected void postChildInit() {
+            super.postChildInit();
+            NetPort.this.postChildInit();
+        }
+
+        @Override
+        protected void preChildInit() {
+            super.preChildInit();
+            NetPort.this.preChildInit();
+        }
+
+        @Override
+        public void notifyDisconnect() {
+            NetPort.this.notifyDisconnect();
+        }
+
+        public void updateFlags(int flags) {
+            setFlag(flags & PortFlags.NON_CONSTANT_FLAGS);
+        }
+
+        @Override
+        protected void connectionRemoved(AbstractPort partner) {
+            NetPort.this.connectionRemoved();
+        }
+
+        @Override
+        protected void newConnection(AbstractPort partner) {
+            NetPort.this.newConnection();
+        }
+
+        @Override
+        protected void initialPushTo(AbstractPort target, boolean reverse) {}
+
+        @Override
+        protected void setMaxQueueLengthImpl(int length) {}
+
+        @Override
+        protected int getMaxQueueLengthImpl() {
+            return 0;
+        }
+
+        @Override
+        protected void clearQueueImpl() {}
+
+        @Override
+        public void forwardData(AbstractPort other) {}
+
     }
 
     @Override

@@ -84,8 +84,11 @@ public class RemoteTypes extends LogUser implements HasDestructor {
          */
     }
 
-    /** List with remote types */
+    /** List with remote types - index is remote type id */
     private @Ptr Entry[] types = null;
+
+    /** List with remote types - index is local type id */
+    private @Ptr Entry[] typesByLocalUid = null;
 
     /** Remote Global default update time */
     private short globalDefault = 0;
@@ -110,6 +113,9 @@ public class RemoteTypes extends LogUser implements HasDestructor {
         assert(!initialized()) : "Already initialized";
         globalDefault = ci.readShort();
         types = new Entry[ci.readShort()];
+        @InCpp("int maxTypes = DataTypeRegister::getInstance()->getMaxTypeIndex();")
+        int maxTypes = types.length + DataTypeRegister.getInstance().getMaxTypeIndex();
+        typesByLocalUid = new Entry[maxTypes];
         short next = ci.readShort();
         LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
         ls.appendln("Connection Partner knows types:");
@@ -123,7 +129,13 @@ public class RemoteTypes extends LogUser implements HasDestructor {
 
             //JavaOnlyBlock
             e.name = name;
+            if (local == null) {
+                local = DataTypeRegister.getInstance().addUnknownDataType(name);
+            }
 
+            if (local != null) {
+                typesByLocalUid[local.getUid()] = e;
+            }
             next = ci.readShort();
         }
         ls.close();
@@ -179,12 +191,12 @@ public class RemoteTypes extends LogUser implements HasDestructor {
     }
 
     /**
-     * @param dataType Data Type
+     * @param dataType Local Data Type
      * @return Remote default minimum network update interval for this type
      */
     public short getTime(DataType dataType) {
         assert(initialized()) : "Not initialized";
-        return types[dataType.getUid()].updateTime;
+        return typesByLocalUid[dataType.getUid()].updateTime;
     }
 
     /**

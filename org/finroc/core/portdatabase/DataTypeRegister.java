@@ -292,13 +292,24 @@ public class DataTypeRegister extends LogUser { /*extends FrameworkElement*/
     }
 
     /**
-     * Get and possibly add (virtual) method data type to register that can be used in interface ports
+     * Add (virtual) method data type to register that can be used in interface ports
      *
      * @param name Name of method data type
      * @param methods Interface (or method set)
      */
     public DataType addMethodDataType(String name, @Ptr PortInterface methods) {
         return addDataType(new DataType(name, methods));
+    }
+
+    /**
+     * Get and possibly add (virtual) unknown data type to register that can be used in interface ports
+     *
+     * @param name Name of method data type
+     * @param methods Interface (or method set)
+     */
+    @JavaOnly
+    public DataType addUnknownDataType(String name) {
+        return addDataType(new DataType(name));
     }
 
     /**
