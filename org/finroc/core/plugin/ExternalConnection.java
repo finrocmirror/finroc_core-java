@@ -240,4 +240,11 @@ public abstract class ExternalConnection extends FrameworkElement {
         }
     }
 
+    /**
+     * @param address New default address
+     */
+    public void setDefaultAddress(String address) {
+        this.lastAddress = address;
+    }
+
 }
