@@ -21,8 +21,8 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -32,7 +32,7 @@ import org.finroc.core.portdatabase.DataTypeRegister;
 public class DataTypeReference extends CoreString {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(DataTypeReference.class);
+    public final static DataType<DataTypeReference> TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
 
     public void DataType() {
         set(CoreNumber.TYPE); // default is CoreNumber
@@ -41,14 +41,14 @@ public class DataTypeReference extends CoreString {
     /**
      * @param dt new DataType to reference
      */
-    public void set(DataType dt) {
+    public void set(DataTypeBase dt) {
         super.set(dt.getName());
     }
 
     /**
      * @return Referenced data type - null if it doesn't exist in this runtime
      */
-    public DataType get() {
-        return DataTypeRegister.getInstance().getDataType(getBuffer().toString());
+    public DataTypeBase get() {
+        return DataTypeBase.findType(getBuffer().toString());
     }
 }

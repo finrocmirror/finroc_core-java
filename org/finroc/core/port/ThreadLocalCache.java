@@ -27,25 +27,23 @@ import org.finroc.core.CoreRegister;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.port.cc.CCContainerBase;
-import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.cc.CCPortData;
 import org.finroc.core.port.cc.CCPortDataBufferPool;
-import org.finroc.core.port.cc.CCPortDataContainer;
+import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.cc.CCPortDataRef;
 import org.finroc.core.port.cc.CCPortQueueElement;
-import org.finroc.core.port.cc.CCQueueFragment;
+import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.MethodCallSyncher;
 import org.finroc.core.port.rpc.PullCall;
-import org.finroc.core.port.std.PortData;
+import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortQueueElement;
-import org.finroc.core.port.std.PortQueueFragment;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.TypedObject;
+import org.finroc.core.port.std.PortQueueFragmentRaw;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.thread.CoreThread;
 import org.finroc.jc.AtomicInt;
+import org.finroc.jc.AutoDeleter;
 import org.finroc.jc.FastStaticThreadLocal;
 import org.finroc.jc.GarbageCollector;
 import org.finroc.jc.annotation.Const;
@@ -59,6 +57,7 @@ import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.ReusablesPool;
@@ -69,6 +68,9 @@ import org.finroc.jc.log.LogUser;
 import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.GenericObjectManager;
 
 /**
  * @author max
@@ -82,32 +84,32 @@ import org.finroc.log.LogLevel;
  * Obviously, this class is somewhat critical for overall performance.
  */
 @Friend(RuntimeEnvironment.class)
-@CppPrepend( {/*"std::tr1::shared_ptr<SimpleList<ThreadLocalCache*>* ThreadLocalCache::infos;",*/
+@CppPrepend( {/*"std::shared_ptr<SimpleList<ThreadLocalCache*>* ThreadLocalCache::infos;",*/
     "// This 'lock' ensures that Thread info is deallocated after last ThreadLocalCache",
     "util::ThreadInfoLock threadInfoLock = util::Thread::getThreadInfoLock();",
     "// This 'lock' ensures that static AutoDeleter instance is deallocated after last ThreadLocalCache",
-    "::std::tr1::shared_ptr<util::AutoDeleter> auto_deleter_lock(util::AutoDeleter::_M_getStaticInstance());",
+    "std::shared_ptr<util::AutoDeleter> auto_deleter_lock(util::AutoDeleter::_M_getStaticInstance());",
     "util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> ThreadLocalCache::info;"
 })
 @Ptr
-@IncludeClass( {GarbageCollector.class, MethodCall.class, PullCall.class})
+@IncludeClass( {GarbageCollector.class, MethodCall.class, PullCall.class, AutoDeleter.class})
 public class ThreadLocalCache extends LogUser {
 
     // maybe TODO: reuse old ThreadLocalInfo objects for other threads - well - would cause a lot of "Verschnitt"
 
     // at the beginning: diverse cached information
 
-    public CCPortDataContainer<?> data;
+    public CCPortDataManagerTL data;
 
     public CCPortDataRef ref;
 
     // ThreadLocal port information
 
     /** Contains port data that was last written to every port - list index is last part of port handle (see CoreRegister) */
-    public final CCPortDataContainer<?>[] lastWrittenToPort = new CCPortDataContainer<?>[CoreRegister.MAX_ELEMENTS];
+    public final CCPortDataManagerTL[] lastWrittenToPort = new CCPortDataManagerTL[CoreRegister.MAX_ELEMENTS];
 
     /** Thread-local pools of buffers for every "cheap-copy" port data type */
-    public final CCPortDataBufferPool[] ccTypePools = new CCPortDataBufferPool[DataType.MAX_CHEAP_COPYABLE_TYPES];
+    public final CCPortDataBufferPool[] ccTypePools = new CCPortDataBufferPool[FinrocTypeInfo.MAX_CCTYPES];
 
     /** Reusable objects representing a method call */
     public final ReusablesPool<MethodCall> methodCalls = new ReusablesPool<MethodCall>();
@@ -123,11 +125,11 @@ public class ThreadLocalCache extends LogUser {
 
     /** Thread Local buffer that can be used temporarily from anywhere for dequeue operations */
     @JavaOnly
-    public final @Ptr PortQueueFragment<PortData> tempFragment = new PortQueueFragment<PortData>();
+    public final @Ptr PortQueueFragmentRaw tempFragment = new PortQueueFragmentRaw();
 
     /** Thread Local buffer that can be used temporarily from anywhere for dequeue operations */
     @JavaOnly
-    public final @Ptr CCQueueFragment<CCPortData> tempCCFragment = new CCQueueFragment<CCPortData>();
+    public final @Ptr CCQueueFragmentRaw tempCCFragment = new CCQueueFragmentRaw();
 
     /** CoreInput for Input packet processor */
     @PassByValue public final CoreInput inputPacketProcessor = new CoreInput();
@@ -155,10 +157,10 @@ public class ThreadLocalCache extends LogUser {
     private static AtomicInt threadUidCounter = new AtomicInt(1);
 
     /** Automatic locks - are released/recycled with releaseAllLocks() */
-    @InCpp("util::SimpleList<const PortData*> autoLocks;")
-    private final SimpleList<PortData> autoLocks = new SimpleList<PortData>();
-    private final SimpleList < CCPortDataContainer<? >> ccAutoLocks = new SimpleList < CCPortDataContainer<? >> ();
-    private final SimpleList < CCInterThreadContainer<? >> ccInterAutoLocks = new SimpleList < CCInterThreadContainer<? >> ();
+    //@InCpp("util::SimpleList<const PortData*> autoLocks;")
+    private final SimpleList<PortDataManager> autoLocks = new SimpleList<PortDataManager>();
+    private final SimpleList < CCPortDataManagerTL> ccAutoLocks = new SimpleList < CCPortDataManagerTL> ();
+    private final SimpleList < CCPortDataManager> ccInterAutoLocks = new SimpleList < CCPortDataManager> ();
 
     /** Thread ID as reuturned by ThreadUtil::getCurrentThreadId() */
     public final long threadId;
@@ -336,23 +338,24 @@ public class ThreadLocalCache extends LogUser {
                 }
 
                 // Release port data lock
-                CCPortDataContainer<?> pd = tli.lastWrittenToPort[portIndex];
+                CCPortDataManagerTL pd = tli.lastWrittenToPort[portIndex];
                 if (pd != null) {
                     tli.lastWrittenToPort[portIndex] = null;
-                    pd.nonOwnerLockRelease(tli.getCCPool(pd.getType()));
+                    pd.nonOwnerLockRelease(tli.getCCPool(pd.getObject().getType()));
                 }
 
             }
         }
     }
 
-    public CCPortDataContainer<?> getUnusedBuffer(DataType dataType) {
+    public CCPortDataManagerTL getUnusedBuffer(@Const @Ref DataTypeBase dataType) {
         return getCCPool(dataType).getUnusedBuffer();
     }
 
     @Inline
-    private CCPortDataBufferPool getCCPool(DataType dataType) {
-        short uid = dataType.getUid();
+    private CCPortDataBufferPool getCCPool(@Const @Ref DataTypeBase dataType) {
+        short uid = FinrocTypeInfo.get(dataType.getUid()).getCCIndex();
+        assert(uid >= 0);
         CCPortDataBufferPool pool = ccTypePools[uid];
         if (pool == null) {
             pool = createCCPool(dataType, uid);
@@ -361,7 +364,7 @@ public class ThreadLocalCache extends LogUser {
     }
 
     @InCppFile
-    private CCPortDataBufferPool createCCPool(DataType dataType, short uid) {
+    private CCPortDataBufferPool createCCPool(@Const @Ref DataTypeBase dataType, short uid) {
         CCPortDataBufferPool pool = new CCPortDataBufferPool(dataType, 10); // create 10 buffers by default
         ccTypePools[uid] = pool;
         return pool;
@@ -407,8 +410,8 @@ public class ThreadLocalCache extends LogUser {
         return result;
     }
 
-    public CCInterThreadContainer <? extends CCPortData > getUnusedInterThreadBuffer(DataType dataType) {
-        CCInterThreadContainer <? extends CCPortData > buf = getCCPool(dataType).getUnusedInterThreadBuffer();
+    public CCPortDataManager getUnusedInterThreadBuffer(@Const @Ref DataTypeBase dataType) {
+        CCPortDataManager buf = getCCPool(dataType).getUnusedInterThreadBuffer();
         //System.out.println("Getting unused interthread buffer: " + buf.hashCode());
         return buf;
     }
@@ -437,16 +440,16 @@ public class ThreadLocalCache extends LogUser {
      *
      * @param obj Object
      */
-    public void addAutoLock(TypedObject obj) {
-        if (obj.getType().isCCType()) {
-            @Ptr CCContainerBase cb = (CCContainerBase)obj;
-            if (cb.isInterThreadContainer()) {
-                addAutoLock((CCInterThreadContainer<?>)cb);
+    public void addAutoLock(GenericObject obj) {
+        @Ptr GenericObjectManager mgr = obj.getManager();
+        if (FinrocTypeInfo.isCCType(obj.getType())) {
+            if (mgr instanceof CCPortDataManager) {
+                addAutoLock((CCPortDataManager)mgr);
             } else {
-                addAutoLock((CCPortDataContainer<?>)cb);
+                addAutoLock((CCPortDataManagerTL)mgr);
             }
         } else {
-            addAutoLock((PortData)obj);
+            addAutoLock((PortDataManager)mgr);
         }
     }
 
@@ -456,7 +459,7 @@ public class ThreadLocalCache extends LogUser {
      *
      * @param obj Object
      */
-    public void addAutoLock(@Const PortData obj) {
+    public void addAutoLock(PortDataManager obj) {
         assert(obj != null);
         autoLocks.add(obj);
     }
@@ -467,7 +470,7 @@ public class ThreadLocalCache extends LogUser {
      *
      * @param obj Object
      */
-    public void addAutoLock(CCPortDataContainer<?> obj) {
+    public void addAutoLock(CCPortDataManagerTL obj) {
         assert(obj != null);
         assert(obj.getOwnerThread() == ThreadUtil.getCurrentThreadId());
         ccAutoLocks.add(obj);
@@ -479,7 +482,7 @@ public class ThreadLocalCache extends LogUser {
      *
      * @param obj Object
      */
-    public void addAutoLock(CCInterThreadContainer<?> obj) {
+    public void addAutoLock(CCPortDataManager obj) {
         assert(obj != null);
         ccInterAutoLocks.add(obj);
     }

@@ -36,9 +36,9 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.portdatabase.CoreSerializableImpl;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializableImpl;
 
 /**
  * @author max
@@ -48,7 +48,7 @@ import org.finroc.core.portdatabase.CoreSerializableImpl;
  * Can be used to efficiently traverse trees of framework elements.
  */
 @PassByValue
-public class FrameworkElementTreeFilter extends CoreSerializableImpl {
+public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
 
     /** Framework element's flags that are relevant */
     private int relevantFlags;
@@ -139,7 +139,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         relevantFlags = is.readInt();
         flagResult = is.readInt();
         paths.clear();
@@ -150,7 +150,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeInt(relevantFlags);
         os.writeInt(flagResult);
         os.writeByte(paths.size());
@@ -170,7 +170,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
      * @param customParam Custom parameter
      */
     @Inline @RawTypeArgs
-    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @PassByValue P customParam) {
+    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @Const @Ref P customParam) {
         @PassByValue StringBuilder sb = new StringBuilder();
         traverseElementTree(root, callback, customParam, sb);
     }
@@ -186,7 +186,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
      * @param tmp Temporary StringBuilder buffer
      */
     @Inline @RawTypeArgs
-    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @PassByValue P customParam, @Ref StringBuilder tmp) {
+    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @Const @Ref  P customParam, @Ref StringBuilder tmp) {
         if (accept(root, tmp)) {
             callback.treeFilterCallback(root, customParam);
         }
@@ -215,7 +215,7 @@ public class FrameworkElementTreeFilter extends CoreSerializableImpl {
          * @param customParam Custom parameter
          */
         @NonVirtual
-        public void treeFilterCallback(FrameworkElement fe, P customParam);
+        public void treeFilterCallback(FrameworkElement fe, @Const @Ref P customParam);
     }
 
 }

@@ -24,25 +24,37 @@ package org.finroc.core.port.cc;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.thread.ThreadUtil;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.GenericObjectManager;
+import org.finroc.serialization.RRLibSerializable;
+import org.finroc.serialization.Serialization;
 import org.finroc.core.CoreRegister;
 import org.finroc.core.RuntimeSettings;
+import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
+import org.finroc.core.port.PortListener;
+import org.finroc.core.port.PortListenerManager;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
  * @author max
@@ -54,7 +66,8 @@ import org.finroc.core.portdatabase.DataType;
  * This has to be done by all public methods.
  */
 @IncludeClass(SafeConcurrentlyIterableList.class)
-@Friend( {CCPort.class, PortNumeric.class})// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
+@Friend( {Port.class })// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
+@CppInclude("CCQueueFragmentRaw.h")
 public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** Edges emerging from this port */
@@ -64,7 +77,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     protected final EdgeList<CCPortBase> edgesDest = new EdgeList<CCPortBase>();
 
     /** default value - invariant: must never be null if used (must always be copied, too) */
-    protected final CCInterThreadContainer<?> defaultValue;
+    protected final CCPortDataManager defaultValue;
 
     /**
      * current value (set by main thread) - invariant: must never be null - sinnvoll(?)
@@ -76,8 +89,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Data that is currently owned - used to belong to a terminated thread
      */
-    @SuppressWarnings("rawtypes")
-    protected @Ptr CCPortDataContainer ownedData;
+    protected @Ptr CCPortDataManagerTL ownedData;
 
     /**
      * Is data assigned to port in standard way? Otherwise - for instance, when using queues -
@@ -100,14 +112,16 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Const final protected int portIndex;
 
     /** Queue for ports with incoming value queue */
-    final protected @Ptr CCPortQueue<CCPortData> queue;
+    final protected @Ptr CCPortQueue queue;
 
     /** Listens to port value changes - may be null */
-    //@InCpp("CCPortListenerManager<> portListener;")
-    protected CCPortListenerManager<CCPortData> portListener = new CCPortListenerManager<CCPortData>();
+    protected PortListenerManager portListener = new PortListenerManager();
 
     /** Object that handles pull requests - null if there is none (typical case) */
     protected CCPullRequestHandler pullRequestHandler;
+
+    /** Unit of port (currently only used for numeric ports) */
+    protected final @Ptr Unit unit;
 
     /**
      * @param pci PortCreationInformation
@@ -116,19 +130,20 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @InitInBody("value")
     public CCPortBase(PortCreationInfo pci) {
         super(pci);
-        assert(pci.dataType.isCCType());
+        assert(FinrocTypeInfo.isCCType(pci.dataType));
         initLists(edgesSrc, edgesDest);
 
         // init types
         //dataType = DataTypeRegister2.getDataTypeEntry(pci.dataType);
         portIndex = getHandle() & CoreRegister.ELEM_INDEX_MASK;
+        unit = pci.unit;
 
         // copy default value (or create new empty default)
         defaultValue = createDefaultValue(pci.dataType);
 
         // standard assign?
         standardAssign = !getFlag(PortFlags.NON_STANDARD_ASSIGN) && (!getFlag(PortFlags.HAS_QUEUE));
-        queue = getFlag(PortFlags.HAS_QUEUE) ? new CCPortQueue<CCPortData>(pci.maxQueueSize) : null;
+        queue = getFlag(PortFlags.HAS_QUEUE) ? new CCPortQueue(pci.maxQueueSize) : null;
         if (queue != null) {
             queue.init();
         }
@@ -136,16 +151,17 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         // set initial value to default
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCPortDataContainer<?> c = getUnusedBuffer(tc);
-        c.assign(defaultValue.getDataPtr());
+        CCPortDataManagerTL c = getUnusedBuffer(tc);
+        c.getObject().deepCopyFrom(defaultValue.getObject(), null);
         c.addLock();
         value = c.getCurrentRef();
         tc.lastWrittenToPort[portIndex] = c;
     }
 
     // helper for direct member initialization in C++
-    private static @Ptr CCInterThreadContainer<?> createDefaultValue(DataType dt) {
-        return (CCInterThreadContainer<?>)dt.createInterThreadInstance();
+    @InCpp("return static_cast<CCPortDataManager*>(dt.createInstanceGeneric<CCPortDataManager>()->getManager());")
+    private static @Ptr CCPortDataManager createDefaultValue(@Const @Ref DataTypeBase dt) {
+        return (CCPortDataManager)(dt.createInstanceGeneric(new CCPortDataManager())).getManager();
     }
 
     public synchronized void delete() {
@@ -171,8 +187,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param portDataContainer port data container to transfer ownership of
      */
-    public void transferDataOwnership(CCPortDataContainer<?> portDataContainer) {
-        CCPortDataContainer<?> current = value.getContainer();
+    public void transferDataOwnership(CCPortDataManagerTL portDataContainer) {
+        CCPortDataManagerTL current = value.getContainer();
         if (current == portDataContainer) { // ownedData is outdated and can be deleted
             if (ownedData != null) {
                 ownedData.postThreadReleaseLock();
@@ -203,7 +219,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         // assign anyway
         tc.data.addLock();
-        CCPortDataContainer<?> pdc = tc.lastWrittenToPort[portIndex];
+        CCPortDataManagerTL pdc = tc.lastWrittenToPort[portIndex];
         if (pdc != null) {
             pdc.releaseLock();
         }
@@ -217,14 +233,14 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param tc ThreadLocalCache with tc.data set
      */
-    @SuppressWarnings("unchecked") @InCppFile
+    @InCppFile
     @Virtual protected void nonStandardAssign(ThreadLocalCache tc) {
         if (getFlag(PortFlags.USES_QUEUE)) {
             assert(getFlag(PortFlags.HAS_QUEUE));
 
             // enqueue
-            CCInterThreadContainer<CCPortData> itc = (CCInterThreadContainer<CCPortData>)tc.getUnusedInterThreadBuffer(tc.data.getType());
-            itc.assign(tc.data.getDataPtr());
+            CCPortDataManager itc = tc.getUnusedInterThreadBuffer(tc.data.getObject().getType());
+            itc.getObject().deepCopyFrom(tc.data.getObject(), null);
             queue.enqueueWrapped(itc);
         }
     }
@@ -235,7 +251,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache
      * @return Unused buffer for writing
      */
-    @Inline protected @Ptr CCPortDataContainer<?> getUnusedBuffer(ThreadLocalCache tc) {
+    @Inline protected @Ptr CCPortDataManagerTL getUnusedBuffer(ThreadLocalCache tc) {
         return tc.getUnusedBuffer(dataType);
     }
 
@@ -245,7 +261,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache
      * @param data Data to publish
      */
-    @Inline protected void publish(ThreadLocalCache tc, CCPortDataContainer<?> data) {
+    @Inline protected void publish(ThreadLocalCache tc, CCPortDataManagerTL data) {
         //JavaOnlyBlock
         publishImpl(tc, data, false, CHANGED, false);
 
@@ -260,7 +276,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param reverse Value received in reverse direction?
      * @param changedConstant changedConstant to use
      */
-    @Inline protected void publish(ThreadLocalCache tc, CCPortDataContainer<?> data, boolean reverse, byte changedConstant) {
+    @Inline protected void publish(ThreadLocalCache tc, CCPortDataManagerTL data, boolean reverse, byte changedConstant) {
         //JavaOnlyBlock
         publishImpl(tc, data, reverse, changedConstant, false);
 
@@ -287,7 +303,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer with data (must be owned by current thread)
      */
-    public void browserPublishRaw(CCPortDataContainer<?> buffer) {
+    public void browserPublishRaw(CCPortDataManagerTL buffer) {
         assert(buffer.getOwnerThread() == ThreadUtil.getCurrentThreadId());
         ThreadLocalCache tc = ThreadLocalCache.get();
 
@@ -307,12 +323,12 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param changedConstant changedConstant to use
      * @param informListeners Inform this port's listeners on change? (usually only when value comes from browser)
      */
-    @Inline private void publishImpl(ThreadLocalCache tc, CCPortDataContainer<?> data, @CppDefault("false") boolean reverse, @CppDefault("CHANGED") byte changedConstant, @CppDefault("false") boolean informListeners) {
+    @Inline private void publishImpl(ThreadLocalCache tc, CCPortDataManagerTL data, @CppDefault("false") boolean reverse, @CppDefault("CHANGED") byte changedConstant, @CppDefault("false") boolean informListeners) {
         @InCpp("") final boolean REVERSE = reverse;
         @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
         @InCpp("") final boolean INFORM_LISTENERS = informListeners;
 
-        assert data.getType() != null : "Port data type not initialized";
+        assert data.getObject().getType() != null : "Port data type not initialized";
         assert isInitialized() || INFORM_LISTENERS : "Port not initialized";
 
         @Ptr ArrayWrapper<CCPortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
@@ -355,7 +371,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
 
         // Backup tc references (in case it is modified - e.g. in BoundedNumberPort)
-        CCPortDataContainer<?> oldData = tc.data;
+        CCPortDataManagerTL oldData = tc.data;
         CCPortDataRef oldRef = tc.ref;
 
         assign(tc);
@@ -406,13 +422,14 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Inline
     private void updateStatistics(ThreadLocalCache tc, CCPortBase source, CCPortBase target) {
         if (RuntimeSettings.COLLECT_EDGE_STATISTICS) { // const, so method can be optimized away completely
-            updateEdgeStatistics(source, target, tc.data);
+            updateEdgeStatistics(source, target, tc.data.getObject());
         }
     }
 
     @Inline
+    @InCpp("portListener.notify(this, tc->data);")
     private void notifyListeners(ThreadLocalCache tc) {
-        portListener.notify(this, tc.data.getDataPtr());
+        portListener.notify(this, tc.data.getObject().getData());
     }
 
     public void notifyDisconnect() {
@@ -427,48 +444,38 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     public void applyDefaultValue() {
         //publish(ThreadLocalCache.get(), defaultValue.getContainer());
         ThreadLocalCache tc = ThreadLocalCache.getFast();
-        CCPortDataContainer<?> c = getUnusedBuffer(tc);
-        c.assign(defaultValue.getDataPtr());
+        CCPortDataManagerTL c = getUnusedBuffer(tc);
+        c.getObject().deepCopyFrom(defaultValue.getObject(), null);
         publish(tc, c);
     }
 
     /**
      * @return Current data with auto-lock (can only be unlocked with ThreadLocalCache auto-unlock)
      */
-    @Inline @Const public CCPortData getAutoLockedRaw() {
-        CCPortDataRef val = value;
-        CCPortDataContainer<?> valC = val.getContainer();
-        if (valC.getOwnerThread() == ThreadUtil.getCurrentThreadId()) { // if same thread: simply add read lock
-            valC.addLock();
-            return valC.getDataPtr();
-        }
-
-        // not the same thread: create auto-locked inter-thread container
+    @Inline @Const public GenericObject getAutoLockedRaw() {
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCInterThreadContainer<?> ccitc = tc.getUnusedInterThreadBuffer(getDataType());
-        tc.addAutoLock(ccitc);
-        for (;;) {
-            ccitc.assign(valC.getDataPtr());
-            if (val == value) { // still valid??
-                return ccitc.getDataPtr();
-            }
-            val = value;
-            valC = val.getContainer();
+
+        if (pushStrategy()) {
+
+            CCPortDataManagerTL mgr = getLockedUnsafeInContainer();
+            tc.addAutoLock(mgr);
+            return mgr.getObject();
+
+        } else {
+
+            CCPortDataManager mgr = getInInterThreadContainer();
+            tc.addAutoLock(mgr);
+            return mgr.getObject();
         }
     }
 
     /**
      * @return Current data in CC Interthread-container. Needs to be recycled manually.
      */
-    public CCInterThreadContainer<?> getInInterThreadContainer() {
-        CCInterThreadContainer<?> ccitc = ThreadLocalCache.get().getUnusedInterThreadBuffer(getDataType());
-        for (;;) {
-            CCPortDataRef val = value;
-            ccitc.assign(val.getContainer().getDataPtr());
-            if (val == value) { // still valid??
-                return ccitc;
-            }
-        }
+    public CCPortDataManager getInInterThreadContainer() {
+        CCPortDataManager ccitc = ThreadLocalCache.get().getUnusedInterThreadBuffer(getDataType());
+        getRaw(ccitc);
+        return ccitc;
     }
 
     /**
@@ -476,29 +483,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer to copy current data
      */
-    public void getRaw(CCInterThreadContainer<?> buffer) {
-        for (;;) {
-            CCPortDataRef val = value;
-            buffer.assign(val.getContainer().getDataPtr());
-            if (val == value) { // still valid??
-                return;
-            }
-        }
-    }
-
-    /**
-     * Copy current value to buffer (Most efficient get()-version)
-     *
-     * @param buffer Buffer to copy current data
-     */
-    public void getRaw(CCPortDataContainer<?> buffer) {
-        for (;;) {
-            CCPortDataRef val = value;
-            buffer.assign(val.getContainer().getDataPtr());
-            if (val == value) { // still valid??
-                return;
-            }
-        }
+    public void getRaw(GenericObjectManager buffer) {
+        getRaw(buffer.getObject());
     }
 
     /**
@@ -506,13 +492,42 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer to copy current data to
      */
-    public void getRaw(CCPortData buffer) {
-        for (;;) {
-            CCPortDataRef val = value;
-            val.getContainer().assignTo(buffer);
-            if (val == value) { // still valid??
-                return;
+    public void getRaw(GenericObject buffer) {
+        if (pushStrategy()) {
+            for (;;) {
+                CCPortDataRef val = value;
+                buffer.deepCopyFrom(val.getData(), null);
+                if (val == value) { // still valid??
+                    return;
+                }
             }
+        } else {
+            CCPortDataManagerTL dc = pullValueRaw();
+            buffer.deepCopyFrom(dc.getObject(), null);
+            dc.releaseLock();
+        }
+    }
+
+
+    /**
+     * Copy current value to buffer (Most efficient get()-version)
+     *
+     * @param buffer Buffer to copy current data to
+     */
+    @JavaOnly
+    public void getRaw(RRLibSerializable buffer) {
+        if (pushStrategy()) {
+            for (;;) {
+                CCPortDataRef val = value;
+                Serialization.deepCopy(val.getData().getData(), buffer, null);
+                if (val == value) { // still valid??
+                    return;
+                }
+            }
+        } else {
+            CCPortDataManagerTL dc = pullValueRaw();
+            Serialization.deepCopy(dc.getObject().getData(), buffer, null);
+            dc.releaseLock();
         }
     }
 
@@ -522,9 +537,9 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @return Container (non-const - public wrapper should return it const)
      */
-    protected CCPortDataContainer<?> getLockedUnsafeInContainer() {
+    protected CCPortDataManagerTL getLockedUnsafeInContainer() {
         CCPortDataRef val = value;
-        CCPortDataContainer<?> valC = val.getContainer();
+        CCPortDataManagerTL valC = val.getContainer();
         if (valC.getOwnerThread() == ThreadUtil.getCurrentThreadId()) { // if same thread: simply add read lock
             valC.addLock();
             return valC;
@@ -532,10 +547,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         // not the same thread: create auto-locked new container
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCPortDataContainer<?> ccitc = tc.getUnusedBuffer(dataType);
+        CCPortDataManagerTL ccitc = tc.getUnusedBuffer(dataType);
         ccitc.refCounter = 1;
         for (;;) {
-            ccitc.assign(valC.getDataPtr());
+            ccitc.getObject().deepCopyFrom(valC.getObject(), null);
             if (val == value) { // still valid??
                 return ccitc;
             }
@@ -551,10 +566,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @return Pulled locked data
      */
-    public CCInterThreadContainer<?> getPullInInterthreadContainerRaw(boolean intermediateAssign) {
-        CCPortDataContainer<?> tmp = pullValueRaw(intermediateAssign);
-        CCInterThreadContainer<?> ret = ThreadLocalCache.getFast().getUnusedInterThreadBuffer(dataType);
-        ret.assign(tmp.getDataPtr());
+    public CCPortDataManager getPullInInterthreadContainerRaw(boolean intermediateAssign) {
+        CCPortDataManagerTL tmp = pullValueRaw(intermediateAssign);
+        CCPortDataManager ret = ThreadLocalCache.getFast().getUnusedInterThreadBuffer(dataType);
+        ret.getObject().deepCopyFrom(tmp.getObject(), null);
         tmp.releaseLock();
         return ret;
     }
@@ -567,7 +582,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param intermediateAssign Assign pulled value to ports in between?
      * @return Locked port data (non-const!)
      */
-    protected CCPortDataContainer<?> pullValueRaw() {
+    protected CCPortDataManagerTL pullValueRaw() {
         return pullValueRaw(true);
     }
 
@@ -578,7 +593,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param intermediateAssign Assign pulled value to ports in between?
      * @return Locked port data (current thread is owner; there is one additional lock for caller; non-const(!))
      */
-    protected CCPortDataContainer<?> pullValueRaw(boolean intermediateAssign) {
+    protected CCPortDataManagerTL pullValueRaw(boolean intermediateAssign) {
         ThreadLocalCache tc = ThreadLocalCache.getFast();
 
         // pull value
@@ -601,7 +616,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @Ptr ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
             tc.data = tc.getUnusedBuffer(dataType);
-            pullRequestHandler.pullRequest(this, tc.data.getDataPtr());
+            pullRequestHandler.pullRequest(this, tc.data);
             tc.data.setRefCounter(1); // one lock for caller
             tc.ref = tc.data.getCurrentRef();
             assign(tc);
@@ -611,7 +626,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
                 CCPortBase pb = sources.get(i);
                 if (pb != null) {
                     pb.pullValueRawImpl(tc, intermediateAssign, false);
-                    if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getDataPtr()))) {
+                    if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getObject().getRawDataPtr()))) {
                         assign(tc);
                     }
                     return;
@@ -638,7 +653,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param readObject Buffer with data (must be owned by current thread)
      */
-    public void publish(CCPortDataContainer<?> buffer) {
+    public void publish(CCPortDataManagerTL buffer) {
         assert(buffer.getOwnerThread() == ThreadUtil.getCurrentThreadId());
         publish(ThreadLocalCache.getFast(), buffer);
     }
@@ -646,16 +661,14 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings( { "rawtypes", "unchecked" })
-    public void addPortListenerRaw(CCPortListener listener) {
+    public void addPortListenerRaw(@CppType("PortListenerRaw") PortListener<?> listener) {
         portListener.add(listener);
     }
 
     /**
      * @param listener Listener to add
      */
-    @SuppressWarnings( { "rawtypes", "unchecked" })
-    public void removePortListenerRaw(CCPortListener listener) {
+    public void removePortListenerRaw(@CppType("PortListenerRaw") PortListener<?> listener) {
         portListener.remove(listener);
     }
 
@@ -670,7 +683,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Dequeued first/oldest element in queue
      */
     @InCppFile
-    public CCInterThreadContainer<?> dequeueSingleUnsafeRaw() {
+    public CCPortDataManager dequeueSingleUnsafeRaw() {
         assert(queue != null);
         return queue.dequeue();
     }
@@ -686,13 +699,13 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Dequeued first/oldest element in queue
      */
     @Inline
-    public CCPortData dequeueSingleAutoLockedRaw() {
-        CCInterThreadContainer<?> result = dequeueSingleUnsafeRaw();
+    public GenericObject dequeueSingleAutoLockedRaw() {
+        CCPortDataManager result = dequeueSingleUnsafeRaw();
         if (result == null) {
             return null;
         }
         ThreadLocalCache.get().addAutoLock(result);
-        return result.getData();
+        return result.getObject();
     }
 
     /**
@@ -701,7 +714,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param fragment Fragment to store all dequeued values in
      */
     @InCppFile
-    public void dequeueAllRaw(@Ref CCQueueFragment<CCPortData> fragment) {
+    public void dequeueAllRaw(@Ref CCQueueFragmentRaw fragment) {
         queue.dequeueAll(fragment);
     }
 
@@ -746,8 +759,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     @Override
     public void forwardData(AbstractPort other) {
-        assert(other.getDataType().isCCType());
-        CCPortDataContainer<?> c = getLockedUnsafeInContainer();
+        assert(FinrocTypeInfo.isCCType(other.getDataType()));
+        CCPortDataManagerTL c = getLockedUnsafeInContainer();
         ((CCPortBase)other).publish(c);
         c.releaseLock();
     }
@@ -756,9 +769,25 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Does port contain default value?
      */
     public boolean containsDefaultValue() {
-        CCInterThreadContainer<?> c = getInInterThreadContainer();
-        boolean result = c.getType() == defaultValue.getType() && c.contentEquals(defaultValue.getDataPtr());
+        CCPortDataManager c = getInInterThreadContainer();
+        boolean result = c.getObject().getType() == defaultValue.getObject().getType() && Serialization.equals(c.getObject(), defaultValue.getObject());
         c.recycle2();
         return result;
+    }
+
+    /**
+     * @return Buffer with default value. Can be used to change default value
+     * for port. However, this should be done before the port is used.
+     */
+    public @Ptr GenericObject getDefaultBufferRaw() {
+        assert(!isReady()) : "please set default value _before_ initializing port";
+        return defaultValue.getObject();
+    }
+
+    /**
+     * @return Unit of port
+     */
+    public Unit getUnit() {
+        return unit;
     }
 }

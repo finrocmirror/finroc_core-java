@@ -27,19 +27,18 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.MemBuffer;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.plugin.RemoteCreateModuleAction;
-import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.net.RemoteRuntime;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.port.std.PortDataManager;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObjectManager;
+import org.finroc.serialization.MemoryBuffer;
 
 /**
  * @author max
@@ -112,28 +111,15 @@ public class AdminClient extends InterfaceClientPort {
      * @param np network port of remote port
      * @param container Data to assign to remote port
      */
-    public void setRemotePortValue(NetPort np, CCInterThreadContainer<?> container) {
+    public void setRemotePortValue(NetPort np, GenericObjectManager container) {
         if (np != null && getAdminInterface(np) == this) {
             try {
-                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), container, null, false);
-                return;
-            } catch (MethodCallException e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
-            }
-        }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
-    }
-
-    /**
-     * Sets value of remote port
-     *
-     * @param np network port of remote port
-     * @param portData Data to assign to remote port
-     */
-    public void setRemotePortValue(NetPort np, PortData portData) {
-        if (np != null && getAdminInterface(np) == this) {
-            try {
-                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), null, portData, false);
+                MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
+                CoreOutput co = new CoreOutput(mb);
+                co.writeString(container.getObject().getType().getName());
+                container.getObject().serialize(co);
+                co.close();
+                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 0, false);
                 return;
             } catch (MethodCallException e) {
                 logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
@@ -149,14 +135,14 @@ public class AdminClient extends InterfaceClientPort {
     public ArrayList<RemoteCreateModuleAction> getRemoteModuleTypes() {
         ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
         try {
-            MemBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
+            MemoryBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
             CoreInput ci = new CoreInput(mb);
             while (ci.moreDataAvailable()) {
                 RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, ci.readString(), ci.readString(), result.size());
                 a.parameters.deserialize(ci);
                 result.add(a);
             }
-            mb.getManager().releaseLock();
+            PortDataManager.getManager(mb).releaseLock();
             return result;
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
@@ -175,7 +161,7 @@ public class AdminClient extends InterfaceClientPort {
      */
     @JavaOnly
     public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
-        MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+        MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
         CoreOutput co = new CoreOutput(mb);
         if (params != null) {
             for (String p : params) {
@@ -183,11 +169,9 @@ public class AdminClient extends InterfaceClientPort {
             }
         }
         co.close();
-        mb.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
 
-        CoreString name2 = (CoreString)getUnusedBuffer(CoreString.TYPE);
+        CoreString name2 = getBufferForCall(CoreString.TYPE);
         name2.set(name);
-        name2.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
 
         try {
             AdminServer.CREATE_MODULE.call(this, cma.remoteIndex, name2, parentHandle, mb, true);
@@ -226,21 +210,20 @@ public class AdminClient extends InterfaceClientPort {
      * @param annType Annotation type
      * @return Annotation - or null, if element has no annotation
      */
-    public FinrocAnnotation getAnnotation(int remoteHandle, DataType annType) {
-        CoreString type = (CoreString)getUnusedBuffer(CoreString.TYPE);
+    public FinrocAnnotation getAnnotation(int remoteHandle, DataTypeBase annType) {
+        CoreString type = getBufferForCall(CoreString.TYPE);
         type.set(annType.getName());
-        type.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
         try {
-            MemBuffer mb = AdminServer.GET_ANNOTATION.call(this, remoteHandle, type, 5000);
+            MemoryBuffer mb = AdminServer.GET_ANNOTATION.call(this, remoteHandle, type, 5000);
             if (mb == null) {
                 return null;
             }
             CoreInput ci = new CoreInput(mb);
-            DataType dt = DataTypeRegister.getInstance().getDataType(ci.readString());
+            DataTypeBase dt = DataTypeBase.findType(ci.readString());
             FinrocAnnotation fa = (FinrocAnnotation)dt.getJavaClass().newInstance();
             fa.deserialize(ci);
             ci.close();
-            mb.getManager().releaseLock();
+            PortDataManager.getManager(mb).releaseLock();
             return fa;
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
@@ -256,7 +239,7 @@ public class AdminClient extends InterfaceClientPort {
      * @param ann Annotation to write
      */
     public void setAnnotation(int remoteHandle, FinrocAnnotation ann) {
-        MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+        MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
         CoreOutput co = new CoreOutput(mb);
         if (ann.getType() == null) {
             ann.initDataType();
@@ -264,7 +247,6 @@ public class AdminClient extends InterfaceClientPort {
         co.writeString(ann.getType().getName());
         ann.serialize(co);
         co.close();
-        mb.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
 
         try {
             AdminServer.SET_ANNOTATION.call(this, remoteHandle, null, null, mb, false);

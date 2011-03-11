@@ -21,17 +21,23 @@
  */
 package org.finroc.core.port.rpc;
 
+import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
-import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.IncludeClass;
-import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.PassByValue;
-import org.finroc.jc.annotation.Ptr;
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.port.std.PortData;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
+import org.finroc.serialization.GenericObject;
+import org.finroc.core.buffer.CoreInput;
+import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.port.cc.CCPortDataManager;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
  * Storage for a parameter
@@ -39,21 +45,23 @@ import org.finroc.core.port.std.PortData;
  * CC Objects: If call is executed in the same runtime environment, object is stored inside
  * otherwise it is directly serialized
  */
-@IncludeClass(CCInterThreadContainer.class)
-@CppInclude("std/PortData.h")
-public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class CallParameter {
+@IncludeClass(CCPortDataManager.class)
+//@CppInclude("std/PortData.h")
+public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class CallParameter implements HasDestructor {
 
     /** Constants for different types of parameters in serialization */
-    public static final byte NULLPARAM = 0, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4, PORTDATA = 5, CCDATA = 6, CCCONTAINER = 7, BYTE = 8, SHORT = 9;
+    public static final byte NULLPARAM = 0, NUMBER = 1, OBJECT = 2;
 
-    /** Parameter */
-    @InCpp("union { int ival; int64 lval; float fval; double dval; int8 bval; int16 sval; CCInterThreadContainer<>* ccval; const PortData* value; };")
-    public @Ptr Object value;
+    /** Storage for numeric parameter */
+    @PassByValue public final CoreNumber number = new CoreNumber();
+
+    /** Object Parameter */
+    public @SharedPtr GenericObject value;
 
     /** Type of parameter (see constants at beginning of class) */
     public byte type;
 
-    @Init("lval(0)")
+
     public CallParameter() {
     }
 
@@ -63,24 +71,46 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
     }
 
     public void recycle() {
-        if (value == null) {
-            return;
+
+        //JavaOnlyBlock
+        if (value != null) {
+            ((ReusableGenericObjectManager)value.getManager()).genericLockRelease();
         }
-        if (type == CCDATA || type == CCCONTAINER) {
 
-            // JavaOnlyBlock
-            ((CCInterThreadContainer<?>)value).recycle2();
-
-            //Cpp ccval->recycle2();
-
-        } else if (type == PORTDATA) {
-
-            // JavaOnlyBlock
-            ((PortData)value).getManager().releaseLock();
-
-            //Cpp value->getManager()->releaseLock();
-
-        }
         value = null;
+    }
+
+    @Override
+    public void delete() {
+        recycle();
+    }
+
+    @ConstMethod public void serialize(@Ref CoreOutput oos) {
+        oos.writeByte(type);
+        if (type == NUMBER) {
+            number.serialize(oos);
+        } else if (type == OBJECT) {
+            oos.writeObject(value);
+            @InCpp("PortDataManager* pdm = PortDataManager::getManager(value);")
+            PortDataManager pdm = PortDataManager.getManager(value.getData());
+            if (pdm != null) {
+                oos.writeInt(pdm.lockID);
+            }
+        }
+    }
+
+    public void deserialize(@Ref CoreInput is) {
+        type = is.readByte();
+        if (type == NUMBER) {
+            number.deserialize(is);
+        } else if (type == OBJECT) {
+            assert(value == null);
+            value = (GenericObject)is.readObjectInInterThreadContainer();
+            @InCpp("PortDataManager* pdm = PortDataManager::getManager(value);")
+            PortDataManager pdm = PortDataManager.getManager(value.getData());
+            if (pdm != null) {
+                pdm.lockID = is.readInt();
+            }
+        }
     }
 }

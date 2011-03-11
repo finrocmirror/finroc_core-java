@@ -21,17 +21,11 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.port.std.PortData;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.std.PortDataManager;
-import org.finroc.core.portdatabase.CoreSerializableImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.SerializationHelper;
-import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
@@ -44,6 +38,13 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializableImpl;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.TypedObject;
 import org.finroc.xml.XMLNode;
 
 /**
@@ -53,19 +54,19 @@ import org.finroc.xml.XMLNode;
  * (Generic base class without template type)
  */
 @Ptr @Friend(StructureParameterList.class)
-public class StructureParameterBase extends CoreSerializableImpl implements HasDestructor {
+public class StructureParameterBase extends RRLibSerializableImpl implements HasDestructor {
 
     /** Name of parameter */
     private String name;
 
     /** DataType of parameter */
-    private DataType type;
+    private DataTypeBase type;
 
     /** Current parameter value (in CreateModuleAction-prototypes this is null) - Standard type */
-    protected @Ptr PortData value;
+    protected @Ptr PortDataManager value;
 
     /** Current parameter value (in CreateModuleAction-prototypes this is null) - CC type */
-    protected @Ptr CCInterThreadContainer<?> ccValue;
+    protected @Ptr CCPortDataManager ccValue;
 
     /** Index in parameter list */
     protected int listIndex;
@@ -93,7 +94,7 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
      */
-    public StructureParameterBase(String name, DataType type, boolean constructorPrototype) {
+    public StructureParameterBase(String name, DataTypeBase type, boolean constructorPrototype) {
         this.name = name;
         this.type = type;
 
@@ -106,7 +107,7 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeString(name);
         os.writeString(type.getName());
         TypedObject val = valPointer();
@@ -125,12 +126,12 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         if (remoteValue()) {
 
             //JavaOnlyBlock
             name = is.readString();
-            type = DataTypeRegister.getInstance().getDataType(is.readString());
+            type = DataTypeBase.findType(is.readString());
 
             //Cpp assert(false && "not supported");
         } else {
@@ -149,7 +150,8 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     /**
      * @return Log description
      */
-    private String getLogDescription() {
+    @JavaOnly
+    public String getLogDescription() {
         return name;
     }
 
@@ -163,7 +165,7 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
      */
     protected void deleteBuffer() {
         if (value != null) {
-            value.getManager().releaseLock();
+            value.releaseLock();
         }
         if (ccValue != null) {
             ccValue.recycle2();
@@ -182,8 +184,9 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
      *
      * @return value or ccValue, depending on data type
      */
-    @ConstMethod private TypedObject valPointer() {
-        return type.isStdType() ? (TypedObject)value : (TypedObject)ccValue;
+    @ConstMethod
+    public GenericObject valPointer() {
+        return value != null ? value.getObject() : ccValue.getObject();
     }
 
     /**
@@ -195,13 +198,13 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
             //JavaOnlyBlock
             // try parsing value - if the type is available locally
             if (type != null) {
-                DataType dt = SerializationHelper.getTypedStringDataType(type, s);
+                DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
                 TypedObject val = valPointer();
                 if (val == null || val.getType() != dt) {
                     createBuffer(dt);
                     val = valPointer();
                 }
-                val.deserialize(s);
+                val.deserialize(new StringInputStream(s));
                 remoteValue = null;
             } else {
                 remoteValue = s;
@@ -211,13 +214,15 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
 
         } else {
             assert(type != null);
-            DataType dt = SerializationHelper.getTypedStringDataType(type, s);
+            DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
             TypedObject val = valPointer();
             if (val.getType() != dt) {
                 createBuffer(dt);
                 val = valPointer();
             }
-            val.deserialize(s);
+
+            StringInputStream sis = new StringInputStream(s);
+            val.deserialize(sis);
         }
     }
 
@@ -227,12 +232,12 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
      *
      * @param type Type
      */
-    private void createBuffer(DataType type) {
+    private void createBuffer(DataTypeBase type) {
         deleteBuffer();
-        if (type.isStdType()) {
-            @Ptr PortDataManager pdm = new PortDataManager(type, null);
+        if (FinrocTypeInfo.isStdType(type)) {
+            @Ptr PortDataManager pdm = PortDataManager.create(type); //new PortDataManagerRaw(type, null);
             pdm.getCurrentRefCounter().setOrAddLocks((byte)1);
-            value = pdm.getData();
+            value = pdm;
             assert(value != null);
         } else {
             ccValue = ThreadLocalCache.get().getUnusedInterThreadBuffer(type);
@@ -247,6 +252,12 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
         return remote;
     }
 
+    /*Cpp
+    const char* getLogDescription() {
+        return name.getCString();
+    }
+     */
+
     /**
      * @return Name of parameter
      */
@@ -257,16 +268,8 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
     /**
      * @return DataType of parameter
      */
-    public DataType getType() {
+    public DataTypeBase getType() {
         return type;
-    }
-
-    /**
-     * @return Remote value if data type is not null
-     */
-    @JavaOnly
-    public TypedObject getValueRaw() {
-        return value != null ? value : ccValue.getData();
     }
 
     /**
@@ -288,9 +291,9 @@ public class StructureParameterBase extends CoreSerializableImpl implements HasD
 
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        DataType dt = type;
+        DataTypeBase dt = type;
         if (node.hasAttribute("type")) {
-            dt = DataTypeRegister.getInstance().getDataType(node.getStringAttribute("type"));
+            dt = DataTypeBase.findType(node.getStringAttribute("type"));
         }
         TypedObject val = valPointer();
         if (val == null || val.getType() != dt) {

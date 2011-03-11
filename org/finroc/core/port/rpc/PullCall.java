@@ -21,7 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.thread.Task;
@@ -29,11 +28,12 @@ import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
  * @author max
@@ -101,30 +101,28 @@ public class PullCall extends AbstractCall implements Task {
                 recycle();
             }
 
-            if (port.getPort().getDataType().isCCType()) {
+            if (FinrocTypeInfo.isCCType(port.getPort().getDataType())) {
                 CCPortBase cp = (CCPortBase)port.getPort();
-                CCInterThreadContainer<?> cpd = cp.getPullInInterthreadContainerRaw(true);
+                CCPortDataManager cpd = cp.getPullInInterthreadContainerRaw(true);
                 recycleParameters();
 
                 //JavaOnlyBlock
-                addParamForSending(cpd);
+                addParam(0, cpd.getObject());
 
-                //Cpp addParamForSending(cpd);
+                //Cpp addParam(0, std::shared_ptr<rrlib::serialization::GenericObject>(cpd->getObject(), SharedPtrDeleteHandler<CCPortDataManager>(cpd)));
 
-                sendParametersComplete();
                 setStatusReturn();
                 port.sendCallReturn(this);
-            } else if (port.getPort().getDataType().isStdType()) {
+            } else if (FinrocTypeInfo.isStdType(port.getPort().getDataType())) {
                 PortBase p = (PortBase)port.getPort();
-                @Const PortData pd = p.getPullLockedUnsafe(true);
+                PortDataManager pd = p.getPullLockedUnsafe(true);
                 recycleParameters();
 
                 //JavaOnlyBlock
-                addParamForSending(pd);
+                addParam(0, pd.getObject());
 
-                //Cpp addParamForSending(pd);
+                //Cpp addParam(0, std::shared_ptr<rrlib::serialization::GenericObject>(pd->getObject(), SharedPtrDeleteHandler<PortDataManager>(pd)));
 
-                sendParametersComplete();
                 setStatusReturn();
                 port.sendCallReturn(this);
             } else {

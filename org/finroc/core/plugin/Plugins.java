@@ -76,8 +76,8 @@ public class Plugins { /*implements HTTPResource*/
     @JavaOnly
     private final SimpleList<CreateFrameworkElementAction> moduleTypes = new SimpleList<CreateFrameworkElementAction>();
 
-    /** Plugin manager instance */
-    private final PluginManager pluginManager = new PluginManager();
+//    /** Plugin manager instance */
+//    private final PluginManager pluginManager = new PluginManager();
 
     /** Plugin loader implementation */
     @JavaOnly @SharedPtr private PluginLoader pluginLoader;
@@ -132,7 +132,7 @@ public class Plugins { /*implements HTTPResource*/
      */
     public void addPlugin(@Ptr @Managed Plugin p) {
         plugins.add(p);
-        p.init(pluginManager);
+        p.init(/*pluginManager*/);
     }
 
     /**

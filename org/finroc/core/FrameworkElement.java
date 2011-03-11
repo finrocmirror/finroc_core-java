@@ -698,6 +698,8 @@ public class FrameworkElement extends Annotatable {
             synchronized (flagMutex) {
                 flags |= CoreFlags.READY;
             }
+
+            notifyAnnotationsInitialized();
         }
 
     }
@@ -795,6 +797,8 @@ public class FrameworkElement extends Annotatable {
 
                 // synchronizes on runtime - so no elements will be deleted while runtime is locked
                 synchronized (getRegistryLock()) {
+
+                    notifyAnnotationsDelete();
 
                     log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting");
                     //System.out.println("Deleting " + toString() + " (" + hashCode() + ")");

@@ -23,20 +23,17 @@ package org.finroc.core.datatype;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.rpc.InterfacePort;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortDataImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
@@ -45,7 +42,15 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializableImpl;
+import org.finroc.serialization.StringInputStream;
 import org.finroc.xml.XMLNode;
 
 /**
@@ -55,13 +60,17 @@ import org.finroc.xml.XMLNode;
  * Is only meant to be used in StructureParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
-public class PortCreationList extends PortDataImpl {
+public class PortCreationList extends RRLibSerializableImpl {
 
     /** Relevant flags for comparison */
     private static final int RELEVANT_FLAGS = CoreFlags.SHARED | PortFlags.IS_VOLATILE;
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(PortCreationList.class);
+    public final static DataType<PortCreationList> TYPE = new DataType<PortCreationList>(PortCreationList.class);
+
+    /** Log domain for edges */
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_creation_list\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_creation_list");
 
     /**
      * Entry in list
@@ -80,7 +89,8 @@ public class PortCreationList extends PortDataImpl {
 
         public Entry(@Const @Ref String name, @Const @Ref String type, boolean outputPort) {
             this.name = name;
-            this.type.deserialize(type);
+            StringInputStream sis = new StringInputStream(type);
+            this.type.deserialize(sis);
             this.outputPort = outputPort;
         }
     }
@@ -117,7 +127,7 @@ public class PortCreationList extends PortDataImpl {
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeBoolean(showOutputPortSelection);
         if (ioVector == null) {
             int size = list.size();
@@ -160,7 +170,7 @@ public class PortCreationList extends PortDataImpl {
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         if (ioVector == null) {
             showOutputPortSelection = is.readBoolean();
             @SizeT int size = is.readInt();
@@ -177,9 +187,10 @@ public class PortCreationList extends PortDataImpl {
                 for (@SizeT int i = 0; i < size; i++) {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
                     String name = is.readString();
-                    DataType dt = DataTypeRegister.getInstance().getDataType(is.readString());
+                    String dtName = is.readString();
+                    DataTypeBase dt = DataTypeBase.findType(dtName);
                     if (dt == null) {
-                        throw new RuntimeException("Type " + dt + " not available");
+                        throw new RuntimeException("Type " + dtName + " not available");
                     }
                     boolean output = is.readBoolean();
                     checkPort(ap, ioVector, flags, name, dt, output, null);
@@ -202,7 +213,7 @@ public class PortCreationList extends PortDataImpl {
      * @param output output port
      * @param prototype Port prototype (only interesting for listener)
      */
-    private void checkPort(@Managed AbstractPort ap, FrameworkElement ioVector, int flags, @Const @Ref String name, DataType dt, boolean output, AbstractPort prototype) {
+    private void checkPort(@Managed AbstractPort ap, FrameworkElement ioVector, int flags, @Const @Ref String name, DataTypeBase dt, boolean output, AbstractPort prototype) {
         if (ap != null && ap.descriptionEquals(name) && ap.getDataType() == dt && (ap.getAllFlags() & RELEVANT_FLAGS) == (flags & RELEVANT_FLAGS)) {
             if ((!showOutputPortSelection) || (output == ap.isOutputPort())) {
                 return;
@@ -220,11 +231,11 @@ public class PortCreationList extends PortDataImpl {
         flags |= tmp;
 
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
-        if (dt.isStdType()) {
+        if (FinrocTypeInfo.isStdType(dt)) {
             ap = new PortBase(new PortCreationInfo(name, ioVector, dt, flags));
-        } else if (dt.isCCType()) {
+        } else if (FinrocTypeInfo.isCCType(dt)) {
             ap = new CCPortBase(new PortCreationInfo(name, ioVector, dt, flags));
-        } else if (dt.isMethodType()) {
+        } else if (FinrocTypeInfo.isMethodType(dt)) {
             ap = new InterfacePort(name, ioVector, dt, InterfacePort.Type.Routing);
         } else {
             log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + dt.getName());
@@ -271,11 +282,11 @@ public class PortCreationList extends PortDataImpl {
             int size = ports.size();
             for (int i = 0; i < size; i++) {
                 AbstractPort p = ports.get(i);
-                XMLNode n = node.addChildNode("port");
-                n.setAttribute("name", p.getCDescription());
-                n.setAttribute("type", p.getDataType().getName());
+                @Ref XMLNode child = node.addChildNode("port");
+                child.setAttribute("name", p.getCDescription());
+                child.setAttribute("type", p.getDataType().getName());
                 if (showOutputPortSelection) {
-                    n.setAttribute("output", p.isOutputPort());
+                    child.setAttribute("output", p.isOutputPort());
                 }
             }
         }
@@ -287,26 +298,25 @@ public class PortCreationList extends PortDataImpl {
         assert(ioVector != null) : "Only available on local systems";
         synchronized (ioVector) {
             showOutputPortSelection = node.getBoolAttribute("showOutputSelection");
-            @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
-            children.addAll(node.getChildren());
             @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
             getPorts(ioVector, ports);
-            for (@SizeT int i = 0; i < children.size(); i++) {
+            @SizeT int i = 0;
+            for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {
                 AbstractPort ap = i < ports.size() ? ports.get(i) : null;
-                XMLNode port = children.get(i);
-                String portName = port.getName();
+                String portName = port.get().getName();
                 assert(portName.equals("port"));
                 boolean b = false;
                 if (showOutputPortSelection) {
-                    b = port.getBoolAttribute("output");
+                    b = port.get().getBoolAttribute("output");
                 }
-                DataType dt = DataTypeRegister.getInstance().getDataType(port.getStringAttribute("type"));
+                String dtName = port.get().getStringAttribute("type");
+                DataTypeBase dt = DataTypeBase.findType(dtName);
                 if (dt == null) {
-                    throw new RuntimeException("Type " + dt + " not available");
+                    throw new RuntimeException("Type " + dtName + " not available");
                 }
-                checkPort(ap, ioVector, flags, port.getStringAttribute("name"), dt, b, null);
+                checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, b, null);
             }
-            for (@SizeT int i = children.size(); i < ports.size(); i++) {
+            for (; i < ports.size(); i++) {
                 ports.get(i).managedDelete();
             }
         }
@@ -319,7 +329,7 @@ public class PortCreationList extends PortDataImpl {
      * @param dt Data type
      * @param output Output port? (possibly irrelevant)
      */
-    public void add(@Const @Ref String name, DataType dt, boolean output) {
+    public void add(@Const @Ref String name, DataTypeBase dt, boolean output) {
         synchronized (ioVector) {
             checkPort(null, ioVector, flags, name, dt, output, null);
         }

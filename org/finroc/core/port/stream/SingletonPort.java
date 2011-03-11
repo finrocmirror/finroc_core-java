@@ -21,14 +21,14 @@
  */
 package org.finroc.core.port.stream;
 
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
-import org.finroc.core.port.std.Port;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PublishCache;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.InCppFile;
+import org.finroc.serialization.RRLibSerializable;
 
 /**
  * @author max
@@ -38,7 +38,7 @@ import org.finroc.jc.annotation.InCppFile;
  * This port class does not handle concurrent access to the data buffer.
  * The data (buffer) has to take care of this issue.
  */
-public class SingletonPort<T extends PortData> extends Port<T> {
+public class SingletonPort<T extends RRLibSerializable> extends Port<T> {
 
     /** Special Port class to load value when initialized */
     @AtFront

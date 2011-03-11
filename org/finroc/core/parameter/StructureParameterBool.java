@@ -22,10 +22,11 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreBoolean;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -41,10 +42,16 @@ public class StructureParameterBool extends StructureParameter<CoreBoolean> {
     }
 
     public StructureParameterBool(String name, boolean defaultValue, boolean constructorPrototype) {
-        super(name, DataTypeRegister.getInstance().getDataType(CoreBoolean.class), constructorPrototype, "");
+        super(name, getDataType(), constructorPrototype, "");
         if (!constructorPrototype) {
             set(defaultValue);
         }
+    }
+
+    /** Helper to get this safely during static initialization */
+    @InCpp("return rrlib::serialization::DataType<Boolean>();")
+    public static DataTypeBase getDataType() {
+        return CoreBoolean.TYPE;
     }
 
     public StructureParameterBool(String name, boolean defaultValue) {

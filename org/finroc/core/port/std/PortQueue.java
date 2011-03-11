@@ -22,10 +22,8 @@
 package org.finroc.core.port.std;
 
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.container.WonderQueueBounded;
 
 /**
@@ -38,8 +36,8 @@ import org.finroc.jc.container.WonderQueueBounded;
  *
  * Use concurrentDequeue, with threads reading from this queue concurrently.
  */
-@Inline @NoCpp @RawTypeArgs @DefaultType("PortData")
-public class PortQueue<T extends PortData> extends WonderQueueBounded<PortDataReference, PortQueueElement> {
+@Inline @NoCpp
+public class PortQueue extends WonderQueueBounded<PortDataReference, PortQueueElement> {
 
     public PortQueue(int maxLength) {
         super(maxLength);

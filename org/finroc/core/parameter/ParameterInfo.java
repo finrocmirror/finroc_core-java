@@ -22,22 +22,25 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.FinrocAnnotation;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
+import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.cc.CCPortDataContainer;
+import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.jc.annotation.Const;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
 import org.finroc.xml.XMLNode;
 
 /**
@@ -49,7 +52,7 @@ import org.finroc.xml.XMLNode;
 public class ParameterInfo extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(ParameterInfo.class);
+    public final static DataType<ParameterInfo> TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
 
     /** Place in Configuration tree, this parameter is configured from (nodes are separated with dots) */
     private String configEntry;
@@ -59,23 +62,23 @@ public class ParameterInfo extends FinrocAnnotation {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeString(configEntry);
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         setConfigEntry(is.readString());
     }
 
     @Override
-    public String serialize() {
-        return configEntry;
+    public void serialize(StringOutputStream os) {
+        os.append(configEntry);
     }
 
     @Override
-    public void deserialize(String s) throws Exception {
-        setConfigEntry(s);
+    public void deserialize(StringInputStream is) throws Exception {
+        setConfigEntry(is.readAll());
     }
 
     /**
@@ -123,17 +126,27 @@ public class ParameterInfo extends FinrocAnnotation {
                     return;
                 }
                 if (cf.hasEntry(configEntry)) {
-                    XMLNode node = cf.getEntry(configEntry, false);
-                    if (ann.getDataType().isCCType()) {
+                    @Ref XMLNode node = cf.getEntry(configEntry, false);
+                    if (FinrocTypeInfo.isCCType(ann.getDataType())) {
                         CCPortBase port = (CCPortBase)ann;
-                        CCPortDataContainer<?> c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
-                        c.deserialize(node);
-                        port.browserPublishRaw(c);
-                    } else if (ann.getDataType().isStdType()) {
+                        CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
+                        try {
+                            c.getObject().deserialize(node);
+                            port.browserPublishRaw(c);
+                        } catch (Exception e) {
+                            c.setRefCounter(1);
+                            c.releaseLock();
+                        }
+                    } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
                         PortBase port = (PortBase)ann;
-                        PortData pd = port.getUnusedBufferRaw();
-                        pd.deserialize(node);
-                        port.browserPublish(pd);
+                        PortDataManager pd = port.getUnusedBufferRaw();
+                        try {
+                            pd.getObject().deserialize(node);
+                            port.browserPublish(pd);
+                        } catch (Exception e) {
+                            pd.getCurrentRefCounter().setOrAddLock();
+                            pd.releaseLock();
+                        }
                     } else {
                         throw new RuntimeException("Port Type not supported as a parameter");
                     }
@@ -153,28 +166,33 @@ public class ParameterInfo extends FinrocAnnotation {
         }
         ConfigFile cf = ConfigFile.find(ann);
         boolean hasEntry = cf.hasEntry(configEntry);
-        if (ann.getDataType().isCCType()) {
+        if (FinrocTypeInfo.isCCType(ann.getDataType())) {
             CCPortBase port = (CCPortBase)ann;
             if (hasEntry || (!port.containsDefaultValue())) {
-                XMLNode node = cf.getEntry(configEntry, true);
-                CCInterThreadContainer<?> c = port.getInInterThreadContainer();
-                c.serialize(node);
+                @Ref XMLNode node = cf.getEntry(configEntry, true);
+                CCPortDataManager c = port.getInInterThreadContainer();
+                c.getObject().serialize(node);
                 c.recycle2();
             }
-        } else if (ann.getDataType().isStdType()) {
+        } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
             PortBase port = (PortBase)ann;
             if (hasEntry || (!port.containsDefaultValue())) {
-                XMLNode node = cf.getEntry(configEntry, true);
-                @Const PortData pd = port.getLockedUnsafeRaw();
-                pd.serialize(node);
-                pd.getManager().releaseLock();
+                @Ref XMLNode node = cf.getEntry(configEntry, true);
+                PortDataManager pd = port.getLockedUnsafeRaw();
+                pd.getObject().serialize(node);
+                pd.releaseLock();
             }
         } else {
             throw new RuntimeException("Port Type not supported as a parameter");
         }
     }
 
-
-
-
+    @Override
+    protected void annotatedObjectInitialized() {
+        try {
+            loadValue(true);
+        } catch (Exception e) {
+            log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
+        }
+    }
 }

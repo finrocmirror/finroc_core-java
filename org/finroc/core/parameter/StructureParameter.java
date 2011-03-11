@@ -21,16 +21,13 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.HPrepend;
-import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.RRLibSerializable;
 
 /**
  * @author max
@@ -46,30 +43,12 @@ import org.finroc.jc.annotation.Ref;
  * - ...they are stored in an FinstructableGroup's XML-file rather than
  * the attribute tree.
  */
-@HPrepend( {
-    "template <typename T, bool C>",
-    "struct StructureParameterBufferHelper {",
-    "  static T* get(PortData* pd, CCInterThreadContainer<>* cc) {",
-    "    return (T*)cc->getData();",
-    "  }",
-    "};",
-    "",
-    "template <typename T>",
-    "struct StructureParameterBufferHelper<T, true> {",
-    "  static T* get(PortData* pd, CCInterThreadContainer<>* cc) {",
-    "    return (T*)pd;",
-    "  }",
-    "};"
-})
 @RawTypeArgs
-@IncludeClass(DataTypeRegister.class)
-public class StructureParameter<T extends TypedObject> extends StructureParameterBase {
-
-    //Cpp typedef StructureParameterBufferHelper<T, boost::is_base_of<PortData, T>::value> Helper;
+public class StructureParameter<T extends RRLibSerializable> extends StructureParameterBase {
 
     /*Cpp
     StructureParameter(const util::String& name) :
-         StructureParameterBase(name, DataTypeRegister::getInstance()->getDataType<T>(), false)
+         StructureParameterBase(name, rrlib::serialization::DataType<T>(), false)
     {}
      */
 
@@ -78,7 +57,7 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      */
-    public StructureParameter(@Const @Ref String name, DataType type, boolean constructorPrototype) {
+    public StructureParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype) {
         super(name, type, constructorPrototype);
     }
 
@@ -88,7 +67,7 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      * @param defaultValue Default value
      */
-    public StructureParameter(@Const @Ref String name, DataType type, boolean constructorPrototype, @Const @Ref String defaultValue) {
+    public StructureParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype, @Const @Ref String defaultValue) {
         super(name, type, constructorPrototype);
         String dv = defaultValue;
         if ((!constructorPrototype) && dv.length() > 0) {
@@ -108,7 +87,7 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @param type DataType of parameter
      * @param defaultValue Default value
      */
-    public StructureParameter(@Const @Ref String name, DataType type, @Const @Ref String defaultValue) {
+    public StructureParameter(@Const @Ref String name, DataTypeBase type, @Const @Ref String defaultValue) {
         this(name, type, false, defaultValue);
     }
 
@@ -116,7 +95,7 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @param name Name of parameter
      * @param type DataType of parameter
      */
-    public StructureParameter(@Const @Ref String name, DataType type) {
+    public StructureParameter(@Const @Ref String name, DataTypeBase type) {
         this(name, type, "");
     }
 
@@ -124,10 +103,9 @@ public class StructureParameter<T extends TypedObject> extends StructureParamete
      * @return Current parameter value (without lock)
      * (without additional locks value is deleted, when parameter is - which doesn't happen while a module is running)
      */
-    @SuppressWarnings("unchecked")
-    @InCpp("return Helper::get(value, ccValue);")
     public @Ptr T getValue() {
-        return (T)super.getValueRaw();
+        GenericObject go = super.valPointer();
+        return go.<T>getData();
     }
 
     @Override

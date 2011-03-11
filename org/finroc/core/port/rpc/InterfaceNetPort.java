@@ -96,7 +96,6 @@ public abstract class InterfaceNetPort extends InterfacePort {
                     RPCThreadPool.getInstance().executeTask(mc);
                     return;
                 } else {
-                    mc.deserializeParamaters();
                     mc.getMethod().executeFromMethodCallObject(mc, mhandler, null);
                     if (!m.isVoidMethod()) {
                         sendSyncCallReturn(mc);
@@ -135,7 +134,6 @@ public abstract class InterfaceNetPort extends InterfacePort {
      * @param mhandler Server/Handler handling call
      */
     public void executeCallFromNetwork(MethodCall mc, @Ptr AbstractMethodCallHandler mhandler) {
-        mc.deserializeParamaters();
         mc.getMethod().executeFromMethodCallObject(mc, mhandler, null);
         if (!mc.getMethod().isVoidMethod()) {
             sendSyncCallReturn(mc);

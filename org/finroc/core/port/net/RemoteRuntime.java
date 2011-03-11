@@ -24,12 +24,11 @@ package org.finroc.core.port.net;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.admin.AdminClient;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -41,7 +40,7 @@ import org.finroc.jc.annotation.Ptr;
 public class RemoteRuntime extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(RemoteRuntime.class);
+    public final static DataType<RemoteRuntime> TYPE = new DataType<RemoteRuntime>(RemoteRuntime.class);
 
     /** Admin interface for remote runtime */
     private final AdminClient adminInterface;

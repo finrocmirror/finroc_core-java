@@ -21,7 +21,6 @@
  */
 package org.finroc.core.plugin;
 
-import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 
 
@@ -39,8 +38,6 @@ public interface Plugin {
      * This method is called once at initialization.
      * Data types, modules, widgets etc. can/should be added to the central
      * registry by calling the Plugin manager's approriate methods.
-     *
-     * @param mgr Plugin Manager
      */
-    public void init(@Ref PluginManager mgr);
+    public void init(/*@Ref PluginManager mgr*/);
 }

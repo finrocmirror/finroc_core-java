@@ -21,14 +21,16 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.port.std.PortDataImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializableImpl;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
 
 /**
  * @author max
@@ -36,10 +38,10 @@ import org.finroc.jc.annotation.Ref;
  * Simple string (buffer) type to use in ports
  * Has 512 bytes initially.
  */
-public class CoreString extends PortDataImpl {
+public class CoreString extends RRLibSerializableImpl {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreString.class);
+    public final static DataType<CoreString> TYPE = new DataType<CoreString>(CoreString.class);
 
     /** String buffer */
     @PassByValue
@@ -69,23 +71,25 @@ public class CoreString extends PortDataImpl {
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    @InCpp("os << buffer;")
+    public void serialize(OutputStreamBuffer os) {
         os.writeString(buffer);
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    @InCpp("is >> buffer;")
+    public void deserialize(InputStreamBuffer is) {
         is.readString(buffer);
     }
 
     @Override
-    public String serialize() {
-        return buffer.toString();
+    public void serialize(StringOutputStream os) {
+        os.append(buffer.toString());
     }
 
     @Override
-    public void deserialize(String s) {
-        set(s);
+    public void deserialize(StringInputStream s) {
+        set(s.readAll());
     }
 
     /**

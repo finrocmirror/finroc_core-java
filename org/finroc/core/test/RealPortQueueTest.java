@@ -30,8 +30,8 @@ import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.port.cc.CCQueueFragment;
+import org.finroc.core.port.cc.CCPortDataManager;
+import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
@@ -44,7 +44,7 @@ public class RealPortQueueTest extends Thread {
     // Number of iterations
     public static int CYCLES = 10000000;
 
-    public static @SharedPtr PortNumeric output;
+    public static @SharedPtr PortNumeric<Integer> output;
 
     static volatile int PUBLISH_LIMIT;
 
@@ -53,13 +53,13 @@ public class RealPortQueueTest extends Thread {
         // Create number output port and input port with queue
         RuntimeEnvironment.getInstance();
         ThreadLocalCache.get();
-        output = new PortNumeric(new PortCreationInfo("output", PortFlags.OUTPUT_PORT));
+        output = new PortNumeric<Integer>(new PortCreationInfo("output", PortFlags.OUTPUT_PORT));
         PortCreationInfo inputPCI = new PortCreationInfo("input", PortFlags.INPUT_PORT | PortFlags.HAS_AND_USES_QUEUE | PortFlags.PUSH_STRATEGY);
         inputPCI.maxQueueSize = 10;
-        PortNumeric input = new PortNumeric(inputPCI);
+        PortNumeric<Integer> input = new PortNumeric<Integer>(inputPCI);
         inputPCI.maxQueueSize = 0;
-        PortNumeric unlimitedInput = new PortNumeric(inputPCI);
-        PortNumeric unlimitedInput2 = new PortNumeric(inputPCI);
+        PortNumeric<Integer> unlimitedInput = new PortNumeric<Integer>(inputPCI);
+        PortNumeric<Integer> unlimitedInput2 = new PortNumeric<Integer>(inputPCI);
         output.connectToTarget(input);
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();
@@ -95,6 +95,7 @@ public class RealPortQueueTest extends Thread {
             output.publish(i);
         }
 
+        /*TODO
         System.out.println("Read contents of queue in fragment...");
         CCQueueFragment<CoreNumber> frag = new CCQueueFragment<CoreNumber>();
         input.dequeueAll(frag);
@@ -150,7 +151,7 @@ public class RealPortQueueTest extends Thread {
         int lastNegUnlimitedF = 0;
 
         int e = CYCLES - 1;
-        CCInterThreadContainer<CoreNumber> cc;
+        CCPortDataManager<CoreNumber> cc;
         start = System.currentTimeMillis();
         PUBLISH_LIMIT = CYCLES;
         while (true) {
@@ -185,13 +186,14 @@ public class RealPortQueueTest extends Thread {
                     assert(val == lastNegUnlimited - 1);
                     lastNegUnlimited = val;
                 }
-            }
+            }*/
 
 //          if ((lastPosLimited == e || lastNegLimited == -e) && lastPosUnlimited == e /*&& lastNegUnlimited == -e*()*/) {
 //              System.out.println("Yeah! Check Completed");
 //              break;
 //          }
 
+        /* TODO
             // Dequeue from unlimited queue (fragment-wise)
             //System.out.println("Iteratorion");
             unlimitedInput2.dequeueAll(frag);
@@ -214,7 +216,7 @@ public class RealPortQueueTest extends Thread {
         }
         time = System.currentTimeMillis() - start;
         System.out.println(time);
-        finished.set(1);
+        finished.set(1);*/
     }
 
 

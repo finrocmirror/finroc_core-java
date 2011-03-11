@@ -21,11 +21,9 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.port.cc.CCPortData;
 import org.finroc.core.port.rpc.InterfaceNetPort;
 import org.finroc.core.port.rpc.MethodCall;
-import org.finroc.core.port.std.PortData;
+import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.Friend;
@@ -37,6 +35,7 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.log.LogUser;
 import org.finroc.log.LogDomain;
+import org.finroc.serialization.GenericObjectManager;
 
 /**
  * @author max
@@ -90,7 +89,7 @@ public abstract class AbstractMethod extends LogUser {
         parameterNames[1] = p2Name;
         parameterNames[2] = p3Name;
         parameterNames[3] = p4Name;
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < parameterCount; i++) {
             if (parameterNames[i].equals(noParam)) {
                 parameterCount = i;
                 break;
@@ -104,12 +103,13 @@ public abstract class AbstractMethod extends LogUser {
     public boolean hasLock(Object o) {
         if (o == null) {
             return true;
-        } else if (o instanceof Number || o instanceof CCPortData || o instanceof CCInterThreadContainer<?>) {
+        } else if (o instanceof Number) {
             return true;
-        } else if (o instanceof PortData) {
-            return ((PortData)o).getManager().isLocked();
+        } else {
+            GenericObjectManager mgr = ReusableGenericObjectManager.getManager(o);
+            assert(mgr != null && mgr instanceof ReusableGenericObjectManager);
+            return ((ReusableGenericObjectManager)mgr).genericHasLock();
         }
-        throw new RuntimeException("Unsupported data type");
     }
 
     @JavaOnly
@@ -117,10 +117,12 @@ public abstract class AbstractMethod extends LogUser {
         if (o == null) {
             return;
         }
-        if (o instanceof PortData) {
-            ((PortData)o).getManager().releaseLock();
-        } else if (o instanceof CCInterThreadContainer<?>) {
-            ((CCInterThreadContainer<?>)o).recycle2();
+        if (o instanceof Number) {
+            return;
+        } else {
+            GenericObjectManager mgr = ReusableGenericObjectManager.getManager(o);
+            assert(mgr != null && mgr instanceof ReusableGenericObjectManager);
+            ((ReusableGenericObjectManager)mgr).genericLockRelease();
         }
     }
 

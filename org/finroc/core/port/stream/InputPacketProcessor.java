@@ -21,10 +21,10 @@
  */
 package org.finroc.core.port.stream;
 
-import org.finroc.core.buffer.ChunkBuffer;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
+import org.finroc.jc.stream.ChunkedBuffer;
 
 /**
  * @author max
@@ -32,7 +32,7 @@ import org.finroc.jc.annotation.RawTypeArgs;
  * Processes incoming packets from input stream directly
  */
 @Ptr @RawTypeArgs
-public interface InputPacketProcessor<T extends ChunkBuffer> {
+public interface InputPacketProcessor<T extends ChunkedBuffer> {
 
     /**
      * Process single packet from stream.

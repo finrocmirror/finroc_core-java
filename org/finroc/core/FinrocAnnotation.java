@@ -21,14 +21,16 @@
  */
 package org.finroc.core;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.core.portdatabase.TypedObjectImpl;
 import org.finroc.jc.HasDestructor;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.Virtual;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.TypedObjectImpl;
 
 /**
  * @author max
@@ -38,7 +40,7 @@ import org.finroc.jc.annotation.Ptr;
  * If annotation should be available over the net (e.g. in finstruct),
  * the serialization methods need to be overridden.
  */
-@Friend(FrameworkElement.class)
+@Friend( {FrameworkElement.class, Annotatable.class})
 public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */
@@ -66,7 +68,12 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
         if (type != null) {
             return; // already set
         }
-        type = DataTypeRegister.getInstance().lookupDataType(this);
+
+        //JavaOnlyBlock
+        type = DataTypeBase.findType(this.getClass());
+
+        //Cpp type = rrlib::serialization::DataTypeBase::findTypeByRtti(_typeid(*this)._name());
+
         assert type != null : "Unknown Object type";
     }
 
@@ -82,14 +89,26 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         throw new RuntimeException("Unsupported");
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         throw new RuntimeException("Unsupported");
     }
+
+    /**
+     * Called when annotated object is initialized
+     * (supposed to be overridden)
+     */
+    @Virtual protected void annotatedObjectInitialized() {}
+
+    /**
+     * Called when annotated object is about to be deleted
+     * (supposed to be overridden)
+     */
+    @Virtual protected void annotatedObjectToBeDeleted() {}
 
     /**
      * Searches for parent with annotation of specified type
@@ -98,7 +117,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
      * @param type Data Type
      * @return Annotation of first parent that has one - or null
      */
-    protected static FinrocAnnotation findParentWithAnnotation(FrameworkElement fe, DataType type) {
+    protected static FinrocAnnotation findParentWithAnnotation(FrameworkElement fe, @Const @Ref DataTypeBase type) {
         FinrocAnnotation ann = fe.getAnnotation(type);
         if (ann != null) {
             return ann;

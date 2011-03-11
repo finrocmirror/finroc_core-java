@@ -21,15 +21,18 @@
  */
 package org.finroc.core.port.rpc;
 
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.thread.Task;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.rpc.method.AbstractAsyncReturnHandler;
 import org.finroc.core.port.rpc.method.AbstractMethod;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
  * @author max
@@ -53,7 +56,7 @@ public class MethodCall extends AbstractCall implements Task {
      * (method may belong to multiple - so this is the one
      *  we wan't to actually use)
      */
-    private DataType portInterfaceType;
+    private DataTypeBase portInterfaceType = null;
 
     /** Needed when executed as a task: Handler that will handle this call */
     private @Ptr AbstractMethodCallHandler handler;
@@ -87,7 +90,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param m The Method that will be called (may not be changed - to avoid ugly programming errors)
      * @param portInterface Data type of interface that method belongs to
      */
-    public void setMethod(AbstractMethod m, @Ptr DataType portInterface) {
+    public void setMethod(AbstractMethod m, @Const @Ref  DataTypeBase portInterface) {
         method = m;
         portInterfaceType = portInterface;
         assert(typeCheck());
@@ -116,11 +119,11 @@ public class MethodCall extends AbstractCall implements Task {
      * @param skipParameters Skip deserialization of parameter stuff? (for cases when port has been deleted;
      * in this case we need to jump to skip target afterwards)
      */
-    public void deserializeCall(CoreInput is, DataType dt, boolean skipParameters) {
+    public void deserializeCall(CoreInput is, @Const @Ref DataTypeBase dt, boolean skipParameters) {
         //assert(skipParameters || (dt != null && dt.isMethodType())) : "Method type required here";
         portInterfaceType = dt;
         byte b = is.readByte();
-        method = (dt == null) ? null : dt.getPortInterface().getMethod(b);
+        method = (dt == null) ? null : FinrocTypeInfo.get(dt).getPortInterface().getMethod(b);
         netTimeout = is.readInt();
         super.deserializeImpl(is, skipParameters);
     }
@@ -164,7 +167,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param handler Handler (server port) that will handle method
      * @param retHandler asynchronous return handler (required for method calls with return value)
      */
-    public void prepareExecution(AbstractMethod method, @Ptr DataType portInterface, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
+    public void prepareExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -182,7 +185,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param netPort Port over which call is sent
      * @param netTimeout Network timeout in ms for call
      */
-    public void prepareSyncRemoteExecution(AbstractMethod method, @Ptr DataType portInterface, AbstractAsyncReturnHandler retHandler, InterfaceNetPort netPort, int netTimeout) {
+    public void prepareSyncRemoteExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, AbstractAsyncReturnHandler retHandler, InterfaceNetPort netPort, int netTimeout) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -199,7 +202,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param portInterface Data type of interface that method belongs to
      * @param netTimeout Network timeout in ms for call
      */
-    public void prepareSyncRemoteExecution(AbstractMethod method, @Ptr DataType portInterface, int netTimeout) {
+    public void prepareSyncRemoteExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, int netTimeout) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -214,7 +217,7 @@ public class MethodCall extends AbstractCall implements Task {
      */
     @InCppFile
     private boolean typeCheck() {
-        return method != null && portInterfaceType != null && portInterfaceType.getPortInterface() != null && portInterfaceType.getPortInterface().containsMethod(method);
+        return method != null && portInterfaceType != null && FinrocTypeInfo.get(portInterfaceType).getPortInterface() != null && FinrocTypeInfo.get(portInterfaceType).getPortInterface().containsMethod(method);
     }
 
     /**
@@ -254,7 +257,7 @@ public class MethodCall extends AbstractCall implements Task {
     /**
      * @return Data type of interface that method belongs to
      */
-    public DataType getPortInterfaceType() {
+    public @Const DataTypeBase getPortInterfaceType() {
         return portInterfaceType;
     }
 

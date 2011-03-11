@@ -46,7 +46,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
     private final StructureParameterBool rtThread = new StructureParameterBool("Realtime Thread", false);
 
     /** Thread cycle time */
-    private final StructureParameterNumeric<Integer> cycleTime = new StructureParameterNumeric<Integer>("Cycle Time", 40, new Bounds(1, 60000, true));
+    private final StructureParameterNumeric<Integer> cycleTime = new StructureParameterNumeric<Integer>("Cycle Time", 40, new Bounds<Integer>(1, 60000, true));
 
     /** Warn on cycle time exceed */
     private final StructureParameterBool warnOnCycleTimeExceed = new StructureParameterBool("Warn on cycle time exceed", true);

@@ -21,24 +21,27 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.port.cc.CCPortDataImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.CCType;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
-import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.Copyable;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializable;
+import org.finroc.serialization.RRLibSerializableImpl;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
 import org.finroc.xml.XMLNode;
 
 /**
@@ -48,10 +51,11 @@ import org.finroc.xml.XMLNode;
  * Currently only meant for use in structure parameters.
  * (In port-classes it's probably better to wrap port classes)
  */
-public class EnumValue extends CCPortDataImpl {
+@Superclass( {RRLibSerializable.class, CCType.class})
+public class EnumValue extends RRLibSerializableImpl implements Copyable<EnumValue> {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(EnumValue.class);
+    public final static DataType<EnumValue> TYPE = new DataType<EnumValue>(EnumValue.class);
 
     /** Enum value as int */
     private int value = -1;
@@ -64,34 +68,27 @@ public class EnumValue extends CCPortDataImpl {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("enum");
 
     @Override
-    public void assign(CCPortData other) {
-        value = ((EnumValue)other).value;
-        stringConstants = ((EnumValue)other).stringConstants;
-    }
-
-    @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeInt(value);
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         value = is.readInt();
     }
 
     @Override
-    public String serialize() {
-        @PassByValue StringBuilder sb = new StringBuilder();
+    public void serialize(StringOutputStream sb) {
         sb.append(value).append("|").append(stringConstants.get(0));
         for (@SizeT int i = 1; i < stringConstants.size(); i++) {
             sb.append(",");
             sb.append(stringConstants.get(i));
         }
-        return sb.toString();
     }
 
     @Override
-    public void deserialize(String s) throws Exception {
+    public void deserialize(StringInputStream is) throws Exception {
+        String s = is.readAll();
         if (s.contains("|")) {
             value = Integer.parseInt(s.substring(0, s.indexOf("|")));
         } else {
@@ -107,7 +104,7 @@ public class EnumValue extends CCPortDataImpl {
     @Override
     public void serialize(XMLNode node) throws Exception {
         node.setAttribute("value", Integer.toString(value));
-        node.setTextContent(stringConstants.get(value));
+        node.setContent(stringConstants.get(value));
     }
 
     @Override
@@ -166,5 +163,11 @@ public class EnumValue extends CCPortDataImpl {
      */
     public void setStringConstants(@Const @Ptr SimpleList<String> stringConstants) {
         this.stringConstants = stringConstants;
+    }
+
+    @Override
+    public void copyFrom(EnumValue source) {
+        value = source.value;
+        stringConstants = source.stringConstants;
     }
 }

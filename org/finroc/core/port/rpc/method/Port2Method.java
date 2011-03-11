@@ -95,9 +95,8 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2);
-            mc.sendParametersComplete();
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2);
             mc.prepareSyncRemoteExecution(this, port.getDataType(), handler, (InterfaceNetPort)ip, netTimeout > 0 ? netTimeout : getDefaultNetTimeout()); // always do this in extra thread
             RPCThreadPool.getInstance().executeTask(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -120,8 +119,8 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
             } else {
                 MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
                 //1
-                mc.addParamForLocalCall(0, p1); //2
-                mc.addParamForLocalCall(1, p2);
+                mc.addParam(0, p1); //2
+                mc.addParam(1, p2);
                 mc.prepareExecution(this, port.getDataType(), mhandler, handler);
                 RPCThreadPool.getInstance().executeTask(mc);
             }
@@ -154,9 +153,8 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2);
-            mc.sendParametersComplete();
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2);
             mc.prepareSyncRemoteExecution(this, port.getDataType(), netTimeout > 0 ? netTimeout : getDefaultNetTimeout());
             try {
                 mc = ((InterfaceNetPort)ip).synchCallOverTheNet(mc, mc.getNetTimeout());
@@ -164,7 +162,6 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
                 // we shouldn't need to recycle anything, since call is responsible for this
                 throw new MethodCallException(e.getType());
             }
-            mc.deserializeParamaters();
             if (mc.hasException()) {
                 byte type = 0;
 
@@ -256,8 +253,7 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
             } else {
                 call.recycleParameters();
                 call.setStatusReturn();
-                call.addParamForSending(ret);
-                call.sendParametersComplete();
+                call.addParam(0, ret);
             }
         } catch (MethodCallException e) {
             if (retHandler != null) {
@@ -282,7 +278,6 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
             rHandler.handleMethodCallException(this, e);
             return;
         }
-        mc.deserializeParamaters();
         if (mc.hasException()) {
             byte type = 0;
 

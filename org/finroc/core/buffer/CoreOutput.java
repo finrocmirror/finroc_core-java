@@ -21,13 +21,12 @@
  */
 package org.finroc.core.buffer;
 
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.TypedObject;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.SharedPtr;
-import org.finroc.jc.stream.Sink;
-import org.finroc.jc.stream.OutputStreamBuffer;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.Sink;
 
 /**
  * @author max
@@ -50,7 +49,7 @@ public class CoreOutput extends OutputStreamBuffer {
      *
      * @param to Object to write (may be null)
      */
-    public void writeObject(@Const TypedObject to) {
+    public void writeObject(@Const GenericObject to) {
         if (to == null) {
             writeShort(-1); // -1 means null
         }
@@ -61,7 +60,4 @@ public class CoreOutput extends OutputStreamBuffer {
         //skipTargetHere();
     }
 
-    public void writeType(DataType dataType) {
-        writeShort(dataType == null ? -1 : dataType.getUid());
-    }
 }

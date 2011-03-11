@@ -32,6 +32,7 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.serialization.DataTypeBase;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
@@ -42,7 +43,6 @@ import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.net.RemoteTypes;
-import org.finroc.core.portdatabase.DataType;
 
 /**
  * @author max
@@ -87,7 +87,7 @@ public class FrameworkElementInfo {
     private int handle;
 
     /** Type of port data */
-    private DataType type;
+    private DataTypeBase type = null;
 
     /** Port Flags */
     private int flags;
@@ -256,7 +256,7 @@ public class FrameworkElementInfo {
     /**
      * @return Type of port data
      */
-    @ConstMethod public DataType getDataType() {
+    @ConstMethod public DataTypeBase getDataType() {
         return type;
     }
 

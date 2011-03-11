@@ -22,9 +22,10 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreString;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -35,15 +36,21 @@ import org.finroc.jc.annotation.NoCpp;
 public class StructureParameterString extends StructureParameter<CoreString> {
 
     public StructureParameterString(String name, String defaultValue, boolean constructorPrototype) {
-        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), constructorPrototype, defaultValue);
+        super(name, getDataType(), constructorPrototype, defaultValue);
     }
 
     public StructureParameterString(String name, String defaultValue) {
-        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), defaultValue);
+        super(name, getDataType(), defaultValue);
     }
 
     public StructureParameterString(String name) {
-        super(name, DataTypeRegister.getInstance().getDataType(CoreString.class), "");
+        super(name, getDataType(), "");
+    }
+
+    /** Helper to get this safely during static initialization */
+    @InCpp("return rrlib::serialization::DataType<CoreString>();")
+    public static DataType<CoreString> getDataType() {
+        return CoreString.TYPE;
     }
 
     /**

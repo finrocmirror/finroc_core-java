@@ -21,8 +21,7 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -34,6 +33,7 @@ import org.finroc.core.portdatabase.DataTypeRegister;
 public class ConstructorParameters extends StructureParameterList {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(ConstructorParameters.class);
+    public final static DataType<ConstructorParameters> TYPE = new DataType<ConstructorParameters>(ConstructorParameters.class);
+
 
 }

@@ -23,8 +23,8 @@ package org.finroc.core.port.std;
 
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.container.QueueFragment;
+import org.finroc.serialization.GenericObject;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
@@ -32,8 +32,8 @@ import org.finroc.core.port.ThreadLocalCache;
  *
  * Fragment for dequeueing bunch of values
  */
-@Inline @NoCpp @RawTypeArgs
-public class PortQueueFragment<T extends PortData> extends QueueFragment<PortDataReference, PortQueueElement> {
+@Inline @NoCpp
+public class PortQueueFragmentRaw extends QueueFragment<PortDataReference, PortQueueElement> {
 
     /**
      * Dequeue one queue element.
@@ -41,9 +41,8 @@ public class PortQueueFragment<T extends PortData> extends QueueFragment<PortDat
      *
      * @return Next element in QueueFragment
      */
-    @SuppressWarnings("unchecked")
-    public T dequeueUnsafe() {
-        return (T)dequeue().getData();
+    public PortDataManager dequeueUnsafe() {
+        return dequeue().getManager();
     }
 
     /**
@@ -52,10 +51,10 @@ public class PortQueueFragment<T extends PortData> extends QueueFragment<PortDat
      *
      * @return Next element in QueueFragment
      */
-    public T dequeueAutoLocked() {
-        T tmp = dequeueUnsafe();
+    public GenericObject dequeueAutoLocked() {
+        PortDataManager tmp = dequeueUnsafe();
         ThreadLocalCache.get().addAutoLock(tmp);
-        return tmp;
+        return tmp.getObject();
     }
 
 }

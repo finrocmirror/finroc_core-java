@@ -25,18 +25,18 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataType;
 import org.finroc.xml.XML2WrapperException;
 import org.finroc.xml.XMLDocument;
 import org.finroc.xml.XMLNode;
@@ -49,7 +49,7 @@ import org.finroc.xml.XMLNode;
 public class ConfigFile extends FinrocAnnotation implements FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(ConfigFile.class);
+    public final static DataType<ConfigFile> TYPE = new DataType<ConfigFile>(ConfigFile.class);
 
     /** (Wrapped) XML document */
     private XMLDocument wrapped;
@@ -76,11 +76,11 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     /**
      * @param file File name of configuration file (loaded if it exists already)
      */
-    private ConfigFile(String filename) throws Exception {
+    public ConfigFile(String filename) throws Exception {
         this.filename = filename;
         if (Files.exists(filename)) {
             try {
-                wrapped = new XMLDocument(filename);
+                wrapped = new XMLDocument(filename, false);// false = do not validate with dtd
             } catch (XML2WrapperException e) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
                 wrapped = new XMLDocument();
@@ -90,6 +90,13 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             wrapped = new XMLDocument();
             wrapped.addRootNode(XML_BRANCH_NAME);
         }
+    }
+
+    /**
+     * Dummy constructor. Generic instantiation is not supported.
+     */
+    public ConfigFile() {
+        throw new RuntimeException("Unsupported");
     }
 
     /**
@@ -163,19 +170,16 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         SimpleList<String> nodes = new SimpleList<String>();
         nodes.addAll(entry.split(SEPARATOR));
         @SizeT int idx = 0;
-        XMLNode current = wrapped.getRootNode();
-        @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
+        @InCpp("rrlib::xml2::XMLNode::const_iterator current = &wrapped.getRootNode();")
+        @Ptr XMLNode current = wrapped.getRootNode();
         while (idx < nodes.size()) {
-            children.clear();
-            children.addAll(current.getChildren());
             boolean found = false;
-            for (@SizeT int i = 0; i < children.size(); i++) {
-                XMLNode child = children.get(i);
-                if (XML_BRANCH_NAME.equals(child.getName()) || XML_LEAF_NAME.equals(child.getName())) {
+            for (XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
+                if (XML_BRANCH_NAME.equals(child.get().getName()) || XML_LEAF_NAME.equals(child.get().getName())) {
                     try {
-                        if (nodes.get(idx).equals(child.getStringAttribute("name"))) {
+                        if (nodes.get(idx).equals(child.get().getStringAttribute("name"))) {
                             idx++;
-                            current = child;
+                            current = child.get();
                             found = true;
                             break;
                         }
@@ -200,26 +204,24 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param create (Re)create entry node?
      * @return XMLNode representing entry
      */
-    public XMLNode getEntry(@Const @Ref String entry, boolean create) {
+    public @Ref XMLNode getEntry(@Const @Ref String entry, boolean create) {
         SimpleList<String> nodes = new SimpleList<String>();
         nodes.addAll(entry.split(SEPARATOR));
         @SizeT int idx = 0;
-        XMLNode current = wrapped.getRootNode();
-        XMLNode parent = current;
-        @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
+        @InCpp("rrlib::xml2::XMLNode::iterator current = &wrapped.getRootNode();")
+        @Ptr XMLNode current = wrapped.getRootNode();
+        @InCpp("rrlib::xml2::XMLNode::iterator parent = current;")
+        @Ptr XMLNode parent = current;
         boolean created = false;
         while (idx < nodes.size()) {
-            children.clear();
-            children.addAll(current.getChildren());
             boolean found = false;
-            for (@SizeT int i = 0; i < children.size(); i++) {
-                XMLNode child = children.get(i);
-                if (XML_BRANCH_NAME.equals(child.getName()) || XML_LEAF_NAME.equals(child.getName())) {
+            for (@CppType("rrlib::xml2::XMLNode::iterator") XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
+                if (XML_BRANCH_NAME.equals(child.get().getName()) || XML_LEAF_NAME.equals(child.get().getName())) {
                     try {
-                        if (nodes.get(idx).equals(child.getStringAttribute("name"))) {
+                        if (nodes.get(idx).equals(child.get().getStringAttribute("name"))) {
                             idx++;
                             parent = current;
-                            current = child;
+                            current = child.get();
                             found = true;
                             break;
                         }
@@ -252,5 +254,22 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         }
 
         return current;
+    }
+
+    /**
+     * Searches given entry in config file and returns its value as string if present.
+     * @param entry the entry in the config file to be searched
+     * @return string value of entry if present, empty string otherwise
+     */
+    public String getStringEntry(@Const @Ref String entry) {
+        if (this.hasEntry(entry)) {
+            try {
+                return getEntry(entry, false).getTextContent();
+            } catch (XML2WrapperException e) {
+                return "";
+            }
+        } else {
+            return "";
+        }
     }
 }

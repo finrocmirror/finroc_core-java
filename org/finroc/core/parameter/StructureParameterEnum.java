@@ -22,7 +22,6 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.EnumValue;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
@@ -30,6 +29,7 @@ import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -46,7 +46,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
 
     /*Cpp
     StructureParameterEnum(const util::String& name, bool constructorPrototype = false) :
-        StructureParameter<EnumValue>(name, DataTypeRegister::getInstance()->getDataType<EnumValue>(), constructorPrototype),
+        StructureParameter<EnumValue>(name, getDataType(), constructorPrototype),
         stringConstants()
     {}
      */
@@ -57,7 +57,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype, @SharedPtr SimpleList<String> stringConstants) {
-        super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class), constructorPrototype);
+        super(name, getDataType(), constructorPrototype);
         this.stringConstants = stringConstants;
         set(defaultValue);
         getValue().setStringConstants(this.stringConstants);
@@ -70,7 +70,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, @Const @Ref String stringConstants) {
-        super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class));
+        super(name, getDataType());
         this.stringConstants.addAll(stringConstants.split(","));
         set(defaultValue);
         getValue().setStringConstants(this.stringConstants);
@@ -84,13 +84,19 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
     @SuppressWarnings( { "unchecked", "rawtypes" })
     @JavaOnly
     public StructureParameterEnum(String name, Enum defaultValue) {
-        super(name, DataTypeRegister.getInstance().getDataType(EnumValue.class));
+        super(name, getDataType());
         set((E)defaultValue);
         getValue().setStringConstants(this.stringConstants);
         this.enumClass = defaultValue.getDeclaringClass();
         for (Enum<?> e : defaultValue.getClass().getEnumConstants()) {
             stringConstants.add(e.name());
         }
+    }
+
+    /** Helper to get this safely during static initialization */
+    @InCpp("return rrlib::serialization::DataType<EnumValue>();")
+    public static DataType<EnumValue> getDataType() {
+        return EnumValue.TYPE;
     }
 
     /**

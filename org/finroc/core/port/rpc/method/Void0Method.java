@@ -71,7 +71,6 @@ public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMeth
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
 
-            mc.sendParametersComplete();
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {

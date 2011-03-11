@@ -74,8 +74,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1);
-            mc.sendParametersComplete();
+            mc.addParam(0, p1);
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -91,7 +90,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
             } else {
                 MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
                 //1
-                mc.addParamForLocalCall(0, p1);
+                mc.addParam(0, p1);
                 mc.prepareExecution(this, port.getDataType(), handler, null);
                 RPCThreadPool.getInstance().executeTask(mc);
             }

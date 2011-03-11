@@ -21,12 +21,14 @@
  */
 package org.finroc.core;
 
-import org.finroc.core.portdatabase.DataType;
 import org.finroc.jc.HasDestructor;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogUser;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -66,7 +68,7 @@ public class Annotatable extends LogUser implements HasDestructor {
      *
      * @param type Data type of annotation we're looking for
      */
-    public FinrocAnnotation getAnnotation(DataType dt) {
+    public FinrocAnnotation getAnnotation(@Const @Ref DataTypeBase dt) {
         FinrocAnnotation ann = firstAnnotation;
         while (ann != null) {
             if (ann.getType() == dt) {
@@ -107,4 +109,27 @@ public class Annotatable extends LogUser implements HasDestructor {
             tmp.delete();
         }
     }
+
+    /**
+     * Notify annotations that object has been initialized
+     */
+    protected void notifyAnnotationsInitialized() {
+        FinrocAnnotation ann = firstAnnotation;
+        while (ann != null) {
+            ann.annotatedObjectInitialized();
+            ann = ann.nextAnnotation;
+        }
+    }
+
+    /**
+     * Notify annotations that object is to be deleted
+     */
+    protected void notifyAnnotationsDelete() {
+        FinrocAnnotation ann = firstAnnotation;
+        while (ann != null) {
+            ann.annotatedObjectToBeDeleted();
+            ann = ann.nextAnnotation;
+        }
+    }
+
 }

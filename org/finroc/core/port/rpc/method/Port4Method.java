@@ -109,12 +109,11 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2); //3
-            mc.addParamForSending(p3); //4
-            mc.addParamForSending(p4);
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2); //3
+            mc.addParam(2, p3); //4
+            mc.addParam(3, p4);
             //n
-            mc.sendParametersComplete();
             mc.prepareSyncRemoteExecution(this, port.getDataType(), handler, (InterfaceNetPort)ip, netTimeout > 0 ? netTimeout : getDefaultNetTimeout()); // always do this in extra thread
             RPCThreadPool.getInstance().executeTask(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -140,10 +139,10 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
             } else {
                 MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
                 //1
-                mc.addParamForLocalCall(0, p1); //2
-                mc.addParamForLocalCall(1, p2); //3
-                mc.addParamForLocalCall(2, p3); //4
-                mc.addParamForLocalCall(3, p4);
+                mc.addParam(0, p1); //2
+                mc.addParam(1, p2); //3
+                mc.addParam(2, p3); //4
+                mc.addParam(3, p4);
                 //n
                 mc.prepareExecution(this, port.getDataType(), mhandler, handler);
                 RPCThreadPool.getInstance().executeTask(mc);
@@ -183,12 +182,11 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2); //3
-            mc.addParamForSending(p3); //4
-            mc.addParamForSending(p4);
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2); //3
+            mc.addParam(2, p3); //4
+            mc.addParam(3, p4);
             //n
-            mc.sendParametersComplete();
             mc.prepareSyncRemoteExecution(this, port.getDataType(), netTimeout > 0 ? netTimeout : getDefaultNetTimeout());
             try {
                 mc = ((InterfaceNetPort)ip).synchCallOverTheNet(mc, mc.getNetTimeout());
@@ -196,7 +194,6 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
                 // we shouldn't need to recycle anything, since call is responsible for this
                 throw new MethodCallException(e.getType());
             }
-            mc.deserializeParamaters();
             if (mc.hasException()) {
                 byte type = 0;
 
@@ -303,8 +300,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
             } else {
                 call.recycleParameters();
                 call.setStatusReturn();
-                call.addParamForSending(ret);
-                call.sendParametersComplete();
+                call.addParam(0, ret);
             }
         } catch (MethodCallException e) {
             if (retHandler != null) {
@@ -329,7 +325,6 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
             rHandler.handleMethodCallException(this, e);
             return;
         }
-        mc.deserializeParamaters();
         if (mc.hasException()) {
             byte type = 0;
 

@@ -26,7 +26,6 @@ import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.ConstPtr;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.InCpp;
@@ -44,6 +43,8 @@ import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
@@ -52,9 +53,8 @@ import org.finroc.core.RuntimeListener;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.net.NetPort;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.TypedObject;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
  * @author max
@@ -112,7 +112,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private volatile byte changed;
 
     /** Type of port data */
-    protected final @Ptr @ConstPtr DataType dataType;
+    protected final @Const DataTypeBase dataType;
 
     /** Edges emerging from this port - raw lists seem the most reasonable approach here */
     @SuppressWarnings("rawtypes")
@@ -171,7 +171,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         if ((flags & BULK_N_EXPRESS) == 0) {
 
             // no priority flags set... typical case... get them from type
-            flags |= pci.dataType.isCCType() ? PortFlags.IS_EXPRESS_PORT : PortFlags.IS_BULK_PORT;
+            flags |= FinrocTypeInfo.isCCType(pci.dataType) ? PortFlags.IS_EXPRESS_PORT : PortFlags.IS_BULK_PORT;
         }
         if ((flags & PortFlags.PUSH_STRATEGY_REVERSE) != 0) {
             flags |= PortFlags.MAY_ACCEPT_REVERSE_DATA;
@@ -495,7 +495,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Type of port data
      */
-    @ConstMethod public DataType getDataType() {
+    @ConstMethod public @Const DataTypeBase getDataType() {
         return dataType;
     }
 
@@ -643,8 +643,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param data Data that was sent
      */
     @InCppFile
-    protected void updateEdgeStatistics(AbstractPort source, AbstractPort target, TypedObject data) {
-        EdgeAggregator.updateEdgeStatistics(source, target, DataType.estimateDataSize(data));
+    protected void updateEdgeStatistics(AbstractPort source, AbstractPort target, @Ptr GenericObject data) {
+        EdgeAggregator.updateEdgeStatistics(source, target, FinrocTypeInfo.estimateDataSize(data));
     }
 
     /**
@@ -925,7 +925,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * This method is only supported by a subset of ports that have a MultiTypePortDataBufferPool
      */
-    public PortData getUnusedBuffer(DataType dt) {
+    public PortDataManager getUnusedBufferRaw(DataTypeBase dt) {
         throw new RuntimeException("Unsupported");
     }
 

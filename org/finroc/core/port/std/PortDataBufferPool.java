@@ -29,7 +29,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.container.ReusablesPoolCR;
 import org.finroc.log.LogStream;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -41,7 +41,7 @@ import org.finroc.core.portdatabase.DataType;
 public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
 
     /** Data Type of buffers in pool */
-    public final @Ptr DataType dataType;
+    public final @Const DataTypeBase dataType;
 
     /*Cpp
 
@@ -59,7 +59,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
     /**
      * @param dataType Type of buffers in pool
      */
-    public PortDataBufferPool(DataType dataType, int initialSize) {
+    public PortDataBufferPool(@Const @Ref DataTypeBase dataType, int initialSize) {
         this.dataType = dataType;
         for (int i = 0; i < initialSize; i++) {
             //enqueue(createBuffer());
@@ -74,13 +74,13 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
      *
      * @return Returns unused buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final @Ptr PortData getUnusedBuffer() {
+    @Inline public final @Ptr PortDataManager getUnusedBuffer() {
         @Ptr PortDataManager pc = getUnused();
         if (pc != null) {
             pc.setUnused(true);
-            return pc.getData();
+            return pc;
         }
-        return createBuffer().getData();
+        return createBuffer();
     }
 
     /**
@@ -96,7 +96,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
      * @return Create new buffer/instance of port data
      */
     @Inline private @Ptr @Managed PortDataManager createBufferRaw() {
-        return new PortDataManager(dataType, getLastCreated() == null ? null : getLastCreated().getData());
+        return PortDataManager.create(dataType);
     }
 
     /**

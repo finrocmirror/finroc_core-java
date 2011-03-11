@@ -23,9 +23,8 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -35,13 +34,20 @@ import org.finroc.jc.annotation.Ptr;
 public class ExecutionControl extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(ExecutionControl.class);
+    public static DataType<ExecutionControl> TYPE = new DataType<ExecutionControl>(ExecutionControl.class);
 
     /** Wrapped StartAndPausable */
     public final @Ptr StartAndPausable implementation;
 
     public ExecutionControl(StartAndPausable implementation) {
         this.implementation = implementation;
+    }
+
+    /**
+     * Dummy constructor. Generic instantiation is not supported.
+     */
+    public ExecutionControl() {
+        throw new RuntimeException("Unsupported");
     }
 
     /**

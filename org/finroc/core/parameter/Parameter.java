@@ -22,23 +22,21 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.datatype.Bounds;
+import org.finroc.core.datatype.Unit;
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
-import org.finroc.core.port.std.Port;
-import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.jc.annotation.NoOuterClass;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.RRLibSerializable;
 
 /**
  * @author max
@@ -46,43 +44,38 @@ import org.finroc.log.LogLevel;
  * Parameter template class for standard types
  */
 @Inline @NoCpp @PassByValue @RawTypeArgs
-public class Parameter<T extends PortData> extends Port<T> {
+public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
-    /** Special Port class to load value when initialized */
-    @AtFront @NoOuterClass @Inline @NoCpp
-    private class PortImpl extends PortBase {
-
-        /** Paramater info */
-        private final ParameterInfo info = new ParameterInfo();
-
-        public PortImpl(PortCreationInfo pci) {
-            super(pci);
-            addAnnotation(info);
-        }
-
-        @Override
-        protected void postChildInit() {
-            super.postChildInit();
-            try {
-                info.loadValue(true);
-            } catch (Exception e) {
-                log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @CppDefault("NULL") DataType dt) {
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
         this(description, parent, dt);
-        ((PortImpl)wrapped).info.setConfigEntry(configEntry);
+        setConfigEntry(configEntry);
     }
 
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @CppDefault("NULL") DataType dt) {
-        wrapped = new PortImpl(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT));
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+        super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT));
+        wrapped.addAnnotation(new ParameterInfo());
     }
 
-    @InCpp("return dt != NULL ? dt : DataTypeRegister::getInstance()->getDataType<T>();")
-    private static DataType getType(DataType dt) {
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, Bounds<T> b, @Const @Ref @CppDefault("NULL") DataTypeBase dt, @CppDefault("NULL") Unit u) {
+        this(description, parent, b, dt, u);
+        setConfigEntry(configEntry);
+    }
+
+    public Parameter(@Const @Ref String description, FrameworkElement parent, Bounds<T> b, @CppDefault("NULL") @Const @Ref DataTypeBase dt, @CppDefault("NULL") Unit u) {
+        super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
+        wrapped.addAnnotation(new ParameterInfo());
+    }
+
+    @InCpp("return dt != NULL ? dt : rrlib::serialization::DataType<T>();")
+    private static DataTypeBase getType(@Const @Ref DataTypeBase dt) {
         return dt;
+    }
+
+    /**
+     * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
+     */
+    public void setConfigEntry(@Const @Ref String configEntry) {
+        ParameterInfo info = (ParameterInfo)wrapped.getAnnotation(ParameterInfo.TYPE);
+        info.setConfigEntry(configEntry);
     }
 }

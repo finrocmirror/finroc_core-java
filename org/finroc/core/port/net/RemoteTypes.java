@@ -26,21 +26,24 @@ import java.util.List;
 
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.log.LogUser;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.log.LogStream;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.portdatabase.UnknownType;
 
 /**
  * @author max
@@ -61,7 +64,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
         private short updateTime = -1;
 
         /** local data type that represents the same time - null if there is noch such type in local runtime environment */
-        private DataType localDataType = null;
+        private DataTypeBase localDataType = null;
 
         /** name of remote type */
         @JavaOnly
@@ -69,7 +72,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
 
         public Entry() {}
 
-        public Entry(short time, DataType local) {
+        public Entry(short time, DataTypeBase local) {
             updateTime = time;
             localDataType = local;
         }
@@ -113,8 +116,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
         assert(!initialized()) : "Already initialized";
         globalDefault = ci.readShort();
         types = new Entry[ci.readShort()];
-        @InCpp("int maxTypes = DataTypeRegister::getInstance()->getMaxTypeIndex();")
-        int maxTypes = types.length + DataTypeRegister.getInstance().getMaxTypeIndex();
+        int maxTypes = types.length + DataTypeBase.getTypeCount();
         typesByLocalUid = new Entry[maxTypes];
         short next = ci.readShort();
         LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
@@ -122,7 +124,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
         while (next != -1) {
             short time = ci.readShort();
             String name = ci.readString();
-            DataType local = DataTypeRegister.getInstance().getDataType(name);
+            DataTypeBase local = DataTypeBase.findType(name);
             ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null ? "available here, too" : "not available here"));
             Entry e = new Entry(time, local);
             types[next] = e;
@@ -130,7 +132,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
             //JavaOnlyBlock
             e.name = name;
             if (local == null) {
-                local = DataTypeRegister.getInstance().addUnknownDataType(name);
+                local = new UnknownType(name);
             }
 
             if (local != null) {
@@ -147,17 +149,16 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param dtr DataTypeRegister to serialize
      * @param co Output Stream to write information to
      */
-    public static void serializeLocalDataTypes(DataTypeRegister dtr, CoreOutput co) {
-        int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.get();
+    public static void serializeLocalDataTypes(CoreOutput co) {
+        int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getValue();
         co.writeShort((short)t);
-        co.writeShort(dtr.getMaxTypeIndex());
-        for (short i = 0, n = (short)dtr.getMaxTypeIndex(); i < n; i++) {
-            DataType dt = dtr.getDataType(i);
-            if (dt != null) {
-                co.writeShort(dt.getUid());
-                co.writeShort(dt.getUpdateTime());
-                co.writeString(dt.getName());
-            }
+        short typeCount = DataTypeBase.getTypeCount();
+        co.writeShort(typeCount);
+        for (short i = 0, n = typeCount; i < n; i++) {
+            DataTypeBase dt = DataTypeBase.getType(i);
+            co.writeShort(dt.getUid());
+            co.writeShort(FinrocTypeInfo.get(i).getUpdateTime());
+            co.writeString(dt.getName());
         }
         co.writeShort(-1); // terminator
     }
@@ -194,7 +195,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param dataType Local Data Type
      * @return Remote default minimum network update interval for this type
      */
-    public short getTime(DataType dataType) {
+    public short getTime(@Const @Ref DataTypeBase dataType) {
         assert(initialized()) : "Not initialized";
         return typesByLocalUid[dataType.getUid()].updateTime;
     }
@@ -203,7 +204,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param uid Remote type uid
      * @return Local data type - which is identical to remote type; or null if no such type exists
      */
-    public DataType getLocalType(short uid) {
+    public DataTypeBase getLocalType(short uid) {
         assert(initialized()) : "Not initialized";
         Entry e = types[uid];
         if (e == null) {

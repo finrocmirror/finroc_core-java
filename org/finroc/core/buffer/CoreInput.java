@@ -23,17 +23,24 @@ package org.finroc.core.buffer;
 
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.net.RemoteTypes;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.core.portdatabase.TypedObject;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.Include;
+import org.finroc.jc.annotation.IncludeClass;
+import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
-import org.finroc.jc.stream.ConstSource;
-import org.finroc.jc.stream.InputStreamBuffer;
-import org.finroc.jc.stream.Source;
+import org.finroc.serialization.ConstSource;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.Source;
 
 /**
  * @author max
@@ -41,6 +48,8 @@ import org.finroc.jc.stream.Source;
  * This is a specialized version of the StreamBuffer read view that is used
  * throughout the framework
  */
+@Include("portdatabase/SharedPtrDeleteHandler.h")
+@IncludeClass( {PortDataManager.class, CCPortDataManager.class})
 public class CoreInput extends InputStreamBuffer {
 
     /** Source for any buffers that are needed */
@@ -49,14 +58,26 @@ public class CoreInput extends InputStreamBuffer {
     /** RemoteTypes object that translates remote type uids in local type uids */
     protected @Ptr RemoteTypes typeTranslation;
 
+    /*Cpp
+    template <typename T>
+    CoreInput(T t) :
+        rrlib::serialization::InputStream(t),
+        bufferSource(NULL),
+        typeTranslation(NULL)
+    {
+    }
+     */
+
     public CoreInput() {
         super();
     }
 
-    public CoreInput(@CppType("const util::ConstSource") @OrgWrapper @SharedPtr ConstSource source) {
+    @JavaOnly
+    public CoreInput(@Const @CppType("rrlib::serialization::ConstSource") @OrgWrapper @SharedPtr ConstSource source) {
         super(source);
     }
 
+    @JavaOnly
     public CoreInput(@OrgWrapper @SharedPtr Source source) {
         super(source);
     }
@@ -94,7 +115,7 @@ public class CoreInput extends InputStreamBuffer {
      *
      * @return Buffer with read object (no locks)
      */
-    public TypedObject readObject() {
+    public GenericObject readObject() {
         return readObject(false);
     }
 
@@ -103,8 +124,28 @@ public class CoreInput extends InputStreamBuffer {
      *
      * @return Buffer with read object (no locks)
      */
-    public TypedObject readObjectInInterThreadContainer() {
-        return readObject(true);
+    @Inline
+    public @SharedPtr GenericObject readObjectInInterThreadContainer() {
+        GenericObject tmp = readObject(true);
+        boolean ccType = FinrocTypeInfo.isCCType(tmp.getType());
+
+        //JavaOnlyBlock
+        if (!ccType) {
+            PortDataManager mgr = (PortDataManager)tmp.getManager();
+            mgr.getCurrentRefCounter().setOrAddLocks((byte)1);
+        }
+        return tmp;
+
+        /*Cpp
+        if (ccType) {
+            CCPortDataManager* mgr = (CCPortDataManager*)tmp->getManager();
+            return std::shared_ptr<rrlib::serialization::GenericObject>(tmp, SharedPtrDeleteHandler<CCPortDataManager>(mgr));
+        } else {
+            PortDataManager* mgr = (PortDataManager*)tmp->getManager();
+            mgr->getCurrentRefCounter()->setOrAddLocks(1);
+            return std::shared_ptr<rrlib::serialization::GenericObject>(tmp, SharedPtrDeleteHandler<PortDataManager>(mgr));
+        }
+         */
     }
 
 
@@ -114,32 +155,30 @@ public class CoreInput extends InputStreamBuffer {
      * @param inInterThreadContainer Deserialize "cheap copy" data in interthread container?
      * @return Buffer with read object
      */
-    private TypedObject readObject(boolean inInterThreadContainer) {
+    private GenericObject readObject(boolean inInterThreadContainer) {
         //readSkipOffset();
-        DataType dt = readType();
+        DataTypeBase dt = readType();
         if (dt == null) {
             return null;
         }
-        if (bufferSource == null && dt.isStdType()) { // skip object?
+        if (bufferSource == null && FinrocTypeInfo.isStdType(dt)) { // skip object?
             //toSkipTarget();
             throw new RuntimeException("Buffer source does not support type " + dt.getName());
             //return null;
         } else {
-            TypedObject buffer = dt.isStdType() ? (TypedObject)bufferSource.getUnusedBuffer(dt) : (inInterThreadContainer ? (TypedObject)ThreadLocalCache.get().getUnusedInterThreadBuffer(dt) : (TypedObject)ThreadLocalCache.get().getUnusedBuffer(dt));
+            GenericObject buffer = FinrocTypeInfo.isStdType(dt) ? (GenericObject)bufferSource.getUnusedBufferRaw(dt).getObject() : (inInterThreadContainer ? (GenericObject)ThreadLocalCache.get().getUnusedInterThreadBuffer(dt).getObject() : (GenericObject)ThreadLocalCache.get().getUnusedBuffer(dt).getObject());
             buffer.deserialize(this);
             return buffer;
         }
     }
 
-    /**
-     * @return Deserialized data type (using type translation lookup table)
-     */
-    public DataType readType() {
+    @Override
+    public DataTypeBase readType() {
         short typeUid = readShort();
         if (typeUid == -1) {
             return null;
         }
-        DataType dt = typeTranslation == null ? DataTypeRegister.getInstance().getDataType(typeUid) : typeTranslation.getLocalType(typeUid);
+        DataTypeBase dt = typeTranslation == null ? DataTypeBase.getType(typeUid) : typeTranslation.getLocalType(typeUid);
         return dt;
     }
 }

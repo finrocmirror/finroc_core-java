@@ -24,10 +24,13 @@ package org.finroc.core.test;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.core.FrameworkElement;
 import org.finroc.plugin.blackboard.BlackboardBuffer;
+import org.finroc.plugin.blackboard.BlackboardClient;
 import org.finroc.plugin.blackboard.BlackboardManager;
 import org.finroc.plugin.blackboard.BlackboardServer;
 import org.finroc.plugin.blackboard.RawBlackboardClient;
 import org.finroc.plugin.blackboard.SingleBufferedBlackboardServer;
+import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.PortDataList;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
@@ -42,7 +45,7 @@ public class BlackboardConcurrencyTest extends Thread {
 
     public static void main(String[] args) {
         BlackboardManager.getInstance();
-        BlackboardServer server = new BlackboardServer("bbct", null);
+        BlackboardServer<MemoryBuffer> server = new BlackboardServer<MemoryBuffer>("bbct", null);
         //SingleBufferedBlackboardServer server2 = new SingleBufferedBlackboardServer("bbct", null);
         FrameworkElement.initAll();
         try {
@@ -59,13 +62,13 @@ public class BlackboardConcurrencyTest extends Thread {
 
     public void run() {
         id = ThreadLocalCache.get().getThreadUid();
-        RawBlackboardClient client = new RawBlackboardClient(RawBlackboardClient.getDefaultPci().derive("bbct"));
+        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive("bbct"), true, -1);
         client.init();
         //client.autoConnect();
         try {
-            for (long l = 0; ; l+=100) {
+            for (long l = 0; ; l += 100) {
                 System.out.println("Thread " + Thread.currentThread().toString() + " try locking");
-                BlackboardBuffer bb = client.writeLock(1000);
+                PortDataList<MemoryBuffer> bb = client.writeLock(1000);
                 System.out.println("Thread " + Thread.currentThread().toString() + " locking " + (bb != null ? "successful" : "failed"));
                 try {
                     System.out.println("Thread " + Thread.currentThread().toString() + " sleeping " + l);

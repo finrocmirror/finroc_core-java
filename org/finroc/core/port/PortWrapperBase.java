@@ -21,7 +21,7 @@
  */
 package org.finroc.core.port;
 
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
@@ -35,6 +35,7 @@ import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -128,8 +129,15 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
     /**
      * @return Type of port data
      */
-    @ConstMethod public DataType getDataType() {
+    @ConstMethod public @Const DataTypeBase getDataType() {
         return wrapped.getDataType();
+    }
+
+    /**
+     * @return Additional type info for port data
+     */
+    @ConstMethod public FinrocTypeInfo getDataTypeInfo() {
+        return FinrocTypeInfo.get(wrapped.getDataType());
     }
 
     /**
@@ -288,5 +296,12 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
      */
     public int getConnectionCount() {
         return wrapped.getConnectionCount();
+    }
+
+    /**
+     * Releases all automatically acquired locks
+     */
+    public void releaseAutoLocks() {
+        ThreadLocalCache.getFast().releaseAllLocks();
     }
 }

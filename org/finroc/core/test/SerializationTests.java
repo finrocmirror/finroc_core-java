@@ -23,8 +23,8 @@ package org.finroc.core.test;
 
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.MemBuffer;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.serialization.MemoryBuffer;
 
 /**
  * @author max
@@ -38,21 +38,21 @@ public class SerializationTests {
     public static void main(String[] args) {
         //testx((byte)0);
         CoreNumber num = new CoreNumber();
-        MemBuffer mb = new MemBuffer();
+        MemoryBuffer mb = new MemoryBuffer();
         CoreOutput buf = new CoreOutput(mb);
         for (int i = -100; i < 69000; i++) {
             num.setValue(i);
             num.serialize(buf);
         }
-        for (long l = 4000000000L; l < 70000000000L; l+= 1000000000) {
+        for (long l = 4000000000L; l < 70000000000L; l += 1000000000) {
             num.setValue(l);
             num.serialize(buf);
         }
-        for (float f = 0; f < 2000; f+=4) {
+        for (float f = 0; f < 2000; f += 4) {
             num.setValue(f);
             num.serialize(buf);
         }
-        for (double d = 0; d < 5000; d+=4) {
+        for (double d = 0; d < 5000; d += 4) {
             num.setValue(d);
             num.serialize(buf);
         }

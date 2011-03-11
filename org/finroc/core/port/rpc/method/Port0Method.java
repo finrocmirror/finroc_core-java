@@ -87,7 +87,6 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
 
-            mc.sendParametersComplete();
             mc.prepareSyncRemoteExecution(this, port.getDataType(), handler, (InterfaceNetPort)ip, netTimeout > 0 ? netTimeout : getDefaultNetTimeout()); // always do this in extra thread
             RPCThreadPool.getInstance().executeTask(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -136,7 +135,6 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
 
-            mc.sendParametersComplete();
             mc.prepareSyncRemoteExecution(this, port.getDataType(), netTimeout > 0 ? netTimeout : getDefaultNetTimeout());
             try {
                 mc = ((InterfaceNetPort)ip).synchCallOverTheNet(mc, mc.getNetTimeout());
@@ -144,7 +142,6 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
                 // we shouldn't need to recycle anything, since call is responsible for this
                 throw new MethodCallException(e.getType());
             }
-            mc.deserializeParamaters();
             if (mc.hasException()) {
                 byte type = 0;
 
@@ -226,8 +223,7 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
             } else {
                 call.recycleParameters();
                 call.setStatusReturn();
-                call.addParamForSending(ret);
-                call.sendParametersComplete();
+                call.addParam(0, ret);
             }
         } catch (MethodCallException e) {
             if (retHandler != null) {
@@ -252,7 +248,6 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
             rHandler.handleMethodCallException(this, e);
             return;
         }
-        mc.deserializeParamaters();
         if (mc.hasException()) {
             byte type = 0;
 

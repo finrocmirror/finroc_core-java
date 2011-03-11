@@ -35,7 +35,6 @@ import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameter;
 import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.Include;
@@ -45,6 +44,7 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Mutable;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.PostInclude;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -277,7 +277,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         } else if (c.equals(String.class) || c.equals(CoreString.class)) {
             return new StructureParameterString(name, "");
         } else {
-            return new StructureParameter(name, DataTypeRegister.getInstance().getDataType(c), false, "");
+            return new StructureParameter(name, DataTypeBase.findType(c), false, "");
         }
     }
 
@@ -317,7 +317,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         } else if (c.equals(String.class)) {
             return ((StructureParameterString)p).get();
         } else {
-            return p.getValueRaw();
+            return p.valPointer().getData();
         }
     }
 }

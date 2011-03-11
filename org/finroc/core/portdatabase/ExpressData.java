@@ -21,12 +21,15 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.jc.annotation.Superclass;
+
 /**
  * @author max
  *
  * Marks data Types that are sent over the network using the 'Express Channel'
  * => higher quality of service.
  */
+@Superclass( {})
 public interface ExpressData {
 
 }

@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2007-2010 Max Reichardt,
+ * Copyright (C) 2011 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -19,36 +19,43 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.finroc.core.port.net;
+package org.finroc.core.portdatabase;
 
-import org.finroc.jc.ListenerManager;
-import org.finroc.jc.annotation.Inline;
-import org.finroc.jc.annotation.NoCpp;
-import org.finroc.jc.annotation.Ptr;
+import org.finroc.core.port.rpc.method.PortInterface;
+import org.finroc.jc.AutoDeleter;
 import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
  *
- * get notified on changes to default minimum network update times
+ * RPC interface data type.
+ * (Should only be created once per data type with name and methods constructor!)
  */
-@Ptr @Inline @NoCpp
-public interface UpdateTimeChangeListener {
+public class RPCInterfaceType extends DataTypeBase {
 
     /**
-     * Called whenever default update time globally or for specific type changes
-     *
-     * @param dt DataType - null for global change
-     * @param newUpdateTime new update time
+     * @param name Name of RPC Inteface
+     * @param methods Referenced PortInterface
      */
-    public void updateTimeChanged(DataTypeBase dt, short newUpdateTime);
-
-    @Ptr @Inline @NoCpp
-    class Manager extends ListenerManager<DataTypeBase, Object, UpdateTimeChangeListener, Manager> {
-
-        @Override
-        public void singleNotify(UpdateTimeChangeListener listener, DataTypeBase origin, Object parameter, int callId) {
-            listener.updateTimeChanged(origin, (short)callId);
-        }
+    public RPCInterfaceType(String name, PortInterface methods) {
+        super(getDataTypeInfo(name));
+        FinrocTypeInfo.get(this).init(methods);
     }
+
+    private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {
+        DataTypeBase dt = findType(name);
+        if (dt != null) {
+
+            //JavaOnlyBlock
+            return dt.getInfo();
+
+            //Cpp return const_cast<DataTypeBase::DataTypeInfoRaw*>(dt.getInfo());
+        }
+        DataTypeInfoRaw info = AutoDeleter.addStatic(new DataTypeInfoRaw());
+        info.setName(name);
+        return info;
+    }
+
+
+
 }

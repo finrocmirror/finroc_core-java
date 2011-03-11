@@ -19,23 +19,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.finroc.core.portdatabase;
 
-import org.finroc.jc.annotation.Managed;
-import org.finroc.jc.annotation.Ptr;
+@Namespace("finroc::core")
+@CppLocation("core/structure")
 
 /**
- * @author max
+ * This package and its subpackages contain the minimal core
+ * of the new (meta) framework.
+ * This core is available in Java and C++.
  */
-//@HPrepend({"class DataType;"}) //, "class PortData;", "template <typename T=int64>", "class CCPortDataContainer;"})
-public interface PortDataFactory {
+package org.finroc.core.structure;
 
-    /**
-     * Create instance of port data type
-     *
-     * @param dataTypeUid Uid of data type
-     * @param interThreadContainer (Only relevant for cheap copy data) Create in inter-thread container?
-     * @return Created instance.
-     */
-    public @Managed @Ptr TypedObject create(@Ptr DataType dataType, boolean interThreadContainer);
-}
+import org.finroc.jc.annotation.CppLocation;
+import org.finroc.jc.annotation.Namespace;
+

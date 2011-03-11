@@ -22,13 +22,17 @@
 package org.finroc.core.port.rpc;
 
 import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
+import org.finroc.jc.annotation.SkipArgs;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortWrapperBase;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
 
 /** Base class for client interface ports */
 public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
@@ -38,7 +42,7 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
     private class PortImpl extends InterfacePort {
 
         @InCppFile
-        public PortImpl(String description, FrameworkElement parent, DataType type, Type client) {
+        public PortImpl(String description, FrameworkElement parent, @Const @Ref DataTypeBase type, Type client) {
             super(description, parent, type, client);
         }
 
@@ -55,7 +59,7 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
         }
     }
 
-    public InterfaceClientPort(String description, FrameworkElement parent, DataType type) {
+    public InterfaceClientPort(String description, FrameworkElement parent, @Const @Ref DataTypeBase type) {
         wrapped = new PortImpl(description, parent, type, InterfacePort.Type.Client);
     }
 
@@ -77,12 +81,15 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
     }
 
     /**
+     * Get buffer to use in method call (has one lock)
+     *
      * (for non-cc types only)
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    public PortData getUnusedBuffer(DataType dt) {
-        return wrapped.getUnusedBuffer(dt);
+    @SkipArgs("1")
+    public @SharedPtr <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+        return wrapped.<T>getBufferForCall(dt);
     }
 
     /**

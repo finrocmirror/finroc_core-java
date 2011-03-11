@@ -56,7 +56,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.rpc.MethodCallSyncher;
 import org.finroc.core.port.stream.StreamCommitThread;
-import org.finroc.core.portdatabase.SerializationHelper;
+import org.finroc.core.portdatabase.DataTypeUtil;
 import org.finroc.core.thread.ExecutionControl;
 
 /**
@@ -149,7 +149,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         assert(!shuttingDown());
 
         // Finish initializing static members of classes
-        SerializationHelper.staticInit(); // can safely be done first
         Unit.staticInit(); // can safely be done first
         Constant.staticInit(); // needs to be done after unit
         Time.getInstance(); // (possibly) init timing thread
@@ -159,6 +158,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         MethodCallSyncher.staticInit(); // dito
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
+        DataTypeUtil.initCCTypes();
 
         //JavaOnlyBlock
         new RuntimeEnvironment(); // should be done before any ports/elements are added

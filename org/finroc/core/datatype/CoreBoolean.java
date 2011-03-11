@@ -21,28 +21,32 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.port.cc.CCPortDataImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.CCType;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Superclass;
+import org.finroc.serialization.Copyable;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializable;
+import org.finroc.serialization.RRLibSerializableImpl;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
 
 /**
  * @author max
  *
  * boolean type
  */
-@CppName("Boolean") @CppFilename("Boolean")
-public class CoreBoolean extends CCPortDataImpl {
+@CppName("Boolean") @CppFilename("Boolean") @Superclass( {RRLibSerializable.class, CCType.class})
+public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreBoolean.class, "Boolean");
+    public final static DataType<CoreBoolean> TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "Boolean");
 
     /** value */
     private boolean value;
@@ -51,9 +55,6 @@ public class CoreBoolean extends CCPortDataImpl {
     @Const @PassByValue public static final CoreBoolean TRUE = new CoreBoolean(true), FALSE = new CoreBoolean(false);
 
     public CoreBoolean() {
-
-        //JavaOnlyBlock
-        type = TYPE;
     }
 
     public CoreBoolean(boolean value) {
@@ -62,33 +63,24 @@ public class CoreBoolean extends CCPortDataImpl {
     }
 
     @Override
-    public DataType getType() {
-        return TYPE;
-    }
-
-    @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeBoolean(value);
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         value = is.readBoolean();
     }
 
     @Override
-    public String serialize() {
-        return value ? "true" : "false";
+    public void serialize(StringOutputStream os) {
+        os.append(value ? "true" : "false");
     }
 
     @Override
-    public void deserialize(String s) throws Exception {
-        value = s.trim().toLowerCase().equals("true");
-    }
-
-    @Override
-    public void assign(CCPortData other) {
-        value = ((CoreBoolean)other).value;
+    public void deserialize(StringInputStream is) throws Exception {
+        String s = is.readWhile("", StringInputStream.LETTER | StringInputStream.WHITESPACE, true);
+        value = s.toLowerCase().equals("true");
     }
 
     public static @Const CoreBoolean getInstance(boolean value) {
@@ -107,5 +99,10 @@ public class CoreBoolean extends CCPortDataImpl {
      */
     public void set(boolean newValue) {
         value = newValue;
+    }
+
+    @Override
+    public void copyFrom(CoreBoolean source) {
+        value = source.value;
     }
 }

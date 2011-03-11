@@ -22,9 +22,8 @@
 package org.finroc.core.port;
 
 import org.finroc.core.LockOrderLevels;
-import org.finroc.core.port.std.PortData;
 import org.finroc.core.port.std.PortDataBufferPool;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.port.std.PortDataManager;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.Ref;
@@ -32,6 +31,7 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.SpinLock;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogStream;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -52,7 +52,7 @@ public class MultiTypePortDataBufferPool {
      * @param dataType DataType of returned buffer.
      * @return Returns unused buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final PortData getUnusedBuffer(DataType dataType) {
+    @Inline public final PortDataManager getUnusedBuffer(DataTypeBase dataType) {
 
         // search for correct pool
         for (@SizeT int i = 0, n = pools.size(); i < n; i++) {
@@ -70,7 +70,7 @@ public class MultiTypePortDataBufferPool {
      * @return Returns unused buffer of possibly newly created pool
      */
     @SpinLock
-    private synchronized final PortData possiblyCreatePool(DataType dataType) {
+    private synchronized final PortDataManager possiblyCreatePool(DataTypeBase dataType) {
 
         // search for correct pool
         for (@SizeT int i = 0, n = pools.size(); i < n; i++) {

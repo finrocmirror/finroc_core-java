@@ -27,12 +27,19 @@ import org.finroc.core.port.MultiTypePortDataBufferPool;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.port.cc.CCPortDataManager;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.ArrayWrapper;
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -45,6 +52,7 @@ import org.finroc.jc.annotation.SizeT;
  * One source may have multiple targets. However, a target may only
  * have one source in order to receive only one return value.
  */
+@Friend(InterfaceClientPort.class)
 public class InterfacePort extends AbstractPort {
 
     /** Edges emerging from this port */
@@ -62,15 +70,15 @@ public class InterfacePort extends AbstractPort {
     /** Pool with diverse data buffers */
     final @Ptr MultiTypePortDataBufferPool bufPool;
 
-    public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type) {
+    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type) {
         this(new PortCreationInfo(description, parent, dataType, 0), type, -1);
     }
 
-    public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type, int customFlags) {
+    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags) {
         this(new PortCreationInfo(description, parent, dataType, customFlags), type, -1);
     }
 
-    public InterfacePort(String description, FrameworkElement parent, DataType dataType, Type type, int customFlags, int lockLevel) {
+    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags, int lockLevel) {
         this(new PortCreationInfo(description, parent, dataType, customFlags), type, lockLevel);
     }
 
@@ -128,8 +136,9 @@ public class InterfacePort extends AbstractPort {
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    public PortData getUnusedBuffer(DataType dt) {
-        assert(!dt.isCCType());
+    @Override
+    public PortDataManager getUnusedBufferRaw(@Const @Ref DataTypeBase dt) {
+        assert(!FinrocTypeInfo.isCCType(dt));
         assert(bufPool != null);
         return bufPool.getUnusedBuffer(dt);
     }
@@ -139,8 +148,8 @@ public class InterfacePort extends AbstractPort {
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    public CCInterThreadContainer<?> getUnusedCCBuffer(DataType dt) {
-        assert(dt.isCCType());
+    public CCPortDataManager getUnusedCCBuffer(@Const @Ref DataTypeBase dt) {
+        assert(FinrocTypeInfo.isCCType(dt));
         return ThreadLocalCache.get().getUnusedInterThreadBuffer(dt);
     }
 
@@ -216,5 +225,24 @@ public class InterfacePort extends AbstractPort {
     @Override
     public void forwardData(AbstractPort other) {
         // do nothing in interface port
+    }
+
+    /**
+     * Get buffer to use in method call or return (has one lock)
+     *
+     * (for non-cc types only)
+     * @param dt Data type of object to get buffer of
+     * @return Unused buffer of type
+     */
+    @SuppressWarnings("unchecked")
+    @InCpp( {"PortDataManager* mgr = getUnusedBufferRaw(rrlib::serialization::DataType<T>());",
+             "mgr->getCurrentRefCounter()->setOrAddLocks((int8_t)1);",
+             "return std::shared_ptr<T>(mgr->getObject()->getData<T>(), SharedPtrDeleteHandler<PortDataManager>(mgr));"
+            })
+    protected @SharedPtr <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+        PortDataManager pdm = getUnusedBufferRaw(dt);
+        T t = (T)pdm.getObject().getData();
+        pdm.getCurrentRefCounter().setOrAddLocks((byte)1);
+        return t;
     }
 }

@@ -24,12 +24,13 @@ package org.finroc.core.parameter;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
-import org.finroc.core.port.cc.CCInterThreadContainer;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.StringInputStream;
 
 /**
  * @author max
@@ -46,22 +47,22 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
     private final Class<T> numClass;
 
     /** Bounds of this parameter */
-    private final Bounds bounds;
+    private final Bounds<T> bounds;
 
     /** Default value */
     private T defaultVal;
 
     public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype) {
-        this(name, defaultValue, constructorPrototype, new Bounds());
+        this(name, defaultValue, constructorPrototype, new Bounds<T>());
     }
 
     public StructureParameterNumeric(String name, T defaultValue) {
-        this(name, defaultValue, false, new Bounds());
+        this(name, defaultValue, false, new Bounds<T>());
     }
 
     @SuppressWarnings("unchecked")
-    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds bounds) {
-        super(name, DataTypeRegister.getInstance().getDataType(CoreNumber.class), constructorPrototype);
+    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds<T> bounds) {
+        super(name, getDataType(), constructorPrototype);
         this.bounds = bounds;
 
         //JavaOnlyBlock
@@ -73,23 +74,29 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
         }
     }
 
-    public StructureParameterNumeric(String name, T defaultValue, Bounds bounds2) {
+    public StructureParameterNumeric(String name, T defaultValue, Bounds<T> bounds2) {
         this(name, defaultValue, false, bounds2);
+    }
+
+    /** Helper to get this safely during static initialization */
+    @InCpp("return rrlib::serialization::DataType<Number>();")
+    public static DataType<CoreNumber> getDataType() {
+        return CoreNumber.TYPE;
     }
 
     /**
      * @return Bounds of this paramete
      */
-    public Bounds getBounds() {
+    public Bounds<T> getBounds() {
         return bounds;
     }
 
     /**
      * @return CoreNumber buffer
      */
-    @SuppressWarnings("unchecked")
     private @Ptr CoreNumber getBuffer() {
-        return ((CCInterThreadContainer<CoreNumber>)ccValue).getData();
+        @Ptr GenericObject go = ccValue.getObject();
+        return go.<CoreNumber>getData();
     }
 
     /**
@@ -105,7 +112,8 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
 
     public void set(String newValue) throws Exception {
         @PassByValue CoreNumber cn = new CoreNumber();
-        cn.deserialize(newValue);
+        StringInputStream sis = new StringInputStream(newValue);
+        cn.deserialize(sis);
         set(cn);
     }
 

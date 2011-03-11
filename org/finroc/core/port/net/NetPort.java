@@ -30,13 +30,11 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
+import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.port.cc.CCPortDataContainer;
-import org.finroc.core.port.cc.CCPortListener;
+import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.cc.CCPullRequestHandler;
-import org.finroc.core.port.cc.CCQueueFragment;
+import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.rpc.AbstractCall;
 import org.finroc.core.port.rpc.Callable;
 import org.finroc.core.port.rpc.InterfaceNetPort;
@@ -45,11 +43,12 @@ import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.PullCall;
 import org.finroc.core.port.rpc.SynchMethodCallLogic;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
+import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortDataReference;
-import org.finroc.core.port.std.PortListener;
-import org.finroc.core.port.std.PortQueueFragment;
+import org.finroc.core.port.PortListener;
+import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.port.std.PullRequestHandler;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.InCpp;
@@ -58,8 +57,10 @@ import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.log.LogUser;
+import org.finroc.serialization.GenericObject;
 
 /**
  * @author max
@@ -70,7 +71,7 @@ import org.finroc.jc.log.LogUser;
 @SuppressWarnings("rawtypes")
 @Ptr
 @IncludeClass(PullCall.class)
-public abstract class NetPort extends LogUser implements PortListener, CCPortListener {
+public abstract class NetPort extends LogUser implements PortListener {
 
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
@@ -86,6 +87,9 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
 
     /** Handle of Remote port */
     protected int remoteHandle;
+
+    /** Finroc Type info type */
+    protected final FinrocTypeInfo.Type ftype;
 
     @InitInBody("wrapped")
     public NetPort(PortCreationInfo pci, @Ptr Object belongsTo) {
@@ -103,20 +107,21 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
                 f |= PortFlags.USES_QUEUE;
             }
         }
-        if (pci.dataType.isStdType() || pci.dataType.isMethodType()) {
+        ftype = FinrocTypeInfo.get(pci.dataType).getType();
+        if (isStdType() || isMethodType()) {
             f |= PortFlags.SPECIAL_REUSE_QUEUE; // different data types may be incoming - cc types are thread local
         }
         pci.flags = f;
         this.belongsTo = belongsTo;
 
         //JavaOnlyBlock
-        if (pci.dataType.isUnknownType()) {
+        if (isUnknownType()) {
             wrapped = new UnknownTypedNetPort(pci);
             return;
         }
 
-        wrapped = (pci.dataType.isMethodType() ? (AbstractPort)new InterfaceNetPortImpl(pci) :
-                   (pci.dataType.isCCType() ? (AbstractPort)new CCNetPort(pci) :
+        wrapped = (isMethodType() ? (AbstractPort)new InterfaceNetPortImpl(pci) :
+                   (isCCType() ? (AbstractPort)new CCNetPort(pci) :
                     (AbstractPort)new StdNetPort(pci)));
     }
 
@@ -124,6 +129,28 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
     public void managedDelete() {
         getPort().managedDelete();
     }
+
+    /** Helper methods for data type type */
+    private boolean isStdType() {
+        return ftype == FinrocTypeInfo.Type.STD;
+    }
+
+    public boolean isCCType() {
+        return ftype == FinrocTypeInfo.Type.CC;
+    }
+
+    private boolean isUnknownType() {
+        return ftype == FinrocTypeInfo.Type.UNKNOWN;
+    }
+
+    public boolean isMethodType() {
+        return ftype == FinrocTypeInfo.Type.METHOD;
+    }
+
+    public boolean isTransactionType() {
+        return ftype == FinrocTypeInfo.Type.TRANSACTION;
+    }
+
 
     public void updateFlags(int flags) {
 
@@ -134,14 +161,14 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         flags |= curFlags;
 
         //JavaOnlyBlock
-        if (wrapped.getDataType().isUnknownType()) {
+        if (isUnknownType()) {
             ((UnknownTypedNetPort)wrapped).updateFlags(flags);
             return;
         }
 
-        if (wrapped.getDataType().isStdType() || wrapped.getDataType().isTransactionType()) {
+        if (isStdType() || isTransactionType()) {
             ((StdNetPort)wrapped).updateFlags(flags);
-        } else if (wrapped.getDataType().isCCType()) {
+        } else if (isCCType()) {
             ((CCNetPort)wrapped).updateFlags(flags);
         } else {
             ((InterfaceNetPortImpl)wrapped).updateFlags(flags);
@@ -246,17 +273,17 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
      */
     public void receiveDataFromStream(CoreInput ci, long timestamp, byte changedFlag) {
         assert(getPort().isReady());
-        if (wrapped.getDataType().isStdType() || wrapped.getDataType().isTransactionType()) {
+        if (isStdType() || isTransactionType()) {
             StdNetPort pb = (StdNetPort)wrapped;
             ci.setBufferSource(pb);
             do {
-                pb.publishFromNet((PortData)ci.readObject(), changedFlag);
+                pb.publishFromNet((PortDataManager)ci.readObject().getManager(), changedFlag);
             } while (ci.readBoolean());
             ci.setBufferSource(null);
-        } else if (wrapped.getDataType().isCCType()) {
+        } else if (isCCType()) {
             CCNetPort pb = (CCNetPort)wrapped;
             do {
-                pb.publishFromNet((CCPortDataContainer<?>)ci.readObject(), changedFlag);
+                pb.publishFromNet((CCPortDataManagerTL)ci.readObject().getManager(), changedFlag);
             } while (ci.readBoolean());
         } else { // interface port
             throw new RuntimeException("Method calls are not handled using this mechanism");
@@ -273,15 +300,15 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
 
         boolean useQ = wrapped.getFlag(PortFlags.USES_QUEUE);
         boolean first = true;
-        if (wrapped.getDataType().isStdType() || wrapped.getDataType().isTransactionType()) {
+        if (isStdType() || isTransactionType()) {
             StdNetPort pb = (StdNetPort)wrapped;
             if (!useQ) {
-                @Const PortData pd = pb.getLockedUnsafeRaw();
-                co.writeObject(pd);
-                pd.getManager().releaseLock();
+                PortDataManager pd = pb.getLockedUnsafeRaw();
+                co.writeObject(pd.getObject());
+                pd.releaseLock();
             } else {
-                @InCpp("PortQueueFragment<PortData> fragment;")
-                @PassByValue PortQueueFragment<PortData> fragment = ThreadLocalCache.getFast().tempFragment;
+                @InCpp("PortQueueFragmentRaw fragment;")
+                @PassByValue PortQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempFragment;
                 pb.dequeueAllRaw(fragment);
                 @Const PortDataReference pd = null;
                 while ((pd = (PortDataReference)fragment.dequeue()) != null) {
@@ -289,27 +316,27 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
                         co.writeBoolean(true);
                     }
                     first = false;
-                    co.writeObject(pd.getData());
+                    co.writeObject(pd.getManager().getObject());
                     pd.getManager().releaseLock();
                 }
             }
-        } else if (wrapped.getDataType().isCCType()) {
+        } else if (isCCType()) {
             CCNetPort pb = (CCNetPort)wrapped;
             if (!useQ) {
-                CCInterThreadContainer<?> ccitc = pb.getInInterThreadContainer();
-                co.writeObject(ccitc);
+                CCPortDataManager ccitc = pb.getInInterThreadContainer();
+                co.writeObject(ccitc.getObject());
                 ccitc.recycle2();
             } else {
-                @InCpp("CCQueueFragment<CCPortData> fragment;")
-                @PassByValue CCQueueFragment<CCPortData> fragment = ThreadLocalCache.getFast().tempCCFragment;
+                @InCpp("CCQueueFragmentRaw fragment;")
+                @PassByValue CCQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempCCFragment;
                 pb.dequeueAllRaw(fragment);
-                CCInterThreadContainer<?> pd = null;
-                while ((pd = (CCInterThreadContainer<?>)fragment.dequeue()) != null) {
+                CCPortDataManager pd = null;
+                while ((pd = fragment.dequeueUnsafe()) != null) {
                     if (!first) {
                         co.writeBoolean(true);
                     }
                     first = false;
-                    co.writeObject(pd);
+                    co.writeObject(pd.getObject());
                     pd.recycle2();
                 }
             }
@@ -330,13 +357,13 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             super.setPullRequestHandler(this);
         }
 
-        public void publishFromNet(CCPortDataContainer<?> readObject, byte changedFlag) {
+        public void publishFromNet(CCPortDataManagerTL readObject, byte changedFlag) {
 
             if (changedFlag != AbstractPort.CHANGED_INITIAL) { // always publish initial pushes
 
                 // only publish if value has actually changed...
-                CCPortDataContainer<?> curData = this.getLockedUnsafeInContainer();
-                boolean equal = curData.contentEquals(readObject.getDataPtr());
+                CCPortDataManagerTL curData = this.getLockedUnsafeInContainer();
+                boolean equal = curData.contentEquals(readObject.getObject().getRawDataPtr());
                 curData.releaseLock();  // unlock value that we just locked for comparison
                 if (equal) {
 
@@ -429,7 +456,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         }
 
         @Override
-        public void pullRequest(CCPortBase origin, CCPortData resultBuffer) {
+        public void pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer) {
             PullCall pc = ThreadLocalCache.getFast().getUnusedPullCall();
             pc.setRemotePortHandle(remoteHandle);
 //          pc.setLocalPortHandle(getHandle());
@@ -438,14 +465,11 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
                 if (pc.hasException()) {
                     getRaw(resultBuffer);
                 } else {
-                    CCInterThreadContainer<?> c;
+                    @SharedPtr GenericObject o = pc.getParamGeneric(0);
+                    CCPortDataManager c = (CCPortDataManager)o.getManager();
+                    resultBuffer.getObject().deepCopyFrom(c.getObject(), null);
 
                     //JavaOnlyBlock
-                    c = pc. < CCInterThreadContainer<? >> getParam(0);
-
-                    //Cpp pc->getParam(0, c);
-
-                    c.assignTo(resultBuffer);
                     c.recycle2();
                 }
                 pc.recycle();
@@ -491,7 +515,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
             super.setPullRequestHandler(this);
         }
 
-        public void publishFromNet(PortData readObject, byte changedFlag) {
+        public void publishFromNet(PortDataManager readObject, byte changedFlag) {
             if (!isOutputPort()) {
                 // reverse push: reset changed flag - since this change comes from the net and needs not to be propagated
                 getPort().resetChanged();
@@ -568,7 +592,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
         }
 
         @Override
-        public PortData pullRequest(PortBase origin, byte addLocks) {
+        public PortDataManager pullRequest(PortBase origin, byte addLocks) {
             assert(addLocks > 0);
             PullCall pc = ThreadLocalCache.getFast().getUnusedPullCall();
             pc.setRemotePortHandle(remoteHandle);
@@ -577,27 +601,24 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
                 pc = SynchMethodCallLogic.performSynchCall(pc, this, PULL_TIMEOUT);
                 if (pc.hasException()) {
                     // return local port data
-                    @Const PortData pd = getLockedUnsafeRaw();
-                    pd.getManager().getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
+                    PortDataManager pd = getLockedUnsafeRaw();
+                    pd.getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
                     pc.recycle();
                     return pd;
                 } else {
-                    PortData pd;
-
-                    //JavaOnlyBlock
-                    pd = pc.<PortData>getParam(0);
-
-                    //Cpp pc->getParam(0, pd);
-
-                    pd.getManager().getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
+                    @SharedPtr GenericObject o = pc.getParamGeneric(0);
+                    PortDataManager pd = (PortDataManager)o.getManager();
+                    @InCpp("int locks = 0;")
+                    int locks = 1; // Java: we already have one lock
+                    pd.getCurrentRefCounter().addLocks((byte)(addLocks - locks));
                     pc.recycle();
                     return pd;
                 }
 
             } catch (MethodCallException e) {
                 // return local port data
-                @Const PortData pd = getLockedUnsafeRaw();
-                pd.getManager().getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
+                PortDataManager pd = getLockedUnsafeRaw();
+                pd.getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
                 pc.recycle();
                 return pd;
             }
@@ -722,7 +743,7 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
 
         public UnknownTypedNetPort(PortCreationInfo pci) {
             super(pci);
-            assert(pci.dataType.isUnknownType());
+            assert(isUnknownType());
             initLists(edgesSrc, edgesDest);
         }
 
@@ -787,13 +808,8 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
 
     }
 
-    @Override
-    public void portChanged(PortBase origin, PortData value) {
-        portChanged();
-    }
-
-    @Override
-    public void portChanged(CCPortBase origin, CCPortData value) {
+    @Override @JavaOnly
+    public void portChanged(AbstractPort origin, Object value) {
         portChanged();
     }
 
@@ -811,6 +827,13 @@ public abstract class NetPort extends LogUser implements PortListener, CCPortLis
     public abstract void sendCallReturn(AbstractCall mc);
 
     protected abstract void propagateStrategyOverTheNet();
+
+    /*Cpp
+    virtual void portChanged(AbstractPort* origin, void* const& value)
+    {
+      portChanged();
+    }
+     */
 
     /**
      * Process incoming strategy update from the net

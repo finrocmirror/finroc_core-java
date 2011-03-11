@@ -23,7 +23,6 @@ package org.finroc.core.port.cc;
 
 import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Ptr;
-import org.finroc.jc.annotation.VoidPtr;
 
 /**
  * @author max
@@ -39,5 +38,5 @@ public interface CCPullRequestHandler {
      * @param origin (Output) Port pull request comes from
      * @param resultBuffer Buffer with result
      */
-    public void pullRequest(CCPortBase origin, @VoidPtr CCPortData resultBuffer);
+    public void pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer);
 }

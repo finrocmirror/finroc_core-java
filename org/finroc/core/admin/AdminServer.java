@@ -27,7 +27,6 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.MemBuffer;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.parameter.ConstructorParameters;
@@ -38,9 +37,8 @@ import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCInterThreadContainer;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.cc.CCPortDataContainer;
+import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.method.AbstractMethod;
@@ -63,17 +61,22 @@ import org.finroc.core.port.rpc.method.Void3Method;
 import org.finroc.core.port.rpc.method.Void4Handler;
 import org.finroc.core.port.rpc.method.Void4Method;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.portdatabase.RPCInterfaceType;
 import org.finroc.core.thread.ExecutionControl;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.MemoryBuffer;
 
 /**
  * @author max
@@ -81,9 +84,9 @@ import org.finroc.log.LogLevel;
  * Administration interface server port
  */
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
-public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemBuffer >,
-        Void3Handler < Integer, CCInterThreadContainer<?>, PortData > , Method0Handler<MemBuffer>, Void1Handler<Integer>,
-            Method2Handler< MemBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer> {
+public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
+        Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
+            Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer> {
 
     /** Admin interface */
     @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface");
@@ -101,28 +104,33 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         new Void2Method<AdminServer, Integer, Integer>(METHODS, "DisconnectAll", "source port handle", "dummy", false);
 
     /** Set a port's value */
-    @PassByValue public static Void3Method < AdminServer, Integer, CCInterThreadContainer<?>, PortData > SET_PORT_VALUE =
-        new Void3Method < AdminServer, Integer, CCInterThreadContainer<?>, PortData > (METHODS, "SetPortValue", "port handle", "cc data", "port data", false);
+    @CppType("Void3Method<AdminServer*, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer>, int>")
+    @PassByValue public static Void3Method < AdminServer, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
+        new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "dummy", false);
 
-    /** Set a port's value */
-    @PassByValue public static Port0Method < AdminServer, MemBuffer > GET_CREATE_MODULE_ACTIONS =
-        new Port0Method < AdminServer, MemBuffer > (METHODS, "GetCreateModuleActions", false);
+    /** Get module types */
+    @CppType("Port0Method<AdminServer*, std::shared_ptr<rrlib::serialization::MemoryBuffer> >")
+    @PassByValue public static Port0Method < AdminServer, MemoryBuffer > GET_CREATE_MODULE_ACTIONS =
+        new Port0Method < AdminServer, MemoryBuffer > (METHODS, "GetCreateModuleActions", false);
 
-    /** Set a port's value */
-    @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemBuffer > CREATE_MODULE =
-        new Void4Method < AdminServer, Integer, CoreString, Integer, MemBuffer > (METHODS, "CreateModule", "create action index", "module name", "parent handle", "module creation parameters", false);
+    /** Create a module */
+    @CppType("Void4Method<AdminServer*, int, std::shared_ptr<CoreString>, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer> >")
+    @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > CREATE_MODULE =
+        new Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > (METHODS, "CreateModule", "create action index", "module name", "parent handle", "module creation parameters", false);
 
     /** Save finstructable group */
     @PassByValue public static Void1Method<AdminServer, Integer> SAVE_FINSTRUCTABLE_GROUP =
         new Void1Method<AdminServer, Integer>(METHODS, "Save Finstructable Group", "finstructable handle", false);
 
     /** Get annotation */
-    @PassByValue public static Port2Method<AdminServer, MemBuffer, Integer, CoreString> GET_ANNOTATION =
-        new Port2Method<AdminServer, MemBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
+    @CppType("Port2Method<AdminServer*, std::shared_ptr<rrlib::serialization::MemoryBuffer>, int, std::shared_ptr<CoreString> >")
+    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_ANNOTATION =
+        new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
 
     /** Set annotation */
-    @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemBuffer > SET_ANNOTATION =
-        new Void4Method < AdminServer, Integer, CoreString, Integer, MemBuffer >(METHODS, "Set Annotation", "handle", "dummy", "dummy", "annotation", false);
+    @CppType("Void4Method<AdminServer*, int, std::shared_ptr<CoreString>, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer> >")
+    @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > SET_ANNOTATION =
+        new Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer >(METHODS, "Set Annotation", "handle", "dummy", "dummy", "annotation", false);
 
     /** Delete element */
     @PassByValue public static Void1Method<AdminServer, Integer> DELETE_ELEMENT =
@@ -141,7 +149,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         new Port1Method<AdminServer, Integer, Integer>(METHODS, "Is Framework element running", "handle", false);
 
     /** Data Type of method calls to this port */
-    public static final DataType DATA_TYPE = DataTypeRegister.getInstance().addMethodDataType("Administration method calls", METHODS);
+    public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration method calls", METHODS);
 
     /** Port name of admin interface */
     public static final String PORT_NAME = "Administration";
@@ -221,38 +229,42 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         }
     }
 
-    @Override
-    public void handleVoidCall(AbstractMethod method, Integer portHandle, CCInterThreadContainer<?> ccData, PortData portData) throws MethodCallException {
+    @Override @NonVirtual
+    public void handleVoidCall(AbstractMethod method, Integer portHandle, @Const @SharedPtr MemoryBuffer buf, Integer dummy) throws MethodCallException {
         assert(method == SET_PORT_VALUE);
         AbstractPort port = RuntimeEnvironment.getInstance().getPort(portHandle);
         if (port != null && port.isReady()) {
             synchronized (port) {
                 if (port.isReady()) {
-                    if (port.getDataType().isCCType() && ccData != null) {
+                    @PassByValue CoreInput ci = new CoreInput(buf);
+                    DataTypeBase dt = DataTypeBase.findType(ci.readString());
+                    if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
                         CCPortBase p = (CCPortBase)port;
-                        CCPortDataContainer<?> c = ThreadLocalCache.get().getUnusedBuffer(ccData.getType());
-                        c.assign(ccData.getDataPtr());
+                        CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(dt);
+                        c.getObject().deserialize(ci);
                         p.browserPublishRaw(c);
-                    } else if (port.getDataType().isStdType() && portData != null) {
+                    } else if (FinrocTypeInfo.isStdType(port.getDataType()) && FinrocTypeInfo.isStdType(dt)) {
                         PortBase p = (PortBase)port;
+                        PortDataManager portData = p.getUnusedBufferRaw(dt);
+                        portData.getObject().deserialize(ci);
                         p.browserPublish(portData);
                         portData = null;
                     }
                 }
             }
         }
-        if (ccData != null) {
-            ccData.recycle2();
-        }
-        if (portData != null) {
-            portData.getManager().releaseLock();
+
+        //JavaOnlyBlock
+        if (buf != null) {
+            PortDataManager.getManager(buf).releaseLock();
         }
     }
 
-    @Override
-    public MemBuffer handleCall(AbstractMethod method) throws MethodCallException {
+    @Override @NonVirtual
+    public @SharedPtr MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
         assert(method == GET_CREATE_MODULE_ACTIONS);
-        MemBuffer mb = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+
+        @SharedPtr MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
         CoreOutput co = new CoreOutput(mb);
         @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
         for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
@@ -266,12 +278,11 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             }
         }
         co.close();
-        mb.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
         return mb;
     }
 
-    @Override
-    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, CoreString name, Integer parentHandle, MemBuffer paramsBuffer) throws MethodCallException {
+    @Override @NonVirtual
+    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, @SharedPtr CoreString name, Integer parentHandle, @Const @SharedPtr MemoryBuffer paramsBuffer) throws MethodCallException {
         ConstructorParameters params = null;
         if (method == SET_ANNOTATION) {
             assert(name == null);
@@ -280,7 +291,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");
             } else {
                 @PassByValue CoreInput ci = new CoreInput(paramsBuffer);
-                DataType dt = DataTypeRegister.getInstance().getDataType(ci.readString());
+                DataTypeBase dt = DataTypeBase.findType(ci.readString());
                 if (dt == null) {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Data type not available. Cancelling setting of annotation.");
                 } else {
@@ -340,12 +351,14 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         }
 
         // release locks
+        //JavaOnlyBlock
         if (name != null) {
-            name.getManager().releaseLock();
+            PortDataManager.getManager(name).releaseLock();
         }
         if (paramsBuffer != null) {
-            paramsBuffer.getManager().releaseLock();
+            PortDataManager.getManager(paramsBuffer).releaseLock();
         }
+
     }
 
     @Override
@@ -375,28 +388,33 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         }
     }
 
-    @Override
-    public MemBuffer handleCall(AbstractMethod method, Integer handle, CoreString type) throws MethodCallException {
+    @Override @NonVirtual
+    public @SharedPtr MemoryBuffer handleCall(AbstractMethod method, Integer handle, @SharedPtr CoreString type) throws MethodCallException {
         assert(method == GET_ANNOTATION);
         FrameworkElement fe = getRuntime().getElement(handle);
         FinrocAnnotation result = null;
-        DataType dt = DataTypeRegister.getInstance().getDataType(type.toString());
+        DataTypeBase dt = DataTypeBase.findType(type.toString());
         if (fe != null && fe.isReady() && dt != null) {
             result = fe.getAnnotation(dt);
         } else {
             logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not query element for annotation type " + type.toString());
         }
-        type.getManager().releaseLock();
+
+        //JavaOnlyBlock
+        PortDataManager.getManager(type).releaseLock();
 
         if (result == null) {
+
+            //JavaOnlyBlock
             return null;
+
+            //Cpp return std::shared_ptr<rrlib::serialization::MemoryBuffer>();
         } else {
-            MemBuffer buf = (MemBuffer)getUnusedBuffer(MemBuffer.BUFFER_TYPE);
+            @SharedPtr MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
             CoreOutput co = new CoreOutput(buf);
             co.writeString(result.getType().getName());
             result.serialize(co);
             co.close();
-            buf.getManager().getCurrentRefCounter().setOrAddLocks((byte)1);
             return buf;
         }
     }

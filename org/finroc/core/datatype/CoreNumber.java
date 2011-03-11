@@ -37,17 +37,20 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
+import org.finroc.serialization.Copyable;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.RRLibSerializable;
+import org.finroc.serialization.Serialization;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
+import org.finroc.serialization.TypedObjectImpl;
 import org.finroc.xml.XMLNode;
 
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.portdatabase.Copyable;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
+import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.ExpressData;
 import org.finroc.core.portdatabase.MaxStringSerializationLength;
-import org.finroc.core.portdatabase.TypedObjectImpl;
 
 /**
  * @author max
@@ -56,11 +59,17 @@ import org.finroc.core.portdatabase.TypedObjectImpl;
  */
 @CppName("Number") @CppFilename("Number")
 @MaxStringSerializationLength(22)
-@Superclass( {TypedObjectImpl.class, Object.class})
-public class CoreNumber extends Number implements CCPortData, ExpressData, Copyable<CoreNumber> {
+@Superclass( {TypedObjectImpl.class, Object.class, CCType.class})
+public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType {
 
     /** UID */
     private static final long serialVersionUID = 8;
+
+    //Cpp template <typename T>
+    //Cpp friend struct CoreNumberPointerGetter;
+
+    //Cpp template <typename T, size_t S>
+    //Cpp friend struct CoreNumberPointerGetterBase;
 
     /** Current numerical data */
     @InCpp( {"union", "{", "  int ival;", "  int64 lval;", "  double dval;", "  float fval;", "};"})
@@ -80,7 +89,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
 
     /** Register Data type */
     @ConstPtr
-    public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreNumber.class, "Number");
+    public final static DataType<CoreNumber> TYPE = new DataType<CoreNumber>(CoreNumber.class, "Number");
 
     // All kinds of variations of constructors
     /*Cpp
@@ -363,7 +372,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
                                            FLOAT32 = -60, CONST = -59, MIN_BARRIER = -58;
 
     @Override
-    public void serialize(CoreOutput oos) {
+    public void serialize(OutputStreamBuffer oos) {
         if (numType == Type.LONG || numType == Type.INT) {
             //Cpp int64 value = (numType == eLONG) ? lval : ival;
             if (value >= MIN_BARRIER && value <= 63) {
@@ -404,7 +413,7 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     @Override
-    public void deserialize(CoreInput ois) {
+    public void deserialize(InputStreamBuffer ois) {
         byte firstByte = ois.readByte();
         boolean hasUnit = (firstByte & 1) > 0;
         switch (firstByte >> 1) {
@@ -519,20 +528,20 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         return numType == Type.FLOAT && value == i && this.unit == unit;
     }
 
-    // CCPortData standard implementation
-    @JavaOnly @Override public void assign(CCPortData other) {
-        CoreNumber cn = (CoreNumber)other;
-        numType = cn.numType;
-        value = cn.value;
-        unit = cn.unit;
-    }
+//    // CCPortData standard implementation
+//    @JavaOnly @Override public void assign(CCPortData other) {
+//        CoreNumber cn = (CoreNumber)other;
+//        numType = cn.numType;
+//        value = cn.value;
+//        unit = cn.unit;
+//    }
+//
+//    @Override @JavaOnly
+//    public DataType<CoreNumber> getType() {
+//        return TYPE;
+//    }
 
-    @Override @JavaOnly
-    public DataType getType() {
-        return TYPE;
-    }
-
-    public static DataType getDataType() {
+    public static DataType<CoreNumber> getDataType() {
         assert(TYPE != null);
         return TYPE;
     }
@@ -555,14 +564,15 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
     }
 
     @Override
-    public String serialize() {
-        return toString();
+    public void serialize(StringOutputStream os) {
+        os.append(toString());
     }
 
     @Override
-    public void deserialize(String s) throws Exception {
+    public void deserialize(StringInputStream is) throws Exception {
 
         // scan for unit
+        String s = is.readWhile("eE-.", StringInputStream.DIGIT, true);
         String num = s;
         for (@SizeT int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -609,13 +619,69 @@ public class CoreNumber extends Number implements CCPortData, ExpressData, Copya
         unit = unit2;
     }
 
+    /**
+     * @return The Number Type
+     */
+    @JavaOnly
+    public Type getNumberType() {
+        return numType;
+    }
+
     @Override @JavaOnly
     public void serialize(XMLNode node) throws Exception {
-        node.setTextContent(serialize());
+        Serialization.serialize(node, this);
     }
 
     @Override @JavaOnly
     public void deserialize(XMLNode node) throws Exception {
-        deserialize(node.getTextContent());
+        deserialize(new StringInputStream(node.getTextContent()));
     }
+
+    /*Cpp
+    template <typename T>
+    T* getValuePtr();
+    };
+
+
+    template <typename T, size_t SIZE>
+    struct CoreNumberPointerGetterBase {
+        static T* getDataPtr(Number* num) {
+            num->setValue(num->value<T>());
+            return static_cast<T*>(&num->ival);
+        }
+    };
+
+    template <typename T>
+    struct CoreNumberPointerGetterBase<T, 8> {
+        static T* getDataPtr(Number* num) {
+            num->setValue(num->value<T>());
+            return static_cast<T*>(&num->lval);
+        }
+    };
+
+    template <typename T>
+    struct CoreNumberPointerGetter : CoreNumberPointerGetterBase<T, sizeof(T)> {};
+
+    template <>
+    struct CoreNumberPointerGetter<float> {
+        static float* getDataPtr(Number* num) {
+            num->setValue(num->value<float>());
+            return &num->fval;
+        }
+    };
+
+    template <>
+    struct CoreNumberPointerGetter<double> {
+        static double* getDataPtr(Number* num) {
+            num->setValue(num->value<double>());
+            return &num->dval;
+        }
+    };
+
+
+    // Get Pointer to current value (that can also be used to set value)
+    template <typename T>
+    T* Number::getValuePtr() {
+    return CoreNumberPointerGetter<T>::getDataPtr(this);
+    */
 }

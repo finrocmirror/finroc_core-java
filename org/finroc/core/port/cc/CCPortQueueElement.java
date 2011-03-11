@@ -60,7 +60,7 @@ public class CCPortQueueElement extends BoundedQElementContainer {
     @Override
     public void recycleContent(@VoidPtr Object content) {
         if (content != null) {
-            ((CCInterThreadContainer<?>)content).recycle2();
+            ((CCPortDataManager)content).recycle2();
         }
     }
 }

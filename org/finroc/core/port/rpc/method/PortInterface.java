@@ -21,11 +21,14 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.AutoPtr;
+import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -40,7 +43,7 @@ public class PortInterface {
     @AutoPtr private SimpleList<AbstractMethod> methods = new SimpleList<AbstractMethod>();
 
     /** Data type for this port interface - the last one in case there are multiple (e.g. for different types of blackboards) - set by DataTypeRegister */
-    DataType myType;
+    DataTypeBase myType = null;
 
     /** Name of port interface */
     String name;
@@ -70,15 +73,15 @@ public class PortInterface {
      *
      * @param dataType Data type that has this port interface
      */
-    public void setDataType(DataType dataType) {
-        assert(dataType.getPortInterface() == this);
+    public void setDataType(@Const @Ref DataTypeBase dataType) {
+        assert(FinrocTypeInfo.get(dataType).getPortInterface() == this);
         myType = dataType;
     }
 
     /**
      * @return Data type of this port interface (must have been set before)
      */
-    public DataType getDataType() {
+    public @Const DataTypeBase getDataType() {
         assert(myType != null);
         return myType;
     }

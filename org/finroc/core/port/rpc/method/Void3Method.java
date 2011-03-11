@@ -80,10 +80,9 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2); //3
-            mc.addParamForSending(p3);
-            mc.sendParametersComplete();
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2); //3
+            mc.addParam(2, p3);
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -101,9 +100,9 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
             } else {
                 MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
                 //1
-                mc.addParamForLocalCall(0, p1); //2
-                mc.addParamForLocalCall(1, p2); //3
-                mc.addParamForLocalCall(2, p3);
+                mc.addParam(0, p1); //2
+                mc.addParam(1, p2); //3
+                mc.addParam(2, p3);
                 mc.prepareExecution(this, port.getDataType(), handler, null);
                 RPCThreadPool.getInstance().executeTask(mc);
             }

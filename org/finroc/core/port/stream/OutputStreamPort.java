@@ -23,9 +23,10 @@ package org.finroc.core.port.stream;
 
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.core.buffer.ChunkBuffer;
+import org.finroc.jc.stream.ChunkedBuffer;
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.std.Port;
+import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PullRequestHandler;
 
 /**
@@ -40,7 +41,7 @@ import org.finroc.core.port.std.PullRequestHandler;
  * (Implementation of this class is non-blocking... that's why it's slightly verbose)
  */
 @Inline @NoCpp
-public class OutputStreamPort<T extends ChunkBuffer> extends Port<T> {
+public class OutputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
     /**
      * @param pci Port Creation Info
@@ -48,7 +49,7 @@ public class OutputStreamPort<T extends ChunkBuffer> extends Port<T> {
      */
     public OutputStreamPort(PortCreationInfo pci, PullRequestHandler listener) {
         super(pci);
-        setPullRequestHandler(listener);
+        ((PortBase)getWrapped()).setPullRequestHandler(listener);
     }
 
     /**

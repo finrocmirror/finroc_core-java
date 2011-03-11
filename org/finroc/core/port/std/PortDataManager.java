@@ -22,9 +22,12 @@
 package org.finroc.core.port.std;
 
 import org.finroc.jc.AtomicInt;
+import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
+import org.finroc.jc.annotation.Attribute;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.HAppend;
@@ -34,42 +37,42 @@ import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
-import org.finroc.jc.container.Reusable;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
-import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObjectManager;
 
-import org.finroc.core.portdatabase.DataType;
+import org.finroc.core.port.Port;
+import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
  * @author max
  *
- * This class is used for allocating/managing/deleting a single port data object that
- * is used in ports.
- * It handles information on locks etc.
- * It may do this for multiple port data objects if port data object owns other
- * port data object.
+ * This class is used for managing a single port data object (or "buffer").
+ *
+ * It handles information on locks, data type etc.
+ *
+ * If it possible to derive a port data managers from another port data manager.
+ * They will share the same reference counter.
+ * This makes sense, when an object contained in the original port data buffer
+ * shall be used in a port.
+ * This way, it does not need to copied.
  */
-@Friend( {PortBase.class, Port.class, PortDataImpl.class, PortDataReference.class})
-@Include("CombinedPointer.h")
+@Include( {"portdatabase/SharedPtrDeleteHandler.h", "CombinedPointer.h"})
+@Attribute("((aligned(8)))")
+@Friend( {PortBase.class, Port.class, PortDataReference.class, DataTypeBase.class})
 @CppPrepend( {"PortDataManager PortDataManager::PROTOTYPE;",
               "size_t PortDataManager::REF_COUNTERS_OFFSET = ((char*)&(PortDataManager::PROTOTYPE.refCounters[0])) - ((char*)&(PortDataManager::PROTOTYPE));",
-              "\nPortDataManager::~PortDataManager() {",
-              "    if (data != NULL) {",
-              "        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager - data:\", data);",
-              "    } else {",
-              "        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, \"Deleting Manager - data: null\");",
-              "    }",
-              "    delete data;",
-              "}",
               "rrlib::logging::LogDomainSharedPointer initDomainDummy = PortDataManager::_V_logDomain();", ""
              })
-
-public class PortDataManager extends Reusable {
+public class PortDataManager extends ReusableGenericObjectManager implements HasDestructor {
 
     /** Number of reference to port data (same as in PortDataImpl) */
     public final static @SizeT int NUMBER_OF_REFERENCES = 4;
@@ -90,54 +93,143 @@ public class PortDataManager extends Reusable {
 
     // PortDataManager prototype to obtain above offset
     static PortDataManager PROTOTYPE;
-
-    PortDataManager() {
-        _FINROC_LOG_STREAM(rrlib::logging::eLL_DEBUG_VERBOSE_1, logDomain, "Creating PROTOTYPE");
-    } // dummy constructor for prototype
      */
 
-    /** Pointer to actual PortData (outermost buffer) */
-    private final @Ptr PortData data;
+    /** PortDataManager that this manager is derived from - null if not derived */
+    private @Ptr PortDataManager derivedFrom;
 
     /** incremented every time buffer is reused */
     protected volatile int reuseCounter = 0;
+
+    /** Helper variable - e.g. for blackboards */
+    public int lockID = 0;
+
+    /** Different reference to port data (because of reuse problem - see portratio) */
+    @JavaOnly private final PortDataReference[] refs = new PortDataReference[NUMBER_OF_REFERENCES];
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_data\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
 
-    /*Cpp
-    virtual ~PortDataManager();
+    /**
+     * Standard constructor
+     *
+     * @param dt Data Type of managed data
      */
-
-    @Init( {"refCounters()", "data(NULL)"})
-    public PortDataManager(@Ptr DataType dt, @Const @Ptr PortData portData) {
-        assert portData == null || portData.getType() == dt || dt.isTransactionType() : "Prototype needs same data type";
-
-        //System.out.println("New port data manager");
-
-        @Ptr PortDataCreationInfo pdci = PortDataCreationInfo.get();
-        pdci.setManager(this);
-        pdci.setPrototype(portData);
+    @Init( {"refCounters()"})
+    protected PortDataManager() {
+        //Cpp assert((((size_t)this) & 0x7) == 0); // make sure requested alignment was honoured
 
         // JavaOnlyBlock
         for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
             refCounters[i] = new RefCounter(this);
         }
-        data = (PortData)dt.createInstance();
+        for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
+            refs[i] = createPortDataRef(getRefCounter(i));
+        }
 
-        /*Cpp
-        data = (PortData*)dt->createInstance();
-         */
-
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager - data: " + data);
-
-        pdci.reset();
-        pdci.initUnitializedObjects();
+        //log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager"); //<" + dt.getName() + "> - data: " + data);
     }
 
-    @OrgWrapper @ConstMethod @Inline public @Const @Ptr PortData getData() {
-        return data;
+//    /**
+//     * Standard constructor
+//     *
+//     * @param dt Data Type of managed data
+//     */
+//    @Init( {"refCounters()"})
+//    protected PortDataManager(@Ptr DataTypeBase dt) {
+//        assert dt != null && dt.isStdType();
+//        //Cpp assert((((size_t)this) & 0x7) == 0); // make sure requested alignment was honoured
+//
+//        type = dt;
+//
+//        // JavaOnlyBlock
+//        for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
+//            refCounters[i] = new RefCounter(this);
+//        }
+//        for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
+//            refs[i] = createPortDataRef(getRefCounter(i));
+//        }
+//
+//        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating PortDataManager<" + dt.getName() + "> - data: " + data);
+//    }
+
+//    /**
+//     * Constructor for derived data
+//     *
+//     * @param derivedFrom Port data manager we are deriving from
+//     * @param managed Data inside buffer of port manager we are deriving from
+//     * @param dt Data Type of managed data
+//     */
+//    @Init( {"refCounters()"})
+//    protected PortDataManager() {
+//        //Cpp assert((((size_t)this) & 0x7) == 0); // make sure requested alignment was honoured
+//
+//        // JavaOnlyBlock
+//        for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
+//            refCounters[i] = new RefCounter(this);
+//        }
+//
+//        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating derived PortDataManager " + this);
+//    }
+
+    /**
+     * Create PortDataReference.
+     * Overridable for PortDataDelegate in Java.
+     */
+    @JavaOnly protected PortDataReference createPortDataRef(PortDataManager.RefCounter refCounter) {
+        return new PortDataReference(this, refCounter);
+    }
+
+    @Inline //@HAppend( {})
+    @InCpp( {"return CombinedPointerOps::create<PortDataReference>(this, reuseCounter & 0x3);" })
+    @NonVirtual @ConstMethod public PortDataReference getCurReference() {
+        return refs[reuseCounter & REF_INDEX_MASK];
+    }
+
+//    /**
+//     * @return Pointer to managed object/buffer
+//     */
+//    @OrgWrapper @ConstMethod @Inline public @Const @VoidPtr Object getDataRaw() {
+//        return data;
+//    }
+
+    /*Cpp
+    inline static void sharedPointerRelease(PortDataManager* manager, bool active) {
+      if (active)
+      {
+        assert((!manager->isUnused()) && ("Unused buffers retrieved from ports must be published"));
+        manager->releaseLock();
+      }
+    }
+     */
+
+    /**
+     * Retrieve manager for port data
+     *
+     * @param data Port data
+     * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
+     * @return Manager for port data - or null if it does not exist
+     */
+    @InCpp("return SharedPtrDeleteHandler<PortDataManager>::getManager(data, resetActiveFlag);")
+    public static <T> PortDataManager getManager(@SharedPtr @Ref T data, @CppDefault("false") boolean resetActiveFlag) {
+        GenericObjectManager gom = ReusableGenericObjectManager.getManager(data);
+        if (gom instanceof PortDataManager) {
+            return (PortDataManager)gom;
+        }
+        return null;
+    }
+
+    /**
+     * Retrieve manager for port data
+     *
+     * @param data Port data
+     * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
+     * @return Manager for port data
+     */
+    @JavaOnly
+    public static <T> PortDataManager getManager(@SharedPtr @Ref T data) {
+        return getManager(data, false);
     }
 
     /**
@@ -384,7 +476,16 @@ public class PortDataManager extends Reusable {
      */
     @InCppFile
     public void dangerousDirectRecycle() {
-        data.handleRecycle();
+        if (derivedFrom != null) {
+            derivedFrom.getCurrentRefCounter().releaseLock();
+            derivedFrom = null;
+
+            //TODO:
+            //type = null;
+            //data = null;
+        } else {
+            getObject().clear();
+        }
         reuseCounter++;
         super.recycle();
     }
@@ -414,6 +515,35 @@ public class PortDataManager extends Reusable {
 
     @InCppFile
     public String toString() {
-        return "PortDataManager for " + (data != null ? data.toString() : "null content") + " (Locks: " + getCurrentRefCounter().getLocks() + ")";
+        return "PortDataManager for " + getContentString() + " (Locks: " + getCurrentRefCounter().getLocks() + ")";
     }
+
+    /**
+     * @return Type of managed object
+     */
+    @ConstMethod public DataTypeBase getType() {
+        return getObject().getType();
+    }
+
+    @Override
+    public void genericLockRelease() {
+        releaseLock();
+    }
+
+    @Override
+    public boolean genericHasLock() {
+        return isLocked();
+    }
+
+    /**
+     * Create object of specified type managed by PortDataManager
+     *
+     * @param dataType Data type
+     * @return Manager
+     */
+    @InCpp("return static_cast<PortDataManager*>(dataType.createInstanceGeneric<PortDataManager>()->getManager());")
+    public static PortDataManager create(@Const @Ref DataTypeBase dataType) {
+        return (PortDataManager)(dataType.createInstanceGeneric(new PortDataManager())).getManager();
+    }
+
 }

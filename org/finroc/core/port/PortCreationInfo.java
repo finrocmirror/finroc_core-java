@@ -26,10 +26,9 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Unit;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 
 /**
  * @author max
@@ -58,7 +57,7 @@ public class PortCreationInfo {
     public short minNetUpdateInterval = -1;
 
     /** Data type of port */
-    public @Ptr DataType dataType;
+    public DataTypeBase dataType = null;
 
     /** Parent of port */
     public @Ptr FrameworkElement parent;
@@ -90,26 +89,34 @@ public class PortCreationInfo {
     }
 
     @JavaOnly
-    public PortCreationInfo(@Const @Ref String description, @Ptr Class<?> dataType, int flags) {
+    public PortCreationInfo(@Const @Ref String description, Class<?> dataType, int flags) {
         this.description = description;
-        this.dataType = DataTypeRegister.getInstance().getDataType(dataType);
+        this.dataType = DataTypeBase.findType(dataType);
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, @Ptr DataType dataType, int flags) {
+    public PortCreationInfo(@Const @Ref String description, @Const @Ref DataTypeBase dataType, int flags) {
         this.description = description;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Ptr DataType dataType, int flags) {
+    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags) {
         this.description = description;
         this.parent = parent;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Ptr DataType dataType) {
+    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags, Unit u) {
+        this.description = description;
+        this.parent = parent;
+        this.dataType = dataType;
+        this.flags = flags;
+        this.unit = u;
+    }
+
+    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType) {
         this.description = description;
         this.parent = parent;
         this.dataType = dataType;
@@ -128,12 +135,12 @@ public class PortCreationInfo {
         this.unit = unit;
     }
 
-    public PortCreationInfo(@Ptr DataType dataType, int flags) {
+    public PortCreationInfo(@Const @Ref DataTypeBase dataType, int flags) {
         this.flags = flags;
         this.dataType = dataType;
     }
 
-    public PortCreationInfo(@Ptr DataType dataType, int flags, boolean managesPorts) {
+    public PortCreationInfo(@Const @Ref DataTypeBase dataType, int flags, boolean managesPorts) {
         this.flags = flags;
         this.dataType = dataType;
         this.managesPorts = managesPorts;
@@ -159,7 +166,7 @@ public class PortCreationInfo {
         this.parent = parent;
     }
 
-    public PortCreationInfo(FrameworkElement parent, DataType dt) {
+    public PortCreationInfo(FrameworkElement parent, @Const @Ref DataTypeBase dt) {
         this.parent = parent;
         this.dataType = dt;
     }
@@ -170,7 +177,7 @@ public class PortCreationInfo {
         this.maxQueueSize = qSize;
     }
 
-    public PortCreationInfo(String description, DataType dataType, int flags, int qSize) {
+    public PortCreationInfo(String description, @Const @Ref DataTypeBase dataType, int flags, int qSize) {
         this.description = description;
         this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
         this.dataType = dataType;
@@ -225,7 +232,7 @@ public class PortCreationInfo {
         return pci2;
     }
 
-    public PortCreationInfo derive(String newDescription, FrameworkElement parent, DataType type) {
+    public PortCreationInfo derive(String newDescription, FrameworkElement parent, @Const @Ref DataTypeBase type) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
         pci2.description = newDescription;
         pci2.parent = parent;
@@ -233,7 +240,7 @@ public class PortCreationInfo {
         return pci2;
     }
 
-    public PortCreationInfo derive(DataType type) {
+    public PortCreationInfo derive(@Const @Ref DataTypeBase type) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
         pci2.dataType = type;
         return pci2;

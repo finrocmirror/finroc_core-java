@@ -23,23 +23,26 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
+import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
-import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.port.cc.PortNumericBounded;
+import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.PortListener;
+import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.cc.CCPortDataContainer;
-import org.finroc.core.port.cc.CCPortListener;
+import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.IncludeClass;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoOuterClass;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
+import org.finroc.jc.annotation.Superclass2;
 import org.finroc.log.LogLevel;
 
 /**
@@ -47,43 +50,27 @@ import org.finroc.log.LogLevel;
  *
  * Parameter template class for numeric types
  */
-@PassByValue
-public class ParameterNumeric<T extends Number> extends PortNumericBounded {
+@IncludeClass(Parameter.class)
+@PassByValue @Superclass2("Parameter<T>")
+public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
 
-    /** Special Port class to load value when initialized */
-    @SuppressWarnings("rawtypes")
-    @AtFront @NoOuterClass
-    private class PortImpl2 extends PortImpl implements CCPortListener {
+    //Cpp using PortWrapperBase<CCPortBase>::logDomain;
 
-        /** Paramater info */
-        private final ParameterInfo info = new ParameterInfo();
+    /**
+     * Caches numeric value of parameter port (optimization)
+     */
+    @AtFront @Superclass2("PortListener<T>") @NoOuterClass
+    class NumberCache implements PortListener<CoreNumber> {
 
-        /** Cached current value (we will much more often that it will be changed) */
+        /** Cached current value (we will much more often read than it will be changed) */
         public volatile T currentValue;
 
-        @InCppFile
-        public PortImpl2(PortCreationInfo pci, Bounds b, Unit u) {
-            super(processPci(pci), b, u);
-            addAnnotation(info);
-            addPortListenerRaw(this);
-        }
-
-        @Override @InCppFile
-        protected void postChildInit() {
-            super.postChildInit();
-            try {
-                this.info.loadValue(true);
-            } catch (Exception e) {
-                log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
-            }
-        }
-
         @SuppressWarnings("unchecked")
-        @Override
-        public void portChanged(CCPortBase origin, CCPortData valueRaw) {
-            @Const CoreNumber value = (CoreNumber)valueRaw;
-            if (getUnit() != value.getUnit()) {
-                double val = value.getUnit().convertTo(value.doubleValue(), getUnit());
+        @Override @JavaOnly
+        public void portChanged(AbstractPort origin, CoreNumber value) {
+            Unit u = ((CCPortBase)wrapped).getUnit();
+            if (u != value.getUnit()) {
+                double val = value.getUnit().convertTo(value.doubleValue(), u);
 
                 //JavaOnlyBlock
                 currentValue = (T)new Double(val);
@@ -97,49 +84,64 @@ public class ParameterNumeric<T extends Number> extends PortNumericBounded {
                 //Cpp currentValue = value->value<T>();
             }
         }
+
+        /*Cpp
+        virtual void portChanged(AbstractPort* origin, const T& value) {
+            currentValue = value;
+        }
+         */
     }
 
-    @SuppressWarnings("unchecked")
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, Bounds b, @Const @Ref String configEntry) {
+    /** Number cache instance used for this parameter */
+    @SharedPtr public NumberCache cache = new NumberCache();
+
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, Bounds<T> b, @Const @Ref String configEntry) {
         this(description, parent, u, defaultValue, b);
-        ((PortImpl2)wrapped).info.setConfigEntry(configEntry);
+        this.setConfigEntry(configEntry);
     }
 
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds b) {
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
         this(description, parent, Unit.NO_UNIT, defaultValue, b);
     }
 
-    @SuppressWarnings("unchecked")
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, Bounds b) {
-        wrapped = new PortImpl2(new PortCreationInfo(description, parent, PortFlags.INPUT_PORT, u), b, u);
+    @SuppressWarnings( { "unchecked", "rawtypes" })
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b) {
+        super(description, parent, b, CoreNumber.TYPE, u);
         @InCpp("T d = defaultValue;")
         double d = defaultValue.doubleValue();
         if (b.inBounds(d)) {
-            super.setDefault(new CoreNumber(defaultValue, u));
+
+            //JavaOnlyBlock
+            setDefault(new CoreNumber(defaultValue, u));
+
+            //Cpp this->setDefault(defaultValue);
         } else {
             logDomain.log(LogLevel.LL_DEBUG_WARNING, getLogDescription(), "Default value is out of bounds");
-            super.setDefault(new CoreNumber(b.toBounds(d), u));
+
+            //JavaOnlyBlock
+            setDefault(new CoreNumber(b.toBounds(d), u));
+
+            //Cpp this->setDefault(defaultValue);
         }
-        ((PortImpl2)wrapped).currentValue = defaultValue;
+        cache.currentValue = defaultValue;
+        this.addPortListener(cache);
     }
 
     /**
      * @return Current parameter value
      */
-    @SuppressWarnings("unchecked")
     @ConstMethod
-    public T get() {
-        return ((PortImpl2)wrapped).currentValue;
+    public T getValue() {
+        return cache.currentValue;
     }
 
     /**
      * @param b new value
      */
-    @SuppressWarnings("unchecked")
     public void set(T v) {
-        CCPortDataContainer<CoreNumber> cb = getUnusedBuffer();
-        cb.getData().setValue(v, getUnit());
-        super.browserPublish(cb);
-        ((PortImpl2)wrapped).currentValue = v;
+        CCPortDataManagerTL cb = ThreadLocalCache.get().getUnusedBuffer(CoreBoolean.TYPE);
+        cb.getObject().<CoreNumber>getData().setValue(v, ((CCPortBase)wrapped).getUnit());
+        ((CCPortBase)wrapped).browserPublishRaw(cb);
+        cache.currentValue = v;
     }
 }

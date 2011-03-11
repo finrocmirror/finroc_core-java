@@ -89,12 +89,11 @@ public class Void4Method<HANDLER extends Void4Handler<P1, P2, P3, P4>, P1, P2, P
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
             MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
             //1
-            mc.addParamForSending(p1); //2
-            mc.addParamForSending(p2); //3
-            mc.addParamForSending(p3); //4
-            mc.addParamForSending(p4);
+            mc.addParam(0, p1); //2
+            mc.addParam(1, p2); //3
+            mc.addParam(2, p3); //4
+            mc.addParam(3, p4);
             //n
-            mc.sendParametersComplete();
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
@@ -114,10 +113,10 @@ public class Void4Method<HANDLER extends Void4Handler<P1, P2, P3, P4>, P1, P2, P
             } else {
                 MethodCall mc = ThreadLocalCache.getFast().getUnusedMethodCall();
                 //1
-                mc.addParamForLocalCall(0, p1); //2
-                mc.addParamForLocalCall(1, p2); //3
-                mc.addParamForLocalCall(2, p3); //4
-                mc.addParamForLocalCall(3, p4);
+                mc.addParam(0, p1); //2
+                mc.addParam(1, p2); //3
+                mc.addParam(2, p3); //4
+                mc.addParam(3, p4);
                 //n
                 mc.prepareExecution(this, port.getDataType(), handler, null);
                 RPCThreadPool.getInstance().executeTask(mc);

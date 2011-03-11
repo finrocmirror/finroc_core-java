@@ -19,44 +19,47 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.finroc.core.port.std;
+package org.finroc.core.port.cc;
 
-import java.util.EventListener;
-
-import org.finroc.jc.ListenerManager;
-import org.finroc.jc.annotation.Const;
-import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
+import org.finroc.jc.container.QueueFragment;
+import org.finroc.serialization.GenericObject;
+import org.finroc.core.port.ThreadLocalCache;
 
 /**
  * @author max
  *
- * Can register at port to receive callbacks whenever the port's value changes
+ * Fragment for dequeueing bunch of values
  */
-@DefaultType("PortData") @Ptr @Inline @NoCpp @RawTypeArgs
-public interface PortListener<T extends PortData> extends EventListener {
+@Inline @NoCpp @RawTypeArgs
+public class CCQueueFragmentRaw extends QueueFragment<CCPortDataManager, CCPortQueueElement> {
 
     /**
-     * Called whenever port's value has changed
+     * Dequeue one queue element.
+     * Returned element will be automatically unlocked
      *
-     * @param origin Port that value comes from
-     * @param value Port's new value (locked for duration of method call)
+     * @return Next element in QueueFragment
      */
-    public void portChanged(PortBase origin, @Const @Ptr T value);
-}
-
-/**
- * Manager for port listeners
- */
-@DefaultType("PortData") @Inline @NoCpp @RawTypeArgs
-class PortListenerManager<T extends PortData> extends ListenerManager<PortBase, T, PortListener<T>, PortListenerManager<T>> {
-
-    @Override
-    public void singleNotify(PortListener<T> listener, PortBase origin, T parameter, int CallId) {
-        listener.portChanged(origin, parameter);
+    public CCPortDataManager dequeueUnsafe() {
+        return super.dequeue();
     }
-}
 
+    /**
+     * Dequeue one queue element.
+     * Returned element will be automatically unlocked
+     *
+     * @return Next element in QueueFragment
+     */
+    public @Ptr GenericObject dequeueAutoLocked() {
+        CCPortDataManager tmp = super.dequeue();
+        if (tmp == null) {
+            return null;
+        }
+        ThreadLocalCache.get().addAutoLock(tmp);
+        return tmp.getObject();
+    }
+
+}

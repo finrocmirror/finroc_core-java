@@ -23,21 +23,20 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
-import org.finroc.core.portdatabase.SerializationHelper;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.DataType;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.xml.XMLNode;
 
 /**
@@ -48,7 +47,7 @@ import org.finroc.xml.XMLNode;
 public class StructureParameterList extends FinrocAnnotation implements HasDestructor {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(StructureParameterList.class);
+    public final static DataType<StructureParameterList> TYPE = new DataType<StructureParameterList>(StructureParameterList.class);
 
     /** List of parameters */
     @PassByValue
@@ -106,7 +105,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     }
 
     @Override
-    public void serialize(CoreOutput os) {
+    public void serialize(OutputStreamBuffer os) {
         os.writeInt(createAction);
         os.writeInt(parameters.size());
         for (@SizeT int i = 0; i < parameters.size(); i++) {
@@ -115,7 +114,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         if (getAnnotated() == null) {
 
             //JavaOnlyBlock
@@ -140,16 +139,6 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             }
             ((FrameworkElement)getAnnotated()).structureParametersChanged();
         }
-    }
-
-    @Override
-    public String serialize() {
-        return SerializationHelper.serializeToHexString(this);
-    }
-
-    @Override
-    public void deserialize(String s) throws Exception {
-        SerializationHelper.deserializeFromHexString(this, s);
     }
 
     /**
@@ -230,25 +219,26 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     @Override
     public void serialize(XMLNode node) throws Exception {
         for (@SizeT int i = 0; i < size(); i++) {
-            XMLNode p = node.addChildNode("parameter");
+            @Ref XMLNode child = node.addChildNode("parameter");
             StructureParameterBase param = get(i);
-            p.setAttribute("name", param.getName());
-            param.serialize(p);
+            child.setAttribute("name", param.getName());
+            param.serialize(child);
         }
     }
 
     // only used in FinstructableGroup
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        @PassByValue SimpleList<XMLNode> vec = new SimpleList<XMLNode>();
-        vec.addAll(node.getChildren());
-        if (vec.size() != size()) {
+        @SizeT int numberOfChildren = node.childCount();
+        if (numberOfChildren != size()) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
         }
-        int count = Math.min(vec.size(), size());
+        int count = Math.min(numberOfChildren, size());
+        XMLNode.ConstChildIterator child = node.getChildrenBegin();
         for (int i = 0; i < count; i++) {
             StructureParameterBase param = get(i);
-            param.deserialize(vec.get(i));
+            param.deserialize(child.get());
+            child.next();
         }
     }
 }

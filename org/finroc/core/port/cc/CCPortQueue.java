@@ -21,10 +21,8 @@
  */
 package org.finroc.core.port.cc;
 
-import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.container.WonderQueueBounded;
 import org.finroc.core.port.ThreadLocalCache;
 
@@ -38,8 +36,8 @@ import org.finroc.core.port.ThreadLocalCache;
  *
  * Use concurrentDequeue, with threads reading from this queue concurrently.
  */
-@DefaultType("CCPortData") @Inline @NoCpp @RawTypeArgs
-public class CCPortQueue<T extends CCPortData> extends WonderQueueBounded<CCInterThreadContainer<T>, CCPortQueueElement> {
+@Inline @NoCpp
+public class CCPortQueue extends WonderQueueBounded<CCPortDataManager, CCPortQueueElement> {
 
     public CCPortQueue(int maxLength) {
         super(maxLength);

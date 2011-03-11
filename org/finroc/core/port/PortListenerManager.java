@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2007-2010 Max Reichardt,
+ * Copyright (C) 2011 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -19,35 +19,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.finroc.core.port.std;
+package org.finroc.core.port;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
+import org.finroc.jc.ListenerManager;
+import org.finroc.jc.annotation.DefaultType;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.RawTypeArgs;
 
 /**
- * @author max
- *
- * Base class for any empty/dummy port data
+ * Manager for port listeners
  */
-@Inline @NoCpp
-public abstract class EmptyPortDataImpl extends PortDataImpl {
+@SuppressWarnings("rawtypes")
+@DefaultType("PortData") @Inline @NoCpp @RawTypeArgs @JavaOnly
+public class PortListenerManager extends ListenerManager<AbstractPort, Object, PortListener, PortListenerManager> {
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void serialize(CoreOutput os) {
-    }
-
-    @Override
-    public void deserialize(CoreInput is) {
-    }
-
-    @Override
-    public String serialize() {
-        return "";
-    }
-
-    @Override
-    public void deserialize(String s) {
+    public void singleNotify(PortListener listener, AbstractPort origin, Object parameter, int CallId) {
+        listener.portChanged(origin, parameter);
     }
 }

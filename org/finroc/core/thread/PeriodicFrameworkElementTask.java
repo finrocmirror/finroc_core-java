@@ -23,12 +23,11 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.port.EdgeAggregator;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.thread.Task;
+import org.finroc.serialization.DataType;
 
 /**
  * @author max
@@ -41,7 +40,7 @@ import org.finroc.jc.thread.Task;
 public class PeriodicFrameworkElementTask extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(PeriodicFrameworkElementTask.class);
+    public static DataType<PeriodicFrameworkElementTask> TYPE = new DataType<PeriodicFrameworkElementTask>(PeriodicFrameworkElementTask.class);
 
     /** Task to execute */
     public final @Ptr Task task;
@@ -67,6 +66,13 @@ public class PeriodicFrameworkElementTask extends FinrocAnnotation {
         this.task = task;
         incoming = incomingPorts;
         outgoing = outgoingPorts;
+    }
+
+    /**
+     * Dummy constructor. Generic instantiation is not supported.
+     */
+    public PeriodicFrameworkElementTask() {
+        throw new RuntimeException("Unsupported");
     }
 
     /**

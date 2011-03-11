@@ -129,19 +129,16 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             try {
                 log(LogLevel.LL_DEBUG, logDomain, "Loading XML: " + xmlFile);
                 @PassByValue XMLDocument doc = new XMLDocument(xmlFile);
-                XMLNode root = doc.getRootNode();
+                @Ref XMLNode root = doc.getRootNode();
                 linkTmp = getQualifiedName() + "/";
 
-                @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
-                children.addAll(root.getChildren());
-                for (@SizeT int i = 0; i < children.size(); i++) {
-                    XMLNode node = children.get(i);
-                    String name = node.getName();
+                for (XMLNode.ConstChildIterator node = root.getChildrenBegin(); node.get() != root.getChildrenEnd(); node.next()) {
+                    String name = node.get().getName();
                     if (name.equals("element")) {
-                        instantiate(node, this);
+                        instantiate(node.get(), this);
                     } else if (name.equals("edge")) {
-                        String src = node.getStringAttribute("src");
-                        String dest = node.getStringAttribute("dest");
+                        String src = node.get().getStringAttribute("src");
+                        String dest = node.get().getStringAttribute("dest");
                         AbstractPort srcPort = getChildPort(src);
                         AbstractPort destPort = getChildPort(dest);
                         if (srcPort == null && destPort == null) {
@@ -185,22 +182,26 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
 
             // read parameters
-            @PassByValue SimpleList<XMLNode> children = new SimpleList<XMLNode>();
-            children.addAll(node.getChildren());
-            int idx = 0;
-            @Ptr XMLNode parameters = null;
-            @Ptr XMLNode constructorParams = null;
-            XMLNode xn = children.get(idx);
-            String pName = xn.getName();
+            XMLNode.ConstChildIterator childNode = node.getChildrenBegin();
+            @Const @Ptr XMLNode parameters = null;
+            @Const @Ptr XMLNode constructorParams = null;
+            String pName = childNode.get().getName();
             if (pName.equals("constructor")) {
-                constructorParams = xn;
-                idx++;
-                xn = children.get(idx);
-                pName = xn.getName();
+
+                //JavaOnlyBlock
+                constructorParams = childNode.get();
+
+                //Cpp constructorParams = &(*childNode);
+                childNode.next();
+                pName = childNode.get().getName();
             }
             if (pName.equals("parameters")) {
-                parameters = xn;
-                idx++;
+
+                //JavaOnlyBlock
+                parameters = childNode.get();
+
+                //Cpp parameters = &(*childNode);
+                childNode.next();
             }
 
             // create mode
@@ -219,11 +220,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
 
             // continue with children
-            for (@SizeT int i = idx; i < children.size(); i++) {
-                XMLNode node2 = children.get(i);
-                String name2 = node2.getName();
+            for (; childNode.get() != node.getChildrenEnd(); childNode.next()) {
+                String name2 = childNode.get().getName();
                 if (name2.equals("element")) {
-                    instantiate(node2, created);
+                    instantiate(childNode.get(), created);
                 } else {
                     log(LogLevel.LL_WARNING, logDomain, "Unknown XML tag: " + name2);
                 }
@@ -285,7 +285,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             log(LogLevel.LL_USER, logDomain, "Saving XML: " + currentXmlFile);
             @PassByValue XMLDocument doc = new XMLDocument();
             try {
-                final XMLNode root = doc.addRootNode("FinstructableGroup");
+                @Ref final XMLNode root = doc.addRootNode("FinstructableGroup");
 
                 // serialize framework elements
                 serializeChildren(root, this);
@@ -293,7 +293,11 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 // serialize edges
                 linkTmp = getQualifiedName() + "/";
                 FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
+
+                //JavaOnlyBlock
                 filter.traverseElementTree(this, this, root);
+
+                //Cpp filter.traverseElementTree(this, this, &root);
                 doc.writeToFile(currentXmlFile);
                 log(LogLevel.LL_USER, logDomain, "Saving successful");
             } catch (XML2WrapperException e) {
@@ -306,7 +310,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe, XMLNode root) {
+    public void treeFilterCallback(FrameworkElement fe, @Ptr XMLNode root) {
         assert(fe.isPort());
         AbstractPort ap = (AbstractPort)fe;
         ap.getConnectionPartners(connectTmp, true, false);
@@ -317,7 +321,8 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             // save edge?
             // check1: different finstructed elements as parent?
             if (ap.getParentWithFlags(CoreFlags.FINSTRUCTED) == ap2.getParentWithFlags(CoreFlags.FINSTRUCTED)) {
-                continue;
+                // TODO: check why continue causes problems here
+                // continue;
             }
 
             // check2: their deepest common finstructable_group parent is this
@@ -327,16 +332,18 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
             FrameworkElement commonFinstructableParent = commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
             if (commonFinstructableParent != this) {
-                continue;
+                // TODO: check why continue causes problems here
+                // continue;
             }
 
             // check3: only save non-volatile connections in this step
             if (ap.isVolatile() || ap2.isVolatile()) {
-                continue;
+                // TODO: check why continue causes problems here
+                // continue;
             }
 
             // save edge
-            XMLNode edge = root.addChildNode("edge");
+            @Ref XMLNode edge = root.addChildNode("edge");
             edge.setAttribute("src", getEdgeLink(ap));
             edge.setAttribute("dest", getEdgeLink(ap2));
         }
@@ -347,12 +354,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 LinkEdge le = ap.getLinkEdges().get(i);
                 if (le.getSourceLink().length() > 0) {
                     // save edge
-                    XMLNode edge = root.addChildNode("edge");
+                    @Ref XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(le.getSourceLink()));
                     edge.setAttribute("dest", getEdgeLink(ap));
                 } else {
                     // save edge
-                    XMLNode edge = root.addChildNode("edge");
+                    @Ref XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(ap));
                     edge.setAttribute("dest", getEdgeLink(le.getTargetLink()));
                 }
@@ -398,17 +405,17 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED)) {
 
                 // serialize framework element
-                XMLNode n = node.addChildNode("element");
+                @Ref XMLNode n = node.addChildNode("element");
                 n.setAttribute("name", fe.getCDescription());
                 CreateFrameworkElementAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
                 n.setAttribute("group", cma.getModuleGroup());
                 n.setAttribute("type", cma.getName());
                 if (cps != null) {
-                    XMLNode pn = n.addChildNode("constructor");
+                    @Ref XMLNode pn = n.addChildNode("constructor");
                     cps.serialize(pn);
                 }
                 if (spl != null) {
-                    XMLNode pn = n.addChildNode("parameters");
+                    @Ref XMLNode pn = n.addChildNode("parameters");
                     spl.serialize(pn);
                 }
 

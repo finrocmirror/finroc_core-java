@@ -63,7 +63,7 @@ public class StreamCommitThread extends CoreLoopThreadBase {
     }
 
     private StreamCommitThread() {
-        super(RuntimeSettings.STREAM_THREAD_CYCLE_TIME.get(), false);
+        super(RuntimeSettings.STREAM_THREAD_CYCLE_TIME.getValue(), false);
         setName("StreamCommitThread");
 
         //JavaOnlyBlock

@@ -39,6 +39,6 @@ public interface PullRequestHandler {
      * @param addLocks Number of locks to set/add
      * @return PortData to answer request with (with one additional lock)
      */
-    public @Const PortData pullRequest(PortBase origin, byte addLocks);
+    public @Const PortDataManager pullRequest(PortBase origin, byte addLocks);
 
 }

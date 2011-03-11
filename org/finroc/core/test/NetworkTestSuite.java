@@ -23,27 +23,34 @@ package org.finroc.core.test;
 
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.SharedPtr;
-import org.finroc.jc.stream.InputStreamBuffer;
-import org.finroc.jc.stream.OutputStreamBuffer;
+import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.log.LogUser;
+import org.finroc.log.LogDomain;
+import org.finroc.log.LogLevel;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.buffer.MemBuffer;
 import org.finroc.core.datatype.CoreNumber;
-import org.finroc.plugin.blackboard.BlackboardBuffer;
+import org.finroc.plugin.blackboard.BBLockException;
+import org.finroc.plugin.blackboard.BlackboardClient;
 import org.finroc.plugin.blackboard.BlackboardManager;
+import org.finroc.plugin.blackboard.BlackboardReadAccess;
 import org.finroc.plugin.blackboard.BlackboardServer;
+import org.finroc.plugin.blackboard.BlackboardWriteAccess;
 import org.finroc.plugin.blackboard.RawBlackboardClient;
 import org.finroc.plugin.blackboard.SingleBufferedBlackboardServer;
+import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
-import org.finroc.core.port.std.Port;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 
 /**
  * @author max
@@ -51,10 +58,14 @@ import org.finroc.core.portdatabase.DataTypeRegister;
  *
  */
 @PassByValue @Inline @NoCpp
-public class NetworkTestSuite {
+public class NetworkTestSuite extends LogUser {
+
+    /** Log domain for this class */
+    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"test\");")
+    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("test");
 
     @AtFront @Inline @NoCpp
-    public class TestStdPort extends Port<MemBuffer> {
+    public class TestStdPort extends Port<MemoryBuffer> {
 
         @PassByValue OutputStreamBuffer os = new OutputStreamBuffer();
         @PassByValue InputStreamBuffer is = new InputStreamBuffer();
@@ -64,7 +75,7 @@ public class NetworkTestSuite {
         }
 
         public void publish(int i) {
-            MemBuffer mb = getUnusedBuffer();
+            MemoryBuffer mb = getUnusedBuffer();
             os.reset(mb);
             os.writeInt(i);
             os.close();
@@ -72,32 +83,32 @@ public class NetworkTestSuite {
         }
 
         public int getIntRaw() {
-            @Const MemBuffer mb = getLockedUnsafe();
+            @Const MemoryBuffer mb = getAutoLocked();
             is.reset(mb);
             int result = -1;
             if (is.moreDataAvailable()) {
                 result = is.readInt();
             }
             is.close();
-            mb.getManager().releaseLock();
+            releaseAutoLocks();
             return result;
         }
     }
 
-    public static final boolean CC_TESTS = false, STD_TESTS = false;
-    public static final boolean BB_TESTS = true;
-    public static final boolean PUSH_TESTS = false, PULL_PUSH_TESTS = false, REVERSE_PUSH_TESTS = false, Q_TESTS = false;
+    public static final boolean CC_TESTS = false, STD_TESTS = true;
+    public static final boolean BB_TESTS = false;
+    public static final boolean PUSH_TESTS = false, PULL_PUSH_TESTS = false, REVERSE_PUSH_TESTS = true, Q_TESTS = false;
     public final String blackboardName, partnerBlackboardName;
     public static final short PUBLISH_FREQ = 200, RECV_FREQ = 1000;
     public final int stopCycle;
 
-    public @SharedPtr PortNumeric ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
-    public @SharedPtr PortNumeric ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
+    public @SharedPtr PortNumeric<Integer> ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
+    public @SharedPtr PortNumeric<Integer> ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
     public @SharedPtr TestStdPort stdPushOut, stdPullPushOut, stdRevPushOut, stdRevPushOutLocal, stdQOut;
     public @SharedPtr TestStdPort stdPushIn, stdPullPushIn, stdRevPushIn, stdQIn;
-    public RawBlackboardClient bbClient, localBbClient;
-    public BlackboardServer bbServer;
-    public SingleBufferedBlackboardServer sbbServer;
+    public BlackboardClient<MemoryBuffer> bbClient, localBbClient;
+    public BlackboardServer<MemoryBuffer> bbServer;
+    public SingleBufferedBlackboardServer<MemoryBuffer> sbbServer;
 
     public NetworkTestSuite(String bbName, String partnerBBName, int stopCycle) {
 
@@ -110,31 +121,31 @@ public class NetworkTestSuite {
 
         if (CC_TESTS) {
             if (PUSH_TESTS) {
-                ccPushOut = new PortNumeric(new PortCreationInfo("CCPush Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccPushIn = new PortNumeric(new PortCreationInfo("CCPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Output", PortFlags.SHARED_OUTPUT_PORT));
+                ccPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Input", PortFlags.SHARED_INPUT_PORT));
                 ccPushIn.setMinNetUpdateInterval(RECV_FREQ);
             }
             if (PULL_PUSH_TESTS) {
-                ccPullPushOut = new PortNumeric(new PortCreationInfo("CCPullPush Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccPullPushIn = new PortNumeric(new PortCreationInfo("CCPullPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccPullPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Output", PortFlags.SHARED_OUTPUT_PORT));
+                ccPullPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Input", PortFlags.SHARED_INPUT_PORT));
                 ccPullPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 ccPullPushIn.setPushStrategy(false);
             }
             if (REVERSE_PUSH_TESTS) {
-                ccRevPushOut = new PortNumeric(new PortCreationInfo("CCRevPush Output", PortFlags.SHARED_OUTPUT_PORT | PortFlags.ACCEPTS_REVERSE_DATA_PUSH));
-                ccRevPushOutLocal = new PortNumeric(new PortCreationInfo("CCRevPush Output Local", PortFlags.SHARED_OUTPUT_PORT));
-                ccRevPushIn = new PortNumeric(new PortCreationInfo("CCRevPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccRevPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output", PortFlags.SHARED_OUTPUT_PORT | PortFlags.ACCEPTS_REVERSE_DATA_PUSH));
+                ccRevPushOutLocal = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output Local", PortFlags.SHARED_OUTPUT_PORT));
+                ccRevPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Input", PortFlags.SHARED_INPUT_PORT));
                 ccRevPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 ccRevPushOutLocal.connectToTarget(ccRevPushIn);
             }
             if (Q_TESTS) {
-                ccQOut = new PortNumeric(new PortCreationInfo("CCPush Queue Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccQIn = new PortNumeric(new PortCreationInfo("CCPush Queue Input", PortFlags.SHARED_INPUT_PORT, 0));
+                ccQOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Output", PortFlags.SHARED_OUTPUT_PORT));
+                ccQIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Input", PortFlags.SHARED_INPUT_PORT, 0));
                 ccQIn.setMinNetUpdateInterval(RECV_FREQ);
             }
         }
         if (STD_TESTS) {
-            DataType bt = DataTypeRegister.getInstance().getDataType(MemBuffer.class);
+            DataTypeBase bt = MemoryBuffer.TYPE;
             if (PUSH_TESTS) {
                 stdPushOut = new TestStdPort(new PortCreationInfo("StdPush Output", bt, PortFlags.SHARED_OUTPUT_PORT));
                 stdPushIn = new TestStdPort(new PortCreationInfo("StdPush Input", bt, PortFlags.SHARED_INPUT_PORT));
@@ -164,9 +175,9 @@ public class NetworkTestSuite {
             BlackboardManager.getInstance();
             //Plugins.getInstance().addPlugin(new Blackboard2Plugin());
             //bbServer = new BlackboardServer(blackboardName);
-            sbbServer = new SingleBufferedBlackboardServer(blackboardName);
-            bbClient = new RawBlackboardClient(RawBlackboardClient.getDefaultPci().derive(partnerBlackboardName));
-            localBbClient = new RawBlackboardClient(RawBlackboardClient.getDefaultPci().derive(blackboardName));
+            sbbServer = new SingleBufferedBlackboardServer<MemoryBuffer>(blackboardName);
+            bbClient = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive(partnerBlackboardName), true, -1);
+            localBbClient = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive(blackboardName), true, -1);
         }
     }
 
@@ -314,7 +325,7 @@ public class NetworkTestSuite {
                     if (stdQIn.hasChanged()) {
                         stdQIn.resetChanged();
                         System.out.print("stdPushIn received: ");
-                        MemBuffer cn = null;
+                        MemoryBuffer cn = null;
                         while ((cn = stdQIn.dequeueSingleAutoLocked()) != null) {
                             is.reset(cn);
                             int result = -1;
@@ -339,26 +350,38 @@ public class NetworkTestSuite {
             if (BB_TESTS) {
 
                 // write to remote blackboard
-                BlackboardBuffer bb = bbClient.writeLock(2000);
-                if (bb != null) {
-                    if (bb.getElements() == 0) {
-                        bb.resize(1, 1, 4, false);
+                try {
+                    BlackboardWriteAccess<MemoryBuffer> bb = new BlackboardWriteAccess<MemoryBuffer>(bbClient, 2000);
+                    if (bb.size() == 0) {
+                        bb.resize(1);
                     }
-                    os.reset(bb);
+                    os.reset(bb.get(0));
                     os.writeInt(i);
                     os.close();
-                    bbClient.unlock();
+
+                    //JavaOnlyBlock
+                    bb.delete();
+
+                } catch (BBLockException ex) {
+                    //log(LogLevel.LL_WARNING, logDomain, "Write-locking blackboard failed");
                 }
 
                 // read local blackboard
-                @Const BlackboardBuffer bb2 = localBbClient.readLock(2000);
-                if (bb2 != null) {
-                    is.reset(bb2);
-                    if (is.moreDataAvailable()) {
-                        System.out.println("Reading Blackboard: " + is.readInt());
+                try {
+                    BlackboardReadAccess<MemoryBuffer> bb = new BlackboardReadAccess<MemoryBuffer>(localBbClient, 2000);
+                    if (bb.size() > 0) {
+                        is.reset(bb.get(0));
+                        if (is.moreDataAvailable()) {
+                            System.out.println("Reading Blackboard: " + is.readInt());
+                        }
+                        is.close();
                     }
-                    is.close();
-                    localBbClient.unlock();
+
+                    //JavaOnlyBlock
+                    bb.delete();
+
+                } catch (BBLockException ex) {
+                    log(LogLevel.LL_WARNING, logDomain, "Read-locking blackboard failed");
                 }
             }
 

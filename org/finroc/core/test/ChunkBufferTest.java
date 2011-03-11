@@ -22,8 +22,8 @@
 package org.finroc.core.test;
 
 import org.finroc.jc.stream.ChunkedBuffer;
-import org.finroc.jc.stream.InputStreamBuffer;
-import org.finroc.jc.stream.OutputStreamBuffer;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 
 /**
  * @author max

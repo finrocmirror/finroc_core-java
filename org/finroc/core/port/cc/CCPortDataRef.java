@@ -28,7 +28,7 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Superclass2;
-import org.finroc.jc.annotation.VoidPtr;
+import org.finroc.serialization.GenericObject;
 
 /**
  * References to cheap copy port data.
@@ -41,33 +41,33 @@ import org.finroc.jc.annotation.VoidPtr;
  * That means, the class is empty and no objects of this class actually exist.
  */
 @Include("CombinedPointer.h")
-@Ptr @Superclass2( {"CombinedPointer<CCPortDataContainer<> >"}) @Inline @NoCpp
+@Ptr @Superclass2( {"CombinedPointer<CCPortDataManagerTL>"}) @Inline @NoCpp
 public class CCPortDataRef {
 
     /** Port data that is referenced */
     @JavaOnly
-    private final CCPortDataContainer<?> portData;
+    private final CCPortDataManagerTL portData;
 
     /**
      * @param portData Port data that is referenced
      */
-    @JavaOnly CCPortDataRef(CCPortDataContainer<?> portData) {
+    @JavaOnly CCPortDataRef(CCPortDataManagerTL portData) {
         this.portData = portData;
     }
 
     /**
      * @return Referenced port data
      */
-    @InCpp("return getContainer()->getDataPtr();")
-    public @VoidPtr CCPortData getData() {
-        return portData.getData();
+    @InCpp("return getContainer()->getObject();")
+    public @Ptr GenericObject getData() {
+        return portData.getObject();
     }
 
     /**
      * @return Container of referenced data
      */
     @InCpp("return getPointer();")
-    public CCPortDataContainer<?> getContainer() {
+    public CCPortDataManagerTL getContainer() {
         return portData;
     }
 }

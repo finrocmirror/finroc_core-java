@@ -21,15 +21,11 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.port.cc.CCPortData;
-import org.finroc.core.port.cc.CCPortDataImpl;
-import org.finroc.core.portdatabase.DataType;
-import org.finroc.core.portdatabase.DataTypeRegister;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
-import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
 
@@ -39,24 +35,25 @@ import org.finroc.jc.annotation.Ref;
  * Information about bounds used, for instance, in bounded port or numerical setting
  * (Not meant to be used as port data)
  */
-@PassByValue
-public class Bounds extends CCPortDataImpl {
+@PassByValue @Inline @NoCpp
+public class Bounds<T> {
 
     /** Minimum and maximum bounds - Double for simplicity & efficiency reasons */
-    private double min, max;
+    @CppType("T") private double min, max;
 
     /**
      * Action to perform when value is out of range
      * Apply default value when value is out of range? (or rather adjust to minimum or maximum or discard value?)
      */
-    public enum OutOfBoundsAction { NONE, DISCARD, ADJUST_TO_RANGE, APPLY_DEFAULT }
+    private enum OutOfBoundsAction { NONE, DISCARD, ADJUST_TO_RANGE, APPLY_DEFAULT }
+    @CppType("OutOfBoundsAction")
     private OutOfBoundsAction action;
 
     /** Default value when value is out of bounds */
-    @PassByValue private CoreNumber outOfBoundsDefault = new CoreNumber();
+    @CppType("T") @PassByValue private CoreNumber outOfBoundsDefault = new CoreNumber();
 
-    /** Data Type */
-    public static DataType TYPE = DataTypeRegister.getInstance().getDataType(CoreString.class);
+//    /** Data Type */
+//    public final static DataType<Bounds> TYPE = new DataType<Bounds>(Bounds.class);
 
     /** dummy constructor for no bounds */
     public Bounds() {
@@ -69,7 +66,7 @@ public class Bounds extends CCPortDataImpl {
      * @param min Minimum bound
      * @param max Maximum bound
      */
-    public Bounds(double min, double max) {
+    public Bounds(@CppType("T") double min, @CppType("T") double max) {
         this(min, max, true);
     }
 
@@ -78,7 +75,7 @@ public class Bounds extends CCPortDataImpl {
      * @param max Maximum bound
      * @param adjustToRange Adjust values lying outside to range (or rather discard them)?
      */
-    public Bounds(double min, double max, boolean adjustToRange) {
+    public Bounds(@CppType("T") double min, @CppType("T") double max, boolean adjustToRange) {
         this.min = min;
         this.max = max;
         action = adjustToRange ? OutOfBoundsAction.ADJUST_TO_RANGE : OutOfBoundsAction.DISCARD;
@@ -89,23 +86,15 @@ public class Bounds extends CCPortDataImpl {
      * @param max Maximum bound
      * @param outOfBoundsDefault Default value when value is out of bounds
      */
-    public Bounds(double min, double max, CoreNumber outOfBoundsDefault) {
+    public Bounds(@CppType("T") double min, @CppType("T") double max, CoreNumber outOfBoundsDefault) {
         this.min = min;
         this.max = max;
         action = OutOfBoundsAction.APPLY_DEFAULT;
-        this.outOfBoundsDefault.setValue(outOfBoundsDefault);
-    }
 
-    /**
-     * @param min Minimum bound
-     * @param max Maximum bound
-     * @param outOfBoundsDefault Default value when value is out of bounds
-     */
-    public Bounds(double min, double max, Constant outOfBoundsDefault) {
-        this.min = min;
-        this.max = max;
-        action = OutOfBoundsAction.APPLY_DEFAULT;
+        //JavaOnlyBlock
         this.outOfBoundsDefault.setValue(outOfBoundsDefault);
+
+        //Cpp this->outOfBoundsDefault = outOfBoundsDefault_.value<T>();
     }
 
     /**
@@ -114,8 +103,8 @@ public class Bounds extends CCPortDataImpl {
      * @param val Value
      * @return Answer
      */
-    @ConstMethod public boolean inBounds(double val) {
-        return val >= min && val <= max;
+    @ConstMethod public boolean inBounds(@CppType("T") double val) {
+        return (!(val < min)) && (!(max < val));
     }
 
     /**
@@ -142,7 +131,7 @@ public class Bounds extends CCPortDataImpl {
     /**
      * @return Default value when value is out of bounds
      */
-    @ConstMethod @Const public CoreNumber getOutOfBoundsDefault() {
+    @ConstMethod @Const public @CppType("T") CoreNumber getOutOfBoundsDefault() {
         return outOfBoundsDefault;
     }
 
@@ -150,46 +139,14 @@ public class Bounds extends CCPortDataImpl {
      * @param val Value to adjust to range
      * @return Adjusted value
      */
-    @ConstMethod public double toBounds(double val) {
+    @ConstMethod public @CppType("T") double toBounds(@CppType("T") double val) {
         if (val < min) {
             return min;
-        } else if (val > max) {
+        } else if (max < val) {
             return max;
         }
         return val;
 
-    }
-
-    @Override
-    public DataType getType() {
-        return TYPE;
-    }
-
-    @Override
-    public void serialize(CoreOutput os) {
-        os.writeDouble(min);
-        os.writeDouble(max);
-        os.writeInt(action.ordinal());
-        outOfBoundsDefault.serialize(os);
-    }
-
-    @Override
-    public void deserialize(CoreInput is) {
-        min = is.readInt();
-        max = is.readInt();
-
-        //JavaOnlyBlock
-        action = OutOfBoundsAction.values()[is.readInt()];
-
-        //Cpp action = static_cast<OutOfBoundsAction>(is.readInt());
-
-        outOfBoundsDefault.deserialize(is);
-    }
-
-    @Override
-    @JavaOnly
-    public void assign(CCPortData other) {
-        set((Bounds)other);
     }
 
     /**
@@ -197,7 +154,7 @@ public class Bounds extends CCPortDataImpl {
      *
      * @param newBounds new value
      */
-    public void set(@Const @Ref Bounds newBounds) {
+    public void set(@Const @Ref Bounds<T> newBounds) {
         action = newBounds.action;
         max = newBounds.max;
         min = newBounds.min;
@@ -207,14 +164,14 @@ public class Bounds extends CCPortDataImpl {
     /**
      * @return Minimum value
      */
-    @ConstMethod public double getMin() {
+    @ConstMethod public @CppType("T") double getMin() {
         return min;
     }
 
     /**
      * @return Maximum value
      */
-    @ConstMethod public double getMax() {
+    @ConstMethod public @CppType("T") double getMax() {
         return max;
     }
 }

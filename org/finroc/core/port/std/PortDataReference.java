@@ -29,6 +29,7 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Superclass2;
+import org.finroc.serialization.GenericObject;
 
 /**
  * @author max
@@ -44,12 +45,12 @@ import org.finroc.jc.annotation.Superclass2;
  *
  * Is immutable
  */
-@Ptr @Superclass2( {"CombinedPointer<PortData>"}) @Inline @NoCpp
+@Ptr @Superclass2( {"CombinedPointer<PortDataManager>"}) @Inline @NoCpp
 @Include("CombinedPointer.h")
 public class PortDataReference {
 
-    /** Port data that is referenced */
-    @JavaOnly private final PortData portData;
+    /** Port data manager that is referenced */
+    @JavaOnly private final PortDataManager portDataManager;
 
     /** Reference counter associated with this reference */
     @JavaOnly private final PortDataManager.RefCounter refCounter;
@@ -57,17 +58,17 @@ public class PortDataReference {
     /**
      * @param portData Port data that is referenced
      */
-    @JavaOnly PortDataReference(PortData portData, PortDataManager.RefCounter refCounter) {
-        this.portData = portData;
+    @JavaOnly PortDataReference(PortDataManager portDataManager, PortDataManager.RefCounter refCounter) {
+        this.portDataManager = portDataManager;
         this.refCounter = refCounter;
     }
 
     /**
      * @return Referenced port data
      */
-    @InCpp("return getPointer();")
-    @ConstMethod public PortData getData() {
-        return portData;
+    @InCpp("return getManager()->getObject();")
+    @Ptr @ConstMethod public GenericObject getData() {
+        return portDataManager.getObject();
     }
 
     /**
@@ -81,8 +82,9 @@ public class PortDataReference {
     /**
      * @return Container of referenced data
      */
+    @InCpp("return getPointer();")
     @ConstMethod public PortDataManager getManager() {
-        return getData().getManager();
+        return portDataManager;
     }
 
     /**

@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2010 Max Reichardt,
+ * Copyright (C) 2011 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -21,29 +21,35 @@
  */
 package org.finroc.core.portdatabase;
 
-import org.finroc.core.port.std.CCDataList;
-import org.finroc.core.port.std.PortDataList;
-import org.finroc.jc.annotation.InCpp;
-import org.finroc.jc.annotation.Inline;
-import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
  *
- * PortDataFactory for list types
+ * RPC interface data type.
+ * (Should only be created once per data type with name and methods constructor!)
  */
-@Inline @NoCpp
-public class ListTypeFactory<T> implements PortDataFactory {
+@JavaOnly
+public class UnknownType extends DataTypeBase {
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    @InCpp("return new T(dataType);")
-    public TypedObject create(DataType dataType, boolean interThreadContainer) {
-        assert(dataType.isListType());
-        if (dataType.getElementType().isCCType()) {
-            return new CCDataList(dataType.getElementType());
-        } else {
-            return new PortDataList(dataType.getElementType());
-        }
+    /**
+     * @param name Name of RPC Inteface
+     * @param methods Referenced PortInterface
+     */
+    public UnknownType(String name) {
+        super(getDataTypeInfo(name));
+        FinrocTypeInfo.get(this).init(FinrocTypeInfo.Type.UNKNOWN);
     }
+
+    private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {
+        DataTypeBase dt = findType(name);
+        if (dt != null) {
+            return dt.getInfo();
+        }
+        DataTypeInfoRaw info = new DataTypeInfoRaw();
+        info.setName(name);
+        return info;
+    }
+
 }

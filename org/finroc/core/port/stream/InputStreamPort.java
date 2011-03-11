@@ -21,21 +21,21 @@
  */
 package org.finroc.core.port.stream;
 
-import org.finroc.core.buffer.ChunkBuffer;
 import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
-import org.finroc.core.port.std.Port;
 import org.finroc.core.port.std.PortBase;
-import org.finroc.core.port.std.PortData;
-import org.finroc.core.port.std.PortQueueFragment;
+import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.port.std.PublishCache;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.log.LogDefinitions;
+import org.finroc.jc.stream.ChunkedBuffer;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
+import org.finroc.serialization.GenericObject;
 
 /**
  * @author max
@@ -46,16 +46,16 @@ import org.finroc.log.LogLevel;
  * the sender. This is easier to handle than setting up a thread
  * for blocking IO.
  */
-public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
+public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
     /** Special Port class to load value when initialized */
     @AtFront
-    protected static class PortImpl<T extends ChunkBuffer> extends PortBase {
+    protected static class PortImpl<T extends ChunkedBuffer> extends PortBase {
 
         /**
          * Used for dequeueing data
          */
-        private PortQueueFragment<PortData> dequeueBuffer = new PortQueueFragment<PortData>();
+        private PortQueueFragmentRaw dequeueBuffer = new PortQueueFragmentRaw();
 
         /**
          * User of input stream
@@ -74,7 +74,7 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
         @SuppressWarnings("unchecked")
         @Override @InCppFile
         protected void nonStandardAssign(PublishCache pc) {
-            if (user == null || processPacket((T)pc.curRef.getData())) {
+            if (user == null || processPacket((T)pc.curRef.getData().getData())) {
                 super.nonStandardAssign(pc); // enqueue
             }
         }
@@ -91,14 +91,13 @@ public class InputStreamPort<T extends ChunkBuffer> extends Port<T> {
         /**
          * Process any packet currently in queue (method only for convenience)
          */
-        @SuppressWarnings("unchecked")
         public void processPackets() {
             dequeueAllRaw(dequeueBuffer);
-            PortData pdr = null;
-            while ((pdr = dequeueBuffer.dequeueUnsafe()) != null) {
-                user.processPacket((T)pdr);
-                pdr.getManager().releaseLock();
+            GenericObject pdr = null;
+            while ((pdr = dequeueBuffer.dequeueAutoLocked()) != null) {
+                user.processPacket(pdr.<T>getData());
             }
+            releaseAutoLocks();
         }
 
         // we have a new connection
