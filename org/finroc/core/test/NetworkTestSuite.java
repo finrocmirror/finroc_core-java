@@ -40,7 +40,6 @@ import org.finroc.plugin.blackboard.BlackboardManager;
 import org.finroc.plugin.blackboard.BlackboardReadAccess;
 import org.finroc.plugin.blackboard.BlackboardServer;
 import org.finroc.plugin.blackboard.BlackboardWriteAccess;
-import org.finroc.plugin.blackboard.RawBlackboardClient;
 import org.finroc.plugin.blackboard.SingleBufferedBlackboardServer;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
@@ -175,9 +174,9 @@ public class NetworkTestSuite extends LogUser {
             BlackboardManager.getInstance();
             //Plugins.getInstance().addPlugin(new Blackboard2Plugin());
             //bbServer = new BlackboardServer(blackboardName);
-            sbbServer = new SingleBufferedBlackboardServer<MemoryBuffer>(blackboardName);
-            bbClient = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive(partnerBlackboardName), true, -1);
-            localBbClient = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive(blackboardName), true, -1);
+            sbbServer = new SingleBufferedBlackboardServer<MemoryBuffer>(blackboardName, MemoryBuffer.TYPE);
+            bbClient = new BlackboardClient<MemoryBuffer>(partnerBlackboardName, null, MemoryBuffer.TYPE);
+            localBbClient = new BlackboardClient<MemoryBuffer>(blackboardName, null, MemoryBuffer.TYPE);
         }
     }
 

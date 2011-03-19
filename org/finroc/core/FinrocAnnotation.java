@@ -24,8 +24,10 @@ package org.finroc.core;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Friend;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.Superclass2;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
@@ -41,6 +43,8 @@ import org.finroc.serialization.TypedObjectImpl;
  * the serialization methods need to be overridden.
  */
 @Friend( {FrameworkElement.class, Annotatable.class})
+@Include( {"rrlib/serialization/TypedObject.h", "rrlib/serialization/StlContainerSuitable.h"})
+@Superclass2( {"rrlib::serialization::TypedObject", "rrlib::serialization::StlUnsuitable"})
 public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */

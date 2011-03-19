@@ -43,7 +43,6 @@ import org.finroc.plugin.blackboard.BlackboardClient;
 import org.finroc.plugin.blackboard.BlackboardManager;
 import org.finroc.plugin.blackboard.BlackboardServer;
 import org.finroc.plugin.blackboard.BlackboardWriteAccess;
-import org.finroc.plugin.blackboard.RawBlackboardClient;
 import org.finroc.plugin.blackboard.SingleBufferedBlackboardServer;
 import org.finroc.serialization.MemoryBuffer;
 import org.finroc.serialization.PortDataList;
@@ -211,8 +210,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         @SuppressWarnings("unused")
         @CppUnused
         //BlackboardServer<MemoryBuffer> server = new BlackboardServer<MemoryBuffer>("testbb");
-        SingleBufferedBlackboardServer<MemoryBuffer> server2 = new SingleBufferedBlackboardServer<MemoryBuffer>("testbb");
-        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>(RawBlackboardClient.getDefaultPci().derive("testbb"), true, -1);
+        SingleBufferedBlackboardServer<MemoryBuffer> server2 = new SingleBufferedBlackboardServer<MemoryBuffer>("testbb", MemoryBuffer.TYPE);
+        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("testbb", null, MemoryBuffer.TYPE);
         //client.autoConnect();
         FrameworkElement.initAll();
 

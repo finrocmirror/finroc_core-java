@@ -34,6 +34,7 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
@@ -41,6 +42,7 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Struct;
+import org.finroc.jc.annotation.Superclass2;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
@@ -60,6 +62,8 @@ import org.finroc.xml.XMLNode;
  * Is only meant to be used in StructureParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
+@Include( {"rrlib/serialization/Serializable.h", "rrlib/serialization/StlContainerSuitable.h"})
+@Superclass2( {"rrlib::serialization::Serializable", "rrlib::serialization::StlUnsuitable"})
 public class PortCreationList extends RRLibSerializableImpl {
 
     /** Relevant flags for comparison */
