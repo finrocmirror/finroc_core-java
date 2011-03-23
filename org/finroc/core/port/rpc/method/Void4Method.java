@@ -32,6 +32,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.NoMatching;
 import org.finroc.jc.annotation.PassByValue;
@@ -41,10 +42,10 @@ import org.finroc.log.LogLevel;
 
 @AutoVariants( {
     "Void4Method; 4 p;Void4Handler;handleCall;P1, P2, P3, P4;p1, p2, p3, p4;<>,;, );p1Name, p2Name, p3Name, p4Name",
-    "Void3Method; 3 p;Void3Handler;handleCall;P1, P2, P3;p1, p2, p3; ;);p1Name, p2Name, p3Name, NO_PARAM;//4;//n;, @PassByValue @NoMatching P4;p4;, @Const @Ref String p4N;e",
-    "Void2Method; 2 p;Void2Handler;handleCall;P1, P2;p1, p2; ;);p1Name, p2Name, NO_PARAM, NO_PARAM;//3;//n;, @PassByValue @NoMatching P3;p4;, @Const @Ref String p3N;p4Name",
-    "Void1Method; 1 p;Void1Handler;handleCall;P1;p1; ;);p1Name, NO_PARAM, NO_PARAM, NO_PARAM;//2;//n;, @PassByValue @NoMatching P2;p4;, @Const @Ref String p2N;p4Name",
-    "Void0Method; 0 p;Void0Handler;handleVoidCall; ; ; ;);NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM;//1;//n;, @PassByValue @NoMatching P1;p4;, @Const @Ref String p1N;p4Name"
+    "Void3Method; 3 p;Void3Handler;handleCall;P1, P2, P3;p1, p2, p3; ;);p1Name, p2Name, p3Name, NO_PARAM;//4;//n;, @PassByValue @NoMatching @CppType(\"P4Arg\") P4;p4;, @Const @Ref String p4N;e",
+    "Void2Method; 2 p;Void2Handler;handleCall;P1, P2;p1, p2; ;);p1Name, p2Name, NO_PARAM, NO_PARAM;//3;//n;, @PassByValue @NoMatching @CppType(\"P3Arg\") P3;p4;, @Const @Ref String p3N;p4Name",
+    "Void1Method; 1 p;Void1Handler;handleCall;P1;p1; ;);p1Name, NO_PARAM, NO_PARAM, NO_PARAM;//2;//n;, @PassByValue @NoMatching @CppType(\"P2Arg\") P2;p4;, @Const @Ref String p2N;p4Name",
+    "Void0Method; 0 p;Void0Handler;handleVoidCall; ; ; ;);NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM;//1;//n;, @PassByValue @NoMatching @CppType(\"P1Arg\") P1;p4;, @Const @Ref String p1N;p4Name"
 })
 /**
  * @author max
@@ -52,6 +53,14 @@ import org.finroc.log.LogLevel;
  * Void method with 4 parameters.
  */
 public class Void4Method<HANDLER extends Void4Handler<P1, P2, P3, P4>, P1, P2, P3, P4> extends AbstractVoidMethod {
+
+    /*Cpp
+    //1
+    typedef typename Arg<_P1>::type P1Arg; //2
+    typedef typename Arg<_P2>::type P2Arg; //3
+    typedef typename Arg<_P3>::type P3Arg; //4
+    typedef typename Arg<_P4>::type P4Arg; //n
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -78,7 +87,7 @@ public class Void4Method<HANDLER extends Void4Handler<P1, P2, P3, P4>, P1, P2, P
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void call(InterfaceClientPort port, @PassByValue @NoMatching P1 p1, @PassByValue @NoMatching P2 p2, @PassByValue @NoMatching P3 p3, @PassByValue @NoMatching P4 p4, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
+    public void call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @PassByValue @NoMatching @CppType("P4Arg") P4 p4, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3

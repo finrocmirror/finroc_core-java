@@ -22,7 +22,6 @@
 package org.finroc.core.port.rpc.method;
 
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.finroc.jc.annotation.AutoPtr;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -40,7 +39,7 @@ import org.finroc.serialization.DataTypeBase;
 public class PortInterface {
 
     /** List of methods in interface */
-    @AutoPtr private SimpleList<AbstractMethod> methods = new SimpleList<AbstractMethod>();
+    private SimpleList<AbstractMethod> methods = new SimpleList<AbstractMethod>();
 
     /** Data type for this port interface - the last one in case there are multiple (e.g. for different types of blackboards) - set by DataTypeRegister */
     DataTypeBase myType = null;

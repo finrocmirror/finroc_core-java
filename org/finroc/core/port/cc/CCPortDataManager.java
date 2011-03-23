@@ -89,8 +89,8 @@ public class CCPortDataManager extends ReusableGenericObjectManager {
     }
 
     /*Cpp
-    inline static void sharedPointerRelease(CCPortDataManager* manager, bool active) {
-      manager->recycle2();
+    inline void handlePointerRelease() {
+      recycle2();
     }
      */
 

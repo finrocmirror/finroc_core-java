@@ -29,6 +29,7 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
@@ -48,7 +49,7 @@ import org.finroc.serialization.Source;
  * This is a specialized version of the StreamBuffer read view that is used
  * throughout the framework
  */
-@Include("portdatabase/SharedPtrDeleteHandler.h")
+@Include("port/tPortDataPtr.h")
 @IncludeClass( {PortDataManager.class, CCPortDataManager.class})
 public class CoreInput extends InputStreamBuffer {
 
@@ -73,7 +74,7 @@ public class CoreInput extends InputStreamBuffer {
     }
 
     @JavaOnly
-    public CoreInput(@Const @CppType("rrlib::serialization::ConstSource") @OrgWrapper @SharedPtr ConstSource source) {
+    public CoreInput(@Const @CppType("rrlib::serialization::ConstSource") @OrgWrapper ConstSource source) {
         super(source);
     }
 
@@ -125,7 +126,7 @@ public class CoreInput extends InputStreamBuffer {
      * @return Buffer with read object (no locks)
      */
     @Inline
-    public @SharedPtr GenericObject readObjectInInterThreadContainer() {
+    public @CustomPtr("tPortDataPtr") GenericObject readObjectInInterThreadContainer() {
         GenericObject tmp = readObject(true);
         boolean ccType = FinrocTypeInfo.isCCType(tmp.getType());
 
@@ -139,11 +140,11 @@ public class CoreInput extends InputStreamBuffer {
         /*Cpp
         if (ccType) {
             CCPortDataManager* mgr = (CCPortDataManager*)tmp->getManager();
-            return std::shared_ptr<rrlib::serialization::GenericObject>(tmp, SharedPtrDeleteHandler<CCPortDataManager>(mgr));
+            return PortDataPtr<rrlib::serialization::GenericObject>(tmp, mgr);
         } else {
             PortDataManager* mgr = (PortDataManager*)tmp->getManager();
             mgr->getCurrentRefCounter()->setOrAddLocks(1);
-            return std::shared_ptr<rrlib::serialization::GenericObject>(tmp, SharedPtrDeleteHandler<PortDataManager>(mgr));
+            return PortDataPtr<rrlib::serialization::GenericObject>(tmp, mgr);
         }
          */
     }

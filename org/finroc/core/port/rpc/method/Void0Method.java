@@ -33,6 +33,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.NoMatching;
 import org.finroc.jc.annotation.PassByValue;
@@ -47,6 +48,10 @@ import org.finroc.log.LogLevel;
  * Void method with 0 parameters.
  */
 public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMethod {
+
+    /*Cpp
+
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to

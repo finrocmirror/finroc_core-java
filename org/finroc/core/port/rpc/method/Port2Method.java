@@ -33,6 +33,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoMatching;
@@ -47,6 +48,12 @@ import org.finroc.jc.annotation.Ref;
  * Non-void method with 2 parameters.
  */
 public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> extends AbstractNonVoidMethod {
+
+    /*Cpp
+    //1
+    typedef typename Arg<_P1>::type P1Arg; //2
+    typedef typename Arg<_P2>::type P2Arg;
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -87,7 +94,7 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching P1 p1, @PassByValue @NoMatching P2 p2, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
+    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2));
@@ -136,16 +143,14 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
      * Call method and wait for return value.
      * (is performed in same thread and blocks)
      *
-     * @param port Port that call is performed from (typically 'this')
-     * @param p1 Parameter 1 (with one lock for call - typically server will release it)
+     * @param port Port that call is performed from (typically 'this')                   //1
+     * @param p1 Parameter 1 (with one lock for call - typically server will release it) //2
      * @param p2 Parameter 2 (with one lock for call - typically server will release it)
-     * @param p3 Parameter 3 (with one lock for call - typically server will release it)
-     * @param p4 Parameter 4 (with one lock for call - typically server will release it)//
      * @param netTimout Network timeout in ms (value <= 0 means method default)
      * @return return value of method
      */
     @SuppressWarnings("unchecked")
-    public R call(InterfaceClientPort port, @PassByValue @NoMatching P1 p1, @PassByValue @NoMatching P2 p2, @CppDefault("-1") int netTimeout) throws MethodCallException {
+    public R call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @CppDefault("-1") int netTimeout) throws MethodCallException {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2));

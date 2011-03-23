@@ -23,6 +23,7 @@ package org.finroc.core.buffer;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.OrgWrapper;
+import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.OutputStreamBuffer;
@@ -40,7 +41,7 @@ public class CoreOutput extends OutputStreamBuffer {
         super();
     }
 
-    public CoreOutput(@OrgWrapper @SharedPtr Sink sink) {
+    public CoreOutput(@OrgWrapper @PassByValue @SharedPtr Sink sink) {
         super(sink);
     }
 

@@ -65,7 +65,7 @@ import org.finroc.core.portdatabase.ReusableGenericObjectManager;
  * shall be used in a port.
  * This way, it does not need to copied.
  */
-@Include( {"portdatabase/SharedPtrDeleteHandler.h", "CombinedPointer.h"})
+@Include( {"CombinedPointer.h"})
 @Attribute("((aligned(8)))")
 @Friend( {PortBase.class, Port.class, PortDataReference.class, DataTypeBase.class})
 @CppPrepend( {"PortDataManager PortDataManager::PROTOTYPE;",
@@ -187,23 +187,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
         return refs[reuseCounter & REF_INDEX_MASK];
     }
 
-//    /**
-//     * @return Pointer to managed object/buffer
-//     */
-//    @OrgWrapper @ConstMethod @Inline public @Const @VoidPtr Object getDataRaw() {
-//        return data;
-//    }
-
-    /*Cpp
-    inline static void sharedPointerRelease(PortDataManager* manager, bool active) {
-      if (active)
-      {
-        assert((!manager->isUnused()) && ("Unused buffers retrieved from ports must be published"));
-        manager->releaseLock();
-      }
-    }
-     */
-
     /**
      * Retrieve manager for port data
      *
@@ -211,7 +194,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
      * @return Manager for port data - or null if it does not exist
      */
-    @InCpp("return SharedPtrDeleteHandler<PortDataManager>::getManager(data, resetActiveFlag);")
+    @JavaOnly
     public static <T> PortDataManager getManager(@SharedPtr @Ref T data, @CppDefault("false") boolean resetActiveFlag) {
         GenericObjectManager gom = ReusableGenericObjectManager.getManager(data);
         if (gom instanceof PortDataManager) {
@@ -265,6 +248,13 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     @ConstMethod public boolean isUnused() {
         return unused;
     }
+
+    /*Cpp
+    inline void handlePointerRelease() {
+      assert((!isUnused()) && ("Unused buffers retrieved from ports must be published"));
+      releaseLock();
+    }
+     */
 
     /** Is port data currently locked (convenience method)? */
     public boolean isLocked() {

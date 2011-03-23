@@ -67,10 +67,11 @@ import org.finroc.core.portdatabase.RPCInterfaceType;
 import org.finroc.core.thread.ExecutionControl;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.CustomPtr;
+import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.SimpleList;
@@ -104,17 +105,17 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         new Void2Method<AdminServer, Integer, Integer>(METHODS, "DisconnectAll", "source port handle", "dummy", false);
 
     /** Set a port's value */
-    @CppType("Void3Method<AdminServer*, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer>, int>")
+    @CppType("Void3Method<AdminServer*, int, PortDataPtr<const rrlib::serialization::MemoryBuffer>, int>")
     @PassByValue public static Void3Method < AdminServer, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
         new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "dummy", false);
 
     /** Get module types */
-    @CppType("Port0Method<AdminServer*, std::shared_ptr<rrlib::serialization::MemoryBuffer> >")
+    @CppType("Port0Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer> >")
     @PassByValue public static Port0Method < AdminServer, MemoryBuffer > GET_CREATE_MODULE_ACTIONS =
         new Port0Method < AdminServer, MemoryBuffer > (METHODS, "GetCreateModuleActions", false);
 
     /** Create a module */
-    @CppType("Void4Method<AdminServer*, int, std::shared_ptr<CoreString>, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer> >")
+    @CppType("Void4Method<AdminServer*, int, PortDataPtr<CoreString>, int, PortDataPtr<const rrlib::serialization::MemoryBuffer> >")
     @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > CREATE_MODULE =
         new Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > (METHODS, "CreateModule", "create action index", "module name", "parent handle", "module creation parameters", false);
 
@@ -123,12 +124,12 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         new Void1Method<AdminServer, Integer>(METHODS, "Save Finstructable Group", "finstructable handle", false);
 
     /** Get annotation */
-    @CppType("Port2Method<AdminServer*, std::shared_ptr<rrlib::serialization::MemoryBuffer>, int, std::shared_ptr<CoreString> >")
+    @CppType("Port2Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer>, int, PortDataPtr<CoreString> >")
     @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_ANNOTATION =
         new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
 
     /** Set annotation */
-    @CppType("Void4Method<AdminServer*, int, std::shared_ptr<CoreString>, int, std::shared_ptr<const rrlib::serialization::MemoryBuffer> >")
+    @CppType("Void4Method<AdminServer*, int, PortDataPtr<CoreString>, int, PortDataPtr<const rrlib::serialization::MemoryBuffer> >")
     @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > SET_ANNOTATION =
         new Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer >(METHODS, "Set Annotation", "handle", "dummy", "dummy", "annotation", false);
 
@@ -230,7 +231,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     }
 
     @Override @NonVirtual
-    public void handleVoidCall(AbstractMethod method, Integer portHandle, @Const @SharedPtr MemoryBuffer buf, Integer dummy) throws MethodCallException {
+    public void handleVoidCall(AbstractMethod method, Integer portHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer buf, Integer dummy) throws MethodCallException {
         assert(method == SET_PORT_VALUE);
         AbstractPort port = RuntimeEnvironment.getInstance().getPort(portHandle);
         if (port != null && port.isReady()) {
@@ -261,11 +262,12 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     }
 
     @Override @NonVirtual
-    public @SharedPtr MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
+    public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
         assert(method == GET_CREATE_MODULE_ACTIONS);
 
-        @SharedPtr MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-        CoreOutput co = new CoreOutput(mb);
+        @CustomPtr("tPortDataPtr") MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+        @InCpp("CoreOutput co(mb._get());")
+        @PassByValue CoreOutput co = new CoreOutput(mb);
         @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
         for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
             @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
@@ -282,7 +284,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     }
 
     @Override @NonVirtual
-    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, @SharedPtr CoreString name, Integer parentHandle, @Const @SharedPtr MemoryBuffer paramsBuffer) throws MethodCallException {
+    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, @CustomPtr("tPortDataPtr") CoreString name, Integer parentHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer paramsBuffer) throws MethodCallException {
         ConstructorParameters params = null;
         if (method == SET_ANNOTATION) {
             assert(name == null);
@@ -389,7 +391,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     }
 
     @Override @NonVirtual
-    public @SharedPtr MemoryBuffer handleCall(AbstractMethod method, Integer handle, @SharedPtr CoreString type) throws MethodCallException {
+    public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method, Integer handle, @CustomPtr("tPortDataPtr") CoreString type) throws MethodCallException {
         assert(method == GET_ANNOTATION);
         FrameworkElement fe = getRuntime().getElement(handle);
         FinrocAnnotation result = null;
@@ -408,10 +410,11 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             //JavaOnlyBlock
             return null;
 
-            //Cpp return std::shared_ptr<rrlib::serialization::MemoryBuffer>();
+            //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
         } else {
-            @SharedPtr MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-            CoreOutput co = new CoreOutput(buf);
+            @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+            @InCpp("CoreOutput co(buf._get());")
+            @PassByValue CoreOutput co = new CoreOutput(buf);
             co.writeString(result.getType().getName());
             result.serialize(co);
             co.close();

@@ -33,6 +33,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.NoMatching;
 import org.finroc.jc.annotation.PassByValue;
@@ -47,6 +48,11 @@ import org.finroc.log.LogLevel;
  * Void method with 1 parameters.
  */
 public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractVoidMethod {
+
+    /*Cpp
+    //1
+    typedef typename Arg<_P1>::type P1Arg;
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -67,7 +73,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void call(InterfaceClientPort port, @PassByValue @NoMatching P1 p1, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
+    public void call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
         //1
         assert(hasLock(p1));
         InterfacePort ip = port.getServer();

@@ -32,6 +32,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoMatching;
@@ -41,10 +42,10 @@ import org.finroc.jc.annotation.Ref;
 
 @AutoVariants( {
     "Port4Method; 4 p;Method4Handler;P1, P2, P3, P4;, p1, p2, p3, p4;, >;p1Name, p2Name, p3Name, p4Name",
-    "Port3Method; 3 p;Method3Handler;P1, P2, P3;, p1, p2, p3; ;p1Name, p2Name, p3Name, NO_PARAM;//4;//n;, @PassByValue @NoMatching P4;p4;, @Const @Ref String p4N;e",
-    "Port2Method; 2 p;Method2Handler;P1, P2;, p1, p2; ;p1Name, p2Name, NO_PARAM, NO_PARAM;//3;//n;, @PassByValue @NoMatching P3;p4;, @Const @Ref String p3N;p4Name",
-    "Port1Method; 1 p;Method1Handler;P1;, p1; ;p1Name, NO_PARAM, NO_PARAM, NO_PARAM;//2;//n;, @PassByValue @NoMatching P2;p4;, @Const @Ref String p2N;p4Name",
-    "Port0Method; 0 p;Method0Handler; ; ;>;NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM;//1;//n;, @PassByValue @NoMatching P1;p4;, @Const @Ref String p1N;p4Name"
+    "Port3Method; 3 p;Method3Handler;P1, P2, P3;, p1, p2, p3; ;p1Name, p2Name, p3Name, NO_PARAM;//4;//n;, @PassByValue @NoMatching @CppType(\"P4Arg\") P4;p4;, @Const @Ref String p4N;e",
+    "Port2Method; 2 p;Method2Handler;P1, P2;, p1, p2; ;p1Name, p2Name, NO_PARAM, NO_PARAM;//3;//n;, @PassByValue @NoMatching @CppType(\"P3Arg\") P3;p4;, @Const @Ref String p3N;p4Name",
+    "Port1Method; 1 p;Method1Handler;P1;, p1; ;p1Name, NO_PARAM, NO_PARAM, NO_PARAM;//2;//n;, @PassByValue @NoMatching @CppType(\"P2Arg\") P2;p4;, @Const @Ref String p2N;p4Name",
+    "Port0Method; 0 p;Method0Handler; ; ;>;NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM;//1;//n;, @PassByValue @NoMatching @CppType(\"P1Arg\") P1;p4;, @Const @Ref String p1N;p4Name"
 })
 /**
  * @author max
@@ -52,6 +53,14 @@ import org.finroc.jc.annotation.Ref;
  * Non-void method with 4 parameters.
  */
 public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P1, P2, P3, P4> extends AbstractNonVoidMethod {
+
+    /*Cpp
+    //1
+    typedef typename Arg<_P1>::type P1Arg; //2
+    typedef typename Arg<_P2>::type P2Arg; //3
+    typedef typename Arg<_P3>::type P3Arg; //4
+    typedef typename Arg<_P4>::type P4Arg; //n
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -98,7 +107,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching P1 p1, @PassByValue @NoMatching P2 p2, @PassByValue @NoMatching P3 p3, @PassByValue @NoMatching P4 p4, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
+    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @PassByValue @NoMatching @CppType("P4Arg") P4 p4, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3
@@ -162,16 +171,16 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * Call method and wait for return value.
      * (is performed in same thread and blocks)
      *
-     * @param port Port that call is performed from (typically 'this')
-     * @param p1 Parameter 1 (with one lock for call - typically server will release it)
-     * @param p2 Parameter 2 (with one lock for call - typically server will release it)
-     * @param p3 Parameter 3 (with one lock for call - typically server will release it)
-     * @param p4 Parameter 4 (with one lock for call - typically server will release it)//
+     * @param port Port that call is performed from (typically 'this')                   //1
+     * @param p1 Parameter 1 (with one lock for call - typically server will release it) //2
+     * @param p2 Parameter 2 (with one lock for call - typically server will release it) //3
+     * @param p3 Parameter 3 (with one lock for call - typically server will release it) //4
+     * @param p4 Parameter 4 (with one lock for call - typically server will release it) //n
      * @param netTimout Network timeout in ms (value <= 0 means method default)
      * @return return value of method
      */
     @SuppressWarnings("unchecked")
-    public R call(InterfaceClientPort port, @PassByValue @NoMatching P1 p1, @PassByValue @NoMatching P2 p2, @PassByValue @NoMatching P3 p3, @PassByValue @NoMatching P4 p4, @CppDefault("-1") int netTimeout) throws MethodCallException {
+    public R call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @PassByValue @NoMatching @CppType("P4Arg") P4 p4, @CppDefault("-1") int netTimeout) throws MethodCallException {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3

@@ -24,9 +24,9 @@ package org.finroc.core.port.rpc;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SkipArgs;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.serialization.DataTypeBase;
@@ -88,7 +88,7 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
      * @return Unused buffer of type
      */
     @SkipArgs("1")
-    public @SharedPtr <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    public @CustomPtr("tPortDataPtr") <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
         return wrapped.<T>getBufferForCall(dt);
     }
 

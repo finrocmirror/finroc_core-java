@@ -128,12 +128,12 @@ public abstract class AbstractMethod extends LogUser {
 
     /*Cpp
     template <typename T>
-    bool hasLock(T t) {
+    bool hasLock(const T& t) {
         return ParameterUtil<T>::hasLock(t);
     }
 
     template <typename T>
-    void cleanup(T t) {
+    void cleanup(const T& t) {
         ParameterUtil<T>::cleanup(t);
     }
     */
@@ -185,6 +185,18 @@ public abstract class AbstractMethod extends LogUser {
      * @return Is this a void method?
      */
     public abstract boolean isVoidMethod();
+
+    /*Cpp
+    template <typename T>
+    struct Arg {
+        typedef T _type;
+    };
+
+    template <typename T>
+    struct Arg<PortDataPtr<T> > {
+        typedef PortDataPtr<T>& _type;
+    };
+     */
 }
 
 /**

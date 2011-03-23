@@ -24,13 +24,14 @@ package org.finroc.core.port.rpc;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.serialization.GenericObject;
 import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
@@ -45,8 +46,8 @@ import org.finroc.core.portdatabase.ReusableGenericObjectManager;
  * CC Objects: If call is executed in the same runtime environment, object is stored inside
  * otherwise it is directly serialized
  */
+@Include("PortDataPtr.h")
 @IncludeClass(CCPortDataManager.class)
-//@CppInclude("std/PortData.h")
 public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class CallParameter implements HasDestructor {
 
     /** Constants for different types of parameters in serialization */
@@ -56,7 +57,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
     @PassByValue public final CoreNumber number = new CoreNumber();
 
     /** Object Parameter */
-    public @SharedPtr GenericObject value;
+    public @CustomPtr("tPortDataPtr") GenericObject value;
 
     /** Type of parameter (see constants at beginning of class) */
     public byte type;
@@ -91,7 +92,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
             number.serialize(oos);
         } else if (type == OBJECT) {
             oos.writeObject(value);
-            @InCpp("PortDataManager* pdm = PortDataManager::getManager(value);")
+            @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
             if (pdm != null) {
                 oos.writeInt(pdm.lockID);
@@ -106,7 +107,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         } else if (type == OBJECT) {
             assert(value == null);
             value = (GenericObject)is.readObjectInInterThreadContainer();
-            @InCpp("PortDataManager* pdm = PortDataManager::getManager(value);")
+            @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
             if (pdm != null) {
                 pdm.lockID = is.readInt();

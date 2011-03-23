@@ -23,12 +23,13 @@ package org.finroc.core.port.rpc;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.RValueRef;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SkipArgs;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.core.FrameworkElement;
@@ -75,7 +76,7 @@ public class InterfaceServerPort extends InterfacePort {
      */
     @SkipArgs("1")
     @InCpp("return getBufferForCall<T>(dt);")
-    public @SharedPtr <T> T getBufferForReturn(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    public @CustomPtr("tPortDataPtr") <T> T getBufferForReturn(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
         return getBufferForCall(dt);
     }
 

@@ -35,16 +35,17 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.Superclass2;
 import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.RRLibSerializable;
@@ -72,6 +73,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     /*Cpp
 
     // typedefs
+    typedef PortDataPtr<T> DataPtr;
     typedef typename PortTypeMap<T>::PortBaseType PortBaseType;
     using PortWrapperBase<PortBaseType>::wrapped;
      */
@@ -144,9 +146,9 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * be cleared prior to using. Using this method with CC-types is not required and less
      * efficient than publishing values directly (factor 2, shouldn't matter usually).
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") @NonVirtual
     @InCpp("return PortUtil<T>::getUnusedBuffer(wrapped);")
-    @Inline public @SharedPtr T getUnusedBuffer() {
+    @Inline public @CustomPtr("tPortDataPtr") T getUnusedBuffer() {
         if (hasCCType()) {
             return (T)ThreadLocalCache.getFast().getUnusedBuffer(getDataType());
         } else {
@@ -158,12 +160,12 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * Gets Port's current value
      *
      * @return Port's current value with read lock.
-     * (in Java lock will need to be released manually, in C++ shared_ptr takes care of this)
+     * (in Java lock will need to be released manually, in C++ tPortDataPtr takes care of this)
      * (Using get with parameter T& is more efficient when using CC types - shouldn't matter usually)
      */
     @InCpp("return PortUtil<T>::getValueWithLock(wrapped);")
     @SuppressWarnings("unchecked")
-    public @Const @SharedPtr T get() {
+    public @Const @CustomPtr("tPortDataPtr") T get() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getInInterThreadContainer().getObject().getData();
         } else {
@@ -273,7 +275,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     }
 
     /*Cpp
-    void addPortListener(PortListener<std::shared_ptr<const T> >* listener) {
+    void addPortListener(PortListener<PortDataPtr<const T> >* listener) {
         wrapped->addPortListenerRaw(listener);
     }
 
@@ -295,7 +297,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     }
 
     /*Cpp
-    void removePortListener(PortListener<std::shared_ptr<const T> >* listener) {
+    void removePortListener(PortListener<PortDataPtr<const T> >* listener) {
         wrapped->removePortListenerRaw(listener);
     }
      */
@@ -329,13 +331,13 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * Use dequeueAll if a continuous set of values is required.
      *
      * (Use only with ports that have a input queue)
-     * (in Java lock will need to be released manually, in C++ shared_ptr takes care of this)
+     * (in Java lock will need to be released manually, in C++ tPortDataPtr takes care of this)
      *
      * @return Dequeued first/oldest element in queue
      */
     @InCpp("return PortUtil<T>::dequeueSingle(wrapped);")
     @SuppressWarnings("unchecked")
-    public @Const @SharedPtr T dequeueSingle() {
+    public @Const @CustomPtr("tPortDataPtr") T dequeueSingle() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).dequeueSingleUnsafeRaw().getObject().getData();
         } else {
@@ -431,6 +433,22 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
         ((CCPortBoundedNumeric)wrapped).setBounds(b);
     }
 
+    /*Cpp
+    // Publish Data Buffer. This data will be forwarded to any connected ports.
+    // Should only be called on output ports.
+    //
+    // \param data Data to publish. It will be deep-copied.
+    // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
+    void publish(const T& data) {
+        PortUtil<T>::copyAndPublish(wrapped, data);
+    }
+
+    inline void publish(PortDataPtr<T>& data)
+    {
+      PortUtil<T>::publish(wrapped, data);
+    }
+     */
+
     /**
      * Publish Data Buffer. This data will be forwarded to any connected ports.
      * It should not be modified thereafter.
@@ -439,7 +457,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * @param data Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
     @InCpp("PortUtil<T>::publish(wrapped, data);")
-    @Inline public void publish(@SharedPtr @Const @Ref T data) {
+    @Inline public void publish(@CustomPtr("tPortDataPtr") @Const @Ref T data) {
         if (hasCCType()) {
             CCPortDataManagerTL mgr = (CCPortDataManagerTL)CCPortDataManagerTL.getManager(data);
             if (mgr == null) {
@@ -462,16 +480,4 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
 //
 //        wrapped.publish(mgr);
     }
-
-    /*Cpp
-    // Publish Data Buffer. This data will be forwarded to any connected ports.
-    // It should not be modified thereafter.
-    // Should only be called on output ports.
-    //
-    // \param data Data to publish. It will be deep-copied.
-    // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
-    void publish(const T& data) {
-        PortUtil<T>::copyAndPublish(wrapped, data);
-    }
-     */
 }

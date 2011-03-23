@@ -26,9 +26,11 @@ import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.CppPrepend;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.CppUnused;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
@@ -63,7 +65,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     static @Managed @SharedPtr PortNumeric<Integer> input, output, p1, p2, p3;
     static RuntimeEnvironment re;
 
-    private static final int CYCLES = 10000000;
+    private static final int CYCLES = 1000/*0000*/;
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"test\");")
@@ -171,7 +173,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         output.connectToTarget(input);
         FrameworkElement.initAll();
 
-        @SharedPtr BlackboardBuffer buf = output.getUnusedBuffer();
+        @CustomPtr("tPortDataPtr") BlackboardBuffer buf = output.getUnusedBuffer();
         @PassByValue CoreOutput co = new CoreOutput(buf);
         co.writeInt(42);
         co.close();
@@ -225,7 +227,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Write-locking blackboard failed");
         }
 
-        @CppType("std::shared_ptr<std::vector<MemoryBuffer> >")
+        @CppType("PortDataPtr<std::vector<MemoryBuffer> >")
         //@CppType("blackboard::BlackboardClient<MemoryBuffer>::ChangeTransactionVar")
         PortDataList<MemoryBuffer> buf = client.getUnusedChangeBuffer();
         buf.resize(1);
@@ -244,7 +246,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
 
         //Cpp buf._reset();
 
-        @CppType("std::shared_ptr<const std::vector<MemoryBuffer> >")
+        @CppType("PortDataPtr<const std::vector<MemoryBuffer> >")
         PortDataList<MemoryBuffer> cbuf = client.read();
         @InCpp("CoreInput ci(&cbuf->_at(0));")
         @PassByValue CoreInput ci = new CoreInput(cbuf.get(0));
@@ -259,21 +261,22 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         int result = 0;
         long size = 0;
         for (int i = 0; i < CYCLES; i++) {
-            buf = client.writeLock(300000000);
+            @Ptr @CppType("std::vector<MemoryBuffer>")
+            PortDataList<MemoryBuffer> buf3 = client.writeLock(300000000);
 
             //JavaOnlyBlock
-            co.reset(buf.get(0));
+            co.reset(buf3.get(0));
 
-            //Cpp co.reset(&buf->_at(0));
+            //Cpp co.reset(&buf3->_at(0));
 
             co.writeInt(i);
             co.writeInt(45);
             co.close();
 
             //JavaOnlyBlock
-            size = buf.get(0).getSize();
+            size = buf3.get(0).getSize();
 
-            //Cpp size = buf->_at(0)._GetSize();
+            //Cpp size = buf3->_at(0)._GetSize();
 
             client.unlock();
 

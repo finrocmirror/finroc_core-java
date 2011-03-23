@@ -23,6 +23,7 @@ package org.finroc.core.port.rpc;
 
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
@@ -30,7 +31,6 @@ import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
@@ -298,7 +298,7 @@ public abstract class AbstractCall extends SerializableReusable {
     }
 
     template <typename T>
-    void addParam(int index, T pd) {
+    void addParam(int index, T& pd) {
         ParameterUtil<T>::addParam(&(params[index]), pd);
     }
     */
@@ -341,18 +341,22 @@ public abstract class AbstractCall extends SerializableReusable {
         }
     }
 
-    public @SharedPtr GenericObject getParamGeneric(int index) {
-        CallParameter p = params[index];
+    public @CustomPtr("tPortDataPtr") GenericObject getParamGeneric(int index) {
+        @Ref CallParameter p = params[index];
         if (p.type == CallParameter.NULLPARAM || p.value == null) {
 
             //JavaOnlyBlock
             return null;
 
-            //Cpp return std::shared_ptr<rrlib::serialization::GenericObject>();
+            //Cpp return PortDataPtr<rrlib::serialization::GenericObject>();
         } else {
-            @SharedPtr GenericObject go = p.value;
+
+            //JavaOnlyBlock
+            @Ref @CustomPtr("tPortDataPtr") GenericObject go = p.value;
             p.clear();
             return go;
+
+            //Cpp return std::_move(p.value);
         }
     }
 

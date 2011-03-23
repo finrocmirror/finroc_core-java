@@ -33,11 +33,11 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.serialization.DataTypeBase;
 
@@ -237,9 +237,9 @@ public class InterfacePort extends AbstractPort {
     @SuppressWarnings("unchecked")
     @InCpp( {"PortDataManager* mgr = getUnusedBufferRaw(rrlib::serialization::DataType<T>());",
              "mgr->getCurrentRefCounter()->setOrAddLocks((int8_t)1);",
-             "return std::shared_ptr<T>(mgr->getObject()->getData<T>(), SharedPtrDeleteHandler<PortDataManager>(mgr));"
+             "return PortDataPtr<T>(mgr);"
             })
-    protected @SharedPtr <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    protected @CustomPtr("tPortDataPtr") <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
         PortDataManager pdm = getUnusedBufferRaw(dt);
         T t = (T)pdm.getObject().getData();
         pdm.getCurrentRefCounter().setOrAddLocks((byte)1);

@@ -33,6 +33,7 @@ import org.finroc.core.port.rpc.RPCThreadPool;
 import org.finroc.jc.annotation.AutoVariants;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoMatching;
@@ -47,6 +48,10 @@ import org.finroc.jc.annotation.Ref;
  * Non-void method with 0 parameters.
  */
 public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractNonVoidMethod {
+
+    /*Cpp
+
+     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -121,10 +126,6 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
      * (is performed in same thread and blocks)
      *
      * @param port Port that call is performed from (typically 'this')
-     * @param p1 Parameter 1 (with one lock for call - typically server will release it)
-     * @param p2 Parameter 2 (with one lock for call - typically server will release it)
-     * @param p3 Parameter 3 (with one lock for call - typically server will release it)
-     * @param p4 Parameter 4 (with one lock for call - typically server will release it)//
      * @param netTimout Network timeout in ms (value <= 0 means method default)
      * @return return value of method
      */

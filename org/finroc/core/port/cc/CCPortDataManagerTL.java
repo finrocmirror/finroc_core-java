@@ -235,11 +235,8 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
     }
 
     /*Cpp
-    inline static void sharedPointerRelease(CCPortDataManagerTL* manager, bool active) {
-      if (active)
-      {
-        manager->releaseLock();
-      }
+    inline void handlePointerRelease() {
+      releaseLock();
     }
      */
 

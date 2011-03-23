@@ -109,7 +109,8 @@ public class PullCall extends AbstractCall implements Task {
                 //JavaOnlyBlock
                 addParam(0, cpd.getObject());
 
-                //Cpp addParam(0, std::shared_ptr<rrlib::serialization::GenericObject>(cpd->getObject(), SharedPtrDeleteHandler<CCPortDataManager>(cpd)));
+                //Cpp PortDataPtr<rrlib::serialization::GenericObject> tmp(cpd->getObject(), cpd);
+                //Cpp addParam(0, tmp);
 
                 setStatusReturn();
                 port.sendCallReturn(this);
@@ -121,7 +122,8 @@ public class PullCall extends AbstractCall implements Task {
                 //JavaOnlyBlock
                 addParam(0, pd.getObject());
 
-                //Cpp addParam(0, std::shared_ptr<rrlib::serialization::GenericObject>(pd->getObject(), SharedPtrDeleteHandler<PortDataManager>(pd)));
+                //Cpp PortDataPtr<rrlib::serialization::GenericObject> tmp(pd->getObject(), pd);
+                //Cpp addParam(0, tmp);
 
                 setStatusReturn();
                 port.sendCallReturn(this);

@@ -51,6 +51,7 @@ import org.finroc.core.port.std.PullRequestHandler;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.ArrayWrapper;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.InitInBody;
@@ -465,7 +466,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 if (pc.hasException()) {
                     getRaw(resultBuffer);
                 } else {
-                    @SharedPtr GenericObject o = pc.getParamGeneric(0);
+                    @CustomPtr("tPortDataPtr") GenericObject o = pc.getParamGeneric(0);
                     CCPortDataManager c = (CCPortDataManager)o.getManager();
                     resultBuffer.getObject().deepCopyFrom(c.getObject(), null);
 
@@ -606,7 +607,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                     pc.recycle();
                     return pd;
                 } else {
-                    @SharedPtr GenericObject o = pc.getParamGeneric(0);
+                    @CustomPtr("tPortDataPtr") GenericObject o = pc.getParamGeneric(0);
                     PortDataManager pd = (PortDataManager)o.getManager();
                     @InCpp("int locks = 0;")
                     int locks = 1; // Java: we already have one lock

@@ -21,7 +21,6 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.jc.annotation.AutoPtr;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppInclude;
@@ -30,7 +29,9 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.annotation.UniquePtr;
 import org.finroc.jc.container.SimpleList;
 
 /**
@@ -64,7 +65,7 @@ public class Unit {
     private final byte uid;
 
     /** factors for conversion to other units in group */
-    @AutoPtr private double[] factors;
+    @SharedPtr private double[] factors;
 
     /** Is this class a constant? */
     private final boolean isAConstant;
