@@ -174,6 +174,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         FrameworkElement.initAll();
 
         @CustomPtr("tPortDataPtr") BlackboardBuffer buf = output.getUnusedBuffer();
+        @InCpp("CoreOutput co(buf.get());")
         @PassByValue CoreOutput co = new CoreOutput(buf);
         co.writeInt(42);
         co.close();
