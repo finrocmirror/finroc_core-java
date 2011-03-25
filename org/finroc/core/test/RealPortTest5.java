@@ -222,6 +222,11 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             BlackboardWriteAccess<MemoryBuffer> bbw = new BlackboardWriteAccess<MemoryBuffer>(client, 4000000);
             bbw.resize(8/*, 8, 8, false*/);
 
+            @InCpp("CoreOutput co(&(bbw[0]));")
+            @PassByValue CoreOutput co = new CoreOutput(bbw.get(0));
+            co.writeLong(0);
+            co.close();
+
             //JavaOnlyBlock
             bbw.delete();
         } catch (BBLockException ex) {

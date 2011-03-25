@@ -261,4 +261,9 @@ public class MethodCall extends AbstractCall implements Task {
         return portInterfaceType;
     }
 
+    /*Cpp
+    virtual void customDelete(bool b) {
+        Reusable::customDelete(b);
+    }
+     */
 }

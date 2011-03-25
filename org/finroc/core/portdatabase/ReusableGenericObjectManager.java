@@ -72,6 +72,7 @@ public abstract class ReusableGenericObjectManager extends Reusable implements G
 
     @Override
     protected void deleteThis() {
+        //Cpp this->~ReusableGenericObjectManager();
         //Cpp delete _M_getObject();
     }
 

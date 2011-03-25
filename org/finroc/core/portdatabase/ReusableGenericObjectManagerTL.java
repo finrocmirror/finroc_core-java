@@ -66,6 +66,7 @@ public class ReusableGenericObjectManagerTL extends ReusableTL implements Generi
 
     @Override
     protected void deleteThis() {
+        //Cpp this->~ReusableGenericObjectManagerTL();
         //Cpp delete _M_getObject();
     }
 

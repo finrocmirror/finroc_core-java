@@ -137,4 +137,10 @@ public class PullCall extends AbstractCall implements Task {
     public String toString() {
         return "PullCall (" + getStatusString() + ", callid: " + super.getMethodCallIndex() + ", threaduid: " + super.getThreadUid() + ")";
     }
+
+    /*Cpp
+    virtual void customDelete(bool b) {
+        Reusable::customDelete(b);
+    }
+     */
 }

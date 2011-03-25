@@ -194,7 +194,11 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
         refCounter--;
         assert(refCounter >= 0);
         if (refCounter == 0) {
+
+            //JavaOnlyBlock
             this.delete(); // my favourite statement :-)
+
+            //Cpp this->customDelete(false);
         }
     }
 
