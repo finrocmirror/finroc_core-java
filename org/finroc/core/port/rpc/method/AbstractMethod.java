@@ -21,9 +21,11 @@
  */
 package org.finroc.core.port.rpc.method;
 
+import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.rpc.InterfaceNetPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
+import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.Friend;
@@ -52,7 +54,7 @@ import org.finroc.serialization.GenericObjectManager;
 @Ptr
 @Friend(PortInterface.class)
 @Include("ParameterUtil.h")
-public abstract class AbstractMethod extends LogUser {
+public abstract class AbstractMethod extends LogUser implements HasDestructor {
 
     /** Method name */
     private String name;
@@ -97,6 +99,10 @@ public abstract class AbstractMethod extends LogUser {
         }
         this.handleInExtraThread = handleInExtraThread;
         portInterface.addMethod(this);
+    }
+
+    public void delete() {
+        RuntimeEnvironment.shutdown();
     }
 
     @JavaOnly

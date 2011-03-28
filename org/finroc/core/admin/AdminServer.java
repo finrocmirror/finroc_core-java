@@ -90,7 +90,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer> {
 
     /** Admin interface */
-    @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface");
+    @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface", true);
 
     /** Connect */
     @PassByValue public static Void2Method<AdminServer, Integer, Integer> CONNECT =

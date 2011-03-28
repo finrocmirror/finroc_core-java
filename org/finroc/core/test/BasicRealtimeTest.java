@@ -22,6 +22,7 @@
 package org.finroc.core.test;
 
 import org.finroc.core.RuntimeEnvironment;
+import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 import org.finroc.jc.AtomicInt;
 import org.finroc.jc.AtomicInt64;
@@ -39,7 +40,7 @@ import org.finroc.jc.thread.ThreadUtil;
  */
 public class BasicRealtimeTest extends Thread {
 
-    PortNumeric port;
+    PortNumeric<Integer> port;
     AtomicInt64 maxLatency = new AtomicInt64();
     AtomicInt64 totalLatency = new AtomicInt64();
     AtomicInt cycles = new AtomicInt();
@@ -66,12 +67,13 @@ public class BasicRealtimeTest extends Thread {
     }
 
     public BasicRealtimeTest(String name) {
-        port = new PortNumeric(name + "-port", true);
+        port = new PortNumeric<Integer>(name + "-port", null, true);
         port.init();
         setName(name);
     }
 
     public void run() {
+        ThreadLocalCache.get(); // init ThreadLocalCache
         port.publish(40);
         port.publish(42);
 

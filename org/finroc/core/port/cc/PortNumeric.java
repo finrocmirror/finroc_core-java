@@ -26,6 +26,7 @@ import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.PostProcess;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
@@ -192,6 +193,7 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     /**
      * Get double value of port ignoring unit
      */
+    @PostProcess("org.finroc.j2c.NumericPort")
     public double getDoubleRaw() {
         @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
         if (pushStrategy()) {
@@ -213,6 +215,7 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     /**
      * Get int value of port ignoring unit
      */
+    @PostProcess("org.finroc.j2c.NumericPort")
     public int getIntRaw() {
         @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
         if (pushStrategy()) {

@@ -39,7 +39,7 @@ import org.finroc.jc.annotation.Superclass2;
  * Can register at port to receive callbacks whenever the port's value changes
  */
 @Include("PortListenerAdapter.h")
-@DefaultType("void*") @Ptr @Inline @NoCpp @RawTypeArgs @Superclass2( {"PortListenerAdapter<T, typeutil::IsCCType<T>::value, boost::is_integral<T>::value || boost::is_floating_point<T>::value>"})
+@DefaultType("const void*") @Ptr @Inline @NoCpp @RawTypeArgs @Superclass2( {"PortListenerAdapter<T, typeutil::IsCCType<T>::value, boost::is_integral<T>::value || boost::is_floating_point<T>::value>"})
 public interface PortListener<T> extends EventListener {
 
     /**

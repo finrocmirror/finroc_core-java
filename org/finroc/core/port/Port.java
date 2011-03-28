@@ -354,17 +354,26 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      *
      * @param result Buffer to (deep) copy dequeued value to
      * (Using this dequeueSingle()-variant is more efficient when using CC types, but can be extremely costly with large data types)
+     * @return true if element was dequeued - false if queue was empty
      */
-    @InCpp("PortUtil<T>::dequeueSingle(wrapped, result);")
-    public void dequeueSingle(@Ref T result) {
+    @InCpp("return PortUtil<T>::dequeueSingle(wrapped, result);")
+    public boolean dequeueSingle(@Ref T result) {
         if (hasCCType()) {
             CCPortDataManager mgr = ((CCPortBase)wrapped).dequeueSingleUnsafeRaw();
-            Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
-            mgr.recycle2();
+            if (mgr != null) {
+                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                mgr.recycle2();
+                return true;
+            }
+            return false;
         } else {
             PortDataManager mgr = ((PortBase)wrapped).dequeueSingleUnsafeRaw();
-            Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
-            mgr.releaseLock();
+            if (mgr != null) {
+                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                mgr.releaseLock();
+                return true;
+            }
+            return false;
         }
     }
 

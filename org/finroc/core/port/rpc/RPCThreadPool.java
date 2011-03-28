@@ -23,6 +23,7 @@ package org.finroc.core.port.rpc;
 
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.rpc.RPCThread.RPCThreadContainer;
+import org.finroc.jc.AutoDeleter;
 import org.finroc.jc.MutexLockOrder;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
@@ -42,7 +43,7 @@ import org.finroc.jc.thread.ThreadUtil;
 public class RPCThreadPool {
 
     /** Singleton instance */
-    private static RPCThreadPool instance = new RPCThreadPool();
+    @Ptr private static RPCThreadPool instance = AutoDeleter.addStatic(new RPCThreadPool());
 
     /** Pool of unused threads */
     @InCpp("util::WonderQueue<RPCThread> unusedThreads;")

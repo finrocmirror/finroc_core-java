@@ -166,6 +166,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
     @Override
     public void delete() {
         //Cpp delete types;
+        //Cpp delete typesByLocalUid;
     }
 
     /**

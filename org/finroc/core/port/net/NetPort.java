@@ -58,7 +58,6 @@ import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
-import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.log.LogUser;
 import org.finroc.serialization.GenericObject;
@@ -472,6 +471,7 @@ public abstract class NetPort extends LogUser implements PortListener {
 
                     //JavaOnlyBlock
                     c.recycle2();
+
                 }
                 pc.recycle();
 
@@ -830,7 +830,7 @@ public abstract class NetPort extends LogUser implements PortListener {
     protected abstract void propagateStrategyOverTheNet();
 
     /*Cpp
-    virtual void portChanged(AbstractPort* origin, void* const& value)
+    virtual void portChanged(AbstractPort* origin, const void* const& value)
     {
       portChanged();
     }

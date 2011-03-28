@@ -23,10 +23,13 @@ package org.finroc.core.test;
 
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.log.LogUser;
@@ -64,7 +67,7 @@ public class NetworkTestSuite extends LogUser {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("test");
 
     @AtFront @Inline @NoCpp
-    public class TestStdPort extends Port<MemoryBuffer> {
+    public static class TestStdPort extends Port<MemoryBuffer> {
 
         @PassByValue OutputStreamBuffer os = new OutputStreamBuffer();
         @PassByValue InputStreamBuffer is = new InputStreamBuffer();
@@ -74,11 +77,11 @@ public class NetworkTestSuite extends LogUser {
         }
 
         public void publish(int i) {
-            MemoryBuffer mb = getUnusedBuffer();
+            @CustomPtr("tPortDataPtr") MemoryBuffer mb = getUnusedBuffer();
             os.reset(mb);
             os.writeInt(i);
             os.close();
-            super.publish(mb);
+            this.publish(mb);
         }
 
         public int getIntRaw() {
@@ -94,18 +97,18 @@ public class NetworkTestSuite extends LogUser {
         }
     }
 
-    public static final boolean CC_TESTS = false, STD_TESTS = true;
+    public static final boolean CC_TESTS = true, STD_TESTS = false;
     public static final boolean BB_TESTS = false;
-    public static final boolean PUSH_TESTS = false, PULL_PUSH_TESTS = false, REVERSE_PUSH_TESTS = true, Q_TESTS = false;
+    public static final boolean PUSH_TESTS = true, PULL_PUSH_TESTS = false, REVERSE_PUSH_TESTS = false, Q_TESTS = false;
     public final String blackboardName, partnerBlackboardName;
     public static final short PUBLISH_FREQ = 200, RECV_FREQ = 1000;
     public final int stopCycle;
 
-    public @SharedPtr PortNumeric<Integer> ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
-    public @SharedPtr PortNumeric<Integer> ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
-    public @SharedPtr TestStdPort stdPushOut, stdPullPushOut, stdRevPushOut, stdRevPushOutLocal, stdQOut;
-    public @SharedPtr TestStdPort stdPushIn, stdPullPushIn, stdRevPushIn, stdQIn;
-    public BlackboardClient<MemoryBuffer> bbClient, localBbClient;
+    public @Managed @SharedPtr PortNumeric<Integer> ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
+    public @Managed @SharedPtr PortNumeric<Integer> ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
+    public @Managed @SharedPtr TestStdPort stdPushOut, stdPullPushOut, stdRevPushOut, stdRevPushOutLocal, stdQOut;
+    public @Managed @SharedPtr TestStdPort stdPushIn, stdPullPushIn, stdRevPushIn, stdQIn;
+    public @Managed @SharedPtr BlackboardClient<MemoryBuffer> bbClient, localBbClient;
     public BlackboardServer<MemoryBuffer> bbServer;
     public SingleBufferedBlackboardServer<MemoryBuffer> sbbServer;
 
@@ -251,7 +254,7 @@ public class NetworkTestSuite extends LogUser {
                     if (ccQIn.hasChanged()) {
                         ccQIn.resetChanged();
                         System.out.print("ccPushIn received: ");
-                        CoreNumber cn = null;
+                        @Const @Ptr CoreNumber cn = null;
                         while ((cn = ccQIn.dequeueSingleAutoLocked()) != null) {
                             System.out.print(" " + cn.intValue());
                         }
@@ -324,7 +327,7 @@ public class NetworkTestSuite extends LogUser {
                     if (stdQIn.hasChanged()) {
                         stdQIn.resetChanged();
                         System.out.print("stdPushIn received: ");
-                        MemoryBuffer cn = null;
+                        @Const MemoryBuffer cn = null;
                         while ((cn = stdQIn.dequeueSingleAutoLocked()) != null) {
                             is.reset(cn);
                             int result = -1;

@@ -101,7 +101,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     }
      */
 
-    @InCpp( {"type = TYPE;"}) @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)"})
+    @InCpp( {"type = TYPE;"}) @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)", "numType(eINT)"})
     public CoreNumber() {
         unit = Unit.NO_UNIT;
         numType = Type.INT;

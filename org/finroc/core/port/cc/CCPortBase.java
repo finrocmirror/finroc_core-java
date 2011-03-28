@@ -615,8 +615,9 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     private void pullValueRawImpl(@Ptr ThreadLocalCache tc, boolean intermediateAssign, boolean first) {
         @Ptr ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
-            tc.data = tc.getUnusedBuffer(dataType);
-            pullRequestHandler.pullRequest(this, tc.data);
+            CCPortDataManagerTL resBuf = tc.getUnusedBuffer(dataType);
+            pullRequestHandler.pullRequest(this, resBuf);
+            tc.data = resBuf;
             tc.data.setRefCounter(1); // one lock for caller
             tc.ref = tc.data.getCurrentRef();
             assign(tc);

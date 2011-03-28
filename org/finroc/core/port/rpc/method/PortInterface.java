@@ -21,7 +21,9 @@
  */
 package org.finroc.core.port.rpc.method;
 
+import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -36,7 +38,7 @@ import org.finroc.serialization.DataTypeBase;
  * A set of methods that can be registered as a method data type at DataTypeRegister
  */
 @Ptr
-public class PortInterface {
+public class PortInterface implements HasDestructor {
 
     /** List of methods in interface */
     private SimpleList<AbstractMethod> methods = new SimpleList<AbstractMethod>();
@@ -47,8 +49,18 @@ public class PortInterface {
     /** Name of port interface */
     String name;
 
-    public PortInterface(String name) {
+    /** Shutdown runtime when this port interface is deleted? - resolves issues with static deinitialization */
+    boolean shutdownRuntimeOnDelete;
+
+    public PortInterface(String name, boolean shutdownRuntimeOnDelete) {
         this.name = name;
+        this.shutdownRuntimeOnDelete = shutdownRuntimeOnDelete;
+    }
+
+    public void delete() {
+        if (shutdownRuntimeOnDelete) {
+            RuntimeEnvironment.shutdown();
+        }
     }
 
     void addMethod(AbstractMethod m) {
