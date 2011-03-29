@@ -22,6 +22,10 @@
 package org.finroc.core.test;
 
 import org.finroc.jc.AtomicInt;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.Managed;
+import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.core.FrameworkElement;
@@ -29,9 +33,8 @@ import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
+import org.finroc.core.port.PortQueueFragment;
 import org.finroc.core.port.ThreadLocalCache;
-import org.finroc.core.port.cc.CCPortDataManager;
-import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
@@ -44,7 +47,7 @@ public class RealPortQueueTest extends Thread {
     // Number of iterations
     public static int CYCLES = 10000000;
 
-    public static @SharedPtr PortNumeric<Integer> output;
+    public static @Managed @SharedPtr PortNumeric<Integer> output;
 
     static volatile int PUBLISH_LIMIT;
 
@@ -73,11 +76,11 @@ public class RealPortQueueTest extends Thread {
         System.out.println(time);
 
         System.out.println("Reading contents of queue (single dq)...");
-        CoreNumber cn = null;
-        while ((cn = input.dequeueSingleAutoLocked()) != null) {
-            System.out.println(cn.doubleValue());
+        @InCpp("int cn = 0;")
+        CoreNumber cn = new CoreNumber();
+        while ((input.dequeueSingle(cn))) {
+            printNum(cn);
         }
-        ThreadLocalCache.get().releaseAllLocks();
 
         System.out.println("Writing two entries to queue...");
         for (int i = 0; i < 2; i++) {
@@ -85,29 +88,28 @@ public class RealPortQueueTest extends Thread {
         }
 
         System.out.println("Reading contents of queue (single dq)...");
-        while ((cn = input.dequeueSingleAutoLocked()) != null) {
-            System.out.println(cn.doubleValue());
+        while ((input.dequeueSingle(cn))) {
+            printNum(cn);
         }
-        ThreadLocalCache.get().releaseAllLocks();
 
         System.out.println("Writing 20 entries to queue...");
         for (int i = 0; i < 20; i++) {
             output.publish(i);
         }
 
-        /*TODO
         System.out.println("Read contents of queue in fragment...");
-        CCQueueFragment<CoreNumber> frag = new CCQueueFragment<CoreNumber>();
+        @CppType("PortQueueFragment<int>")
+        PortQueueFragment<CoreNumber> frag = new PortQueueFragment<CoreNumber>();
         input.dequeueAll(frag);
-        while ((cn = frag.dequeueAutoLocked()) != null) {
-            System.out.println(cn.toString());
+        while (frag.dequeue(cn)) {
+            printNum(cn);
         }
         ThreadLocalCache.get().releaseAllLocks();
 
         System.out.println("Read contents of queue in fragment again...");
         input.dequeueAll(frag);
-        while ((cn = frag.dequeueAutoLocked()) != null) {
-            System.out.println(cn.toString());
+        while (frag.dequeue(cn)) {
+            printNum(cn);
         }
         ThreadLocalCache.get().releaseAllLocks();
 
@@ -118,8 +120,8 @@ public class RealPortQueueTest extends Thread {
 
         System.out.println("Read contents of queue in fragment...");
         input.dequeueAll(frag);
-        while ((cn = frag.dequeueAutoLocked()) != null) {
-            System.out.println(cn.toString());
+        while (frag.dequeue(cn)) {
+            printNum(cn);
         }
         ThreadLocalCache.get().releaseAllLocks();
 
@@ -151,9 +153,10 @@ public class RealPortQueueTest extends Thread {
         int lastNegUnlimitedF = 0;
 
         int e = CYCLES - 1;
-        CCPortDataManager<CoreNumber> cc;
         start = System.currentTimeMillis();
         PUBLISH_LIMIT = CYCLES;
+        @InCpp("int cc = 0;")
+        CoreNumber cc = new CoreNumber();
         while (true) {
 
             if ((lastPosUnlimited & 0xFFFF) == 0) {
@@ -161,10 +164,9 @@ public class RealPortQueueTest extends Thread {
             }
 
             // Dequeue from bounded queue
-            cc = input.dequeueSingleUnsafe();
-            if (cc != null) {
-                int val = cc.getData().intValue();
-                cc.recycle2();
+            if (input.dequeueSingle(cc)) {
+                @InCpp("int val = cc;")
+                int val = cc.intValue();
                 if (val >= 0) {
                     assert(val > lastPosLimited);
                     lastPosLimited = val;
@@ -175,10 +177,9 @@ public class RealPortQueueTest extends Thread {
             }
 
             // Dequeue from unlimited queue (single dq)
-            cc = unlimitedInput.dequeueSingleUnsafe();
-            if (cc != null) {
-                int val = cc.getData().intValue();
-                cc.recycle2();
+            if (unlimitedInput.dequeueSingle(cc)) {
+                @InCpp("int val = cc;")
+                int val = cc.intValue();
                 if (val >= 0) {
                     assert(val == lastPosUnlimited + 1);
                     lastPosUnlimited = val;
@@ -186,19 +187,19 @@ public class RealPortQueueTest extends Thread {
                     assert(val == lastNegUnlimited - 1);
                     lastNegUnlimited = val;
                 }
-            }*/
+            }
 
 //          if ((lastPosLimited == e || lastNegLimited == -e) && lastPosUnlimited == e /*&& lastNegUnlimited == -e*()*/) {
 //              System.out.println("Yeah! Check Completed");
 //              break;
 //          }
 
-        /* TODO
             // Dequeue from unlimited queue (fragment-wise)
             //System.out.println("Iteratorion");
             unlimitedInput2.dequeueAll(frag);
-            while ((cc = frag.dequeueUnsafe()) != null) {
-                int val = cc.getData().intValue();
+            while (frag.dequeue(cc)) {
+                @InCpp("int val = cc;")
+                int val = cc.intValue();
                 if (val >= 0) {
                     assert(val == lastPosUnlimitedF + 1);
                     lastPosUnlimitedF = val;
@@ -206,7 +207,6 @@ public class RealPortQueueTest extends Thread {
                     assert(val == lastNegUnlimitedF - 1);
                     lastNegUnlimitedF = val;
                 }
-                cc.recycle2();
             }
 
             if ((lastPosLimited == e || lastNegLimited == -e) && lastPosUnlimited == e && lastNegUnlimited == -e && lastPosUnlimitedF == e && lastNegUnlimitedF == -e) {
@@ -216,7 +216,12 @@ public class RealPortQueueTest extends Thread {
         }
         time = System.currentTimeMillis() - start;
         System.out.println(time);
-        finished.set(1);*/
+        finished.set(1);
+    }
+
+    @InCpp("std::cout << cn << std::endl;")
+    private static void printNum(@PassByValue @CppType("int") CoreNumber cn) {
+        System.out.println(cn.doubleValue());
     }
 
 
@@ -230,6 +235,7 @@ public class RealPortQueueTest extends Thread {
     public static AtomicInt finished = new AtomicInt(0);
 
     public void run() {
+        ThreadLocalCache.get();
         for (int i = 1; i < CYCLES; i++) {
             while (i > PUBLISH_LIMIT) {}
             output.publish(positiveCount ? i : -i);

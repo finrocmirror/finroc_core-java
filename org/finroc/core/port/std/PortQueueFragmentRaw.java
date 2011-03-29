@@ -37,7 +37,7 @@ public class PortQueueFragmentRaw extends QueueFragment<PortDataReference, PortQ
 
     /**
      * Dequeue one queue element.
-     * Returned element will be automatically unlocked
+     * Returned object needs to be unlocked manually.
      *
      * @return Next element in QueueFragment
      */

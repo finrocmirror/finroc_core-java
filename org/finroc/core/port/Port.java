@@ -60,7 +60,7 @@ import org.finroc.serialization.Serialization;
  *
  * In C++ code for correct casting is generated.
  */
-@Include( {"PortTypeMap.h", "PortUtil.h"})
+@Include( {"PortTypeMap.h", "PortUtil.h", "PortQueueFragment.h"})
 @IncludeClass(PortWrapperBase.class)
 @Inline @NoCpp @RawTypeArgs
 //@Superclass2({"PortWrapperBase<typename PortTypeMap<T>::PortBaseType>"})
@@ -314,16 +314,20 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
         }
     }
 
-    // TODO: implement safely
-//    /**
-//     * Dequeue all elements currently in queue
-//     *
-//     * @param fragment Fragment to store all dequeued values in
-//     */
-//    @SuppressWarnings("unchecked")
-//    public void dequeueAll(@Ref PortQueueFragment<T> fragment) {
-//        wrapped.dequeueAllRaw((PortQueueFragment<PortData>) fragment);
-//    }
+    /**
+     * Dequeue all elements currently in queue
+     *
+     * @param fragment Fragment to store all dequeued values in
+     */
+    @InCpp("fragment.dequeueFromPort(wrapped);")
+    public void dequeueAll(@Ref PortQueueFragment<T> fragment) {
+        fragment.cc = hasCCType();
+        if (hasCCType()) {
+            ((CCPortBase)wrapped).dequeueAllRaw(fragment.wrappedCC);
+        } else {
+            ((PortBase)wrapped).dequeueAllRaw(fragment.wrapped);
+        }
+    }
 
     /**
      * Dequeue first/oldest element in queue.
@@ -480,13 +484,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
             ((PortBase)wrapped).publish(mgr);
         }
 
-//        PortDataManager mgr = PortDataManager.getManager(data, true);
-//
 //        /*Cpp
 //        assert((!data->IsUnused()) || data.is_unique() && "It is not permitted to hold another pointer to data that is yet to be published");
-//        data._reset();
 //         */
-//
-//        wrapped.publish(mgr);
     }
 }
