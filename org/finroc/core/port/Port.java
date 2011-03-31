@@ -35,6 +35,7 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
@@ -279,7 +280,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
         wrapped->addPortListenerRaw(listener);
     }
 
-    void addPortListener(PortListener<void*>* listener) {
+    void addPortListener(PortListener<>* listener) {
         wrapped->addPortListenerRaw(listener);
     }
      */
@@ -433,6 +434,15 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
 //        return value
 //    }
 //     */
+
+    /**
+     * @return Bounds as they are currently set
+     */
+    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @InCpp("return PortUtil<T>::getBounds(wrapped);")
+    @Const @ConstMethod public Bounds<T> getBounds() {
+        return ((CCPortBoundedNumeric)wrapped).getBounds();
+    }
 
     /**
      * Set new bounds

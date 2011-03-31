@@ -21,10 +21,12 @@
  */
 package org.finroc.core.port;
 
+import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
@@ -33,6 +35,7 @@ import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.annotation.SkipArgs;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.serialization.DataTypeBase;
@@ -303,5 +306,26 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
      */
     public void releaseAutoLocks() {
         ThreadLocalCache.getFast().releaseAllLocks();
+    }
+
+    /**
+     * Add annotation to this port
+     *
+     * @param ann Annotation
+     */
+    public void addAnnotation(FinrocAnnotation ann) {
+        wrapped.addAnnotation(ann);
+    }
+
+    /**
+     * Get annotation of specified type
+     *
+     * @param type Data type of annotation we're looking for
+     * @return Annotation. Null if port has no annotation of this type.
+     */
+    @SuppressWarnings("unchecked")
+    @SkipArgs("1")
+    public <A extends FinrocAnnotation> A getAnnotation(@CppDefault("rrlib::serialization::DataType<A>()") DataTypeBase dt) {
+        return (A)wrapped.getAnnotation(dt);
     }
 }

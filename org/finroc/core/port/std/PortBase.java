@@ -494,7 +494,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Answer
      */
     @ConstMethod public boolean valueIs(@Const @VoidPtr Object pd) {
-        return value.get().getData() == pd;
+        return value.get().getData().getRawDataPtr() == pd;
     }
 
     /**

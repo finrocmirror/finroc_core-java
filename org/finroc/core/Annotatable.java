@@ -63,10 +63,19 @@ public class Annotatable extends LogUser implements HasDestructor {
         }
     }
 
+    /*Cpp
+    //! Convenience method for below
+    template <typename A>
+    A* getAnnotation() {
+        return static_cast<A*>(getAnnotation(rrlib::serialization::DataType<A>()));
+    }
+     */
+
     /**
      * Get annotation of specified type
      *
      * @param type Data type of annotation we're looking for
+     * @return Annotation. Null if framework element has no annotation of this type.
      */
     public FinrocAnnotation getAnnotation(@Const @Ref DataTypeBase dt) {
         FinrocAnnotation ann = firstAnnotation;
