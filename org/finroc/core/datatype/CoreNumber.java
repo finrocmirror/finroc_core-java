@@ -226,6 +226,34 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     void setValue(const uint32_t& t, Unit* u) {
         setValue((int32_t)t, u);
     }
+    void setValue(long int t) {
+        if (sizeof(long int) == 4) {
+            setValue((int32_t)t);
+        } else {
+            setValue((int64_t)t);
+        }
+    }
+    void setValue(long int t, Unit* u) {
+        if (sizeof(long int) == 4) {
+            setValue((int32_t)t, u);
+        } else {
+            setValue((int64_t)t, u);
+        }
+    }
+    void setValue(unsigned long int t) {
+        setValue((long int)t);
+    }
+    void setValue(unsigned long int t, Unit* u) {
+        setValue((long int)t, u);
+    }
+    void setValue(uint64_t t) {
+        setValue((int64_t)t);
+    }
+    void setValue(uint64_t t, Unit* u) {
+        setValue((int64_t)t, u);
+    }
+
+
      */
 
 
@@ -638,16 +666,38 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     }
 
     /*Cpp
+
+    bool operator<(const Number& other) const {
+        if (unit != &(Unit::NO_UNIT) && other.unit != &(Unit::NO_UNIT)) {
+            double o = other.unit->convertTo(other.dval, unit);
+            return o < dval;
+        }
+        switch(numType) {
+        case eINT:
+            return ival < other.value<int>();
+        case eLONG:
+            return lval < other.value<int64_t>();
+        case eDOUBLE:
+            return dval < other.value<double>();
+        case eFLOAT:
+            return fval < other.value<float>();
+        case eCONSTANT:
+            return unit->getValue() < other;
+        default:
+            assert(false && "Possibly not a Number at this memory address?");
+            return 0;
+        }
+    }
+
     template <typename T>
     T* getValuePtr();
     };
-
 
     template <typename T, size_t SIZE>
     struct CoreNumberPointerGetterBase {
         static T* getDataPtr(Number* num) {
             num->setValue(num->value<T>());
-            return static_cast<T*>(&num->ival);
+            return (T*)(&num->ival);  // TODO: this only works on little endian
         }
     };
 
@@ -655,7 +705,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     struct CoreNumberPointerGetterBase<T, 8> {
         static T* getDataPtr(Number* num) {
             num->setValue(num->value<T>());
-            return static_cast<T*>(&num->lval);
+            return (T*)(&num->lval);
         }
     };
 

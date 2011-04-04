@@ -23,7 +23,9 @@ package org.finroc.core.port;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
+import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.datatype.EnumValue;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortWrapperBase;
@@ -36,7 +38,9 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.CustomPtr;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.IncludeClass;
@@ -62,10 +66,29 @@ import org.finroc.serialization.Serialization;
  * In C++ code for correct casting is generated.
  */
 @Include( {"PortTypeMap.h", "PortUtil.h", "PortQueueFragment.h"})
-@IncludeClass(PortWrapperBase.class)
+@IncludeClass( {PortWrapperBase.class, CoreBoolean.class, EnumValue.class})
 @Inline @NoCpp @RawTypeArgs
 //@Superclass2({"PortWrapperBase<typename PortTypeMap<T>::PortBaseType>"})
 @Superclass2( {"PortParent<T>"})
+@HAppend( {
+    "extern template class Port<int8_t>;",
+    "extern template class Port<int16_t>;",
+    "extern template class Port<int>;",
+    "extern template class Port<long int>;",
+    "extern template class Port<long long int>;",
+    "extern template class Port<uint8_t>;",
+    "extern template class Port<uint16_t>;",
+    "extern template class Port<unsigned int>;",
+    "extern template class Port<unsigned long int>;",
+    "extern template class Port<unsigned long long int>;",
+    "extern template class Port<float>;",
+    "extern template class Port<double>;",
+    "extern template class Port<Number>;",
+    "extern template class Port<CoreString>;",
+    "extern template class Port<Boolean>;",
+    "extern template class Port<EnumValue>;",
+    "extern template class Port<rrlib::serialization::MemoryBuffer>;"
+})
 public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractPort> {
 
     /** Does port have "cheap-copy" type? */
@@ -91,11 +114,12 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
         //Cpp wrapped = new PortBaseType(processPci(pci));
     }
 
+    //Cpp template <typename Q = T>
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public Port(PortCreationInfo pci, @Const @Ref Bounds<T> bounds) {
+    public Port(PortCreationInfo pci, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> bounds) {
 
         //JavaOnlyBlock
         assert(pci.dataType == CoreNumber.TYPE);
@@ -135,7 +159,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     /**
      * @return Does port have "cheap copy" (CC) type?
      */
-    @InCpp("return typeutil::IsCCType<T>::value; // compile-time constant")
+    @InCpp("return typeutil::IsCCType<T>::value; // compile-time constant") @Inline
     public boolean hasCCType() {
         return ccType;
     }
@@ -182,7 +206,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * @param result Buffer to (deep) copy port's current value to
      * (Using this get()-variant is more efficient when using CC types, but can be extremely costly with large data types)
      */
-    @InCpp("return PortUtil<T>::getValue(wrapped, result);")
+    @InCpp("return PortUtil<T>::getValue(wrapped, result);") @Inline
     public @Const void get(@Ref T result) {
         if (hasCCType()) {
             ((CCPortBase)wrapped).getRaw((RRLibSerializable)result);
@@ -267,7 +291,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      */
     @SuppressWarnings("unchecked")
     @InCpp("return PortUtil<T>::getPull(wrapped, intermediateAssign);")
-    public @Const T getPull(boolean intermediateAssign) {
+    public @Const @CustomPtr("tPortDataPtr") T getPull(boolean intermediateAssign) {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getPullInInterthreadContainerRaw(intermediateAssign, false).getObject().getData();
         } else {
@@ -435,15 +459,18 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
 //    }
 //     */
 
+    //Cpp template <typename Q = T>
     /**
      * @return Bounds as they are currently set
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
     @InCpp("return PortUtil<T>::getBounds(wrapped);")
+    @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type")
     @Const @ConstMethod public Bounds<T> getBounds() {
         return ((CCPortBoundedNumeric)wrapped).getBounds();
     }
 
+    //Cpp template <typename Q = T>
     /**
      * Set new bounds
      * (This is not thread-safe and must only be done in "pause mode")
@@ -452,7 +479,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
     @InCpp("PortUtil<T>::setBounds(wrapped, b);")
-    public void setBounds(Bounds<T> b) {
+    public void setBounds(@Const @Ref @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") Bounds<T> b) {
         ((CCPortBoundedNumeric)wrapped).setBounds(b);
     }
 
@@ -462,7 +489,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     //
     // \param data Data to publish. It will be deep-copied.
     // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
-    void publish(const T& data) {
+    inline void publish(const T& data) {
         PortUtil<T>::copyAndPublish(wrapped, data);
     }
 
