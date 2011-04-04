@@ -71,16 +71,8 @@ import org.finroc.serialization.Serialization;
 //@Superclass2({"PortWrapperBase<typename PortTypeMap<T>::PortBaseType>"})
 @Superclass2( {"PortParent<T>"})
 @HAppend( {
-    "extern template class Port<int8_t>;",
-    "extern template class Port<int16_t>;",
     "extern template class Port<int>;",
-    "extern template class Port<long int>;",
     "extern template class Port<long long int>;",
-    "extern template class Port<uint8_t>;",
-    "extern template class Port<uint16_t>;",
-    "extern template class Port<unsigned int>;",
-    "extern template class Port<unsigned long int>;",
-    "extern template class Port<unsigned long long int>;",
     "extern template class Port<float>;",
     "extern template class Port<double>;",
     "extern template class Port<Number>;",

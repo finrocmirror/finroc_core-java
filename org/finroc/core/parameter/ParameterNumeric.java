@@ -35,6 +35,7 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.JavaOnly;
@@ -52,6 +53,12 @@ import org.finroc.log.LogLevel;
  */
 @IncludeClass(Parameter.class)
 @PassByValue @Superclass2("Parameter<T>")
+@HAppend( {
+    "extern template class ParameterNumeric<int>;",
+    "extern template class ParameterNumeric<long long int>;",
+    "extern template class ParameterNumeric<float>;",
+    "extern template class ParameterNumeric<double>;",
+})
 public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
 
     //Cpp using PortWrapperBase<CCPortBase>::logDomain;

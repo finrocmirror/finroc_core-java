@@ -29,6 +29,8 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
@@ -44,6 +46,17 @@ import org.finroc.serialization.RRLibSerializable;
  * Parameter template class for standard types
  */
 @Inline @NoCpp @PassByValue @RawTypeArgs
+@HAppend( {
+    "extern template class Parameter<int>;",
+    "extern template class Parameter<long long int>;",
+    "extern template class Parameter<float>;",
+    "extern template class Parameter<double>;",
+    "extern template class Parameter<Number>;",
+    "extern template class Parameter<CoreString>;",
+    "extern template class Parameter<Boolean>;",
+    "extern template class Parameter<EnumValue>;",
+    "extern template class Parameter<rrlib::serialization::MemoryBuffer>;"
+})
 public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
     public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
@@ -56,12 +69,14 @@ public class Parameter<T extends RRLibSerializable> extends Port<T> {
         wrapped.addAnnotation(new ParameterInfo());
     }
 
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, Bounds<T> b, @Const @Ref @CppDefault("NULL") DataTypeBase dt, @CppDefault("NULL") Unit u) {
+    //Cpp template <typename Q = T>
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @Const @Ref @CppDefault("NULL") DataTypeBase dt, @CppDefault("NULL") Unit u) {
         this(description, parent, b, dt, u);
         setConfigEntry(configEntry);
     }
 
-    public Parameter(@Const @Ref String description, FrameworkElement parent, Bounds<T> b, @CppDefault("NULL") @Const @Ref DataTypeBase dt, @CppDefault("NULL") Unit u) {
+    //Cpp template <typename Q = T>
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @CppDefault("NULL") @Const @Ref DataTypeBase dt, @CppDefault("NULL") Unit u) {
         super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
         wrapped.addAnnotation(new ParameterInfo());
     }
