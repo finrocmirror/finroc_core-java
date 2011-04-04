@@ -27,6 +27,7 @@ import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.serialization.Copyable;
 import org.finroc.serialization.DataType;
@@ -102,7 +103,7 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     }
 
     @Override
-    public void copyFrom(CoreBoolean source) {
+    public void copyFrom(@Const @Ref CoreBoolean source) {
         value = source.value;
     }
 }

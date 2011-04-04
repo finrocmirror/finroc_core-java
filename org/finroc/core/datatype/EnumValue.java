@@ -166,7 +166,7 @@ public class EnumValue extends RRLibSerializableImpl implements Copyable<EnumVal
     }
 
     @Override
-    public void copyFrom(EnumValue source) {
+    public void copyFrom(@Const @Ref EnumValue source) {
         value = source.value;
         stringConstants = source.stringConstants;
     }

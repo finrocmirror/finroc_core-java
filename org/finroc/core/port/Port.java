@@ -269,9 +269,9 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     @InCpp("return PortUtil<T>::getPull(wrapped, intermediateAssign);")
     public @Const T getPull(boolean intermediateAssign) {
         if (hasCCType()) {
-            return (T)((CCPortBase)wrapped).getPullInInterthreadContainerRaw(intermediateAssign).getObject().getData();
+            return (T)((CCPortBase)wrapped).getPullInInterthreadContainerRaw(intermediateAssign, false).getObject().getData();
         } else {
-            return (T)((PortBase)wrapped).getPullLockedUnsafe(intermediateAssign).getObject().getData();
+            return (T)((PortBase)wrapped).getPullLockedUnsafe(intermediateAssign, false).getObject().getData();
         }
     }
 

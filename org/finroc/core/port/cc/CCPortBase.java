@@ -563,11 +563,12 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Pulls port data (regardless of strategy) and returns it in interhread container
      * (careful: no auto-release of lock)
      * @param intermediateAssign Assign pulled value to ports in between?
+     * @param ignorePullRequestHandlerOnThisPort Ignore pull request handler on first port? (for network port pulling it's good if pullRequestHandler is not called on first port)
      *
      * @return Pulled locked data
      */
-    public CCPortDataManager getPullInInterthreadContainerRaw(boolean intermediateAssign) {
-        CCPortDataManagerTL tmp = pullValueRaw(intermediateAssign);
+    public CCPortDataManager getPullInInterthreadContainerRaw(boolean intermediateAssign, boolean ignorePullRequestHandlerOnThisPort) {
+        CCPortDataManagerTL tmp = pullValueRaw(intermediateAssign, ignorePullRequestHandlerOnThisPort);
         CCPortDataManager ret = ThreadLocalCache.getFast().getUnusedInterThreadBuffer(dataType);
         ret.getObject().deepCopyFrom(tmp.getObject(), null);
         tmp.releaseLock();
@@ -583,7 +584,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Locked port data (non-const!)
      */
     protected CCPortDataManagerTL pullValueRaw() {
-        return pullValueRaw(true);
+        return pullValueRaw(true, false);
     }
 
     /**
@@ -591,13 +592,14 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * When multiple source ports are available, an arbitrary one of them is used.
      *
      * @param intermediateAssign Assign pulled value to ports in between?
+     * @param ignorePullRequestHandlerOnThisPort Ignore pull request handler on first port? (for network port pulling it's good if pullRequestHandler is not called on first port)
      * @return Locked port data (current thread is owner; there is one additional lock for caller; non-const(!))
      */
-    protected CCPortDataManagerTL pullValueRaw(boolean intermediateAssign) {
+    protected CCPortDataManagerTL pullValueRaw(boolean intermediateAssign, boolean ignorePullRequestHandlerOnThisPort) {
         ThreadLocalCache tc = ThreadLocalCache.getFast();
 
         // pull value
-        pullValueRawImpl(tc, intermediateAssign, true);
+        pullValueRawImpl(tc, intermediateAssign, ignorePullRequestHandlerOnThisPort);
 
         // return locked data
         return tc.data;

@@ -103,7 +103,7 @@ public class PullCall extends AbstractCall implements Task {
 
             if (FinrocTypeInfo.isCCType(port.getPort().getDataType())) {
                 CCPortBase cp = (CCPortBase)port.getPort();
-                CCPortDataManager cpd = cp.getPullInInterthreadContainerRaw(true);
+                CCPortDataManager cpd = cp.getPullInInterthreadContainerRaw(true, true);
                 recycleParameters();
 
                 //JavaOnlyBlock
@@ -116,7 +116,7 @@ public class PullCall extends AbstractCall implements Task {
                 port.sendCallReturn(this);
             } else if (FinrocTypeInfo.isStdType(port.getPort().getDataType())) {
                 PortBase p = (PortBase)port.getPort();
-                PortDataManager pd = p.getPullLockedUnsafe(true);
+                PortDataManager pd = p.getPullLockedUnsafe(true, true);
                 recycleParameters();
 
                 //JavaOnlyBlock

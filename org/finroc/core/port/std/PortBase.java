@@ -464,7 +464,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         if (pushStrategy()) {
             return lockCurrentValueForRead();
         } else {
-            return pullValueRaw(true);
+            return pullValueRaw();
         }
     }
 
@@ -505,7 +505,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Locked port data
      */
     protected PortDataManager pullValueRaw() {
-        return pullValueRaw(true);
+        return pullValueRaw(true, false);
     }
 
     /**
@@ -513,9 +513,10 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * When multiple source ports are available an arbitrary one of them is used.
      *
      * @param intermediateAssign Assign pulled value to ports in between?
+     * @param ignorePullRequestHandlerOnThisPort Ignore pull request handler on first port? (for network port pulling it's good if pullRequestHandler is not called on first port)
      * @return Locked port data
      */
-    protected PortDataManager pullValueRaw(boolean intermediateAssign) {
+    protected PortDataManager pullValueRaw(boolean intermediateAssign, boolean ignorePullRequestHandlerOnThisPort) {
 
         // prepare publish cache
         @InCpp("PublishCache pc;")
@@ -531,7 +532,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         pc.setLocks = 0;
 
         // pull value
-        pullValueRawImpl(pc, intermediateAssign, true);
+        pullValueRawImpl(pc, intermediateAssign, ignorePullRequestHandlerOnThisPort);
 
         // lock value and return
         pc.releaseObsoleteLocks();
@@ -549,7 +550,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     private @Const void pullValueRawImpl(@Ref PublishCache pc, boolean intermediateAssign, boolean first) {
         @Ptr ArrayWrapper<PortBase> sources = edgesDest.getIterable();
-        if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
+        if ((!first) && pullRequestHandler != null) {
             pc.lockEstimate++; // for local assign
             PortDataReference pdr = pullRequestHandler.pullRequest(this, (byte)pc.lockEstimate).getCurReference();
             pc.curRef = pdr;
@@ -611,8 +612,8 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @return Pulled locked data
      */
-    public PortDataManager getPullLockedUnsafe(boolean intermediateAssign) {
-        return pullValueRaw(intermediateAssign);
+    public PortDataManager getPullLockedUnsafe(boolean intermediateAssign, boolean ignorePullRequestHandlerOnThisPort) {
+        return pullValueRaw(intermediateAssign, ignorePullRequestHandlerOnThisPort);
     }
 
     /**
