@@ -31,12 +31,15 @@ import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.StringInputStream;
@@ -49,10 +52,12 @@ import org.finroc.xml.XMLNode;
  * Annotates ports that are a parameter
  * and provides respective functionality
  */
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ParameterInfo>;"})
 public class ParameterInfo extends FinrocAnnotation {
 
     /** Data Type */
-    public final static DataType<ParameterInfo> TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
+    public final static DataTypeBase TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
 
     /** Place in Configuration tree, this parameter is configured from (nodes are separated with dots) */
     private String configEntry;

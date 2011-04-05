@@ -23,11 +23,14 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.port.EdgeAggregator;
+import org.finroc.jc.annotation.HAppend;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.thread.Task;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -37,10 +40,12 @@ import org.finroc.serialization.DataType;
  * Such tasks are executed by a ThreadContainer - in the order of the graph.
  */
 @Struct
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::PeriodicFrameworkElementTask>;"})
 public class PeriodicFrameworkElementTask extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType<PeriodicFrameworkElementTask> TYPE = new DataType<PeriodicFrameworkElementTask>(PeriodicFrameworkElementTask.class);
+    public static DataTypeBase TYPE = new DataType<PeriodicFrameworkElementTask>(PeriodicFrameworkElementTask.class);
 
     /** Task to execute */
     public final @Ptr Task task;

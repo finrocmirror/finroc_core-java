@@ -27,8 +27,10 @@ import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -44,6 +46,8 @@ import org.finroc.xml.XMLNode;
  *
  * List of structure parameters
  */
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::StructureParameterList>;"})
 public class StructureParameterList extends FinrocAnnotation implements HasDestructor {
 
     /** Data Type */

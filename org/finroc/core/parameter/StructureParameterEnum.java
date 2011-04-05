@@ -29,7 +29,7 @@ import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.container.SimpleList;
-import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -95,7 +95,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
 
     /** Helper to get this safely during static initialization */
     @InCpp("return rrlib::serialization::DataType<EnumValue>();")
-    public static DataType<EnumValue> getDataType() {
+    public static DataTypeBase getDataType() {
         return EnumValue.TYPE;
     }
 

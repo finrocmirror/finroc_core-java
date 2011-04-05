@@ -24,8 +24,10 @@ package org.finroc.core.datatype;
 import org.finroc.core.portdatabase.CCType;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -36,6 +38,7 @@ import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.Copyable;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.RRLibSerializable;
@@ -52,10 +55,12 @@ import org.finroc.xml.XMLNode;
  * (In port-classes it's probably better to wrap port classes)
  */
 @Superclass( {RRLibSerializable.class, CCType.class})
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::EnumValue>;"})
 public class EnumValue extends RRLibSerializableImpl implements Copyable<EnumValue> {
 
     /** Data Type */
-    public final static DataType<EnumValue> TYPE = new DataType<EnumValue>(EnumValue.class);
+    public final static DataTypeBase TYPE = new DataType<EnumValue>(EnumValue.class);
 
     /** Enum value as int */
     private int value = -1;

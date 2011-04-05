@@ -25,7 +25,7 @@ import org.finroc.core.datatype.CoreString;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
-import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
@@ -49,7 +49,7 @@ public class StructureParameterString extends StructureParameter<CoreString> {
 
     /** Helper to get this safely during static initialization */
     @InCpp("return rrlib::serialization::DataType<CoreString>();")
-    public static DataType<CoreString> getDataType() {
+    public static DataTypeBase getDataType() {
         return CoreString.TYPE;
     }
 

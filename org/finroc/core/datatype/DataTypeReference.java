@@ -21,6 +21,7 @@
  */
 package org.finroc.core.datatype;
 
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.serialization.DataType;
 import org.finroc.serialization.DataTypeBase;
 
@@ -29,10 +30,11 @@ import org.finroc.serialization.DataTypeBase;
  *
  * Reference to data type (type doesn't need to exist in local runtime)
  */
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::DataTypeReference>;"})
 public class DataTypeReference extends CoreString {
 
     /** Data Type */
-    public final static DataType<DataTypeReference> TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
+    public final static DataTypeBase TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
 
     public void DataType() {
         set(CoreNumber.TYPE); // default is CoreNumber

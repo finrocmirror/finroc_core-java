@@ -22,10 +22,13 @@
 package org.finroc.core.datatype;
 
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.RRLibSerializableImpl;
@@ -38,10 +41,12 @@ import org.finroc.serialization.StringOutputStream;
  * Simple string (buffer) type to use in ports
  * Has 512 bytes initially.
  */
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::CoreString>;"})
 public class CoreString extends RRLibSerializableImpl {
 
     /** Data Type */
-    public final static DataType<CoreString> TYPE = new DataType<CoreString>(CoreString.class);
+    public final static DataTypeBase TYPE = new DataType<CoreString>(CoreString.class);
 
     /** String buffer */
     @PassByValue

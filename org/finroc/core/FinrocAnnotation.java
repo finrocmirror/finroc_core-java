@@ -44,7 +44,7 @@ import org.finroc.serialization.TypedObjectImpl;
  */
 @Friend( {FrameworkElement.class, Annotatable.class})
 @Include( {"rrlib/serialization/TypedObject.h", "rrlib/serialization/StlContainerSuitable.h"})
-@Superclass2( {"rrlib::serialization::TypedObject", "rrlib::serialization::StlUnsuitable"})
+@Superclass2( {"rrlib::serialization::TypedObject", "rrlib::serialization::StlUnsuitable", "rrlib::serialization::NoSharedPtrListType"})
 public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */

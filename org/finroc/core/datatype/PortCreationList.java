@@ -33,11 +33,13 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Managed;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -64,13 +66,15 @@ import org.finroc.xml.XMLNode;
  */
 @Include( {"rrlib/serialization/Serializable.h", "rrlib/serialization/StlContainerSuitable.h"})
 @Superclass2( {"rrlib::serialization::Serializable", "rrlib::serialization::StlUnsuitable"})
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::PortCreationList>;"})
 public class PortCreationList extends RRLibSerializableImpl {
 
     /** Relevant flags for comparison */
     private static final int RELEVANT_FLAGS = CoreFlags.SHARED | PortFlags.IS_VOLATILE;
 
     /** Data Type */
-    public final static DataType<PortCreationList> TYPE = new DataType<PortCreationList>(PortCreationList.class);
+    public final static DataTypeBase TYPE = new DataType<PortCreationList>(PortCreationList.class);
 
     /** Log domain for edges */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_creation_list\");")

@@ -90,7 +90,7 @@ public class FinrocTypeInfo {
     /**
      * @return Global storage for finroc type info
      */
-    @CppType("FinrocTypeInfo*")
+    @CppType("FinrocTypeInfo*") @InCppFile
     private static final FinrocTypeInfo[] infoArray() {
         //Cpp static FinrocTypeInfo info[MAX_TYPES];
         return info;

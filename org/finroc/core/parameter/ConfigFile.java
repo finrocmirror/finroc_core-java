@@ -28,7 +28,9 @@ import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -37,6 +39,7 @@ import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.xml.XML2WrapperException;
 import org.finroc.xml.XMLDocument;
 import org.finroc.xml.XMLNode;
@@ -46,10 +49,12 @@ import org.finroc.xml.XMLNode;
  *
  * Configuration File. Is a tree of nodes with values as leafs
  */
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ConfigFile>;"})
 public class ConfigFile extends FinrocAnnotation implements FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Data Type */
-    public final static DataType<ConfigFile> TYPE = new DataType<ConfigFile>(ConfigFile.class);
+    public final static DataTypeBase TYPE = new DataType<ConfigFile>(ConfigFile.class);
 
     /** (Wrapped) XML document */
     private XMLDocument wrapped;

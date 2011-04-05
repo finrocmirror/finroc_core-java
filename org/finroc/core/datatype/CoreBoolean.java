@@ -26,11 +26,14 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.serialization.Copyable;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.RRLibSerializable;
@@ -44,10 +47,12 @@ import org.finroc.serialization.StringOutputStream;
  * boolean type
  */
 @CppName("Boolean") @CppFilename("Boolean") @Superclass( {RRLibSerializable.class, CCType.class})
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Boolean>;"})
 public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType {
 
     /** Data Type */
-    public final static DataType<CoreBoolean> TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "Boolean");
+    public final static DataTypeBase TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "Boolean");
 
     /** value */
     private boolean value;

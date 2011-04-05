@@ -23,18 +23,23 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.jc.annotation.HAppend;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 
 /**
  * @author max
  *
  * Annotation for framework elements that can be started and paused (via finstruct)
  */
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ExecutionControl>;"})
 public class ExecutionControl extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataType<ExecutionControl> TYPE = new DataType<ExecutionControl>(ExecutionControl.class);
+    public static DataTypeBase TYPE = new DataType<ExecutionControl>(ExecutionControl.class);
 
     /** Wrapped StartAndPausable */
     public final @Ptr StartAndPausable implementation;

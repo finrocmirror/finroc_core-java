@@ -28,7 +28,7 @@ import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
-import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.StringInputStream;
 
@@ -80,12 +80,12 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
 
     /** Helper to get this safely during static initialization */
     @InCpp("return rrlib::serialization::DataType<Number>();")
-    public static DataType<CoreNumber> getDataType() {
+    public static DataTypeBase getDataType() {
         return CoreNumber.TYPE;
     }
 
     /**
-     * @return Bounds of this paramete
+     * @return Bounds of this parameter
      */
     public Bounds<T> getBounds() {
         return bounds;

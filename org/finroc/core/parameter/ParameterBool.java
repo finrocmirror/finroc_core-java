@@ -32,18 +32,16 @@ import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.Inline;
-import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
-import org.finroc.serialization.DataType;
 
 /**
  * @author max
  *
  * Parameter template class for cc types
  */
-@Inline @NoCpp @PassByValue
+@PassByValue
 public class ParameterBool extends Parameter<CoreBoolean> {
 
     /**
@@ -64,9 +62,6 @@ public class ParameterBool extends Parameter<CoreBoolean> {
     /** Bool cache instance used for this parameter */
     @SharedPtr public BoolCache cache = new BoolCache();
 
-    /** Data Type */
-    public final static DataType<BoolCache> TYPE = new DataType<BoolCache>(BoolCache.class);
-
     public ParameterBool(@Const @Ref String description, FrameworkElement parent, boolean defaultValue, @Const @Ref String configEntry) {
         this(description, parent, defaultValue);
         setConfigEntry(configEntry);
@@ -82,7 +77,7 @@ public class ParameterBool extends Parameter<CoreBoolean> {
     /**
      * @return Current parameter value
      */
-    @ConstMethod
+    @ConstMethod @Inline
     public boolean getValue() {
         return cache.currentValue;
     }

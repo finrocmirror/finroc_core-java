@@ -27,18 +27,21 @@ import org.finroc.jc.annotation.ConstPtr;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.serialization.Copyable;
 import org.finroc.serialization.DataType;
+import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.RRLibSerializable;
@@ -60,6 +63,8 @@ import org.finroc.core.portdatabase.MaxStringSerializationLength;
 @CppName("Number") @CppFilename("Number")
 @MaxStringSerializationLength(22)
 @Superclass( {TypedObjectImpl.class, Object.class, CCType.class})
+@PostInclude("rrlib/serialization/DataType.h")
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Number>;"})
 public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType {
 
     /** UID */
@@ -89,7 +94,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
 
     /** Register Data type */
     @ConstPtr
-    public final static DataType<CoreNumber> TYPE = new DataType<CoreNumber>(CoreNumber.class, "Number");
+    public final static DataTypeBase TYPE = new DataType<CoreNumber>(CoreNumber.class, "Number");
 
     // All kinds of variations of constructors
     /*Cpp
@@ -569,7 +574,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
 //        return TYPE;
 //    }
 
-    public static DataType<CoreNumber> getDataType() {
+    public static DataTypeBase getDataType() {
         assert(TYPE != null);
         return TYPE;
     }
