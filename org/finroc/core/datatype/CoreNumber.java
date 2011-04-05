@@ -27,6 +27,7 @@ import org.finroc.jc.annotation.ConstPtr;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
@@ -173,11 +174,11 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         this.unit = unit;
         numType = Type.INT;
     }
-    public void setValue(long value) {
+    public void setValue(@CppType("long long int") long value) {
         setValue(value, Unit.NO_UNIT);
     }
     @InCpp( {"lval = value_;", "this->unit = unit_;", "numType = eLONG;"})
-    public void setValue(long value, @Ptr Unit unit) {
+    public void setValue(@CppType("long long int") long value, @Ptr Unit unit) {
         this.value = value;
         this.unit = unit;
         numType = Type.LONG;
@@ -235,14 +236,14 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         if (sizeof(long int) == 4) {
             setValue((int32_t)t);
         } else {
-            setValue((int64_t)t);
+            setValue((long long int)t);
         }
     }
     void setValue(long int t, Unit* u) {
         if (sizeof(long int) == 4) {
             setValue((int32_t)t, u);
         } else {
-            setValue((int64_t)t, u);
+            setValue((long long int)t, u);
         }
     }
     void setValue(unsigned long int t) {
@@ -251,10 +252,10 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     void setValue(unsigned long int t, Unit* u) {
         setValue((long int)t, u);
     }
-    void setValue(uint64_t t) {
+    void setValue(unsigned long long int t) {
         setValue((int64_t)t);
     }
-    void setValue(uint64_t t, Unit* u) {
+    void setValue(unsigned long long int t, Unit* u) {
         setValue((int64_t)t, u);
     }
 

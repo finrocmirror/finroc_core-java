@@ -31,7 +31,6 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.jc.annotation.SizeT;
-import org.finroc.jc.annotation.UniquePtr;
 import org.finroc.jc.container.SimpleList;
 
 /**
