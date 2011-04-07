@@ -28,6 +28,7 @@ import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
+import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
@@ -51,6 +52,7 @@ import org.finroc.serialization.DataTypeBase;
  * - Connect() methods can be hidden/reimplemented (via name hiding). This can be used to enforce that only certain connections can be created at compile time.
  */
 @Inline @NoCpp @PassByValue @RawTypeArgs
+@HAppend("template <typename T> inline bool operator==(const AbstractPort* p, PortWrapperBase<T> pw) { return pw == p; }")
 public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
 
     /** Wrapped port */
@@ -289,7 +291,7 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
     /*Cpp
     // using this operator, it can be checked conveniently in PortListener's portChanged()
     // whether origin port is the same port as this object wraps
-    bool operator ==(const T* p) const {
+    bool operator ==(const AbstractPort* p) const {
         return wrapped == p;
     }
      */

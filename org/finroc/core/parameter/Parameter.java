@@ -29,12 +29,16 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppDefault;
+import org.finroc.jc.annotation.CppFilename;
+import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.serialization.DataTypeBase;
@@ -47,37 +51,42 @@ import org.finroc.serialization.RRLibSerializable;
  */
 @Inline @NoCpp @PassByValue @RawTypeArgs
 @HAppend( {
-    "extern template class Parameter<int>;",
-    "extern template class Parameter<long long int>;",
-    "extern template class Parameter<float>;",
-    "extern template class Parameter<double>;",
-    "extern template class Parameter<Number>;",
-    "extern template class Parameter<CoreString>;",
-    "extern template class Parameter<Boolean>;",
-    "extern template class Parameter<EnumValue>;",
-    "extern template class Parameter<rrlib::serialization::MemoryBuffer>;"
+    "extern template class ParameterBase<int>;",
+    "extern template class ParameterBase<long long int>;",
+    "extern template class ParameterBase<float>;",
+    "extern template class ParameterBase<double>;",
+    "extern template class ParameterBase<Number>;",
+    "extern template class ParameterBase<CoreString>;",
+    "extern template class ParameterBase<bool>;",
+    "extern template class ParameterBase<EnumValue>;",
+    "extern template class ParameterBase<rrlib::serialization::MemoryBuffer>;",
 })
+@CppName("ParameterBase") @CppFilename("ParameterBase")
 public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
-        this(description, parent, dt);
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+        super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT));
+        wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
     }
 
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
-        super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT));
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @Ptr Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+        super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u));
+        setDefault(defaultValue);
+        setConfigEntry(configEntry);
         wrapped.addAnnotation(new ParameterInfo());
     }
 
-    //Cpp template <typename Q = T>
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @Const @Ref @CppDefault("NULL") DataTypeBase dt, @CppDefault("NULL") Unit u) {
-        this(description, parent, b, dt, u);
-        setConfigEntry(configEntry);
+    @JavaOnly
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+        this(description, parent, "", dt);
     }
 
     //Cpp template <typename Q = T>
-    public Parameter(@Const @Ref String description, FrameworkElement parent, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @CppDefault("NULL") @Const @Ref DataTypeBase dt, @CppDefault("NULL") Unit u) {
+    public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @CppDefault("NULL") Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
         super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
+        setDefault(defaultValue);
+        setConfigEntry(configEntry);
         wrapped.addAnnotation(new ParameterInfo());
     }
 
@@ -90,7 +99,9 @@ public class Parameter<T extends RRLibSerializable> extends Port<T> {
      * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
      */
     public void setConfigEntry(@Const @Ref String configEntry) {
-        ParameterInfo info = (ParameterInfo)wrapped.getAnnotation(ParameterInfo.TYPE);
-        info.setConfigEntry(configEntry);
+        if (configEntry.length() > 0) {
+            ParameterInfo info = (ParameterInfo)wrapped.getAnnotation(ParameterInfo.TYPE);
+            info.setConfigEntry(configEntry);
+        }
     }
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppInclude;
 import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
@@ -50,6 +51,7 @@ import org.finroc.core.portdatabase.UnknownType;
  *
  * This class aggregates information about types used in remote runtime environments.
  */
+@CppInclude("parameter/Parameter.h")
 public class RemoteTypes extends LogUser implements HasDestructor {
 
     /** Log domain for edges */

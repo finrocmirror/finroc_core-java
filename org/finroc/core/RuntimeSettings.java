@@ -26,7 +26,9 @@ import java.nio.ByteOrder;
 
 import org.finroc.jc.AutoDeleter;
 import org.finroc.jc.annotation.CppInclude;
+import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.ForwardDecl;
+import org.finroc.jc.annotation.HPrepend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.IncludeClass;
@@ -58,8 +60,9 @@ import org.finroc.core.util.Files;
  *
  * staticInit() should be called after runtime and data types have been initialized.
  */
-@ForwardDecl( {ParameterBool.class, ParameterNumeric.class})
-@CppInclude( {"parameter/ParameterBool.h", "parameter/ParameterNumeric.h"})
+@HPrepend("template <typename T> \n class Parameter;")
+@ForwardDecl(ParameterNumeric.class)
+@CppInclude( {"parameter/Parameter.h"})
 @Superclass2( {"FrameworkElement", "PortListener<int>"})
 @IncludeClass( {FrameworkElement.class, PortListener.class})
 public class RuntimeSettings extends FrameworkElement implements PortListener<CoreNumber> {
@@ -76,15 +79,18 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     public static final boolean CPP_CORE = false;
 
     /** Display warning, if loop times of CoreLoopThreads are exceeded? */
+    @CppType("Parameter<bool>")
     @Managed @Ptr public static ParameterBool WARN_ON_CYCLE_TIME_EXCEED;
 
     /** Default cycle time of CoreLoopThreads in ms*/
+    @CppType("Parameter<long long int>")
     @Managed @Ptr public static ParameterNumeric<Long> DEFAULT_CYCLE_TIME;
 
     /** Default number of event threads */
     //public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
 
     /** Default minimum network update time (ms) */
+    @CppType("Parameter<int>")
     @Managed @Ptr public static ParameterNumeric<Integer> DEFAULT_MINIMUM_NETWORK_UPDATE_TIME;
 
     public static final int EDGE_LIST_DEFAULT_SIZE = 0;
@@ -100,6 +106,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     //public static final IntSetting BUFFER_TRACKER_LOOP_TIME = inst.add("BUFFER_TRACKER_LOOP_TIME", 140, true);
 
     /** Cycle time for stream thread */
+    @CppType("Parameter<int>")
     @Managed @Ptr public static ParameterNumeric<Integer> STREAM_THREAD_CYCLE_TIME;
 
     /** > 0 if Runtime is instantiated in Java Applet - contains bit size of server CPU */
@@ -109,6 +116,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * Period in ms after which garbage collector will delete objects... any threads
      * still working on objects while creating deletion task should be finished by then
      */
+    @CppType("Parameter<int>")
     @Managed @Ptr public static ParameterNumeric<Integer> GARBAGE_COLLECTOR_SAFETY_PERIOD;
 
     /** ByteOrder of host that runtime is running on */

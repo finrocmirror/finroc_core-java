@@ -38,6 +38,7 @@ import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.IncludeClass;
+import org.finroc.jc.annotation.Init;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoOuterClass;
 import org.finroc.jc.annotation.PassByValue;
@@ -52,7 +53,7 @@ import org.finroc.log.LogLevel;
  * Parameter template class for numeric types
  */
 @IncludeClass(Parameter.class)
-@PassByValue @Superclass2("Parameter<T>")
+@PassByValue @Superclass2("ParameterBase<T>")
 @HAppend( {
     "extern template class ParameterNumeric<int>;",
     "extern template class ParameterNumeric<long long int>;",
@@ -71,6 +72,10 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
 
         /** Cached current value (we will much more often read than it will be changed) */
         public volatile T currentValue;
+
+        @Init("currentValue(0)")
+        public NumberCache() {
+        }
 
         @SuppressWarnings("unchecked")
         @Override @JavaOnly
@@ -102,18 +107,31 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
     /** Number cache instance used for this parameter */
     @SharedPtr public NumberCache cache = new NumberCache();
 
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, Bounds<T> b, @Const @Ref String configEntry) {
-        this(description, parent, u, defaultValue, b);
-        this.setConfigEntry(configEntry);
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry) {
+        super(description, parent, configEntry, CoreNumber.TYPE);
+        this.addPortListener(cache);
     }
 
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
-        this(description, parent, Unit.NO_UNIT, defaultValue, b);
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Unit u, @Const @Ref String configEntry) {
+        super(description, parent, getDefaultValue(defaultValue), u, configEntry, CoreNumber.TYPE);
+        cache.currentValue = defaultValue;
+        this.addPortListener(cache);
     }
+
+    @JavaOnly
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
+        this(description, parent, defaultValue, b, Unit.NO_UNIT, "");
+    }
+
+    @JavaOnly
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b, Unit u) {
+        this(description, parent, defaultValue, b, u, "");
+    }
+
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, Unit u, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b) {
-        super(description, parent, b, CoreNumber.TYPE, u);
+    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b, Unit u, @Const @Ref String configEntry) {
+        super(description, parent, getDefaultValue(defaultValue), b, u, configEntry, CoreNumber.TYPE);
         @InCpp("T d = defaultValue;")
         double d = defaultValue.doubleValue();
         if (b.inBounds(d)) {
@@ -132,6 +150,11 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
         }
         cache.currentValue = defaultValue;
         this.addPortListener(cache);
+    }
+
+    @InCpp("return defaultValue;")
+    private static @CppType("T") CoreNumber getDefaultValue(@CppType("T") Number defaultValue) {
+        return new CoreNumber(defaultValue);
     }
 
     /**

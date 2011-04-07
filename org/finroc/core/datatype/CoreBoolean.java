@@ -93,6 +93,16 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
         return value ? TRUE : FALSE;
     }
 
+    /*Cpp
+    const bool* getPointer() const {
+        return &value;
+    }
+
+    bool* getPointer() {
+        return &value;
+    }
+     */
+
     /**
      * @return Current value
      */

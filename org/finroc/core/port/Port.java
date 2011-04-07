@@ -77,7 +77,7 @@ import org.finroc.serialization.Serialization;
     "extern template class Port<double>;",
     "extern template class Port<Number>;",
     "extern template class Port<CoreString>;",
-    "extern template class Port<Boolean>;",
+    "extern template class Port<bool>;",
     "extern template class Port<EnumValue>;",
     "extern template class Port<rrlib::serialization::MemoryBuffer>;"
 })
