@@ -348,17 +348,25 @@ public class ThreadLocalCache extends LogUser {
         }
     }
 
+    public CCPortDataManagerTL getUnusedBuffer(short ccTypeIndex) {
+        return getCCPool(ccTypeIndex).getUnusedBuffer();
+    }
+
     public CCPortDataManagerTL getUnusedBuffer(@Const @Ref DataTypeBase dataType) {
         return getCCPool(dataType).getUnusedBuffer();
     }
 
     @Inline
     private CCPortDataBufferPool getCCPool(@Const @Ref DataTypeBase dataType) {
-        short uid = FinrocTypeInfo.get(dataType.getUid()).getCCIndex();
-        assert(uid >= 0);
-        CCPortDataBufferPool pool = ccTypePools[uid];
+        return getCCPool(FinrocTypeInfo.get(dataType.getUid()).getCCIndex());
+    }
+
+    @Inline
+    private CCPortDataBufferPool getCCPool(short ccTypeIndex) {
+        assert(ccTypeIndex >= 0);
+        CCPortDataBufferPool pool = ccTypePools[ccTypeIndex];
         if (pool == null) {
-            pool = createCCPool(dataType, uid);
+            pool = createCCPool(FinrocTypeInfo.getFromCCIndex(ccTypeIndex), ccTypeIndex);
         }
         return pool;
     }

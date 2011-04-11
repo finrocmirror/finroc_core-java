@@ -113,6 +113,19 @@ public class FinrocTypeInfo {
     }
 
     /**
+     * @param ccTypeIndex CC Index
+     * @return Data type with this index
+     */
+    public static DataTypeBase getFromCCIndex(short ccTypeIndex) {
+        for (short i = 0; i < MAX_TYPES; i++) {
+            if (get(i).getType() == Type.CC && get(i).ccIndex == ccTypeIndex) {
+                return DataTypeBase.getType(i);
+            }
+        }
+        throw new RuntimeException("Type not found");
+    }
+
+    /**
      * @return Type of data type
      */
     public Type getType() {

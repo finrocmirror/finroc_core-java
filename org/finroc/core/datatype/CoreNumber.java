@@ -49,7 +49,6 @@ import org.finroc.serialization.RRLibSerializable;
 import org.finroc.serialization.Serialization;
 import org.finroc.serialization.StringInputStream;
 import org.finroc.serialization.StringOutputStream;
-import org.finroc.serialization.TypedObjectImpl;
 import org.finroc.xml.XMLNode;
 
 import org.finroc.core.portdatabase.CCType;
@@ -63,8 +62,8 @@ import org.finroc.core.portdatabase.MaxStringSerializationLength;
  */
 @CppName("Number") @CppFilename("Number")
 @MaxStringSerializationLength(22)
-@Superclass( {TypedObjectImpl.class, Object.class, CCType.class})
-@PostInclude("rrlib/serialization/DataType.h")
+@Superclass( {RRLibSerializable.class, Object.class, CCType.class})
+@PostInclude( {"rrlib/serialization/DataType.h", "Constant.h"})
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Number>;"})
 public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType {
 
@@ -103,15 +102,17 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         unit = from.unit;
         numType = from.numType;
         lval = from.lval; // will copy any type of value
-        type = TYPE;
     }
      */
 
-    @InCpp( {"type = TYPE;"}) @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)", "numType(eINT)"})
+    @Inline @Init( {"lval(0)", "unit(&Unit::NO_UNIT)", "numType(eINT)"})
     public CoreNumber() {
         unit = Unit.NO_UNIT;
         numType = Type.INT;
+
+        //JavaOnlyBlock
         value = 0;
+
     }
 
     @JavaOnly public CoreNumber(int value) {
@@ -124,39 +125,38 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         num_type(eINT),
         unit(unit_)
     {
-      type = TYPE;
     }
     */
 
-    @InCpp( {"type = TYPE;"}) @Init( {"ival(value_)", "numType(eINT)", "unit(unit_)"})
+    @InCpp( {}) @Init( {"ival(value_)", "numType(eINT)", "unit(unit_)"})
     public CoreNumber(int value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(long value) {
         setValue(value);
     }
-    @InCpp( {"type = TYPE;"}) @Init( {"lval(value_)", "numType(eLONG)", "unit(unit_)"})
+    @InCpp( {}) @Init( {"lval(value_)", "numType(eLONG)", "unit(unit_)"})
     public CoreNumber(long value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(double value) {
         setValue(value);
     }
-    @InCpp( {"type = TYPE;"}) @Init( {"dval(value_)", "numType(eDOUBLE)", "unit(unit_)"})
+    @InCpp( {}) @Init( {"dval(value_)", "numType(eDOUBLE)", "unit(unit_)"})
     public CoreNumber(double value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(float value) {
         setValue(value);
     }
-    @InCpp( {"type = TYPE;"}) @Init( {"fval(value_)", "numType(eFLOAT)", "unit(unit_)"})
+    @InCpp( {}) @Init( {"fval(value_)", "numType(eFLOAT)", "unit(unit_)"})
     public CoreNumber(float value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
     @JavaOnly public CoreNumber(@Ptr Constant c) {
         setValue(c);
     }
-    @InCpp( {"type = TYPE;", "setValue(value_, unit_);"})
+    @InCpp( {"setValue(value_, unit_);"})
     public CoreNumber(@Const @Ref Number value, @Ptr @CppDefault("&Unit::NO_UNIT") Unit unit) {
         setValue(value, unit);
     }
@@ -486,7 +486,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         unit = hasUnit ? Unit.getUnit(ois.readByte()) : Unit.NO_UNIT;
     }
 
-    @Override
+    @Override @Inline
     public void copyFrom(@Const @Ref CoreNumber source) {
         numType = source.numType;
         unit = source.unit;
@@ -508,7 +508,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     /**
      * @return Unit of data
      */
-    @InCppFile @ConstMethod
+    @HAppend( {}) @ConstMethod @Inline
     public @Ptr Unit getUnit() {
         return numType == Type.CONSTANT ? getConstant().unit : unit;
     }

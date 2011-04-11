@@ -32,7 +32,6 @@ import org.finroc.jc.annotation.InCppFile;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.Inline;
-import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
@@ -75,6 +74,9 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** Edges ending at this port */
     protected final EdgeList<CCPortBase> edgesDest = new EdgeList<CCPortBase>();
+
+    /** CC type index of data type (optimization) */
+    protected short ccTypeIndex;
 
     /** default value - invariant: must never be null if used (must always be copied, too) */
     protected final CCPortDataManager defaultValue;
@@ -131,6 +133,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     public CCPortBase(PortCreationInfo pci) {
         super(pci);
         assert(FinrocTypeInfo.isCCType(pci.dataType));
+        ccTypeIndex = FinrocTypeInfo.get(getDataType()).getCCIndex();
         initLists(edgesSrc, edgesDest);
 
         // init types
@@ -252,7 +255,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Unused buffer for writing
      */
     @Inline protected @Ptr CCPortDataManagerTL getUnusedBuffer(ThreadLocalCache tc) {
-        return tc.getUnusedBuffer(dataType);
+        return tc.getUnusedBuffer(ccTypeIndex);
     }
 
     /**
@@ -261,7 +264,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache
      * @param data Data to publish
      */
-    @Inline protected void publish(ThreadLocalCache tc, CCPortDataManagerTL data) {
+    @Inline public void publish(ThreadLocalCache tc, CCPortDataManagerTL data) {
         //JavaOnlyBlock
         publishImpl(tc, data, false, CHANGED, false);
 
@@ -514,19 +517,19 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer to copy current data to
      */
-    @JavaOnly
-    public void getRaw(RRLibSerializable buffer) {
+    @Inline
+    public <T extends RRLibSerializable> void getRaw(@Ref T buffer) {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = value;
-                Serialization.deepCopy(val.getData().getData(), buffer, null);
+                Serialization.deepCopy(val.getData().<T>getData(), buffer, null);
                 if (val == value) { // still valid??
                     return;
                 }
             }
         } else {
             CCPortDataManagerTL dc = pullValueRaw();
-            Serialization.deepCopy(dc.getObject().getData(), buffer, null);
+            Serialization.deepCopy(dc.getObject().<T>getData(), buffer, null);
             dc.releaseLock();
         }
     }
@@ -792,5 +795,12 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     public Unit getUnit() {
         return unit;
+    }
+
+    /**
+     * @return Returns data type cc index directly (faster than acquiring using FinrocTypeInfo and DataTypeBase)
+     */
+    public short getDataTypeCCIndex() {
+        return ccTypeIndex;
     }
 }
