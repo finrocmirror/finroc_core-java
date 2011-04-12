@@ -201,7 +201,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     @InCpp("return PortUtil<T>::getValue(wrapped, result);") @Inline
     public @Const void get(@Ref T result) {
         if (hasCCType()) {
-            ((CCPortBase)wrapped).getRaw((RRLibSerializable)result);
+            ((CCPortBase)wrapped).getRawT((RRLibSerializable)result);
         } else {
             PortDataManager mgr = ((PortBase)wrapped).getLockedUnsafeRaw();
             Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);

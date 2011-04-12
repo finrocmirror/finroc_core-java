@@ -518,7 +518,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param buffer Buffer to copy current data to
      */
     @Inline
-    public <T extends RRLibSerializable> void getRaw(@Ref T buffer) {
+    public <T extends RRLibSerializable> void getRawT(@Ref T buffer) {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = value;
