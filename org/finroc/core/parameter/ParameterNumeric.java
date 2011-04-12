@@ -23,7 +23,6 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
-import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.AbstractPort;
@@ -169,7 +168,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
      * @param b new value
      */
     public void set(T v) {
-        CCPortDataManagerTL cb = ThreadLocalCache.get().getUnusedBuffer(CoreBoolean.TYPE);
+        CCPortDataManagerTL cb = ThreadLocalCache.get().getUnusedBuffer(CoreNumber.TYPE);
         cb.getObject().<CoreNumber>getData().setValue(v, ((CCPortBase)wrapped).getUnit());
         ((CCPortBase)wrapped).browserPublishRaw(cb);
         cache.currentValue = v;
