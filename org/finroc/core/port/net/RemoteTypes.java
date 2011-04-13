@@ -121,7 +121,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
         int maxTypes = types.length + DataTypeBase.getTypeCount();
         typesByLocalUid = new Entry[maxTypes];
         short next = ci.readShort();
-        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
+        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG, getLogDescription());
         ls.appendln("Connection Partner knows types:");
         while (next != -1) {
             short time = ci.readShort();

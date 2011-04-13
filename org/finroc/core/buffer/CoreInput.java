@@ -28,6 +28,7 @@ import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.Include;
@@ -36,6 +37,7 @@ import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.OrgWrapper;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SharedPtr;
 import org.finroc.serialization.ConstSource;
 import org.finroc.serialization.DataTypeBase;
@@ -116,18 +118,19 @@ public class CoreInput extends InputStreamBuffer {
      *
      * @return Buffer with read object (no locks)
      */
-    public GenericObject readObject() {
-        return readObject(false);
+    public GenericObject readObject(@Const @Ref @CppDefault("NULL") DataTypeBase expectedType) {
+        return readObject(false, expectedType);
     }
 
     /**
      * Deserialize object with variable type from stream - and place "cheap copy" data in "interthread container"
      *
+     * @param expectedType expected type (optional, may be null)
      * @return Buffer with read object (no locks)
      */
     @Inline
-    public @CustomPtr("tPortDataPtr") GenericObject readObjectInInterThreadContainer() {
-        GenericObject tmp = readObject(true);
+    public @CustomPtr("tPortDataPtr") GenericObject readObjectInInterThreadContainer(@Const @Ref @CppDefault("NULL") DataTypeBase expectedType) {
+        GenericObject tmp = readObject(true, expectedType);
         boolean ccType = FinrocTypeInfo.isCCType(tmp.getType());
 
         //JavaOnlyBlock
@@ -154,14 +157,21 @@ public class CoreInput extends InputStreamBuffer {
      * Deserialize object with variable type from stream
      *
      * @param inInterThreadContainer Deserialize "cheap copy" data in interthread container?
+     * @param expectedType expected type (optional, may be null)
      * @return Buffer with read object
      */
-    private GenericObject readObject(boolean inInterThreadContainer) {
+    private GenericObject readObject(boolean inInterThreadContainer, @Const @Ref @CppDefault("NULL") DataTypeBase expectedType) {
         //readSkipOffset();
         DataTypeBase dt = readType();
         if (dt == null) {
             return null;
         }
+
+        //JavaOnlyBlock
+        if (!dt.isConvertibleTo(expectedType)) {
+            dt = expectedType; // fix to cope with mca2 legacy blackboards
+        }
+
         if (bufferSource == null && FinrocTypeInfo.isStdType(dt)) { // skip object?
             //toSkipTarget();
             throw new RuntimeException("Buffer source does not support type " + dt.getName());

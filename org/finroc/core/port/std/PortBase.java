@@ -452,7 +452,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Inline
     @InCpp("portListener.notify(this, pc->curRef->getManager());")
     private void notifyListeners(PublishCache pc) {
-        portListener.notify(this, pc.curRef.getData());
+        portListener.notify(this, pc.curRef.getData().getData());
     }
 
     /**

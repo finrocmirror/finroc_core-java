@@ -277,13 +277,13 @@ public abstract class NetPort extends LogUser implements PortListener {
             StdNetPort pb = (StdNetPort)wrapped;
             ci.setBufferSource(pb);
             do {
-                pb.publishFromNet((PortDataManager)ci.readObject().getManager(), changedFlag);
+                pb.publishFromNet((PortDataManager)ci.readObject(wrapped.getDataType()).getManager(), changedFlag);
             } while (ci.readBoolean());
             ci.setBufferSource(null);
         } else if (isCCType()) {
             CCNetPort pb = (CCNetPort)wrapped;
             do {
-                pb.publishFromNet((CCPortDataManagerTL)ci.readObject().getManager(), changedFlag);
+                pb.publishFromNet((CCPortDataManagerTL)ci.readObject(wrapped.getDataType()).getManager(), changedFlag);
             } while (ci.readBoolean());
         } else { // interface port
             throw new RuntimeException("Method calls are not handled using this mechanism");

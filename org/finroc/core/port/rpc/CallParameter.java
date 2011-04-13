@@ -106,7 +106,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
             number.deserialize(is);
         } else if (type == OBJECT) {
             assert(value == null);
-            value = (GenericObject)is.readObjectInInterThreadContainer();
+            value = (GenericObject)is.readObjectInInterThreadContainer(null);
             @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
             if (pdm != null) {

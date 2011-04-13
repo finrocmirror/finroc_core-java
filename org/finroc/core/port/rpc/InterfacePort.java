@@ -235,7 +235,7 @@ public class InterfacePort extends AbstractPort {
      * @return Unused buffer of type
      */
     @SuppressWarnings("unchecked")
-    @InCpp( {"PortDataManager* mgr = getUnusedBufferRaw(rrlib::serialization::DataType<T>());",
+    @InCpp( {"PortDataManager* mgr = getUnusedBufferRaw(dt != NULL ? dt : rrlib::serialization::DataType<T>());",
              "mgr->getCurrentRefCounter()->setOrAddLocks((int8_t)1);",
              "return PortDataPtr<T>(mgr);"
             })
