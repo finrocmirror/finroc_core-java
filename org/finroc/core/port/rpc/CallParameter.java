@@ -79,6 +79,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         }
 
         value = null;
+        type = NULLPARAM;
     }
 
     @Override
