@@ -53,6 +53,7 @@ public class CoreOutput extends OutputStreamBuffer {
     public void writeObject(@Const GenericObject to) {
         if (to == null) {
             writeShort(-1); // -1 means null
+            return;
         }
 
         //writeSkipOffsetPlaceholder();

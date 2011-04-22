@@ -186,7 +186,7 @@ public class StructureParameterBase extends RRLibSerializableImpl implements Has
      */
     @ConstMethod
     public GenericObject valPointer() {
-        return value != null ? value.getObject() : ccValue.getObject();
+        return value != null ? value.getObject() : (ccValue != null ? ccValue.getObject() : null);
     }
 
     /**
