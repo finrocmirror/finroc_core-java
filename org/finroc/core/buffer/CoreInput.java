@@ -168,7 +168,7 @@ public class CoreInput extends InputStreamBuffer {
         }
 
         //JavaOnlyBlock
-        if (!dt.isConvertibleTo(expectedType)) {
+        if (expectedType != null && (!dt.isConvertibleTo(expectedType))) {
             dt = expectedType; // fix to cope with mca2 legacy blackboards
         }
 

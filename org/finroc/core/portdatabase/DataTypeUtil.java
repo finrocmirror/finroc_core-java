@@ -23,6 +23,7 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.datatype.EnumValue;
 import org.finroc.jc.annotation.CppFilename;
 import org.finroc.jc.annotation.CppName;
 import org.finroc.jc.annotation.JavaOnly;
@@ -55,5 +56,6 @@ public class DataTypeUtil {
     public static void initCCTypes() {
         FinrocTypeInfo.get(CoreNumber.TYPE).init(FinrocTypeInfo.Type.CC);
         FinrocTypeInfo.get(CoreBoolean.TYPE).init(FinrocTypeInfo.Type.CC);
+        FinrocTypeInfo.get(EnumValue.TYPE).init(FinrocTypeInfo.Type.CC);
     }
 }
