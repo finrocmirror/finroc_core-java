@@ -89,9 +89,9 @@ public class GroupInterface extends EdgeAggregator {
      * @return flags for these parameters
      */
     public GroupInterface(FrameworkElement parent, @Const @Ref String description, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
-        super(parent, description, computePortFlags(dataClass, portDir, shared, uniqueLink));
+        super(parent, description, computeFlags(dataClass, shared, uniqueLink));
         addAnnotation(new StructureParameterList(ports));
-        ports.getValue().initialSetup(this, 0, portDir == PortDirection.BOTH);
+        ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);
     }
 
     /**
@@ -103,13 +103,33 @@ public class GroupInterface extends EdgeAggregator {
      * @param uniqueLink Do ports habe globally unique link
      * @return flags for these parameters
      */
-    private static int computePortFlags(DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
+    private static int computeFlags(DataClassification dataClass, boolean shared, boolean uniqueLink) {
         int flags = EdgeAggregator.IS_INTERFACE;
         if (dataClass == DataClassification.SENSOR_DATA) {
             flags |= EdgeAggregator.SENSOR_DATA;
         } else if (dataClass == DataClassification.CONTROLLER_DATA) {
             flags |= EdgeAggregator.CONTROLLER_DATA;
         }
+        if (shared) {
+            flags |= CoreFlags.SHARED;
+        }
+        if (uniqueLink) {
+            flags |= CoreFlags.GLOBALLY_UNIQUE_LINK;
+        }
+        return flags;
+    }
+
+    /**
+     * Compute port flags
+     *
+     * @param dataClass Classifies data in this interface
+     * @param portDir Which types of ports can be created in this interface?
+     * @param shared Shared interface/ports?
+     * @param uniqueLink Do ports habe globally unique link
+     * @return flags for these parameters
+     */
+    private static int computePortFlags(PortDirection portDir, boolean shared, boolean uniqueLink) {
+        int flags = 0;
         if (shared) {
             flags |= CoreFlags.SHARED;
         }
