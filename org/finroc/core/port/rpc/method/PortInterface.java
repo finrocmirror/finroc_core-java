@@ -104,4 +104,16 @@ public class PortInterface implements HasDestructor {
     public boolean containsMethod(AbstractMethod method) {
         return methods.contains(method);
     }
+
+    /**
+     * Reset/clear interface. This deletes all methods from interface
+     * and allows adding methods to this interface in a custom order.
+     * (using addMethod())
+     *
+     * This can be necessary when using methods in a template class, because
+     * instantiation order of static method objects seems to be undefined.
+     */
+    public void clear() {
+        methods.clear();
+    }
 }
