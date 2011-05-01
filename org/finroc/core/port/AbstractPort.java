@@ -702,7 +702,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             @Ptr AbstractPort port = it.get(i);
             if (port != null && port.getFlag(CoreFlags.NETWORK_ELEMENT)) {
                 NetPort np = port.asNetPort();
-                if (np.getBelongsTo() == belongsTo) {
+                if (np != null && np.getBelongsTo() == belongsTo) {
                     return np;
                 }
             }
