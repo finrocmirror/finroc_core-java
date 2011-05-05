@@ -178,8 +178,8 @@ public class NetworkTestSuite extends LogUser {
             //Plugins.getInstance().addPlugin(new Blackboard2Plugin());
             //bbServer = new BlackboardServer(blackboardName);
             sbbServer = new SingleBufferedBlackboardServer<MemoryBuffer>(blackboardName, MemoryBuffer.TYPE);
-            bbClient = new BlackboardClient<MemoryBuffer>(partnerBlackboardName, null, MemoryBuffer.TYPE);
-            localBbClient = new BlackboardClient<MemoryBuffer>(blackboardName, null, MemoryBuffer.TYPE);
+            bbClient = new BlackboardClient<MemoryBuffer>(partnerBlackboardName, null, false, MemoryBuffer.TYPE);
+            localBbClient = new BlackboardClient<MemoryBuffer>(blackboardName, null, false, MemoryBuffer.TYPE);
         }
     }
 

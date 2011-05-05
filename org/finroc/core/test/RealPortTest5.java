@@ -214,7 +214,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         @CppUnused
         //BlackboardServer<MemoryBuffer> server = new BlackboardServer<MemoryBuffer>("testbb");
         SingleBufferedBlackboardServer<MemoryBuffer> server2 = new SingleBufferedBlackboardServer<MemoryBuffer>("testbb", MemoryBuffer.TYPE);
-        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("testbb", null, MemoryBuffer.TYPE);
+        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("testbb", null, false, MemoryBuffer.TYPE);
         //client.autoConnect();
         FrameworkElement.initAll();
 

@@ -59,7 +59,7 @@ public class BlackboardConcurrencyTest extends Thread {
 
     public void run() {
         id = ThreadLocalCache.get().getThreadUid();
-        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("bbct", null, MemoryBuffer.TYPE);
+        BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("bbct", null, false, MemoryBuffer.TYPE);
         client.init();
         //client.autoConnect();
         try {
