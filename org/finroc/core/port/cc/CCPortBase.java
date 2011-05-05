@@ -494,9 +494,20 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Copy current value to buffer (Most efficient get()-version)
      *
      * @param buffer Buffer to copy current data to
+     * @param dontPull Do not attempt to pull data - even if port is on push strategy
      */
     public void getRaw(GenericObject buffer) {
-        if (pushStrategy()) {
+        getRaw(buffer, false);
+    }
+
+    /**
+     * Copy current value to buffer (Most efficient get()-version)
+     *
+     * @param buffer Buffer to copy current data to
+     * @param dontPull Do not attempt to pull data - even if port is on push strategy
+     */
+    public void getRaw(GenericObject buffer, boolean dontPull) {
+        if (pushStrategy() || dontPull) {
             for (;;) {
                 CCPortDataRef val = value;
                 buffer.deepCopyFrom(val.getData(), null);

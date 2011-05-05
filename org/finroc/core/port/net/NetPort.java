@@ -463,7 +463,7 @@ public abstract class NetPort extends LogUser implements PortListener {
             try {
                 pc = SynchMethodCallLogic.performSynchCall(pc, this, PULL_TIMEOUT);
                 if (pc.hasException()) {
-                    getRaw(resultBuffer);
+                    getRaw(resultBuffer.getObject(), true);
                 } else {
                     @CustomPtr("tPortDataPtr") GenericObject o = pc.getParamGeneric(0);
                     CCPortDataManager c = (CCPortDataManager)o.getManager();
@@ -476,7 +476,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 pc.recycle();
 
             } catch (MethodCallException e) {
-                getRaw(resultBuffer);
+                getRaw(resultBuffer.getObject(), true);
             }
         }
 
@@ -602,7 +602,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 pc = SynchMethodCallLogic.performSynchCall(pc, this, PULL_TIMEOUT);
                 if (pc.hasException()) {
                     // return local port data
-                    PortDataManager pd = getLockedUnsafeRaw();
+                    PortDataManager pd = lockCurrentValueForRead();
                     pd.getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
                     pc.recycle();
                     return pd;
@@ -618,7 +618,7 @@ public abstract class NetPort extends LogUser implements PortListener {
 
             } catch (MethodCallException e) {
                 // return local port data
-                PortDataManager pd = getLockedUnsafeRaw();
+                PortDataManager pd = lockCurrentValueForRead();
                 pd.getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
                 pc.recycle();
                 return pd;
