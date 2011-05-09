@@ -86,7 +86,7 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
+    public void callAsync(InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
 
         InterfacePort ip = port.getServer();
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {

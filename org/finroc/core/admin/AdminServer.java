@@ -287,7 +287,11 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     public void handleVoidCall(AbstractMethod method, Integer cmaIndex, @CustomPtr("tPortDataPtr") CoreString name, Integer parentHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer paramsBuffer) throws MethodCallException {
         ConstructorParameters params = null;
         if (method == SET_ANNOTATION) {
+
+            //JavaOnlyBlock
             assert(name == null);
+
+            //Cpp assert(!name);
             FrameworkElement elem = RuntimeEnvironment.getInstance().getElement(cmaIndex);
             if (elem == null || (!elem.isReady())) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");

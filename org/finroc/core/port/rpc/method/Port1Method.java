@@ -90,7 +90,7 @@ public class Port1Method<HANDLER extends Method1Handler<R, P1>, R, P1> extends A
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void callAsync(@Const @Ptr InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
+    public void callAsync(InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
         //1
         assert(hasLock(p1));
         InterfacePort ip = port.getServer();
