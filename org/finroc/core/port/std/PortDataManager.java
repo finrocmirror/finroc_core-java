@@ -277,7 +277,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
         /** UID */
         private static final long serialVersionUID = -2089004067275013847L;
 
-        @InCpp("::tbb::atomic<short> wrapped; // one less than actual number of references. So -1 when actually no locks.")
+        @InCpp("std::atomic<short> wrapped; // one less than actual number of references. So -1 when actually no locks.")
         private PortDataManager manager;
 
         @JavaOnly public RefCounter(/*int i,*/ PortDataManager manager) {
@@ -314,7 +314,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
             }
 
             /*Cpp
-            __TBB_machine_fetchadd1(this, count); // mean trick... won't make negative value positive *g* - CPU should not like this, but it's reasonably fast actually
+            std::atomic_fetch_add((std::atomic<int8_t>*)this, count); // mean trick... won't make negative value positive *g* - CPU should not like this, but it's reasonably fast actually
             return wrapped >= 0;
              */
         }
@@ -367,7 +367,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
             }
 
             /*Cpp
-            short newVal = wrapped.fetch_and_add(-count) - count;
+            short newVal = wrapped.fetch_add(-count) - count;
             if (newVal < 0) {
                 getManager()->dangerousDirectRecycle();
                 //getManager()->reuseCounter++;
