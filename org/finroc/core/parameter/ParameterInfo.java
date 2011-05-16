@@ -139,8 +139,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             c.getObject().deserialize(node);
                             port.browserPublishRaw(c);
                         } catch (Exception e) {
-                            c.setRefCounter(1);
-                            c.releaseLock();
+                            c.recycleUnused();
                         }
                     } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
                         PortBase port = (PortBase)ann;
@@ -149,8 +148,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             pd.getObject().deserialize(node);
                             port.browserPublish(pd);
                         } catch (Exception e) {
-                            pd.getCurrentRefCounter().setOrAddLock();
-                            pd.releaseLock();
+                            pd.recycleUnused();
                         }
                     } else {
                         throw new RuntimeException("Port Type not supported as a parameter");

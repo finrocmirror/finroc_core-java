@@ -46,9 +46,11 @@ import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 import org.finroc.core.port.rpc.method.Method0Handler;
 import org.finroc.core.port.rpc.method.Method1Handler;
 import org.finroc.core.port.rpc.method.Method2Handler;
+import org.finroc.core.port.rpc.method.Method3Handler;
 import org.finroc.core.port.rpc.method.Port0Method;
 import org.finroc.core.port.rpc.method.Port1Method;
 import org.finroc.core.port.rpc.method.Port2Method;
+import org.finroc.core.port.rpc.method.Port3Method;
 import org.finroc.core.port.rpc.method.PortInterface;
 import org.finroc.core.port.rpc.method.Void0Handler;
 import org.finroc.core.port.rpc.method.Void0Method;
@@ -77,7 +79,10 @@ import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.Serialization;
+import org.finroc.serialization.StringInputStream;
 
 /**
  * @author max
@@ -87,7 +92,7 @@ import org.finroc.serialization.MemoryBuffer;
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
         Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
-            Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer> {
+            Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
 
     /** Admin interface */
     @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface", true);
@@ -107,7 +112,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     /** Set a port's value */
     @CppType("Void3Method<AdminServer*, int, PortDataPtr<const rrlib::serialization::MemoryBuffer>, int>")
     @PassByValue public static Void3Method < AdminServer, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
-        new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "dummy", false);
+        new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "as string?", false);
 
     /** Get module types */
     @CppType("Port0Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer> >")
@@ -148,6 +153,11 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     /** Is framework element with specified handle currently executing? */
     @PassByValue public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
         new Port1Method<AdminServer, Integer, Integer>(METHODS, "Is Framework element running", "handle", false);
+
+    /** Get current port value as string */
+    @CppType("Port3Method<AdminServer*, PortDataPtr<CoreString>, int, int, int >")
+    @PassByValue public static Port3Method<AdminServer, CoreString, Integer, Integer, Integer> GET_PORT_VALUE_AS_STRING =
+        new Port3Method<AdminServer, CoreString, Integer, Integer, Integer>(METHODS, "Get port value as string", "handle", "dummy", "dummy", false);
 
     /** Data Type of method calls to this port */
     public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration method calls", METHODS);
@@ -231,7 +241,7 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     }
 
     @Override @NonVirtual
-    public void handleVoidCall(AbstractMethod method, Integer portHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer buf, Integer dummy) throws MethodCallException {
+    public void handleVoidCall(AbstractMethod method, Integer portHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer buf, Integer asString) throws MethodCallException {
         assert(method == SET_PORT_VALUE);
         AbstractPort port = RuntimeEnvironment.getInstance().getPort(portHandle);
         if (port != null && port.isReady()) {
@@ -242,12 +252,34 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
                     if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
                         CCPortBase p = (CCPortBase)port;
                         CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(dt);
-                        c.getObject().deserialize(ci);
+                        if (asString == 0) {
+                            c.getObject().deserialize(ci);
+                        } else {
+                            String s = ci.readString();
+                            @PassByValue StringInputStream sis = new StringInputStream(s);
+                            try {
+                                c.getObject().deserialize(sis);
+                            } catch (Exception e) {
+                                c.recycleUnused();
+                                log(LogLevel.LL_WARNING, logDomain, "Cannot deserialize from string " + s, e);
+                            }
+                        }
                         p.browserPublishRaw(c);
                     } else if (FinrocTypeInfo.isStdType(port.getDataType()) && FinrocTypeInfo.isStdType(dt)) {
                         PortBase p = (PortBase)port;
-                        PortDataManager portData = p.getUnusedBufferRaw(dt);
-                        portData.getObject().deserialize(ci);
+                        PortDataManager portData = p.getDataType() != dt ? p.getUnusedBufferRaw(dt) : p.getUnusedBufferRaw();
+                        if (asString == 0) {
+                            portData.getObject().deserialize(ci);
+                        } else {
+                            String s = ci.readString();
+                            @PassByValue StringInputStream sis = new StringInputStream(s);
+                            try {
+                                portData.getObject().deserialize(sis);
+                            } catch (Exception e) {
+                                portData.recycleUnused();
+                                log(LogLevel.LL_WARNING, logDomain, "Cannot deserialize from string " + s, e);
+                            }
+                        }
                         p.browserPublish(portData);
                         portData = null;
                     }
@@ -449,6 +481,34 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             return ec.isRunning() ? 1 : 0;
         }
         return -1;
+    }
+
+    @Override
+    public @CustomPtr("tPortDataPtr") CoreString handleCall(AbstractMethod method, Integer p1, Integer p2, Integer p3) throws MethodCallException {
+        assert(method == GET_PORT_VALUE_AS_STRING);
+        AbstractPort ap = getRuntime().getPort(p1);
+        if (ap != null && ap.isReady()) {
+            if (FinrocTypeInfo.isCCType(ap.getDataType())) {
+                @CustomPtr("tPortDataPtr") CoreString cs = this.<CoreString>getBufferForReturn(CoreString.TYPE);
+                CCPortBase p = (CCPortBase)ap;
+                @Const GenericObject go = p.getAutoLockedRaw();
+                cs.set(Serialization.serialize(go));
+                p.releaseAutoLocks();
+                return cs;
+            } else if (FinrocTypeInfo.isStdType(ap.getDataType())) {
+                @CustomPtr("tPortDataPtr") CoreString cs = this.<CoreString>getBufferForReturn(CoreString.TYPE);
+                PortBase p = (PortBase)ap;
+                PortDataManager go = p.getAutoLockedRaw();
+                cs.set(Serialization.serialize(go.getObject()));
+                p.releaseAutoLocks();
+                return cs;
+            }
+        }
+
+        //JavaOnlyBlock
+        return null;
+
+        //Cpp return PortDataPtr<CoreString>();
     }
 
 }

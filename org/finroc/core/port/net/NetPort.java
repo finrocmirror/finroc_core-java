@@ -366,10 +366,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 boolean equal = curData.contentEquals(readObject.getObject().getRawDataPtr());
                 curData.releaseLock();  // unlock value that we just locked for comparison
                 if (equal) {
-
-                    // laborious version of recycle
-                    readObject.setRefCounter(1);
-                    readObject.releaseLock();
+                    readObject.recycleUnused();
                     return;
                 }
             }

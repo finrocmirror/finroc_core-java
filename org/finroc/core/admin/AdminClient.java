@@ -29,10 +29,12 @@ import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.plugin.RemoteCreateModuleAction;
+import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.net.RemoteRuntime;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
+import org.finroc.core.port.rpc.method.AsyncReturnHandler;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.log.LogLevel;
@@ -126,6 +128,43 @@ public class AdminClient extends InterfaceClientPort {
             }
         }
         logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
+    }
+
+    /**
+     * Sets value of remote port
+     *
+     * @param np network port of remote port
+     * @param dt Data type of object
+     * @param newValue new value as string (that remote runtime will deserialize from)
+     */
+    public void setRemotePortValue(NetPort np, DataTypeBase dt, String newValue) {
+        if (np != null && getAdminInterface(np) == this) {
+            try {
+                MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
+                CoreOutput co = new CoreOutput(mb);
+                co.writeString(dt.getName());
+                co.writeString(newValue);
+                co.close();
+                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 1, false);
+                return;
+            } catch (MethodCallException e) {
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            }
+        }
+        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
+    }
+
+    /**
+     * Gets value of remote port as string
+     *
+     * @param np Network port of remote port
+     * @param returnHandler To keep UI responsive, function returns and result is passed to this return handler later
+     */
+    public void getRemotePortValue(NetPort np, AsyncReturnHandler<CoreString> returnHandler) {
+        if (np != null && getAdminInterface(np) == this) {
+            ThreadLocalCache.get();
+            AdminServer.GET_PORT_VALUE_AS_STRING.callAsync(this, returnHandler, np.getRemoteHandle(), 0, 0, 5000, false);
+        }
     }
 
     /**

@@ -69,7 +69,7 @@ public class FinrocTypeInfo {
     // static stuff
 
     /** CC Type counter */
-    public static final AtomicInt lastCcIndex = new AtomicInt();
+    @JavaOnly public static final AtomicInt lastCcIndex = new AtomicInt();
 
     /** Maximum number of types */
     public static final int MAX_TYPES = 2000;
@@ -161,6 +161,7 @@ public class FinrocTypeInfo {
      * Initialize finroc type info
      */
     public void init(Type type) {
+        //Cpp static util::AtomicInt lastCcIndex(0);
         if (this.type != Type.STD) {
             return;
         }

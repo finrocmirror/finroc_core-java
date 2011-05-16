@@ -255,6 +255,14 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
         return (CCPortDataManagerTL)(dataType.createInstanceGeneric(new CCPortDataManagerTL())).getManager();
     }
 
+    /**
+     * Recycle unused buffer
+     */
+    public void recycleUnused() {
+        setRefCounter(1);
+        releaseLock();
+    }
+
 //    /*Cpp
 //    void setData(const T& data) {
 //        setData(&data);

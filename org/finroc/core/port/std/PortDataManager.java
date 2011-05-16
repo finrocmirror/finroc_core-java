@@ -536,4 +536,11 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
         return (PortDataManager)(dataType.createInstanceGeneric(new PortDataManager())).getManager();
     }
 
+    /**
+     * Recycle unused buffer
+     */
+    public void recycleUnused() {
+        getCurrentRefCounter().setOrAddLock();
+        releaseLock();
+    }
 }
