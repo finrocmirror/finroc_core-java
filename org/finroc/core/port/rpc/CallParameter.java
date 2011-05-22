@@ -31,13 +31,15 @@ import org.finroc.jc.annotation.Include;
 import org.finroc.jc.annotation.IncludeClass;
 import org.finroc.jc.annotation.NoSuperclass;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.serialization.GenericObject;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
@@ -87,7 +89,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         recycle();
     }
 
-    @ConstMethod public void serialize(@Ref CoreOutput oos) {
+    @ConstMethod public void serialize(@Ref OutputStreamBuffer oos) {
         oos.writeByte(type);
         if (type == NUMBER) {
             number.serialize(oos);
@@ -101,18 +103,42 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         }
     }
 
-    public void deserialize(@Ref CoreInput is) {
+    public void deserialize(@Ref InputStreamBuffer is) {
         type = is.readByte();
         if (type == NUMBER) {
             number.deserialize(is);
         } else if (type == OBJECT) {
             assert(value == null);
-            value = (GenericObject)is.readObjectInInterThreadContainer(null);
+            //value = (GenericObject)is.readObjectInInterThreadContainer(null);
+            @Ptr GenericObject go = is.readObject(null, this);
+            value = lock(go);
             @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
             if (pdm != null) {
                 pdm.lockID = is.readInt();
             }
         }
+    }
+
+    private @CustomPtr("tPortDataPtr") GenericObject lock(@Ptr GenericObject tmp) {
+        boolean ccType = FinrocTypeInfo.isCCType(tmp.getType());
+
+        //JavaOnlyBlock
+        if (!ccType) {
+            PortDataManager mgr = (PortDataManager)tmp.getManager();
+            mgr.getCurrentRefCounter().setOrAddLocks((byte)1);
+        }
+        return tmp;
+
+        /*Cpp
+        if (ccType) {
+            CCPortDataManager* mgr = (CCPortDataManager*)tmp->getManager();
+            return PortDataPtr<rrlib::serialization::GenericObject>(tmp, mgr);
+        } else {
+            PortDataManager* mgr = (PortDataManager*)tmp->getManager();
+            mgr->getCurrentRefCounter()->setOrAddLocks(1);
+            return PortDataPtr<rrlib::serialization::GenericObject>(tmp, mgr);
+        }
+         */
     }
 }

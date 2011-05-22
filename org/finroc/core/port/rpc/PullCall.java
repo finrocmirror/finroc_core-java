@@ -26,8 +26,8 @@ import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.thread.Task;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.net.NetPort;
@@ -70,14 +70,14 @@ public class PullCall extends AbstractCall implements Task {
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         super.deserialize(is);
         intermediateAssign = is.readBoolean();
         ccPull = is.readBoolean();
     }
 
     @Override
-    public void serialize(CoreOutput oos) {
+    public void serialize(OutputStreamBuffer oos) {
         super.serialize(oos);
         oos.writeBoolean(intermediateAssign);
         oos.writeBoolean(ccPull);

@@ -21,10 +21,11 @@
  */
 package org.finroc.core.test;
 
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.jc.annotation.PassByValue;
+import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 
 /**
  * @author max
@@ -37,9 +38,9 @@ public class SerializationTests {
      */
     public static void main(String[] args) {
         //testx((byte)0);
-        CoreNumber num = new CoreNumber();
-        MemoryBuffer mb = new MemoryBuffer();
-        CoreOutput buf = new CoreOutput(mb);
+        @PassByValue CoreNumber num = new CoreNumber();
+        @PassByValue MemoryBuffer mb = new MemoryBuffer();
+        @PassByValue OutputStreamBuffer buf = new OutputStreamBuffer(mb);
         for (int i = -100; i < 69000; i++) {
             num.setValue(i);
             num.serialize(buf);
@@ -58,7 +59,7 @@ public class SerializationTests {
         }
         buf.flush();
 
-        CoreInput ci = new CoreInput(mb);
+        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(mb);
         System.out.println(ci.remaining());
 
         while (ci.remaining() > 0) {

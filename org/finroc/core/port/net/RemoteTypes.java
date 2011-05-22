@@ -24,7 +24,6 @@ package org.finroc.core.port.net;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.finroc.jc.HasDestructor;
 import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppInclude;
@@ -32,17 +31,18 @@ import org.finroc.jc.annotation.Friend;
 import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
-import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
+import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.jc.log.LogUser;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.log.LogStream;
 import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
+import org.finroc.serialization.TypeEncoder;
 import org.finroc.core.RuntimeSettings;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.UnknownType;
 
@@ -52,7 +52,7 @@ import org.finroc.core.portdatabase.UnknownType;
  * This class aggregates information about types used in remote runtime environments.
  */
 @CppInclude("parameter/Parameter.h")
-public class RemoteTypes extends LogUser implements HasDestructor {
+public class RemoteTypes extends LogUser implements TypeEncoder {
 
     /** Log domain for edges */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"remote_types\");")
@@ -62,38 +62,30 @@ public class RemoteTypes extends LogUser implements HasDestructor {
     @AtFront @PassByValue @Friend(RemoteTypes.class)
     static class Entry {
 
-        /** update time for this data type */
-        private short updateTime = -1;
-
-        /** local data type that represents the same time - null if there is noch such type in local runtime environment */
+        /** local data type that represents the same time - null if there is no such type in local runtime environment */
         private DataTypeBase localDataType = null;
 
+        /** Number of local types checked to resolve type */
+        private short typesChecked;
+
         /** name of remote type */
-        @JavaOnly
         private String name;
 
         public Entry() {}
 
-        public Entry(short time, DataTypeBase local) {
-            updateTime = time;
+        public Entry(DataTypeBase local) {
             localDataType = local;
         }
-
-        /*Cpp
-        bool operator==(void* x) {
-            if (x == NULL) {
-                return localDataType == NULL;
-            }
-            return x == this;
-        }
-         */
     }
 
-    /** List with remote types - index is remote type id */
-    private @Ptr Entry[] types = null;
+    /** List with remote types - index is remote type id (=> mapping: remote type id => local type id */
+    private SafeConcurrentlyIterableList<Entry> types = new SafeConcurrentlyIterableList<Entry>(200, 2);
 
-    /** List with remote types - index is local type id */
-    private @Ptr Entry[] typesByLocalUid = null;
+    /** List with remote type update times - index is local type id */
+    private SafeConcurrentlyIterableList<Short> updateTimes = new SafeConcurrentlyIterableList<Short>(200, 2);
+
+    /** Number (max index) of local types already sent to remote runtime */
+    private short localTypesSent = 0;
 
     /** Remote Global default update time */
     private short globalDefault = 0;
@@ -114,22 +106,26 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      *
      * @param ci Input Stream Buffer to read from
      */
-    public void deserialize(CoreInput ci) {
-        assert(!initialized()) : "Already initialized";
-        globalDefault = ci.readShort();
-        types = new Entry[ci.readShort()];
-        int maxTypes = types.length + DataTypeBase.getTypeCount();
-        typesByLocalUid = new Entry[maxTypes];
-        short next = ci.readShort();
+    private void deserialize(@Ref InputStreamBuffer ci) {
         LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG, getLogDescription());
-        ls.appendln("Connection Partner knows types:");
+        if (types.size() == 0) {
+            assert(!initialized()) : "Already initialized";
+            globalDefault = ci.readShort();
+            ls.appendln("Connection Partner knows types:");
+        } else {
+            ls.appendln("Connection Partner knows more types:");
+        }
+        short next = ci.readShort();
         while (next != -1) {
             short time = ci.readShort();
             String name = ci.readString();
+            short checkedTypes = DataTypeBase.getTypeCount();
             DataTypeBase local = DataTypeBase.findType(name);
             ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null ? "available here, too" : "not available here"));
-            Entry e = new Entry(time, local);
-            types[next] = e;
+            int typesSize = types.size(); // to avoid warning
+            assert(next == typesSize);
+            Entry e = new Entry(local);
+            e.typesChecked = checkedTypes;
 
             //JavaOnlyBlock
             e.name = name;
@@ -137,8 +133,18 @@ public class RemoteTypes extends LogUser implements HasDestructor {
                 local = new UnknownType(name);
             }
 
+            /*Cpp
+            if (local == NULL) {
+                e.name = name;
+            }
+             */
+
+            types.add(e, true);
             if (local != null) {
-                typesByLocalUid[local.getUid()] = e;
+                while ((short)updateTimes.size() < DataTypeBase.getTypeCount()) {
+                    updateTimes.add((short) - 1, true);
+                }
+                updateTimes.getIterable().set(local.getUid(), time);
             }
             next = ci.readShort();
         }
@@ -151,24 +157,20 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param dtr DataTypeRegister to serialize
      * @param co Output Stream to write information to
      */
-    public static void serializeLocalDataTypes(CoreOutput co) {
-        int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getValue();
-        co.writeShort((short)t);
+    private void serializeLocalDataTypes(@Ref OutputStreamBuffer co) {
+        if (localTypesSent == 0) {
+            int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getValue();
+            co.writeShort((short)t);
+        }
         short typeCount = DataTypeBase.getTypeCount();
-        co.writeShort(typeCount);
-        for (short i = 0, n = typeCount; i < n; i++) {
+        for (short i = localTypesSent, n = typeCount; i < n; i++) {
             DataTypeBase dt = DataTypeBase.getType(i);
             co.writeShort(dt.getUid());
             co.writeShort(FinrocTypeInfo.get(i).getUpdateTime());
             co.writeString(dt.getName());
         }
         co.writeShort(-1); // terminator
-    }
-
-    @Override
-    public void delete() {
-        //Cpp delete types;
-        //Cpp delete typesByLocalUid;
+        localTypesSent = typeCount;
     }
 
     /**
@@ -177,13 +179,16 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @param typeUid Type uid
      * @param newTime new update time
      */
-    public void setTime(short typeUid, short newTime) {
+    public void setTime(DataTypeBase dt, short newTime) {
         assert(initialized()) : "Not initialized";
-        if (typeUid < 0) {
+        if (dt == null) {
             assert(newTime >= 0);
             globalDefault = newTime;
         } else {
-            types[typeUid].updateTime = newTime;
+            while ((short)updateTimes.size() < DataTypeBase.getTypeCount()) {
+                updateTimes.add((short) - 1, true);
+            }
+            updateTimes.getIterable().set(dt.getUid(), newTime);
         }
     }
 
@@ -191,7 +196,7 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      * @return Has this object been initialized?
      */
     public boolean initialized() {
-        return types != null;
+        return types.size() != 0;
     }
 
     /**
@@ -200,21 +205,10 @@ public class RemoteTypes extends LogUser implements HasDestructor {
      */
     public short getTime(@Const @Ref DataTypeBase dataType) {
         assert(initialized()) : "Not initialized";
-        return typesByLocalUid[dataType.getUid()].updateTime;
-    }
-
-    /**
-     * @param uid Remote type uid
-     * @return Local data type - which is identical to remote type; or null if no such type exists
-     */
-    public DataTypeBase getLocalType(short uid) {
-        assert(initialized()) : "Not initialized";
-        Entry e = types[uid];
-        if (e == null) {
-            log(LogLevel.LL_DEBUG_WARNING, logDomain, "RemoteTypes: Unknown type " + uid);
-            return null;
+        while ((short)updateTimes.size() < dataType.getUid()) {
+            updateTimes.add((short) - 1, true);
         }
-        return e.localDataType;
+        return updateTimes.getIterable().get(dataType.getUid());
     }
 
     /**
@@ -223,11 +217,52 @@ public class RemoteTypes extends LogUser implements HasDestructor {
     @JavaOnly
     public List<String> getRemoteTypeNames() {
         ArrayList<String> result = new ArrayList<String>();
-        for (Entry e : types) {
+        for (Entry e : types.getIterable().getBackend()) {
             if (e != null) {
                 result.add(e.name);
             }
         }
         return result;
+    }
+
+    @Override
+    public DataTypeBase readType(InputStreamBuffer is) {
+        short uid = is.readShort();
+        if (uid == -2) {
+            // we get info on more data
+            deserialize(is);
+            uid = is.readShort();
+        }
+        assert(initialized()) : "Not initialized";
+        int typesSize = types.size(); // to avoid warning
+        if (uid < 0 || uid >= typesSize) {
+            log(LogLevel.LL_ERROR, logDomain, "Corrupt type information from received from connection partner: " + uid);
+            throw new RuntimeException("Corrupt type information from received from connection partner");
+        }
+
+        @Ref Entry e = types.getIterable().get(uid);
+        if (e.localDataType == null && e.typesChecked < DataTypeBase.getTypeCount()) {
+            // we have more types locally... maybe we can resolve missing types now
+            e.typesChecked = DataTypeBase.getTypeCount();
+            e.localDataType = DataTypeBase.findType(e.name);
+        }
+        return e.localDataType;
+    }
+
+    @Override
+    public void writeType(OutputStreamBuffer os, DataTypeBase dt) {
+        int count = DataTypeBase.getTypeCount();
+        if (count > localTypesSent) {
+            os.writeShort(-2);
+            serializeLocalDataTypes(os);
+        }
+        os.writeShort(dt.getUid());
+    }
+
+    /**
+     * @return Have new types been added since last update?
+     */
+    public boolean typeUpdateNecessary() {
+        return DataTypeBase.getTypeCount() > localTypesSent;
     }
 }

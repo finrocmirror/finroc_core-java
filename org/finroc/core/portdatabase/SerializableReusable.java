@@ -21,9 +21,19 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
+import org.finroc.jc.annotation.InCppFile;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.container.Reusable;
+import org.finroc.serialization.RRLibSerializable;
+import org.finroc.serialization.Serialization;
+import org.finroc.serialization.StringInputStream;
+import org.finroc.serialization.StringOutputStream;
+import org.finroc.xml.XMLNode;
 
 /**
  * @author max
@@ -31,7 +41,7 @@ import org.finroc.jc.container.Reusable;
  * This is the base class for some classes that are both Serializable and Reusable
  */
 @NoCpp
-public abstract class SerializableReusable extends Reusable implements CoreSerializable {
+public abstract class SerializableReusable extends Reusable implements RRLibSerializable {
 
     /**
      * Recycle call object - after calling this method, object is available in ReusablesPool it originated from
@@ -41,5 +51,50 @@ public abstract class SerializableReusable extends Reusable implements CoreSeria
     @Virtual public void genericRecycle() {
         //responsibleThread = -1;
         super.recycle();
+    }
+
+    /**
+     * Serialize object as string (e.g. for xml output)
+     *
+     * @param os String output stream
+     */
+    @Override @InCppFile @Virtual @ConstMethod @JavaOnly
+    public void serialize(@Ref StringOutputStream os) {
+        Serialization.serializeToHexString(this, os);
+    }
+
+    /**
+     * Deserialize object. Object has to already exists.
+     * Should be suited for reusing old objects.
+     *
+     * Parsing errors should throw an Exception - and set object to
+     * sensible (default?) value
+     *
+     * @param s String to deserialize from
+     */
+    @Override @InCppFile @Virtual @JavaOnly
+    public void deserialize(@Ref StringInputStream s) throws Exception {
+        Serialization.deserializeFromHexString(this, s);
+    }
+
+    /**
+     * Serialize object to XML
+     *
+     * @param node Empty XML node (name shouldn't be changed)
+     */
+    @Override @InCppFile @Virtual @ConstMethod @JavaOnly
+    public void serialize(@Ref XMLNode node) throws Exception {
+        node.setContent(Serialization.serialize(this));
+    }
+
+    /**
+     * Deserialize from XML Node
+     *
+     * @param node Node to deserialize from
+     */
+    @Override @InCppFile @Virtual @JavaOnly
+    public void deserialize(@Const @Ref XMLNode node) throws Exception {
+        StringInputStream is = new StringInputStream(node.getTextContent());
+        deserialize(is);
     }
 }

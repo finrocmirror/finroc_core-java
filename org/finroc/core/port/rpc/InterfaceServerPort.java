@@ -28,7 +28,6 @@ import org.finroc.jc.annotation.InCpp;
 import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.Ptr;
-import org.finroc.jc.annotation.RValueRef;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SkipArgs;
 import org.finroc.serialization.DataTypeBase;

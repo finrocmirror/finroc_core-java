@@ -25,8 +25,6 @@ import java.util.ArrayList;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.plugin.RemoteCreateModuleAction;
 import org.finroc.core.port.ThreadLocalCache;
@@ -40,7 +38,9 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.GenericObjectManager;
+import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 
 /**
  * @author max
@@ -117,8 +117,8 @@ public class AdminClient extends InterfaceClientPort {
         if (np != null && getAdminInterface(np) == this) {
             try {
                 MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-                CoreOutput co = new CoreOutput(mb);
-                co.writeString(container.getObject().getType().getName());
+                OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+                co.writeType(container.getObject().getType());
                 container.getObject().serialize(co);
                 co.close();
                 AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 0, false);
@@ -141,8 +141,8 @@ public class AdminClient extends InterfaceClientPort {
         if (np != null && getAdminInterface(np) == this) {
             try {
                 MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-                CoreOutput co = new CoreOutput(mb);
-                co.writeString(dt.getName());
+                OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+                co.writeType(dt);
                 co.writeString(newValue);
                 co.close();
                 AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 1, false);
@@ -175,9 +175,10 @@ public class AdminClient extends InterfaceClientPort {
         ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
         try {
             MemoryBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
-            CoreInput ci = new CoreInput(mb);
+            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
             while (ci.moreDataAvailable()) {
-                RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, ci.readString(), ci.readString(), result.size());
+                String name = ci.readString();
+                RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, name, ci.readString(), result.size());
                 a.parameters.deserialize(ci);
                 result.add(a);
             }
@@ -201,7 +202,7 @@ public class AdminClient extends InterfaceClientPort {
     @JavaOnly
     public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
         MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-        CoreOutput co = new CoreOutput(mb);
+        OutputStreamBuffer co = new OutputStreamBuffer(mb);
         if (params != null) {
             for (String p : params) {
                 co.writeString(p);
@@ -257,7 +258,7 @@ public class AdminClient extends InterfaceClientPort {
             if (mb == null) {
                 return null;
             }
-            CoreInput ci = new CoreInput(mb);
+            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
             DataTypeBase dt = DataTypeBase.findType(ci.readString());
             FinrocAnnotation fa = (FinrocAnnotation)dt.getJavaClass().newInstance();
             fa.deserialize(ci);
@@ -279,11 +280,11 @@ public class AdminClient extends InterfaceClientPort {
      */
     public void setAnnotation(int remoteHandle, FinrocAnnotation ann) {
         MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-        CoreOutput co = new CoreOutput(mb);
+        OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
         if (ann.getType() == null) {
             ann.initDataType();
         }
-        co.writeString(ann.getType().getName());
+        co.writeType(ann.getType());
         ann.serialize(co);
         co.close();
 

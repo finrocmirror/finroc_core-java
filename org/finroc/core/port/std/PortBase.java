@@ -362,6 +362,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         // inform listeners?
         if (INFORM_LISTENERS) {
+            setChanged(CHANGE_CONSTANT);
             notifyListeners(pc);
         }
 

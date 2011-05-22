@@ -33,13 +33,13 @@ import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeListener;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.net.RemoteTypes;
@@ -131,7 +131,7 @@ public class FrameworkElementInfo {
      *
      * (call in runtime-registry synchronized context only)
      */
-    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, CoreOutput tp, FrameworkElementTreeFilter elementFilter, @Ref StringBuilder tmp) {
+    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, @Ref OutputStreamBuffer tp, FrameworkElementTreeFilter elementFilter, @Ref StringBuilder tmp) {
 
         tp.writeByte(opCode); // write opcode (see base class)
 
@@ -176,7 +176,7 @@ public class FrameworkElementInfo {
         if (fe.isPort()) {
             AbstractPort port = (AbstractPort)fe;
 
-            tp.writeShort(port.getDataType().getUid());
+            tp.writeType(port.getDataType());
             tp.writeShort(port.getStrategy());
             tp.writeShort(port.getMinNetUpdateInterval());
 
@@ -192,7 +192,7 @@ public class FrameworkElementInfo {
      * @param is Input Stream to deserialize from
      * @param typeLookup Remote type information to lookup type
      */
-    public void deserialize(CoreInput is, RemoteTypes typeLookup) {
+    public void deserialize(@Ref InputStreamBuffer is, RemoteTypes typeLookup) {
         reset();
         opCode = is.readByte();
 
@@ -227,7 +227,7 @@ public class FrameworkElementInfo {
 
         // possibly read port specific info
         if ((flags & CoreFlags.IS_PORT) > 0) {
-            type = typeLookup.getLocalType(is.readShort());
+            type = is.readType();
             strategy = is.readShort();
             minNetUpdateTime = is.readShort();
 

@@ -171,13 +171,13 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         @SuppressWarnings("unused")
         @CppUnused
         AdminServer as = new AdminServer();
-        FrameworkElement.initAll();
 
         // init thread-local-cache for main thread */
         ThreadLocalCache.get();
 
         //ConfigFile.init(conffile);
         RuntimeSettings.staticInit(); // can be done now... or last
+        FrameworkElement.initAll();
 
         StreamCommitThread.staticInit();
         // Start thread

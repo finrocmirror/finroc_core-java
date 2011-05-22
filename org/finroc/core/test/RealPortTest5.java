@@ -37,16 +37,15 @@ import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.plugin.blackboard.BBLockException;
 import org.finroc.plugin.blackboard.BlackboardBuffer;
 import org.finroc.plugin.blackboard.BlackboardClient;
 import org.finroc.plugin.blackboard.BlackboardManager;
-import org.finroc.plugin.blackboard.BlackboardServer;
 import org.finroc.plugin.blackboard.BlackboardWriteAccess;
 import org.finroc.plugin.blackboard.SingleBufferedBlackboardServer;
+import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.PortDataList;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
@@ -174,14 +173,14 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         FrameworkElement.initAll();
 
         @CustomPtr("tPortDataPtr") BlackboardBuffer buf = output.getUnusedBuffer();
-        @InCpp("CoreOutput co(buf.get());")
-        @PassByValue CoreOutput co = new CoreOutput(buf);
+        @InCpp("rrlib::serialization::OutputStream co(buf.get());")
+        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf);
         co.writeInt(42);
         co.close();
         output.publish(buf);
 
         @Const BlackboardBuffer cbuf = input.getAutoLocked();
-        @PassByValue CoreInput ci = new CoreInput(cbuf);
+        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(cbuf);
         System.out.println(ci.readInt());
         input.releaseAutoLocks();
 
@@ -222,8 +221,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             BlackboardWriteAccess<MemoryBuffer> bbw = new BlackboardWriteAccess<MemoryBuffer>(client, 4000000);
             bbw.resize(8/*, 8, 8, false*/);
 
-            @InCpp("CoreOutput co(&(bbw[0]));")
-            @PassByValue CoreOutput co = new CoreOutput(bbw.get(0));
+            @InCpp("rrlib::serialization::OutputStream co(&(bbw[0]));")
+            @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(bbw.get(0));
             co.writeLong(0);
             co.close();
 
@@ -237,8 +236,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         //@CppType("blackboard::BlackboardClient<MemoryBuffer>::ChangeTransactionVar")
         PortDataList<MemoryBuffer> buf = client.getUnusedChangeBuffer();
         buf.resize(1);
-        @InCpp("CoreOutput co(&buf->_at(0));")
-        @PassByValue CoreOutput co = new CoreOutput(buf.get(0));
+        @InCpp("rrlib::serialization::OutputStream co(&buf->_at(0));")
+        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf.get(0));
         co.writeInt(0x4BCDEF12);
         co.close();
         try {
@@ -254,8 +253,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
 
         @CppType("PortDataPtr<const std::vector<MemoryBuffer> >")
         PortDataList<MemoryBuffer> cbuf = client.read();
-        @InCpp("CoreInput ci(&cbuf->_at(0));")
-        @PassByValue CoreInput ci = new CoreInput(cbuf.get(0));
+        @InCpp("rrlib::serialization::InputStream ci(&cbuf->_at(0));")
+        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(cbuf.get(0));
         System.out.println(ci.readInt());
 
         //JavaOnlyBlock

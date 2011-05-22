@@ -27,8 +27,8 @@ import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.plugin.blackboard.BlackboardBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
@@ -59,7 +59,7 @@ public class InitialPushTest {
         // fill output ports with something
         nOut.publish(23);
         @CustomPtr("tPortDataPtr") BlackboardBuffer bb = out.getUnusedBuffer();
-        @PassByValue CoreOutput co = new CoreOutput();
+        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer();
         co.reset(bb);
         co.writeInt(23);
         co.close();

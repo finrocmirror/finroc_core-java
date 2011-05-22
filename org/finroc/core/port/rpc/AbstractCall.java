@@ -36,8 +36,8 @@ import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.GenericObjectManager;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 import org.finroc.core.portdatabase.SerializableReusable;
@@ -128,7 +128,7 @@ public abstract class AbstractCall extends SerializableReusable {
     }
 
     @Override
-    public void serialize(CoreOutput oos) {
+    public void serialize(OutputStreamBuffer oos) {
         oos.writeByte(status);
         oos.writeByte(syncherID);
         oos.writeInt(threadUid);
@@ -141,11 +141,11 @@ public abstract class AbstractCall extends SerializableReusable {
     }
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         deserializeImpl(is, false);
     }
 
-    public void deserializeImpl(CoreInput is, boolean skipParameters) {
+    public void deserializeImpl(@Ref InputStreamBuffer is, boolean skipParameters) {
         status = is.readByte();
         syncherID = is.readByte();
         threadUid = is.readInt();

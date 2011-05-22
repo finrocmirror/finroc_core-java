@@ -27,6 +27,7 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
@@ -209,7 +210,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param create (Re)create entry node?
      * @return XMLNode representing entry
      */
-    public @Ref XMLNode getEntry(@Const @Ref String entry, boolean create) {
+    public @Ref XMLNode getEntry(@Const @Ref String entry, @CppDefault("false") boolean create) {
         SimpleList<String> nodes = new SimpleList<String>();
         nodes.addAll(entry.split(SEPARATOR));
         @SizeT int idx = 0;

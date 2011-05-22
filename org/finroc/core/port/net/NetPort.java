@@ -24,8 +24,6 @@ package org.finroc.core.port.net;
 import java.util.List;
 
 import org.finroc.core.CoreFlags;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
@@ -58,9 +56,12 @@ import org.finroc.jc.annotation.InitInBody;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PassByValue;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Virtual;
 import org.finroc.jc.log.LogUser;
 import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 
 /**
  * @author max
@@ -271,19 +272,19 @@ public abstract class NetPort extends LogUser implements PortListener {
      * @param ci Stream
      * @param timestamp Time stamp
      */
-    public void receiveDataFromStream(CoreInput ci, long timestamp, byte changedFlag) {
+    public void receiveDataFromStream(@Ref InputStreamBuffer ci, long timestamp, byte changedFlag) {
         assert(getPort().isReady());
         if (isStdType() || isTransactionType()) {
             StdNetPort pb = (StdNetPort)wrapped;
-            ci.setBufferSource(pb);
+            ci.setFactory(pb);
             do {
-                pb.publishFromNet((PortDataManager)ci.readObject(wrapped.getDataType()).getManager(), changedFlag);
+                pb.publishFromNet((PortDataManager)ci.readObject(wrapped.getDataType(), null).getManager(), changedFlag);
             } while (ci.readBoolean());
-            ci.setBufferSource(null);
+            ci.setFactory(null);
         } else if (isCCType()) {
             CCNetPort pb = (CCNetPort)wrapped;
             do {
-                pb.publishFromNet((CCPortDataManagerTL)ci.readObject(wrapped.getDataType()).getManager(), changedFlag);
+                pb.publishFromNet((CCPortDataManagerTL)ci.readObject(wrapped.getDataType(), null).getManager(), changedFlag);
             } while (ci.readBoolean());
         } else { // interface port
             throw new RuntimeException("Method calls are not handled using this mechanism");
@@ -296,7 +297,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      * @param co Stream
      * @param startTime Time stamp
      */
-    public void writeDataToNetwork(CoreOutput co, long startTime) {
+    public void writeDataToNetwork(@Ref OutputStreamBuffer co, long startTime) {
 
         boolean useQ = wrapped.getFlag(PortFlags.USES_QUEUE);
         boolean first = true;

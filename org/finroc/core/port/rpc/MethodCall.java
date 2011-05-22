@@ -27,8 +27,8 @@ import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.thread.Task;
 import org.finroc.serialization.DataTypeBase;
-import org.finroc.core.buffer.CoreOutput;
-import org.finroc.core.buffer.CoreInput;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.port.rpc.method.AbstractAsyncReturnHandler;
 import org.finroc.core.port.rpc.method.AbstractMethod;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
@@ -97,7 +97,7 @@ public class MethodCall extends AbstractCall implements Task {
     }
 
     @Override
-    public void serialize(CoreOutput oos) {
+    public void serialize(OutputStreamBuffer oos) {
         oos.writeByte(method == null ? -1 : method.getMethodId());
         assert(getStatus() != SYNCH_CALL || netTimeout > 0) : "Network timeout needs to be >0 with a synch call";
         oos.writeInt(netTimeout);
@@ -107,7 +107,7 @@ public class MethodCall extends AbstractCall implements Task {
 
 
     @Override
-    public void deserialize(CoreInput is) {
+    public void deserialize(InputStreamBuffer is) {
         throw new RuntimeException("Call deserializeCall instead, please!");
     }
 
@@ -119,7 +119,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param skipParameters Skip deserialization of parameter stuff? (for cases when port has been deleted;
      * in this case we need to jump to skip target afterwards)
      */
-    public void deserializeCall(CoreInput is, @Const @Ref DataTypeBase dt, boolean skipParameters) {
+    public void deserializeCall(@Ref InputStreamBuffer is, @Const @Ref DataTypeBase dt, boolean skipParameters) {
         //assert(skipParameters || (dt != null && dt.isMethodType())) : "Method type required here";
         portInterfaceType = dt;
         byte b = is.readByte();

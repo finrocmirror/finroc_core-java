@@ -109,7 +109,7 @@ public class StructureParameterBase extends RRLibSerializableImpl implements Has
     @Override
     public void serialize(OutputStreamBuffer os) {
         os.writeString(name);
-        os.writeString(type.getName());
+        os.writeType(type);
         TypedObject val = valPointer();
 
         //JavaOnlyBlock
@@ -131,12 +131,12 @@ public class StructureParameterBase extends RRLibSerializableImpl implements Has
 
             //JavaOnlyBlock
             name = is.readString();
-            type = DataTypeBase.findType(is.readString());
+            type = is.readType();
 
             //Cpp assert(false && "not supported");
         } else {
             is.readString();
-            is.readString();
+            is.readType();
         }
         if (is.readBoolean()) {
             try {

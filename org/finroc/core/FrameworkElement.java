@@ -57,8 +57,8 @@ import org.finroc.jc.thread.ThreadUtil;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.log.LogStream;
+import org.finroc.serialization.OutputStreamBuffer;
 
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
@@ -366,7 +366,7 @@ public class FrameworkElement extends Annotatable {
      * @param os OutputStream
      * @param i Link Number (0 is primary link/description)
      */
-    @ConstMethod public void writeDescription(CoreOutput os, int i) {
+    @ConstMethod public void writeDescription(@Ref OutputStreamBuffer os, int i) {
         if (isReady()) {
             os.writeString(getLink(i).description);
         } else {

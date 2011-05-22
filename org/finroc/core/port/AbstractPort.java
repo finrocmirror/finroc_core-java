@@ -38,20 +38,22 @@ import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
 import org.finroc.jc.annotation.Superclass2;
 import org.finroc.jc.annotation.Virtual;
+import org.finroc.jc.annotation.VoidPtr;
 import org.finroc.jc.container.SafeConcurrentlyIterableList;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.jc.log.LogDefinitions;
 import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.Factory;
 import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.RuntimeSettings;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
@@ -80,7 +82,7 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
               "    delete linkEdges;",
               "}"
              })
-public abstract class AbstractPort extends FrameworkElement implements HasDestructor {
+public abstract class AbstractPort extends FrameworkElement implements HasDestructor, Factory {
 
     /**
      * List class for edges
@@ -1056,7 +1058,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param co Output Stream
      */
     @SuppressWarnings("unchecked")
-    public void serializeOutgoingConnections(CoreOutput co) {
+    public void serializeOutgoingConnections(@Ref OutputStreamBuffer co) {
         @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
         byte count = 0;
         for (int i = 0, n = it.size(); i < n; i++) {
@@ -1150,4 +1152,27 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param destination other port
      */
     public abstract void forwardData(AbstractPort other);
+
+    @InCpp("return std::shared_ptr<void>(dt.createInstance());")
+    @Override
+    public Object createBuffer(DataTypeBase dt) {
+        return dt.createInstance();
+    }
+
+    @Override
+    public GenericObject createGenericObject(DataTypeBase dt, @VoidPtr Object factoryParameter) {
+        if (FinrocTypeInfo.isStdType(dt)) {
+            return getUnusedBufferRaw(dt).getObject();
+        } else if (FinrocTypeInfo.isCCType(dt)) {
+            if (factoryParameter == null) {
+                // get thread local buffer
+                return ThreadLocalCache.get().getUnusedBuffer(dt).getObject();
+            } else {
+                // get interthread buffer
+                return ThreadLocalCache.get().getUnusedInterThreadBuffer(dt).getObject();
+            }
+        }
+        log(LogLevel.LL_ERROR, logDomain, "Cannot create buffer of type " + dt.getName());
+        return null;
+    }
 }

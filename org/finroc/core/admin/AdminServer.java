@@ -25,8 +25,6 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.buffer.CoreInput;
-import org.finroc.core.buffer.CoreOutput;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.parameter.ConstructorParameters;
@@ -80,7 +78,9 @@ import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.GenericObject;
+import org.finroc.serialization.InputStreamBuffer;
 import org.finroc.serialization.MemoryBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.serialization.Serialization;
 import org.finroc.serialization.StringInputStream;
 
@@ -247,8 +247,9 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         if (port != null && port.isReady()) {
             synchronized (port) {
                 if (port.isReady()) {
-                    @PassByValue CoreInput ci = new CoreInput(buf);
-                    DataTypeBase dt = DataTypeBase.findType(ci.readString());
+                    @InCpp("rrlib::serialization::InputStream ci(buf._get(), rrlib::serialization::InputStream::eNames);")
+                    @PassByValue InputStreamBuffer ci = new InputStreamBuffer(buf, InputStreamBuffer.TypeEncoding.Names);
+                    DataTypeBase dt = ci.readType();
                     if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
                         CCPortBase p = (CCPortBase)port;
                         CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(dt);
@@ -298,8 +299,8 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         assert(method == GET_CREATE_MODULE_ACTIONS);
 
         @CustomPtr("tPortDataPtr") MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-        @InCpp("CoreOutput co(mb._get());")
-        @PassByValue CoreOutput co = new CoreOutput(mb);
+        @InCpp("rrlib::serialization::OutputStream co(mb._get(), rrlib::serialization::OutputStream::eNames);")
+        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
         @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
         for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
             @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
@@ -328,8 +329,9 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             if (elem == null || (!elem.isReady())) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");
             } else {
-                @PassByValue CoreInput ci = new CoreInput(paramsBuffer);
-                DataTypeBase dt = DataTypeBase.findType(ci.readString());
+                @InCpp("rrlib::serialization::InputStream ci(paramsBuffer._get(), rrlib::serialization::InputStream::eNames);")
+                @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer, InputStreamBuffer.TypeEncoding.Names);
+                DataTypeBase dt = ci.readType();
                 if (dt == null) {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Data type not available. Cancelling setting of annotation.");
                 } else {
@@ -357,7 +359,8 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
 
                         if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
                             params = cma.getParameterTypes().instantiate();
-                            @PassByValue CoreInput ci = new CoreInput(paramsBuffer);
+                            @InCpp("rrlib::serialization::InputStream ci(paramsBuffer._get());")
+                            @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer);
                             for (@SizeT int i = 0; i < params.size(); i++) {
                                 StructureParameterBase param = params.get(i);
                                 String s = ci.readString();
@@ -449,9 +452,9 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
             //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
         } else {
             @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-            @InCpp("CoreOutput co(buf._get());")
-            @PassByValue CoreOutput co = new CoreOutput(buf);
-            co.writeString(result.getType().getName());
+            @InCpp("rrlib::serialization::OutputStream co(buf._get(), rrlib::serialization::OutputStream::eNames);")
+            @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
+            co.writeType(result.getType());
             result.serialize(co);
             co.close();
             return buf;

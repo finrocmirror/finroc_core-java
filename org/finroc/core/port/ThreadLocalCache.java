@@ -26,7 +26,6 @@ import java.lang.ref.WeakReference;
 import org.finroc.core.CoreRegister;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.buffer.CoreInput;
 import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataBufferPool;
@@ -71,6 +70,7 @@ import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataTypeBase;
 import org.finroc.serialization.GenericObject;
 import org.finroc.serialization.GenericObjectManager;
+import org.finroc.serialization.InputStreamBuffer;
 
 /**
  * @author max
@@ -132,7 +132,7 @@ public class ThreadLocalCache extends LogUser {
     public final @Ptr CCQueueFragmentRaw tempCCFragment = new CCQueueFragmentRaw();
 
     /** CoreInput for Input packet processor */
-    @PassByValue public final CoreInput inputPacketProcessor = new CoreInput();
+    @PassByValue public final InputStreamBuffer inputPacketProcessor = new InputStreamBuffer();
 
     /** Object to gain fast access to the thread local information */
     @InCpp("static util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> info;")
@@ -358,7 +358,7 @@ public class ThreadLocalCache extends LogUser {
 
     @Inline
     private CCPortDataBufferPool getCCPool(@Const @Ref DataTypeBase dataType) {
-        return getCCPool(FinrocTypeInfo.get(dataType.getUid()).getCCIndex());
+        return getCCPool(FinrocTypeInfo.get(dataType).getCCIndex());
     }
 
     @Inline

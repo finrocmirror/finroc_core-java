@@ -211,17 +211,17 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         setValue(value, Unit.NO_UNIT);
     }
     public void setValue(@Const @Ref Number value, @Ptr Unit unit) {
-        this.unit = unit;
         if (value instanceof Long) {
-            setValue(value.longValue());
+            setValue(value.longValue(), unit);
         } else if (value instanceof Integer) {
-            setValue(value.intValue());
+            setValue(value.intValue(), unit);
         } else if (value instanceof Float) {
-            setValue(value.floatValue());
+            setValue(value.floatValue(), unit);
         } else if (value instanceof CoreNumber) {
-            setValue((CoreNumber)value);
+            copyFrom((CoreNumber)value);
+            this.unit = unit;
         } else {
-            setValue(value.doubleValue());
+            setValue(value.doubleValue(), unit);
         }
     }
 
@@ -439,6 +439,9 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
             oos.writeByte(prepFirstByte(CONST));
             oos.writeByte(((Constant)unit).getConstantId());
         }
+        if (unit != Unit.NO_UNIT) {
+            oos.writeByte(unit.getUid());
+        }
     }
 
     @ConstMethod private byte prepFirstByte(byte value2) {
@@ -521,11 +524,11 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
             // JavaOnlyBlock
         case INT:
         case LONG:
-            return value + unit.toString();
+            return (value + " " + unit.toString()).trim();
         case FLOAT:
-            return floatValue() + unit.toString();
+            return (floatValue() + " " + unit.toString()).trim();
         case DOUBLE:
-            return doubleValue() + unit.toString();
+            return (doubleValue() + " " + unit.toString()).trim();
 
             /*Cpp
             case eINT:
@@ -606,7 +609,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     public void deserialize(StringInputStream is) throws Exception {
 
         // scan for unit
-        String s = is.readWhile("eE-.", StringInputStream.DIGIT, true);
+        String s = is.readWhile("-.", StringInputStream.DIGIT | StringInputStream.WHITESPACE | StringInputStream.LETTER, true);
         String num = s;
         for (@SizeT int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -614,8 +617,8 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
                 if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (c == '-' || Character.isDigit(s.charAt(i + 1)))) {
                     continue; // exponent in decimal notation
                 }
-                num = s.substring(0, i);
-                String unitString = s.substring(i);
+                num = s.substring(0, i).trim();
+                String unitString = s.substring(i).trim();
                 unit = Unit.getUnit(unitString);
                 break;
             }
