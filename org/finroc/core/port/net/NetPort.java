@@ -360,17 +360,12 @@ public abstract class NetPort extends LogUser implements PortListener {
 
         public void publishFromNet(CCPortDataManagerTL readObject, byte changedFlag) {
 
-            if (changedFlag != AbstractPort.CHANGED_INITIAL) { // always publish initial pushes
-
-                // only publish if value has actually changed...
-                CCPortDataManagerTL curData = this.getLockedUnsafeInContainer();
-                boolean equal = curData.contentEquals(readObject.getObject().getRawDataPtr());
-                curData.releaseLock();  // unlock value that we just locked for comparison
-                if (equal) {
-                    readObject.recycleUnused();
-                    return;
-                }
-            }
+            // Publish all pushed data from the network. This avoids problems in finstruct.
+            // Compared to tranferring the stuff over the network,
+            // effort for publishing the stuff locally, is negligible.
+            /*if (changedFlag != AbstractPort.CHANGED_INITIAL) {
+              check ...
+            }*/
 
             ThreadLocalCache tc = ThreadLocalCache.getFast();
             if (isOutputPort()) {
