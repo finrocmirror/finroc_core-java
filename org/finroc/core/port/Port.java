@@ -49,6 +49,7 @@ import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.NoCpp;
 import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.Ptr;
+import org.finroc.jc.annotation.RValueRef;
 import org.finroc.jc.annotation.RawTypeArgs;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.Superclass2;
@@ -314,6 +315,31 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     }
 
     /*Cpp
+
+    // Publish Data Buffer. This data will be forwarded to any connected ports.
+    // Should only be called on output ports.
+    //
+    // \param data Data to publish. It will be deep-copied.
+    // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
+    inline void publish(const T& data) {
+        PortUtil<T>::copyAndPublish(wrapped, data);
+    }
+
+    inline void publish(PortDataPtr<T>&& data)
+    {
+      PortUtil<T>::publish(wrapped, data);
+    }
+
+    inline void publish(PortDataPtr<T>& data)
+    {
+      PortUtil<T>::publish(wrapped, data);
+    }
+
+    inline void publish(PortDataPtr<const T>& data)
+    {
+      PortUtil<T>::publish(wrapped, data);
+    }
+
     void removePortListener(PortListener<PortDataPtr<const T> >* listener) {
         wrapped->removePortListenerRaw(listener);
     }
@@ -475,22 +501,6 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
         ((CCPortBoundedNumeric)wrapped).setBounds(b);
     }
 
-    /*Cpp
-    // Publish Data Buffer. This data will be forwarded to any connected ports.
-    // Should only be called on output ports.
-    //
-    // \param data Data to publish. It will be deep-copied.
-    // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
-    inline void publish(const T& data) {
-        PortUtil<T>::copyAndPublish(wrapped, data);
-    }
-
-    inline void publish(PortDataPtr<T>& data)
-    {
-      PortUtil<T>::publish(wrapped, data);
-    }
-     */
-
     /**
      * Publish Data Buffer. This data will be forwarded to any connected ports.
      * It should not be modified thereafter.
@@ -499,7 +509,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
      * @param data Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
     @InCpp("PortUtil<T>::publish(wrapped, data);")
-    @Inline public void publish(@CustomPtr("tPortDataPtr") @Const @Ref T data) {
+    @Inline public void publish(@RValueRef @CustomPtr("tPortDataPtr") @Const @Ref T data) {
         if (hasCCType()) {
             CCPortDataManagerTL mgr = (CCPortDataManagerTL)CCPortDataManagerTL.getManager(data);
             if (mgr == null) {
