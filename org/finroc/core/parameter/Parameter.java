@@ -73,8 +73,8 @@ public class Parameter<T extends RRLibSerializable> extends Port<T> {
     public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @Ptr Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
         super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u));
         setDefault(defaultValue);
-        setConfigEntry(configEntry);
         wrapped.addAnnotation(new ParameterInfo());
+        setConfigEntry(configEntry);
     }
 
     @JavaOnly
@@ -86,8 +86,8 @@ public class Parameter<T extends RRLibSerializable> extends Port<T> {
     public Parameter(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @CppDefault("NULL") Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
         super(new PortCreationInfo(description, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
         setDefault(defaultValue);
-        setConfigEntry(configEntry);
         wrapped.addAnnotation(new ParameterInfo());
+        setConfigEntry(configEntry);
     }
 
     @InCpp("return dt != NULL ? dt : rrlib::serialization::DataType<T>();")
