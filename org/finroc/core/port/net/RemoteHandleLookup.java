@@ -38,4 +38,10 @@ public interface RemoteHandleLookup {
      * @return Handle of remote framework element (null if not found)
      */
     public Integer getRemoteHandle(FrameworkElement element);
+
+    /**
+     * @param handle Remote handle
+     * @return Framework element that represents remote framework element with this remote handle
+     */
+    public FrameworkElement getRemoteElement(int handle);
 }

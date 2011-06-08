@@ -33,6 +33,7 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.log.LogDefinitions;
@@ -62,9 +63,20 @@ public class ParameterInfo extends FinrocAnnotation {
     /** Place in Configuration tree, this parameter is configured from (nodes are separated with dots) */
     private String configEntry;
 
+    /** Is this info on remote parameter? */
+    @JavaOnly
+    private boolean remote = false;
+
     /** Log domain */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"parameter\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
+
+    public ParameterInfo() {}
+
+    @JavaOnly
+    public ParameterInfo(boolean remote) {
+        this.remote = remote;
+    }
 
     @Override
     public void serialize(OutputStreamBuffer os) {
@@ -73,6 +85,13 @@ public class ParameterInfo extends FinrocAnnotation {
 
     @Override
     public void deserialize(InputStreamBuffer is) {
+
+        //JavaOnlyBlock
+        if (remote) {
+            configEntry = is.readString();
+            return;
+        }
+
         setConfigEntry(is.readString());
     }
 
@@ -83,6 +102,13 @@ public class ParameterInfo extends FinrocAnnotation {
 
     @Override
     public void deserialize(StringInputStream is) throws Exception {
+
+        //JavaOnlyBlock
+        if (remote) {
+            configEntry = is.readAll();
+            return;
+        }
+
         setConfigEntry(is.readAll());
     }
 
@@ -99,6 +125,13 @@ public class ParameterInfo extends FinrocAnnotation {
      * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
      */
     public void setConfigEntry(String configEntry) {
+
+        //JavaOnlyBlock
+        if (remote) {
+            this.configEntry = configEntry;
+            return;
+        }
+
         if (!this.configEntry.equals(configEntry)) {
             this.configEntry = configEntry;
             try {

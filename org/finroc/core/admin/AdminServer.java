@@ -24,10 +24,13 @@ package org.finroc.core.admin;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.finstructable.FinstructableGroup;
+import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConstructorParameters;
+import org.finroc.core.parameter.ParameterInfo;
 import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
@@ -65,14 +68,18 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.RPCInterfaceType;
 import org.finroc.core.thread.ExecutionControl;
+import org.finroc.jc.annotation.AtFront;
 import org.finroc.jc.annotation.Const;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.CustomPtr;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.Inline;
 import org.finroc.jc.annotation.NonVirtual;
 import org.finroc.jc.annotation.PassByValue;
+import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
 import org.finroc.jc.annotation.SizeT;
+import org.finroc.jc.annotation.Struct;
 import org.finroc.jc.annotation.Superclass;
 import org.finroc.jc.container.SimpleList;
 import org.finroc.log.LogLevel;
@@ -90,9 +97,22 @@ import org.finroc.serialization.StringInputStream;
  * Administration interface server port
  */
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
-public class AdminServer extends InterfaceServerPort implements Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
+public class AdminServer extends InterfaceServerPort implements FrameworkElementTreeFilter.Callback<AdminServer.CallbackParameters>, Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
         Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
             Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
+
+    /** Struct for callback parameters for GET_PARAMETER_INFO method */
+    @Struct @AtFront
+    static class CallbackParameters {
+        @Ptr OutputStreamBuffer co;
+        @Ptr ConfigFile cf;
+
+        @Inline
+        public CallbackParameters(ConfigFile cf2, OutputStreamBuffer co2) {
+            this.cf = cf2;
+            this.co = co2;
+        }
+    }
 
     /** Admin interface */
     @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface", true);
@@ -158,6 +178,11 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
     @CppType("Port3Method<AdminServer*, PortDataPtr<CoreString>, int, int, int >")
     @PassByValue public static Port3Method<AdminServer, CoreString, Integer, Integer, Integer> GET_PORT_VALUE_AS_STRING =
         new Port3Method<AdminServer, CoreString, Integer, Integer, Integer>(METHODS, "Get port value as string", "handle", "dummy", "dummy", false);
+
+    /** Get parameter info for specified framework element: ConfigFile, children with config file, info on all parameters with same config file  */
+    @CppType("Port2Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer>, int, PortDataPtr<CoreString> >")
+    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_PARAMETER_INFO =
+        new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
 
     /** Data Type of method calls to this port */
     public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration method calls", METHODS);
@@ -431,31 +456,64 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
 
     @Override @NonVirtual
     public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method, Integer handle, @CustomPtr("tPortDataPtr") CoreString type) throws MethodCallException {
-        assert(method == GET_ANNOTATION);
-        FrameworkElement fe = getRuntime().getElement(handle);
-        FinrocAnnotation result = null;
-        DataTypeBase dt = DataTypeBase.findType(type.toString());
-        if (fe != null && fe.isReady() && dt != null) {
-            result = fe.getAnnotation(dt);
-        } else {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not query element for annotation type " + type.toString());
-        }
-
-        //JavaOnlyBlock
-        PortDataManager.getManager(type).releaseLock();
-
-        if (result == null) {
+        if (method == GET_ANNOTATION) {
+            FrameworkElement fe = getRuntime().getElement(handle);
+            FinrocAnnotation result = null;
+            DataTypeBase dt = DataTypeBase.findType(type.toString());
+            if (fe != null && fe.isReady() && dt != null) {
+                result = fe.getAnnotation(dt);
+            } else {
+                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not query element for annotation type " + type.toString());
+            }
 
             //JavaOnlyBlock
-            return null;
+            PortDataManager.getManager(type).releaseLock();
 
-            //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
+            if (result == null) {
+
+                //JavaOnlyBlock
+                return null;
+
+                //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
+            } else {
+                @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+                @InCpp("rrlib::serialization::OutputStream co(buf._get(), rrlib::serialization::OutputStream::eNames);")
+                @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
+                co.writeType(result.getType());
+                result.serialize(co);
+                co.close();
+                return buf;
+            }
         } else {
+            assert(method == GET_PARAMETER_INFO);
+
+            //JavaOnlyBlock
+            PortDataManager.getManager(type).releaseLock();
+
+            FrameworkElement fe = getRuntime().getElement(handle);
+            if (fe == null || (!fe.isReady())) {
+                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not get parameter info for framework element " + handle);
+
+                //JavaOnlyBlock
+                return null;
+
+                //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
+            }
+
+            ConfigFile cf = ConfigFile.find(fe);
             @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
             @InCpp("rrlib::serialization::OutputStream co(buf._get(), rrlib::serialization::OutputStream::eNames);")
             @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
-            co.writeType(result.getType());
-            result.serialize(co);
+            if (cf == null) {
+                co.writeBoolean(false);
+            } else {
+                co.writeBoolean(true);
+                @PassByValue CallbackParameters params = new CallbackParameters(cf, co);
+                co.writeInt(((FrameworkElement)cf.getAnnotated()).getHandle());
+                cf.serialize(co);
+                @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+                filter.traverseElementTree(fe, this, params);
+            }
             co.close();
             return buf;
         }
@@ -512,6 +570,24 @@ public class AdminServer extends InterfaceServerPort implements Void2Handler<Int
         return null;
 
         //Cpp return PortDataPtr<CoreString>();
+    }
+
+    @Override
+    public void treeFilterCallback(FrameworkElement fe, @Const @Ref CallbackParameters customParam) {
+        ConfigFile cf = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);
+        if (cf != null) {
+            customParam.co.writeByte(1);
+            customParam.co.writeInt(fe.getHandle());
+            customParam.co.writeString(cf.getFilename());
+            customParam.co.writeBoolean(cf.isActive());
+        } else {
+            ParameterInfo pi = (ParameterInfo)fe.getAnnotation(ParameterInfo.TYPE);
+            if (pi != null && customParam.cf == ConfigFile.find(fe)) {
+                customParam.co.writeByte(2);
+                customParam.co.writeInt(fe.getHandle());
+                customParam.co.writeString(pi.getConfigEntry());
+            }
+        }
     }
 
 }

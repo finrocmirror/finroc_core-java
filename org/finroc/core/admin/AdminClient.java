@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreString;
+import org.finroc.core.parameter.ConfigFile;
+import org.finroc.core.parameter.ParameterInfo;
 import org.finroc.core.plugin.RemoteCreateModuleAction;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.net.NetPort;
@@ -342,6 +344,81 @@ public class AdminClient extends InterfaceClientPort {
                 throw new Exception("element N/A");
             }
             return result == 1;
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Update parameter info on remote framework elements
+     *
+     * @param remoteElement Root framework element whose config file to use
+     */
+    public void getParameterInfo(FrameworkElement remoteElement) throws Exception {
+        RemoteRuntime rr = RemoteRuntime.find(remoteElement);
+        if (rr == null) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find remote runtime object");
+            return;
+        }
+        try {
+            MemoryBuffer mb = AdminServer.GET_PARAMETER_INFO.call(this, rr.getRemoteHandle(remoteElement), null, 5000);
+            if (mb == null) {
+                return;
+            }
+            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+
+            // No config file available?
+            if (ci.readBoolean() == false) {
+                return;
+            }
+
+            // deserialize config file
+            FrameworkElement configFiled = rr.getRemoteElement(ci.readInt());
+            if (!configFiled.isReady()) {
+                return;
+            }
+            ConfigFile cf = (ConfigFile)configFiled.getAnnotation(ConfigFile.TYPE);
+            if (cf == null) {
+                cf = new ConfigFile();
+                configFiled.addAnnotation(cf);
+            }
+            cf.deserialize(ci);
+
+            // read child entries
+            while (ci.moreDataAvailable()) {
+                int opCode = ci.readByte();
+                FrameworkElement fe = rr.getRemoteElement(ci.readInt());
+                String s = ci.readString();
+
+                if (!fe.isReady()) {
+                    continue;
+                }
+
+                if (opCode == 1) { // Config file in child framework element
+
+                    ConfigFile cf2 = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);
+                    if (cf2 == null) {
+                        cf2 = new ConfigFile();
+                        configFiled.addAnnotation(cf2);
+                    }
+                    cf2.setRemoteStatus(s, ci.readBoolean());
+
+                } else { // Parameter in child framework element
+                    assert(opCode == 2);
+
+                    ParameterInfo pi = (ParameterInfo)fe.getAnnotation(ParameterInfo.TYPE);
+                    if (pi == null) {
+                        pi = new ParameterInfo(true);
+                        fe.addAnnotation(pi);
+                    }
+
+                    pi.setConfigEntry(s);
+                }
+            }
+
+            ci.close();
+            PortDataManager.getManager(mb).releaseLock();
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
             throw e;

@@ -21,16 +21,20 @@
  */
 package org.finroc.core.parameter;
 
+import java.io.StringReader;
+
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.jc.Files;
 import org.finroc.jc.annotation.Const;
+import org.finroc.jc.annotation.ConstMethod;
 import org.finroc.jc.annotation.CppDefault;
 import org.finroc.jc.annotation.CppType;
 import org.finroc.jc.annotation.HAppend;
 import org.finroc.jc.annotation.InCpp;
+import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.jc.annotation.PostInclude;
 import org.finroc.jc.annotation.Ptr;
 import org.finroc.jc.annotation.Ref;
@@ -41,9 +45,12 @@ import org.finroc.log.LogDomain;
 import org.finroc.log.LogLevel;
 import org.finroc.serialization.DataType;
 import org.finroc.serialization.DataTypeBase;
+import org.finroc.serialization.InputStreamBuffer;
+import org.finroc.serialization.OutputStreamBuffer;
 import org.finroc.xml.XML2WrapperException;
 import org.finroc.xml.XMLDocument;
 import org.finroc.xml.XMLNode;
+import org.xml.sax.InputSource;
 
 /**
  * @author max
@@ -79,6 +86,9 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     /** Temp buffer - only used in synchronized context */
     private StringBuilder tempBuffer = new StringBuilder();
 
+    /** Is config file active? (false when config file is deleted via finstruct) */
+    private boolean active = true;
+
     /**
      * @param file File name of configuration file (loaded if it exists already)
      */
@@ -99,10 +109,21 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     }
 
     /**
-     * Dummy constructor. Generic instantiation is not supported.
+     * Create empty config file with no filename (should only be used to deserialize from stream shortly afterwards)
      */
-    public ConfigFile() {
-        throw new RuntimeException("Unsupported");
+    public ConfigFile() throws Exception {
+        wrapped = new XMLDocument();
+        wrapped.addRootNode(XML_BRANCH_NAME);
+    }
+
+    /**
+     * @param file File name of configuration file (loaded if it exists already)
+     * @param remoteFile Remote file - should be true (is only used to distinguish from standard constructor)
+     */
+    @JavaOnly
+    public ConfigFile(String filename, boolean remoteFile) throws Exception {
+        this.filename = filename;
+        wrapped = null;
     }
 
     /**
@@ -129,7 +150,15 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @return ConfigFile - or null if none could be found
      */
     public static ConfigFile find(FrameworkElement element) {
-        return (ConfigFile)findParentWithAnnotation(element, TYPE);
+        FinrocAnnotation ann = element.getAnnotation(TYPE);
+        if (ann != null && ((ConfigFile)ann).active == true) {
+            return (ConfigFile)ann;
+        }
+        FrameworkElement parent = element.getParent();
+        if (parent != null) {
+            return find(parent);
+        }
+        return null;
     }
 
     /**
@@ -277,5 +306,110 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         } else {
             return "";
         }
+    }
+
+    /**
+     * @return Root node of config file
+     */
+    @JavaOnly
+    public XMLNode getRootNode() {
+        return wrapped.getRootNode();
+    }
+
+    /**
+     * @return Filename of current config file
+     */
+    @ConstMethod
+    public String getFilename() {
+        return filename;
+    }
+
+    @Override
+    public void serialize(OutputStreamBuffer os) {
+        os.writeBoolean(active);
+        os.writeString(getFilename());
+
+        try {
+
+            //JavaOnlyBlock
+            if (wrapped == null) {
+                os.writeString("");
+            } else {
+                os.writeString(wrapped.getXMLDump());
+            }
+
+            //Cpp os.writeString(wrapped.getRootNode().getXMLDump());
+        } catch (XML2WrapperException e) {
+            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+        }
+    }
+
+    @Override
+    public void deserialize(InputStreamBuffer is) {
+        active = is.readBoolean();
+        String file = is.readString();
+        String content = is.readString();
+
+        if (active && file.length() > 0 && content.length() == 0 && (!file.equals(filename))) {
+
+            // load file
+            if (Files.exists(file)) {
+                try {
+                    wrapped = new XMLDocument(file, false);// false = do not validate with dtd
+                } catch (XML2WrapperException e) {
+                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                    wrapped = new XMLDocument();
+                    try {
+                        wrapped.addRootNode(XML_BRANCH_NAME);
+                    } catch (XML2WrapperException e1) {
+                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                    }
+                }
+            }
+            filename = file;
+        } else if (active && content.length() > 0) {
+            if (file.length() > 0) {
+                filename = file;
+            }
+
+            try {
+
+                //JavaOnlyBlock
+                wrapped = new XMLDocument(new InputSource(new StringReader(content)), false);
+
+                //Cpp wrapped = rrlib::xml2::XMLDocument(content.getCString(), content.length() + 1);
+            } catch (Exception e) {
+                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+            }
+        }
+    }
+
+    /**
+     * (Should only be used when Annotatable::getAnnotation() is called manually)
+     *
+     * @return Is config file active (does it "exist")?
+     */
+    @ConstMethod
+    public boolean isActive() {
+        return isActive();
+    }
+
+    /**
+     * Set status of remote config files
+     *
+     * @param filename new filename (if it differs, this will clear contents of xml document)
+     * @param active Is this config file active?
+     */
+    @JavaOnly
+    public void setRemoteStatus(String filename, boolean active) {
+        this.active = active;
+        if (filename.equals(this.filename)) {
+            return;
+        }
+
+        this.filename = filename;
+        wrapped = null;
     }
 }

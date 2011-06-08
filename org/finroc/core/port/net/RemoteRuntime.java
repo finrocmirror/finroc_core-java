@@ -76,6 +76,15 @@ public class RemoteRuntime extends FinrocAnnotation {
     }
 
     /**
+     * @param handle Remote handle
+     * @return Framework element that represents remote framework element with this remote handle
+     */
+    @JavaOnly
+    public FrameworkElement getRemoteElement(int handle) {
+        return remoteHandleLookup.getRemoteElement(handle);
+    }
+
+    /**
      * @param remoteTypes Remote types
      */
     public void setRemoteTypes(RemoteTypes remoteTypes) {
