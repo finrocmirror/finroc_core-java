@@ -125,7 +125,7 @@ public class Unit {
      */
     @ConstMethod public double getConversionFactor(Unit u) {
         if (convertibleTo(u)) {
-            return u.factor / factor;
+            return factor / u.factor;
         }
         throw new RuntimeException("Units cannot be converted.");
     }
