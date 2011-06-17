@@ -483,6 +483,16 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     }
 
     /**
+     * @param dontPull Do not attempt to pull data - even if port is on push strategy
+     * @return Current data in CC Interthread-container. Needs to be recycled manually.
+     */
+    public CCPortDataManager getInInterThreadContainer(boolean dontPull) {
+        CCPortDataManager ccitc = ThreadLocalCache.get().getUnusedInterThreadBuffer(getDataType());
+        getRaw(ccitc.getObject(), dontPull);
+        return ccitc;
+    }
+
+    /**
      * Copy current value to buffer (Most efficient get()-version)
      *
      * @param buffer Buffer to copy current data
@@ -495,7 +505,6 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Copy current value to buffer (Most efficient get()-version)
      *
      * @param buffer Buffer to copy current data to
-     * @param dontPull Do not attempt to pull data - even if port is on push strategy
      */
     public void getRaw(GenericObject buffer) {
         getRaw(buffer, false);

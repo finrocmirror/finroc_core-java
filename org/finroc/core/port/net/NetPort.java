@@ -141,7 +141,7 @@ public abstract class NetPort extends LogUser implements PortListener {
     }
 
     private boolean isUnknownType() {
-        return ftype == FinrocTypeInfo.Type.UNKNOWN;
+        return ftype.ordinal() >= FinrocTypeInfo.Type.UNKNOWN_STD.ordinal();
     }
 
     public boolean isMethodType() {
@@ -304,7 +304,7 @@ public abstract class NetPort extends LogUser implements PortListener {
         if (isStdType() || isTransactionType()) {
             StdNetPort pb = (StdNetPort)wrapped;
             if (!useQ) {
-                PortDataManager pd = pb.getLockedUnsafeRaw();
+                PortDataManager pd = pb.getLockedUnsafeRaw(true);
                 co.writeObject(pd.getObject());
                 pd.releaseLock();
             } else {
@@ -324,7 +324,7 @@ public abstract class NetPort extends LogUser implements PortListener {
         } else if (isCCType()) {
             CCNetPort pb = (CCNetPort)wrapped;
             if (!useQ) {
-                CCPortDataManager ccitc = pb.getInInterThreadContainer();
+                CCPortDataManager ccitc = pb.getInInterThreadContainer(true);
                 co.writeObject(ccitc.getObject());
                 ccitc.recycle2();
             } else {

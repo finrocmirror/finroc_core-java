@@ -21,6 +21,7 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.jc.annotation.JavaOnly;
 import org.finroc.serialization.DataTypeBase;
 
@@ -33,13 +34,24 @@ import org.finroc.serialization.DataTypeBase;
 @JavaOnly
 public class UnknownType extends DataTypeBase {
 
+    /** Original type
+    private FinrocTypeInfo.Type originalType;
+
     /**
      * @param name Name of RPC Inteface
      * @param methods Referenced PortInterface
      */
-    public UnknownType(String name) {
+    public UnknownType(String name, FinrocTypeInfo.Type type) {
         super(getDataTypeInfo(name));
-        FinrocTypeInfo.get(this).init(FinrocTypeInfo.Type.UNKNOWN);
+        FinrocTypeInfo.get(this).init(getUnknownType(type));
+    }
+
+    /**
+     * @param type Type of remote type
+     * @return Equivalent unknown type (enum)
+     */
+    private FinrocTypeInfo.Type getUnknownType(FinrocTypeInfo.Type type) {
+        return FinrocTypeInfo.Type.values()[type.ordinal() + FinrocTypeInfo.Type.UNKNOWN_STD.ordinal()];
     }
 
     private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {

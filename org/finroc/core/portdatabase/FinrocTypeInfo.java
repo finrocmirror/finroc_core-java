@@ -48,7 +48,10 @@ public class FinrocTypeInfo {
         CC, // Is this a "cheap-copy" data type?
         METHOD, // Is this a method type
         TRANSACTION, // Is this a transaction data type?
-        UNKNOWN // Unknown data type
+        UNKNOWN_STD, // Unknown standard data type
+        UNKNOWN_CC, // Unknown CC data type
+        UNKNOWN_METHOD, // Unknown method data type
+        UNKNOWN_TRANSACTION // Unknown transaction data type
     }
 
     /** Type of data type */
@@ -204,6 +207,14 @@ public class FinrocTypeInfo {
      */
     public static boolean isMethodType(@Const @Ref DataTypeBase dt) {
         return get(dt).getType() == Type.METHOD;
+    }
+
+    /**
+     * @param dt Data type to look this up for
+     * @return It this an unknown type
+     */
+    public static boolean isUnknownType(DataTypeBase dt) {
+        return get(dt).getType().ordinal() >= Type.UNKNOWN_STD.ordinal();
     }
 
     /**

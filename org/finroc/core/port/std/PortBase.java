@@ -462,7 +462,17 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return current locked port data
      */
     public @Inline PortDataManager getLockedUnsafeRaw() {
-        if (pushStrategy()) {
+        return getLockedUnsafeRaw(false);
+    }
+
+    /**
+     * (careful: typically not meant for use by clients (not type-safe, no auto-release of locks))
+     *
+     * @param dontPull Do not attempt to pull data - even if port is on push strategy
+     * @return current locked port data
+     */
+    public @Inline PortDataManager getLockedUnsafeRaw(boolean dontPull) {
+        if (pushStrategy() || dontPull) {
             return lockCurrentValueForRead();
         } else {
             return pullValueRaw();

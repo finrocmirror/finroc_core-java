@@ -118,6 +118,12 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
         short next = ci.readShort();
         while (next != -1) {
             short time = ci.readShort();
+
+            //JavaOnlyBlock
+            FinrocTypeInfo.Type type = FinrocTypeInfo.Type.values()[ci.readByte()];
+
+            //Cpp ci.readByte();
+
             String name = ci.readString();
             short checkedTypes = DataTypeBase.getTypeCount();
             DataTypeBase local = DataTypeBase.findType(name);
@@ -130,7 +136,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             //JavaOnlyBlock
             e.name = name;
             if (local == null) {
-                local = new UnknownType(name);
+                local = new UnknownType(name, type);
             }
 
             /*Cpp
@@ -165,8 +171,15 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
         short typeCount = DataTypeBase.getTypeCount();
         for (short i = localTypesSent, n = typeCount; i < n; i++) {
             DataTypeBase dt = DataTypeBase.getType(i);
+
+//            //JavaOnlyBlock
+//            if (FinrocTypeInfo.isUnknownType(dt)) {
+//                continue; // don't serialize unknown types
+//            }
+
             co.writeShort(dt.getUid());
             co.writeShort(FinrocTypeInfo.get(i).getUpdateTime());
+            co.writeByte(FinrocTypeInfo.get(i).getType().ordinal());
             co.writeString(dt.getName());
         }
         co.writeShort(-1); // terminator
