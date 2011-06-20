@@ -69,6 +69,10 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         @InCpp("T val = cn->value<T>();")
         double val = cn.doubleValue();
         if (!bounds.inBounds(val)) {
+            if (tc.ref.getContainer().getRefCounter() == 0) { // still unused
+                log(LogLevel.LL_DEBUG_WARNING, logDomain, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
+                tc.ref.getContainer().recycleUnused();
+            }
             if (bounds.discard()) {
                 tc.ref = value;
                 tc.data = tc.ref.getContainer();

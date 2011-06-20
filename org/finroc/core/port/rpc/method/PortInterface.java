@@ -65,9 +65,15 @@ public class PortInterface implements HasDestructor {
 
     void addMethod(AbstractMethod m) {
         assert(methods.size() <= 127) : "too many methods";
-        m.methodId = (byte)methods.size();
-        m.type = this;
-        methods.add(m);
+        if (methods.contains(m)) {
+            // should only happen in C++ (with certain static initialization order)
+            m.methodId = (byte)methods.indexOf(m);
+            m.type = this;
+        } else {
+            m.methodId = (byte)methods.size();
+            m.type = this;
+            methods.add(m);
+        }
     }
 
     /**
