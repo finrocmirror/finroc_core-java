@@ -461,6 +461,9 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @return Pointer to framework element - or null if it has been deleted
      */
     public FrameworkElement getElement(int handle) {
+        if (handle == this.getHandle()) {
+            return this;
+        }
         FrameworkElement fe = handle >= 0 ? registry.ports.get(handle) : registry.elements.get(handle);
         if (fe == null) {
             return null;

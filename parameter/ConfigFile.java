@@ -393,7 +393,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      */
     @ConstMethod
     public boolean isActive() {
-        return isActive();
+        return active;
     }
 
     /**
