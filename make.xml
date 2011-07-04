@@ -2,14 +2,14 @@
 <targets>
 
   <finrocjavalibrary name="core" libs="rrlib_finroc_core_utils.jar">
-    <sources exclude="org/finroc/core/test/** org/finroc/core/finstructable/Finstructed.java">
+    <sources exclude="test/** finstructable/Finstructed.java">
       **.java
     </sources>
   </finrocjavalibrary>
 
   <javatestprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
     <sources>
-      org/finroc/core/test/*.java
+      test/*.java
     </sources>
     <script name="realports_java" main-class="org.finroc.core.test.RealPortTest5"/>
     <script name="queuedports_java" main-class="org.finroc.core.test.RealPortQueueTest"/>
@@ -22,7 +22,7 @@
   
   <finrocjavaprogram name="finstructed_java" libs="finroc_core.jar finroc_plugin_tcp.jar" main-class="org.finroc.core.finstructable.Finstructed">
     <sources>
-      org/finroc/core/finstructable/Finstructed.java
+      finstructable/Finstructed.java
     </sources>
   </finrocjavaprogram>
 </targets>
