@@ -60,7 +60,7 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
 
         try {
             finrocRepRoot = RuntimeSettings.getRootDir();
-            while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "sources/java/core" + File.separator + "make.xml").exists()) {
+            while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "sources/java/org/finroc").exists()) {
                 finrocRepRoot = finrocRepRoot.getParentFile();
             }
         } catch (NullPointerException e) {

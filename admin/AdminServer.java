@@ -53,8 +53,6 @@ import org.finroc.core.port.rpc.method.Port1Method;
 import org.finroc.core.port.rpc.method.Port2Method;
 import org.finroc.core.port.rpc.method.Port3Method;
 import org.finroc.core.port.rpc.method.PortInterface;
-import org.finroc.core.port.rpc.method.Void0Handler;
-import org.finroc.core.port.rpc.method.Void0Method;
 import org.finroc.core.port.rpc.method.Void1Handler;
 import org.finroc.core.port.rpc.method.Void1Method;
 import org.finroc.core.port.rpc.method.Void2Handler;
@@ -99,18 +97,27 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements FrameworkElementTreeFilter.Callback<AdminServer.CallbackParameters>, Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
         Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
-            Method2Handler< MemoryBuffer, Integer, CoreString>, Void0Handler, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
+            Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
 
     /** Struct for callback parameters for GET_PARAMETER_INFO method */
     @Struct @AtFront
     static class CallbackParameters {
         @Ptr OutputStreamBuffer co;
         @Ptr ConfigFile cf;
+        @Ptr SimpleList<ExecutionControl> ecs;
 
         @Inline
         public CallbackParameters(ConfigFile cf2, OutputStreamBuffer co2) {
             this.cf = cf2;
             this.co = co2;
+            this.ecs = null;
+        }
+
+        @Inline
+        public CallbackParameters(@Ptr SimpleList<ExecutionControl> ecs) {
+            this.cf = null;
+            this.co = null;
+            this.ecs = ecs;
         }
     }
 
@@ -163,12 +170,12 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         new Void1Method<AdminServer, Integer>(METHODS, "Delete Framework element", "handle", false);
 
     /** Start/Resume application execution */
-    @PassByValue public static Void0Method<AdminServer> START_EXECUTION =
-        new Void0Method<AdminServer>(METHODS, "Start execution", false);
+    @PassByValue public static Void1Method<AdminServer, Integer> START_EXECUTION =
+        new Void1Method<AdminServer, Integer>(METHODS, "Start execution", "Framework element handle", false);
 
     /** Stop/Pause application execution */
-    @PassByValue public static Void0Method<AdminServer> PAUSE_EXECUTION =
-        new Void0Method<AdminServer>(METHODS, "Pause execution", false);
+    @PassByValue public static Void1Method<AdminServer, Integer> PAUSE_EXECUTION =
+        new Void1Method<AdminServer, Integer>(METHODS, "Pause execution", "Framework element handle", false);
 
     /** Is framework element with specified handle currently executing? */
     @PassByValue public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
@@ -192,6 +199,9 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
     /** Qualified port name */
     public static final String QUALIFIED_PORT_NAME = "Unrelated/Administration";
+
+    /** Return values for IS_RUNNING */
+    public final static int NOTHING = -1, STOPPED = 0, STARTED = 1, BOTH = 2;
 
     public AdminServer() {
         super(PORT_NAME, null, DATA_TYPE, null, PortFlags.SHARED);
@@ -440,6 +450,28 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
             return;
         }
 
+        if (method == START_EXECUTION || method == PAUSE_EXECUTION) {
+            @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+            getExecutionControls(ecs, handle);
+            if (ecs.size() == 0) {
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Start/Pause command has not effect");
+            }
+            if (method == START_EXECUTION) {
+                for (@SizeT int i = 0; i < ecs.size(); i++) {
+                    if (!ecs.get(i).isRunning()) {
+                        ecs.get(i).start();
+                    }
+                }
+            } else if (method == PAUSE_EXECUTION) {
+                for (@SizeT int i = 0; i < ecs.size(); i++) {
+                    if (ecs.get(i).isRunning()) {
+                        ecs.get(i).pause();
+                    }
+                }
+            }
+            return;
+        }
+
         assert(method == SAVE_FINSTRUCTABLE_GROUP);
         FrameworkElement fe = getRuntime().getElement(handle);
         if (fe != null && fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTABLE_GROUP)) {
@@ -520,28 +552,47 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     }
 
     @Override
-    public void handleVoidCall(AbstractMethod method) throws MethodCallException {
-        assert(method == START_EXECUTION || method == PAUSE_EXECUTION);
-        if (method == START_EXECUTION) {
-            getRuntime().startExecution();
-        } else if (method == PAUSE_EXECUTION) {
-            getRuntime().stopExecution();
-        }
+    public Integer handleCall(AbstractMethod method, Integer handle) throws MethodCallException {
+        assert(method == START_EXECUTION || method == PAUSE_EXECUTION || method == IS_RUNNING);
+        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        getExecutionControls(ecs, handle);
 
+        boolean stopped = false;
+        boolean running = false;
+        for (@SizeT int i = 0; i < ecs.size(); i++) {
+            stopped |= (!ecs.get(i).isRunning());
+            running |= ecs.get(i).isRunning();
+        }
+        if (running && stopped) {
+            return BOTH;
+        } else if (running) {
+            return STARTED;
+        } else if (stopped) {
+            return STOPPED;
+        } else {
+            return NOTHING;
+        }
     }
 
-    @Override
-    public Integer handleCall(AbstractMethod method, Integer handle) throws MethodCallException {
-        assert(method == IS_RUNNING);
-        FrameworkElement fe = getRuntime().getElement(handle);
+    /**
+     * Returns all relevant execution controls for start/stop command on specified element
+     * (Helper method for IS_RUNNING, START_EXECUTION and PAUSE_EXECUTION)
+     *
+     * @param result Result buffer for list of execution controls
+     * @param elementHandle Handle of element
+     */
+    private void getExecutionControls(@Ref SimpleList<ExecutionControl> result, int elementHandle) {
+        FrameworkElement fe = getRuntime().getElement(elementHandle);
         if (fe != null && (fe.isReady())) {
-            ExecutionControl ec = ExecutionControl.find(fe);
-            if (ec == null) {
-                return 0;
-            }
-            return ec.isRunning() ? 1 : 0;
+            @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+            filter.traverseElementTree(fe, this, new CallbackParameters(result));
         }
-        return -1;
+        if (result.size() == 0) {
+            ExecutionControl ec = ExecutionControl.find(fe);
+            if (ec != null) {
+                result.add(ec);
+            }
+        }
     }
 
     @Override
@@ -574,6 +625,14 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
     @Override
     public void treeFilterCallback(FrameworkElement fe, @Const @Ref CallbackParameters customParam) {
+        if (customParam.ecs != null) {
+            ExecutionControl ec = (ExecutionControl)fe.getAnnotation(ExecutionControl.TYPE);
+            if (ec != null) {
+                customParam.ecs.add(ec);
+            }
+            return;
+        }
+
         ConfigFile cf = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);
         if (cf != null) {
             customParam.co.writeByte(1);

@@ -312,10 +312,12 @@ public class AdminClient extends InterfaceClientPort {
 
     /**
      * Starts execution of all executable elements in remote runtime
+     *
+     * @param remoteHandle remote handle of framework element to start
      */
-    public void startExecution() {
+    public void startExecution(int remoteHandle) {
         try {
-            AdminServer.START_EXECUTION.call(this, false);
+            AdminServer.START_EXECUTION.call(this, remoteHandle, false);
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
@@ -323,10 +325,12 @@ public class AdminClient extends InterfaceClientPort {
 
     /**
      * Stops execution of all executable elements in remote runtime
+     *
+     * @param remoteHandle remote handle of framework element to stop
      */
-    public void pauseExecution() {
+    public void pauseExecution(int remoteHandle) {
         try {
-            AdminServer.PAUSE_EXECUTION.call(this, false);
+            AdminServer.PAUSE_EXECUTION.call(this, remoteHandle, false);
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
@@ -334,16 +338,13 @@ public class AdminClient extends InterfaceClientPort {
 
     /**
      * @param remoteHandle remote handle of framework element to query
-     * @return Is framework element currently executing (e.g. true, if parent ThreadContainer is executing)
+     * @return Return code (see AdminServer)
      * @throws Throws Exception if remote element is no longer available - or has no Executable parent
      */
-    public boolean isExecuting(int remoteHandle) throws Exception {
+    public int isExecuting(int remoteHandle) throws Exception {
         try {
             int result = AdminServer.IS_RUNNING.call(this, remoteHandle, 2000);
-            if (result < 0) {
-                throw new Exception("element N/A");
-            }
-            return result == 1;
+            return result;
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
             throw e;
