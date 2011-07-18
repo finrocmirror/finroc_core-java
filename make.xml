@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <targets>
 
-  <finrocjavalibrary name="core" libs="rrlib_finroc_core_utils.jar">
+  <finroclibrary name="core" libs="rrlib_finroc_core_utils.jar">
     <sources exclude="test/** finstructable/Finstructed.java">
       **.java
     </sources>
-  </finrocjavalibrary>
+  </finroclibrary>
 
-  <javatestprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
+  <testprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
     <sources>
       test/*.java
     </sources>
@@ -18,11 +18,11 @@
     <script name="initial_pushing_java" main-class="org.finroc.core.test.InitialPushTest"/>
     <script name="p2p_java" main-class="org.finroc.core.test.Peer2PeerTest"/>
     <script name="basic_realtime_java" main-class="org.finroc.core.test.BasicRealtimeTest"/>
-  </javatestprogram>
+  </testprogram>
   
-  <finrocjavaprogram name="finstructed_java" libs="finroc_core.jar finroc_plugin_tcp.jar" main-class="org.finroc.core.finstructable.Finstructed">
+  <finrocprogram name="finstructed_java" libs="finroc_core.jar finroc_plugin_tcp.jar" main-class="org.finroc.core.finstructable.Finstructed">
     <sources>
       finstructable/Finstructed.java
     </sources>
-  </finrocjavaprogram>
+  </finrocprogram>
 </targets>
