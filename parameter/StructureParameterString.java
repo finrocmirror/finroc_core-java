@@ -24,6 +24,7 @@ package org.finroc.core.parameter;
 import org.finroc.core.datatype.CoreString;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 
@@ -32,7 +33,7 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
  *
  * String StructureParameter class for convenience
  */
-@Inline @NoCpp
+@Inline @NoCpp @JavaOnly
 public class StructureParameterString extends StructureParameter<CoreString> {
 
     public StructureParameterString(String name, String defaultValue, boolean constructorPrototype) {

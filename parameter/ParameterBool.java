@@ -32,6 +32,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
@@ -41,7 +42,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
  *
  * Parameter template class for cc types
  */
-@PassByValue
+@PassByValue @JavaOnly
 public class ParameterBool extends Parameter<CoreBoolean> {
 
     /**

@@ -54,6 +54,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
  * Currently only meant for use in structure parameters.
  * (In port-classes it's probably better to wrap port classes)
  */
+@JavaOnly
 @Superclass( {RRLibSerializable.class, CCType.class})
 @PostInclude("rrlib/serialization/DataType.h")
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::EnumValue>;"})

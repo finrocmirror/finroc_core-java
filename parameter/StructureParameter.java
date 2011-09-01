@@ -22,6 +22,7 @@
 package org.finroc.core.parameter;
 
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
@@ -43,7 +44,7 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
  * - ...they are stored in an FinstructableGroup's XML-file rather than
  * the attribute tree.
  */
-@RawTypeArgs
+@RawTypeArgs @JavaOnly
 public class StructureParameter<T extends RRLibSerializable> extends StructureParameterBase {
 
     /*Cpp

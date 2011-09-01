@@ -33,7 +33,7 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
  *
  * Boolean Structure parameter.
  */
-@Inline @NoCpp
+@Inline @NoCpp @JavaOnly
 public class StructureParameterBool extends StructureParameter<CoreBoolean> {
 
     @JavaOnly

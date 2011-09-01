@@ -271,13 +271,13 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         } else if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c) || c.equals(CoreBoolean.class)) {
             return new StructureParameterBool(name, false, true);
         } else if (c.equals(CoreNumber.class) || c.equals(int.class) || c.equals(double.class) || c.equals(float.class) || c.equals(long.class) || Number.class.isAssignableFrom(c)) {
-            return new StructureParameterNumeric(name, 0);
+            return new StructureParameterNumeric(name, 0, true);
         } else if (Enum.class.isAssignableFrom(c)) {
-            return new StructureParameterEnum(name, (Enum)c.getEnumConstants()[0]);
+            return new StructureParameterEnum(name, (Enum)c.getEnumConstants()[0], true);
         } else if (c.equals(String.class) || c.equals(CoreString.class)) {
-            return new StructureParameterString(name, "");
+            return new StructureParameterString(name, "", true);
         } else {
-            return new StructureParameter(name, DataTypeBase.findType(c), false, "");
+            return new StructureParameter(name, DataTypeBase.findType(c), true, "");
         }
     }
 

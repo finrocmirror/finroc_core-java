@@ -21,27 +21,13 @@
  */
 package org.finroc.core.portdatabase;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 
 /**
  * @author max
  *
  * Classes inheriting from this interface are considered as "cheap copy" types.
  */
-@Include("rrlib/serialization/CustomTypeInitialization.h")
-@IncludeClass( {DataTypeBase.class, FinrocTypeInfo.class})
-@Superclass2( {"rrlib::serialization::CustomTypeInitialization"}) @Inline @NoCpp
+@JavaOnly
 public interface CCType {
-
-    /*Cpp
-    public:
-    static void customTypeInitialization(rrlib::serialization::DataTypeBase dt, void* v) {
-        FinrocTypeInfo::get(dt).init(FinrocTypeInfo::eCC);
-    }
-     */
 }

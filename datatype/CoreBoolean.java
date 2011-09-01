@@ -27,6 +27,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
 import org.rrlib.finroc_core_utils.jc.annotation.CppName;
 import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
@@ -46,6 +47,7 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
  *
  * boolean type
  */
+@JavaOnly
 @CppName("Boolean") @CppFilename("Boolean") @Superclass( {RRLibSerializable.class, CCType.class})
 @PostInclude("rrlib/serialization/DataType.h")
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Boolean>;"})

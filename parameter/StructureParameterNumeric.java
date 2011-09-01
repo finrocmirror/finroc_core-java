@@ -37,6 +37,7 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
  *
  * Numeric Structure parameter.
  */
+@JavaOnly
 public class StructureParameterNumeric<T extends Number> extends StructureParameter<CoreNumber> {
 
     /** Unit of parameter */

@@ -64,6 +64,16 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                 finrocRepRoot = finrocRepRoot.getParentFile();
             }
         } catch (NullPointerException e) {
+
+            try {
+                finrocRepRoot = new File(".").getAbsoluteFile().getParentFile();
+                while (!new File(finrocRepRoot.getAbsolutePath() + File.separator + "sources/java/org/finroc").exists()) {
+                    finrocRepRoot = finrocRepRoot.getParentFile();
+                }
+                return;
+            } catch (NullPointerException ne) {
+            }
+
             // ok, we are in an external location - try reading .project file
             try {
                 finrocRepRoot = RuntimeSettings.getRootDir().getParentFile();
@@ -76,7 +86,13 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                     }
                 }
             } catch (IOException e1) {
-                e1.printStackTrace();
+
+                String fh = System.getenv("FINROC_HOME");
+                if (fh == null) {
+                    System.out.println("Cannot find FINROC_HOME. Please set environment variable or change working directory.");
+                    System.exit(0);
+                }
+                finrocRepRoot = new File(fh);
             }
         }
     }
@@ -183,14 +199,14 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
             Document doc = dbuilder.parse(dir + "/make.xml");
 
             // this should be the first target
-            NodeList nl = doc.getElementsByTagName("finrocjavaplugin");
+            NodeList nl = doc.getElementsByTagName("finrocplugin");
             String prefix = "finroc_plugin_";
             if (nl.getLength() == 0) {
-                nl = doc.getElementsByTagName("finrocjavalibrary");
+                nl = doc.getElementsByTagName("finroclibrary");
                 prefix = "finroc_";
             }
             if (nl.getLength() == 0) {
-                nl = doc.getElementsByTagName("rrjavalib");
+                nl = doc.getElementsByTagName("rrlib");
                 prefix = "rrlib_";
             }
             if (nl.getLength() == 0) {

@@ -100,7 +100,8 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     @JavaOnly private final static File rootDir = new File(Files.getRootDir(RuntimeSettings.class)); //new File(new File(Files.getRootDir(RuntimeSettings.class)).getParentFile().getAbsolutePath());
 
     /** Is runtime executed as .class files (usually in Debug mode) or in .jar file */
-    @JavaOnly private final static Boolean debugging = new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin") || new File(Files.getRootDir(RuntimeSettings.class) + "/org/finroc/core/RuntimeSettings.java").exists();
+    @JavaOnly private final static Boolean debugging = !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
+    // new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin") || new File(Files.getRootDir(RuntimeSettings.class) + "/org/finroc/core/RuntimeSettings.java").exists();
 
     /** Loop time for buffer tracker (in ms) */
     //public static final IntSetting BUFFER_TRACKER_LOOP_TIME = inst.add("BUFFER_TRACKER_LOOP_TIME", 140, true);
