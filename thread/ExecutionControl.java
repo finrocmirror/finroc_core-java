@@ -23,9 +23,15 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementTreeFilter;
+import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
 import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
+import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
+import org.rrlib.finroc_core_utils.jc.annotation.Ref;
+import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
+import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.serialization.DataType;
 import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 
@@ -84,5 +90,61 @@ public class ExecutionControl extends FinrocAnnotation {
      */
     public void pause() {
         implementation.pauseExecution();
+    }
+
+    /**
+     * Starts all execution controls below and possibly attached to specified element
+     *
+     * @param fe Framework element that is root of subtree to search for execution controls
+     */
+    public static void startAll(FrameworkElement fe) {
+        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        findAll(ecs, fe);
+        for (@SizeT int i = 0; i < ecs.size(); i++) {
+            if (!ecs.get(i).isRunning()) {
+                ecs.get(i).start();
+            }
+        }
+    }
+
+    /**
+     * Pauses all execution controls below and possibly attached to specified element
+     *
+     * @param fe Framework element that is root of subtree to search for execution controls
+     */
+    public static void pauseAll(FrameworkElement fe) {
+        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        findAll(ecs, fe);
+        for (@SizeT int i = 0; i < ecs.size(); i++) {
+            if (ecs.get(i).isRunning()) {
+                ecs.get(i).pause();
+            }
+        }
+    }
+
+    /**
+     * Returns all execution controls below and including specified element
+     *
+     * @param result Result buffer for list of execution controls (controls are added to list)
+     * @param elementHandle Framework element that is root of subtree to search for execution controls
+     */
+    public static void findAll(@Ref SimpleList<ExecutionControl> result, FrameworkElement fe) {
+        if (fe != null && (fe.isReady())) {
+            @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+            filter.traverseElementTree(fe, new FindCallback(), result);
+        }
+    }
+
+    /** Helper class for findAllBelow */
+    @AtFront @PassByValue
+    static class FindCallback implements FrameworkElementTreeFilter.Callback<SimpleList<ExecutionControl>> {
+
+        @Override
+        public void treeFilterCallback(FrameworkElement fe, SimpleList<ExecutionControl> customParam) {
+            ExecutionControl ec = (ExecutionControl)fe.getAnnotation(ExecutionControl.TYPE);
+            if (ec != null) {
+                customParam.add(ec);
+            }
+        }
     }
 }

@@ -104,20 +104,11 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     static class CallbackParameters {
         @Ptr OutputStreamBuffer co;
         @Ptr ConfigFile cf;
-        @Ptr SimpleList<ExecutionControl> ecs;
 
         @Inline
         public CallbackParameters(ConfigFile cf2, OutputStreamBuffer co2) {
             this.cf = cf2;
             this.co = co2;
-            this.ecs = null;
-        }
-
-        @Inline
-        public CallbackParameters(@Ptr SimpleList<ExecutionControl> ecs) {
-            this.cf = null;
-            this.co = null;
-            this.ecs = ecs;
         }
     }
 
@@ -553,7 +544,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
     @Override
     public Integer handleCall(AbstractMethod method, Integer handle) throws MethodCallException {
-        assert(method == START_EXECUTION || method == PAUSE_EXECUTION || method == IS_RUNNING);
+        assert(method == IS_RUNNING);
         @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
         getExecutionControls(ecs, handle);
 
@@ -583,10 +574,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
      */
     private void getExecutionControls(@Ref SimpleList<ExecutionControl> result, int elementHandle) {
         FrameworkElement fe = getRuntime().getElement(elementHandle);
-        if (fe != null && (fe.isReady())) {
-            @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
-            filter.traverseElementTree(fe, this, new CallbackParameters(result));
-        }
+        ExecutionControl.findAll(result, fe);
         if (result.size() == 0) {
             ExecutionControl ec = ExecutionControl.find(fe);
             if (ec != null) {
@@ -625,14 +613,6 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
     @Override
     public void treeFilterCallback(FrameworkElement fe, @Const @Ref CallbackParameters customParam) {
-        if (customParam.ecs != null) {
-            ExecutionControl ec = (ExecutionControl)fe.getAnnotation(ExecutionControl.TYPE);
-            if (ec != null) {
-                customParam.ecs.add(ec);
-            }
-            return;
-        }
-
         ConfigFile cf = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);
         if (cf != null) {
             customParam.co.writeByte(1);
