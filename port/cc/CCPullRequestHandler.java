@@ -37,6 +37,7 @@ public interface CCPullRequestHandler {
      *
      * @param origin (Output) Port pull request comes from
      * @param resultBuffer Buffer with result
+     * @return Was pull request handled (and result buffer filled) - or should it be handled by port in the standard way (now)?
      */
-    public void pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer);
+    public boolean pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer);
 }

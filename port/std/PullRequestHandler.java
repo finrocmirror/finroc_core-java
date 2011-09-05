@@ -37,7 +37,7 @@ public interface PullRequestHandler {
      *
      * @param origin (Output) Port pull request comes from
      * @param addLocks Number of locks to set/add
-     * @return PortData to answer request with (with one additional lock)
+     * @return PortData to answer request with (with one additional lock) - or null if pull should be handled by port (now)
      */
     public @Const PortDataManager pullRequest(PortBase origin, byte addLocks);
 

@@ -642,28 +642,32 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @Ptr ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
             CCPortDataManagerTL resBuf = tc.getUnusedBuffer(dataType);
-            pullRequestHandler.pullRequest(this, resBuf);
-            tc.data = resBuf;
-            tc.data.setRefCounter(1); // one lock for caller
-            tc.ref = tc.data.getCurrentRef();
-            assign(tc);
-        } else {
-            // continue with next-best connected source port
-            for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
-                CCPortBase pb = sources.get(i);
-                if (pb != null) {
-                    pb.pullValueRawImpl(tc, intermediateAssign, false);
-                    if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getObject().getRawDataPtr()))) {
-                        assign(tc);
-                    }
-                    return;
-                }
+            if (pullRequestHandler.pullRequest(this, resBuf)) {
+                tc.data = resBuf;
+                tc.data.setRefCounter(1); // one lock for caller
+                tc.ref = tc.data.getCurrentRef();
+                assign(tc);
+                return;
+            } else {
+                resBuf.recycleUnused();
             }
-
-            // no connected source port... pull/return current value
-            tc.data = getLockedUnsafeInContainer(); // one lock for caller
-            tc.ref = tc.data.getCurrentRef();
         }
+
+        // continue with next-best connected source port
+        for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
+            CCPortBase pb = sources.get(i);
+            if (pb != null) {
+                pb.pullValueRawImpl(tc, intermediateAssign, false);
+                if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getObject().getRawDataPtr()))) {
+                    assign(tc);
+                }
+                return;
+            }
+        }
+
+        // no connected source port... pull/return current value
+        tc.data = getLockedUnsafeInContainer(); // one lock for caller
+        tc.ref = tc.data.getCurrentRef();
     }
 
     /**

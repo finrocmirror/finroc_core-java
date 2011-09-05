@@ -449,7 +449,7 @@ public abstract class NetPort extends LogUser implements PortListener {
         }
 
         @Override
-        public void pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer) {
+        public boolean pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer) {
             PullCall pc = ThreadLocalCache.getFast().getUnusedPullCall();
             pc.setRemotePortHandle(remoteHandle);
 //          pc.setLocalPortHandle(getHandle());
@@ -471,6 +471,7 @@ public abstract class NetPort extends LogUser implements PortListener {
             } catch (MethodCallException e) {
                 getRaw(resultBuffer.getObject(), true);
             }
+            return true;
         }
 
         @Override

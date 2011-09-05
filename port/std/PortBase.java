@@ -563,35 +563,42 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @Ptr ArrayWrapper<PortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) {
             pc.lockEstimate++; // for local assign
-            PortDataReference pdr = pullRequestHandler.pullRequest(this, (byte)pc.lockEstimate).getCurReference();
-            pc.curRef = pdr;
-            pc.curRefCounter = pdr.getRefCounter();
-            assert(pdr.getRefCounter().getLocks() >= pc.lockEstimate);
-            if (pc.curRef != value.get()) {
-                assign(pc);
-            }
-            pc.setLocks++; // lock for return
-        } else {
-            // continue with next-best connected source port
-            for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
-                PortBase pb = sources.get(i);
-                if (pb != null) {
-                    if (intermediateAssign) {
-                        pc.lockEstimate++;
-                    }
-                    pb.pullValueRawImpl(pc, intermediateAssign, false);
-                    if ((first || intermediateAssign) && (pc.curRef != value.get())) {
-                        assign(pc);
-                    }
-                    return;
+            PortDataManager mgr = pullRequestHandler.pullRequest(this, (byte)pc.lockEstimate);
+            if (mgr != null) {
+                PortDataReference pdr = mgr.getCurReference();
+                pc.curRef = pdr;
+                pc.curRefCounter = pdr.getRefCounter();
+                assert(pdr.getRefCounter().getLocks() >= pc.lockEstimate);
+                if (pc.curRef != value.get()) {
+                    assign(pc);
                 }
+                pc.setLocks++; // lock for return
+                return;
+            } else {
+                pc.lockEstimate--; // ok... pull request was not handled, revert and continue normally
             }
-
-            // no connected source port... pull/return current value
-            pc.curRef = lockCurrentValueForRead((byte)pc.lockEstimate);
-            pc.curRefCounter = pc.curRef.getRefCounter();
-            pc.setLocks++; // lock for return
         }
+
+        // continue with next-best connected source port
+        for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
+            PortBase pb = sources.get(i);
+            if (pb != null) {
+                if (intermediateAssign) {
+                    pc.lockEstimate++;
+                }
+                pb.pullValueRawImpl(pc, intermediateAssign, false);
+                if ((first || intermediateAssign) && (pc.curRef != value.get())) {
+                    assign(pc);
+                }
+                return;
+            }
+        }
+
+        // no connected source port... pull/return current value
+        pc.curRef = lockCurrentValueForRead((byte)pc.lockEstimate);
+        pc.curRefCounter = pc.curRef.getRefCounter();
+        pc.setLocks++; // lock for return
+
     }
 
     /**
