@@ -166,7 +166,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     }
 
     protected RuntimeSettings() {
-        super(RuntimeEnvironment.getInstance(), "Settings");
+        super(new FrameworkElement(RuntimeEnvironment.getInstance(), "Settings"), "Core");
         WARN_ON_CYCLE_TIME_EXCEED = AutoDeleter.addStatic(new ParameterBool("WARN_ON_CYCLE_TIME_EXCEED", this, true));
         DEFAULT_CYCLE_TIME = AutoDeleter.addStatic(new ParameterNumeric<Long>("DEFAULT_CYCLE_TIME", this, 50L, new Bounds<Long>(1, 2000)));
         DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = AutoDeleter.addStatic(new ParameterNumeric<Integer>("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", this, 40, new Bounds<Integer>(1, 2000)));
