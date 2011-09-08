@@ -117,7 +117,7 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                 Document doc = dbuilder.parse(file);
 
                 // find FinrocJavaPlugin tags
-                NodeList nl = doc.getElementsByTagName("finrocjavaplugin");
+                NodeList nl = doc.getElementsByTagName("finrocplugin");
                 for (int i = 0; i < nl.getLength(); i++) {
                     Node n = nl.item(i).getAttributes().getNamedItem("plugin-class");
                     if (n != null) {
