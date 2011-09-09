@@ -180,7 +180,17 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     /** Get parameter info for specified framework element: ConfigFile, children with config file, info on all parameters with same config file  */
     @CppType("Port2Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer>, int, PortDataPtr<CoreString> >")
     @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_PARAMETER_INFO =
-        new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
+        new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "GetParameterInfo", "handle", "dummy", false);
+
+    /** Get module libraries (.so files) */
+    @CppType("Port0Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer> >")
+    @PassByValue public static Port0Method < AdminServer, MemoryBuffer > GET_MODULE_LIBRARIES =
+        new Port0Method < AdminServer, MemoryBuffer > (METHODS, "GetModuleLibraries", false);
+
+    /** Load module library (.so file). Returns updated module list (same as GET_CREATE_MODULE_ACTIONS) */
+    @CppType("Port2Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer>, int, PortDataPtr<CoreString> >")
+    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> LOAD_MODULE_LIBRARY =
+        new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS,  "LoadModuleLibrary", "dummy", "library name", false);
 
     /** Data Type of method calls to this port */
     public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration method calls", METHODS);
@@ -322,22 +332,28 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
     @Override @NonVirtual
     public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
-        assert(method == GET_CREATE_MODULE_ACTIONS);
+        assert(method == GET_CREATE_MODULE_ACTIONS || method == LOAD_MODULE_LIBRARY || method == GET_MODULE_LIBRARIES);
 
         @CustomPtr("tPortDataPtr") MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
         @InCpp("rrlib::serialization::OutputStream co(mb._get(), rrlib::serialization::OutputStream::eNames);")
         @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
-        @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
-        for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
-            @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
-            co.writeString(cma.getName());
-            co.writeString(cma.getModuleGroup());
-            if (cma.getParameterTypes() != null) {
-                cma.getParameterTypes().serialize(co);
-            } else {
-                StructureParameterList.EMPTY.serialize(co);
+
+        if (method == GET_MODULE_LIBRARIES) {
+            log(LogLevel.LL_WARNING, logDomain, "GET_MODULE_LIBRARIES only available in C++, currently");
+        } else {
+            @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
+            for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
+                @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
+                co.writeString(cma.getName());
+                co.writeString(cma.getModuleGroup());
+                if (cma.getParameterTypes() != null) {
+                    cma.getParameterTypes().serialize(co);
+                } else {
+                    StructureParameterList.EMPTY.serialize(co);
+                }
             }
         }
+
         co.close();
         return mb;
     }
@@ -507,6 +523,9 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                 co.close();
                 return buf;
             }
+        } else if (method == LOAD_MODULE_LIBRARY) {
+            log(LogLevel.LL_WARNING, logDomain, "LOAD_MODULE_LIBRARY only available in C++, currently");
+            return handleCall(method);
         } else {
             assert(method == GET_PARAMETER_INFO);
 

@@ -22,6 +22,7 @@
 package org.finroc.core.admin;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
@@ -174,21 +175,29 @@ public class AdminClient extends InterfaceClientPort {
      */
     @JavaOnly
     public ArrayList<RemoteCreateModuleAction> getRemoteModuleTypes() {
-        ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
         try {
             MemoryBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
-            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
-            while (ci.moreDataAvailable()) {
-                String name = ci.readString();
-                RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, name, ci.readString(), result.size());
-                a.parameters.deserialize(ci);
-                result.add(a);
-            }
-            PortDataManager.getManager(mb).releaseLock();
-            return result;
+            return toRemoteCreateModuleActionArray(mb);
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
         }
+        return new ArrayList<RemoteCreateModuleAction>();
+    }
+
+    /**
+     * @param mb Memory buffer (locked - one lock will be released by this method
+     * @return List with Deserialized remote create module actions
+     */
+    private ArrayList<RemoteCreateModuleAction> toRemoteCreateModuleActionArray(MemoryBuffer mb) {
+        ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
+        InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+        while (ci.moreDataAvailable()) {
+            String name = ci.readString();
+            RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, name, ci.readString(), result.size());
+            a.parameters.deserialize(ci);
+            result.add(a);
+        }
+        PortDataManager.getManager(mb).releaseLock();
         return result;
     }
 
@@ -425,4 +434,46 @@ public class AdminClient extends InterfaceClientPort {
             throw e;
         }
     }
+
+    /**
+     * @return Loadable module libraries in remote runtime
+     */
+    public List<String> getModuleLibraries() {
+        ArrayList<String> result = new ArrayList<String>();
+        try {
+            MemoryBuffer mb = AdminServer.GET_MODULE_LIBRARIES.call(this, 2000);
+            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+            while (ci.moreDataAvailable()) {
+                result.add(ci.readString());
+            }
+            PortDataManager.getManager(mb).releaseLock();
+            return result;
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+        return result;
+    }
+
+    /**
+     * Load module library in external runtime
+     *
+     * @param load module library to load
+     * @return Updated list of remote create module actions
+     */
+    public List<RemoteCreateModuleAction> loadModuleLibrary(String load) {
+        CoreString type = getBufferForCall(CoreString.TYPE);
+        type.set(load);
+        try {
+            MemoryBuffer mb = AdminServer.LOAD_MODULE_LIBRARY.call(this, 0, type, 5000);
+            if (mb == null) {
+                return null;
+            }
+            return toRemoteCreateModuleActionArray(mb);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+        return null;
+    }
+
+
 }
