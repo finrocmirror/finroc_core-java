@@ -101,7 +101,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     }
 
     /**
-     * Init remote data type information from intput stream buffer.
+     * Init remote data type information from input stream buffer.
      * (call only once!)
      *
      * @param ci Input Stream Buffer to read from
@@ -160,7 +160,6 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     /**
      * Serializes information about local data types
      *
-     * @param dtr DataTypeRegister to serialize
      * @param co Output Stream to write information to
      */
     private void serializeLocalDataTypes(@Ref OutputStreamBuffer co) {
@@ -218,7 +217,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      */
     public short getTime(@Const @Ref DataTypeBase dataType) {
         assert(initialized()) : "Not initialized";
-        while ((short)updateTimes.size() < dataType.getUid()) {
+        while ((short)updateTimes.size() <= dataType.getUid()) {
             updateTimes.add((short) - 1, true);
         }
         return updateTimes.getIterable().get(dataType.getUid());
