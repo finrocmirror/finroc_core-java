@@ -35,9 +35,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
  */
 public final class Constant extends Unit {
 
-    /** UID */
-    private static final long serialVersionUID = 14L;
-
     /** Lookup table for constants (id => Constant) */
     private static final Constant[] constants = new Constant[128];
 

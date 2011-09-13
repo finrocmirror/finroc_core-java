@@ -24,6 +24,7 @@ package org.finroc.core.port.net;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
@@ -127,7 +128,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             String name = ci.readString();
             short checkedTypes = DataTypeBase.getTypeCount();
             DataTypeBase local = DataTypeBase.findType(name);
-            ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null ? "available here, too" : "not available here"));
+            ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null && (!FinrocTypeInfo.isUnknownType(local)) ? "available here, too" : "not available here"));
             int typesSize = types.size(); // to avoid warning
             assert(next == typesSize);
             Entry e = new Entry(local);
@@ -229,7 +230,9 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     @JavaOnly
     public List<String> getRemoteTypeNames() {
         ArrayList<String> result = new ArrayList<String>();
-        for (Entry e : types.getIterable().getBackend()) {
+        ArrayWrapper<Entry> iterable = types.getIterable();
+        for (int i = 0, n = iterable.size(); i < n; i++) {
+            Entry e = iterable.get(i);
             if (e != null) {
                 result.add(e.name);
             }

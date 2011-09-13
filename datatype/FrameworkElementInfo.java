@@ -67,9 +67,6 @@ public class FrameworkElementInfo {
         public int extraFlags;
     }
 
-    /** UID */
-    private static final long serialVersionUID = 22;
-
     /** EDGE_CHANGE Opcode */
     public static final byte EDGE_CHANGE = RuntimeListener.REMOVE + 1;
 

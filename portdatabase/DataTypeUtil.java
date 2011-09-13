@@ -23,11 +23,11 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
-import org.finroc.core.datatype.EnumValue;
 import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
 import org.rrlib.finroc_core_utils.jc.annotation.CppName;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
+import org.rrlib.finroc_core_utils.serialization.EnumValue;
 import org.rrlib.finroc_core_utils.serialization.GenericChangeable;
 
 @JavaOnly

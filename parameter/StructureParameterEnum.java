@@ -21,13 +21,13 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.datatype.EnumValue;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.serialization.DataType;
+import org.rrlib.finroc_core_utils.serialization.EnumValue;
 
 /**
  * @author max
@@ -45,8 +45,9 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype) {
-        super(name, getDataType(), constructorPrototype);
+        super(name, new DataType(defaultValue.getDeclaringClass()), constructorPrototype);
         if (!constructorPrototype) {
             set(defaultValue);
         }
@@ -58,32 +59,26 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue) {
-        super(name, getDataType());
+        super(name, new DataType(defaultValue.getDeclaringClass()));
         set(defaultValue);
         this.enumClass = defaultValue.getDeclaringClass();
-    }
-
-    /** Helper to get this safely during static initialization */
-    @InCpp("return rrlib::serialization::DataType<EnumValue>();")
-    public static DataTypeBase getDataType() {
-        return EnumValue.TYPE;
     }
 
     /**
      * @param defaultValue new value
      */
-    public void set(@PassByValue E defaultValue) {
-        @InCpp("int i = static_cast<int>(defaultValue);")
-        int i = defaultValue.ordinal();
-        super.getValue().set(i);
+    public void set(@PassByValue E e) {
+        super.getValue().set(e);
     }
 
     /**
      * @return Current value
      */
+    @SuppressWarnings("unchecked")
     public E get() {
-        return getValueForInt(super.getValue().get());
+        return (E)(super.getValue().get());
     }
 
     /**
