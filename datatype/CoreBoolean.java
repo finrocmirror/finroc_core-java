@@ -54,7 +54,7 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
 public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType {
 
     /** Data Type */
-    public final static DataTypeBase TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "Boolean");
+    public final static DataTypeBase TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "bool");
 
     /** value */
     private boolean value;
