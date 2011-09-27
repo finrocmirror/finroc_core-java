@@ -26,6 +26,7 @@ import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
+import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
 import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
@@ -522,7 +523,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             if (isDeleted()) {
                 return;
             }
-            if (linkEdges == null) { // lazy inizialization
+            if (linkEdges == null) { // lazy initialization
                 linkEdges = new SimpleList<LinkEdge>();
             }
             for (@SizeT int i = 0; i < linkEdges.size(); i++) {
@@ -531,6 +532,22 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 }
             }
             linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle()));
+        }
+    }
+
+    /**
+     * Connect port to specified source port
+     *
+     * @param srcPortParent Parent of source port
+     * @param srcPortName Name of source port
+     * @param warnIfNotAvailable Print warning message if connection cannot be established
+     */
+    public void connectToSource(FrameworkElement srcPortParent, @Const @Ref String srcPortName, @CppDefault("true") boolean warnIfNotAvailable) {
+        FrameworkElement p = srcPortParent.getChild(srcPortName);
+        if (p != null && p.isPort()) {
+            connectToSource((AbstractPort)p);
+        } else if (warnIfNotAvailable) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find port '" + srcPortName + "' in " + srcPortParent.getQualifiedName() + ".");
         }
     }
 
@@ -554,6 +571,22 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 }
             }
             linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink)));
+        }
+    }
+
+    /**
+     * Connect port to specified destination port
+     *
+     * @param destPortParent Parent of destination port
+     * @param destPortName Name of destination port
+     * @param warnIfNotAvailable Print warning message if connection cannot be established
+     */
+    public void connectToTarget(FrameworkElement destPortParent, @Const @Ref String destPortName, @CppDefault("true") boolean warnIfNotAvailable) {
+        FrameworkElement p = destPortParent.getChild(destPortName);
+        if (p != null && p.isPort()) {
+            connectToTarget((AbstractPort)p);
+        } else if (warnIfNotAvailable) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find port '" + destPortName + "' in " + destPortParent.getQualifiedName() + ".");
         }
     }
 
