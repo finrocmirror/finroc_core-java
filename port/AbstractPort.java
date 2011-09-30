@@ -840,7 +840,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     sourcePort = allSourcesReversePushers;
                 }
                 if (sourcePort) {
-                    if (isReady() && pushWanter.isReady()) {
+                    if (isReady() && pushWanter.isReady() && (!getFlag(PortFlags.NO_INITIAL_PUSHING)) && (!pushWanter.getFlag(PortFlags.NO_INITIAL_PUSHING))) {
                         initialPushLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
                         initialPushTo(pushWanter, false);
                     }

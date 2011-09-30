@@ -71,8 +71,11 @@ public class PortFlags extends CoreFlags {
     /** Is this port volatile (meaning that it's not always there and connections to it should preferably be links) */
     public static final int IS_VOLATILE = FIRST_PORT_FLAG << 10;
 
+    /** Deactivates initial pushing when this (output) port is connected to another port with push strategy */
+    public static final int NO_INITIAL_PUSHING = FIRST_PORT_FLAG << 11;
+
     /** First custom flag for special port types */
-    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_PORT_FLAG << 11;
+    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_PORT_FLAG << 12;
 
     // Non-constant flags
 
