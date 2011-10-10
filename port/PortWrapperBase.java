@@ -22,6 +22,7 @@
 package org.finroc.core.port;
 
 import org.finroc.core.FinrocAnnotation;
+import org.finroc.core.FrameworkElement;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
@@ -215,6 +216,28 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
      */
     public void connectToTarget(AbstractPort target) {
         wrapped.connectToTarget(target);
+    }
+
+    /**
+     * Connect port to specified source port
+     *
+     * @param srcPortParent Parent of source port
+     * @param srcPortName Name of source port
+     * @param warnIfNotAvailable Print warning message if connection cannot be established
+     */
+    public void connectToSource(FrameworkElement srcPortParent, String srcPortName, boolean warnIfNotAvailable) {
+        wrapped.connectToSource(srcPortParent, srcPortName, warnIfNotAvailable);
+    }
+
+    /**
+     * Connect port to specified destination port
+     *
+     * @param destPortParent Parent of destination port
+     * @param destPortName Name of destination port
+     * @param warnIfNotAvailable Print warning message if connection cannot be established
+     */
+    public void connectToTarget(FrameworkElement destPortParent, String destPortName, boolean warnIfNotAvailable) {
+        wrapped.connectToTarget(destPortParent, destPortName, warnIfNotAvailable);
     }
 
     /**

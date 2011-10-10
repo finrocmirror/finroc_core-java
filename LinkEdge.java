@@ -48,14 +48,18 @@ public class LinkEdge implements HasDestructor {
     /** Pointer to next edge - for a singly linked list */
     private @Ptr LinkEdge next;
 
+    /** Is this a finstructed link edge? */
+    private boolean finstructed;
+
     /**
      * Creates link edge for handle and link
      *
      * @param sourceLink_ source link
      * @param targetHandle handle of target port
+     * @param finstructed Is this a finstructed link edge?
      */
-    public LinkEdge(String sourceLink_, int targetHandle) {
-        this(sourceLink_, "", targetHandle);
+    public LinkEdge(String sourceLink_, int targetHandle, boolean finstructed) {
+        this(sourceLink_, "", targetHandle, finstructed);
     }
 
     /**
@@ -63,9 +67,10 @@ public class LinkEdge implements HasDestructor {
      *
      * @param sourceLink_ source link
      * @param targetLink_ target link
+     * @param finstructed Is this a finstructed link edge?
      */
-    public LinkEdge(String sourceLink_, String targetLink_) {
-        this(sourceLink_, targetLink_, -1);
+    public LinkEdge(String sourceLink_, String targetLink_, boolean finstructed) {
+        this(sourceLink_, targetLink_, -1, finstructed);
     }
 
     /**
@@ -73,9 +78,10 @@ public class LinkEdge implements HasDestructor {
      *
      * @param sourceHandle handle of source port
      * @param targetLink_ target link
+     * @param finstructed Is this a finstructed link edge?
      */
-    public LinkEdge(int sourceHandle, String targetLink_) {
-        this("", targetLink_, sourceHandle);
+    public LinkEdge(int sourceHandle, String targetLink_, boolean finstructed) {
+        this("", targetLink_, sourceHandle, finstructed);
     }
 
     /**
@@ -84,11 +90,13 @@ public class LinkEdge implements HasDestructor {
      * @param sourceLink_ source link
      * @param targetLink_ target link
      * @param portHandle_ If one link is null - this contains handle of partner port
+     * @param finstructed Is this a finstructed link edge?
      */
-    private LinkEdge(String sourceLink_, String targetLink_, int portHandle_) {
+    private LinkEdge(String sourceLink_, String targetLink_, int portHandle_, boolean finstructed) {
         sourceLink = sourceLink_;
         targetLink = targetLink_;
         portHandle = portHandle_;
+        this.finstructed = finstructed;
         if (sourceLink.length() > 0) {
             RuntimeEnvironment.getInstance().addLinkEdge(sourceLink, this);
         }
@@ -140,12 +148,12 @@ public class LinkEdge implements HasDestructor {
             if (link.equals(sourceLink)) {
                 AbstractPort target = targetLink.length() > 0 ? re.getPort(targetLink) : re.getPort(portHandle);
                 if (target != null) {
-                    port.connectToTarget(target);
+                    port.connectToTarget(target, finstructed);
                 }
             } else {
                 AbstractPort source = sourceLink.length() > 0 ? re.getPort(sourceLink) : re.getPort(portHandle);
                 if (source != null) {
-                    port.connectToSource(source);
+                    source.connectToTarget(port, finstructed);
                 }
             }
         }
@@ -161,5 +169,12 @@ public class LinkEdge implements HasDestructor {
 
     public String getTargetLink() {
         return targetLink;
+    }
+
+    /**
+     * @return Was this link edge finstructed?
+     */
+    public boolean isFinstructed() {
+        return finstructed;
     }
 }

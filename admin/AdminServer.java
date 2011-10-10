@@ -267,12 +267,12 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
      * @param dest Destination port
      */
     private void connect(AbstractPort src, AbstractPort dest) {
-        if (src.isVolatile()) {
-            dest.connectToSource(src.getQualifiedLink());
-        } else if (dest.isVolatile()) {
-            src.connectToTarget(dest.getQualifiedLink());
+        if (src.isVolatile() && (!dest.isVolatile())) {
+            dest.connectToSource(src.getQualifiedLink(), true);
+        } else if (dest.isVolatile() && (!src.isVolatile())) {
+            src.connectToTarget(dest.getQualifiedLink(), true);
         } else {
-            src.connectToTarget(dest);
+            src.connectToTarget(dest, true);
         }
     }
 

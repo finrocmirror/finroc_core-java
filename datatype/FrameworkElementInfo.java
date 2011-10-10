@@ -67,6 +67,24 @@ public class FrameworkElementInfo {
         public int extraFlags;
     }
 
+    /**
+     * Infos regarding edges emerging from this element
+     */
+    @AtFront @PassByValue @Struct
+    public static class ConnectionInfo {
+
+        /** Handle of destination port */
+        public int handle;
+
+        /** Was this edge finstructed? */
+        public boolean finstructed;
+
+        public ConnectionInfo(int handle, boolean finstructed) {
+            this.handle = handle;
+            this.finstructed = finstructed;
+        }
+    }
+
     /** EDGE_CHANGE Opcode */
     public static final byte EDGE_CHANGE = RuntimeListener.REMOVE + 1;
 
@@ -96,7 +114,7 @@ public class FrameworkElementInfo {
     private short minNetUpdateTime;
 
     /** Stores outgoing connection destination ports - if this is a port */
-    private SimpleList<Integer> connections = new SimpleList<Integer>();
+    private SimpleList<ConnectionInfo> connections = new SimpleList<ConnectionInfo>();
 
     /** Register Data type */
     //@ConstPtr
@@ -231,7 +249,8 @@ public class FrameworkElementInfo {
             if (!portOnlyClient) {
                 byte cnt = is.readByte();
                 for (int i = 0; i < cnt; i++) {
-                    connections.add(is.readInt());
+                    int handle = is.readInt();
+                    connections.add(new ConnectionInfo(handle, is.readBoolean()));
                 }
             }
         }
@@ -334,11 +353,11 @@ public class FrameworkElementInfo {
     }
 
     /**
-     * Get outgoing connection's destination handles
+     * Get outgoing connection's destination handles etc.
      *
      * @param copyTo List to copy result of get operation to
      */
-    @ConstMethod public void getConnections(@Ref SimpleList<Integer> copyTo) {
+    @ConstMethod public void getConnections(@Ref SimpleList<ConnectionInfo> copyTo) {
         copyTo.clear();
         copyTo.addAll(connections);
     }

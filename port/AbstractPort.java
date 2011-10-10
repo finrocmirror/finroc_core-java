@@ -21,6 +21,8 @@
  */
 package org.finroc.core.port;
 
+import java.util.BitSet;
+
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
@@ -28,6 +30,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
+import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
@@ -138,6 +141,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * n >= 1: push strategy for queue with n elements (queue length makes no difference locally, but network ports need to buffer this amount of elements)
      */
     private short strategy = -1;
+
+    /** Bit vector indicating which of the outgoing edges was finstructed */
+    @CppType("int16")
+    private BitSet outgoingEdgesFinstructed = new BitSet();
 
     /** Constant for bulk and express flag */
     private static final int BULK_N_EXPRESS = PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT;
@@ -286,13 +293,25 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param target Target port
      */
+    @JavaOnly
     public void connectToTarget(@Ptr AbstractPort target) {
+        connectToTarget(target, false);
+    }
+
+
+    /**
+     * Connect port to specified target port
+     *
+     * @param target Target port
+     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
+     */
+    public void connectToTarget(@Ptr AbstractPort target, @CppDefault("false") boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
                 return;
             }
             if (mayConnectTo(target) && (!isConnectedTo(target))) {
-                rawConnectToTarget(target);
+                rawConnectToTarget(target, finstructed);
                 target.propagateStrategy(null, this);
                 newConnection(target);
                 target.newConnection(this);
@@ -333,18 +352,25 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * succeeded
      *
      * @param target Target to connect to
+     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
      */
     @SuppressWarnings("unchecked")
-    @Virtual protected void rawConnectToTarget(@Ptr AbstractPort target) {
+    @Virtual protected void rawConnectToTarget(@Ptr AbstractPort target, boolean finstructed) {
         EdgeAggregator.edgeAdded(this, target);
 
         // JavaOnlyBlock
-        edgesSrc.add(target, false);
+        int idx = edgesSrc.add(target, false);
         target.edgesDest.add(this, false);
+        if (finstructed) {
+            setEdgeFinstructed(idx, true);
+        }
 
         /*Cpp
-        edgesSrc->add(target, false);
+        size_t idx = edgesSrc->add(target, false);
         target->edgesDest->add(this, false);
+        if (finstructed) {
+            setEdgeFinstructed(idx, true);
+        }
         */
 
         publishUpdatedEdgeInfo(RuntimeListener.ADD, target);
@@ -518,7 +544,20 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param linkName Link name of source port (relative to parent framework element)
      */
+    @JavaOnly
     public void connectToSource(@Const @Ref String srcLink) {
+        connectToSource(srcLink, false);
+    }
+
+
+    /**
+     * Connect port to specified source port
+     * (connection is (re)established when link is available)
+     *
+     * @param linkName Link name of source port (relative to parent framework element)
+     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
+     */
+    public void connectToSource(@Const @Ref String srcLink, @CppDefault("false") boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
                 return;
@@ -531,7 +570,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     return;
                 }
             }
-            linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle()));
+            linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle(), finstructed));
         }
     }
 
@@ -557,7 +596,19 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param linkName Link name of target port (relative to parent framework element)
      */
+    @JavaOnly
     public void connectToTarget(@Const @Ref String destLink) {
+        connectToTarget(destLink, false);
+    }
+
+    /**
+     * Connect port to specified target port
+     * (connection is (re)established when link is available)
+     *
+     * @param linkName Link name of target port (relative to parent framework element)
+     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
+     */
+    public void connectToTarget(@Const @Ref String destLink, @CppDefault("false") boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
                 return;
@@ -570,7 +621,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     return;
                 }
             }
-            linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink)));
+            linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink), finstructed));
         }
     }
 
@@ -1086,7 +1137,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     /**
      * Serializes target handles of all outgoing connection destinations to stream
-     * [byte: number of connections][int handle1]...[int handle n]
+     * [byte: number of connections][int handle 1][bool finstructed 1]...[int handle n][bool finstructed n]
      *
      * @param co Output Stream
      */
@@ -1104,6 +1155,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             AbstractPort as = it.get(i);
             if (as != null) {
                 co.writeInt(as.getHandle());
+                co.writeBoolean(isEdgeFinstructed(i));
             }
         }
     }
@@ -1114,9 +1166,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param result List to write results to
      * @param outgoingEdges Consider outgoing edges
      * @param incomingEdges Consider incoming edges
+     * @param finstructedEdgesOnly Consider only outgoing finstructed edges?
      */
     @SuppressWarnings("unchecked")
-    public void getConnectionPartners(@Ref SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges) {
+    public void getConnectionPartners(@Ref SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges, @CppDefault("false") boolean finstructedEdgesOnly) {
         result.clear();
         @Ptr ArrayWrapper<AbstractPort> it = null;
 
@@ -1124,14 +1177,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             it = edgesSrc.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
                 AbstractPort target = it.get(i);
-                if (target == null) {
+                if (target == null || (finstructedEdgesOnly && (!isEdgeFinstructed(i)))) {
                     continue;
                 }
                 result.add(target);
             }
         }
 
-        if (incomingEdges) {
+        if (incomingEdges && (!finstructedEdgesOnly)) {
             it = edgesDest.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
                 AbstractPort target = it.get(i);
@@ -1207,5 +1260,26 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         }
         log(LogLevel.LL_ERROR, logDomain, "Cannot create buffer of type " + dt.getName());
         return null;
+    }
+
+    /**
+     * Mark edge with specified index as finstructed
+     *
+     * @param idx Index of edge
+     * @param value True if edge was finstructed, false if edge was not finstructed (or when it is possibly deleted)
+     */
+    private void setEdgeFinstructed(int idx, boolean value) {
+        outgoingEdgesFinstructed.set(idx, value);
+    }
+
+    /**
+     * @param target Index of target port
+     * @return Is edge to specified target port finstructed?
+     */
+    private boolean isEdgeFinstructed(int idx) {
+        if (idx < 0 || idx >= outgoingEdgesFinstructed.size()) {
+            return false;
+        }
+        return outgoingEdgesFinstructed.get(idx);
     }
 }

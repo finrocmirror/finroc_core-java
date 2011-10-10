@@ -26,6 +26,7 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.LinkEdge;
 import org.finroc.core.parameter.ConstructorParameters;
+import org.finroc.core.parameter.ParameterInfo;
 import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
@@ -74,6 +75,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
     /** Temporary variable for save operation: Qualified link to this group */
     private String linkTmp = "";
+
+    /** Temporary variable for save operation: Save parameter config entries in callback (instead of edges)? */
+    private boolean saveParameterConfigEntries = false;
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
@@ -144,11 +148,24 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         if (srcPort == null && destPort == null) {
                             log(LogLevel.LL_WARNING, logDomain, "Cannot create edge because neither port is available: " + src + ", " + dest);
                         } else if (srcPort == null || srcPort.isVolatile()) { // source volatile
-                            destPort.connectToSource(qualifyLink(src));
+                            destPort.connectToSource(qualifyLink(src), true);
                         } else if (destPort == null || destPort.isVolatile()) { // destination volatile
-                            srcPort.connectToTarget(qualifyLink(dest));
+                            srcPort.connectToTarget(qualifyLink(dest), true);
                         } else {
-                            srcPort.connectToTarget(destPort);
+                            srcPort.connectToTarget(destPort, true);
+                        }
+                    } else if (name.equals("config")) {
+                        String param = node.get().getStringAttribute("parameter");
+                        AbstractPort parameter = getChildPort(param);
+                        if (parameter == null) {
+                            log(LogLevel.LL_WARNING, logDomain, "Cannot set config entry, because parameter is not available: " + param);
+                        } else {
+                            ParameterInfo pi = parameter.getAnnotation(ParameterInfo.class);
+                            if (pi == null) {
+                                log(LogLevel.LL_WARNING, logDomain, "Port is not parameter: " + param);
+                            } else {
+                                pi.setConfigEntry(node.get().getTextContent(), true);
+                            }
                         }
                     } else {
                         log(LogLevel.LL_WARNING, logDomain, "Unknown XML tag: " + name);
@@ -295,9 +312,16 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
 
                 //JavaOnlyBlock
+                saveParameterConfigEntries = false;
+                filter.traverseElementTree(this, this, root);
+                saveParameterConfigEntries = true;
                 filter.traverseElementTree(this, this, root);
 
                 //Cpp filter.traverseElementTree(this, this, &root);
+                //Cpp saveParameterConfigEntries = false;
+                //Cpp filter.traverseElementTree(this, this, &root);
+                //Cpp saveParameterConfigEntries = true;
+
                 doc.writeToFile(currentXmlFile);
                 log(LogLevel.LL_USER, logDomain, "Saving successful");
             } catch (XML2WrapperException e) {
@@ -313,7 +337,24 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public void treeFilterCallback(FrameworkElement fe, @Ptr XMLNode root) {
         assert(fe.isPort());
         AbstractPort ap = (AbstractPort)fe;
-        ap.getConnectionPartners(connectTmp, true, false);
+
+        // second pass?
+        if (saveParameterConfigEntries) {
+            ParameterInfo info = ap.getAnnotation(ParameterInfo.class);
+            if (info != null && info.isConfigEntrySetFromFinstruct()) {
+                try {
+                    @Ref XMLNode config = root.addChildNode("config");
+                    config.setAttribute("parameter", getEdgeLink(ap));
+                    config.setContent(info.getConfigEntry());
+                } catch (XML2WrapperException e) {
+                    e.printStackTrace();
+                }
+            }
+            return;
+        }
+
+        // first pass
+        ap.getConnectionPartners(connectTmp, true, false, true); // only outgoing edges => we don't get any edges double
 
         for (@SizeT int i = 0; i < connectTmp.size(); i++) {
             AbstractPort ap2 = connectTmp.get(i);
@@ -332,14 +373,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
             FrameworkElement commonFinstructableParent = commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
             if (commonFinstructableParent != this) {
-                // TODO: check why continue causes problems here
-                // continue;
+                continue;
             }
 
-            // check3: only save non-volatile connections in this step
+            // check3: only save non-volatile connections in this step (finstruct creates link edges for volatile ports)
             if (ap.isVolatile() || ap2.isVolatile()) {
-                // TODO: check why continue causes problems here
-                // continue;
+                continue;
             }
 
             // save edge
@@ -352,6 +391,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         if (ap.getLinkEdges() != null) {
             for (@SizeT int i = 0; i < ap.getLinkEdges().size(); i++) {
                 LinkEdge le = ap.getLinkEdges().get(i);
+                if (!le.isFinstructed()) {
+                    continue;
+                }
                 if (le.getSourceLink().length() > 0) {
                     // save edge
                     @Ref XMLNode edge = root.addChildNode("edge");

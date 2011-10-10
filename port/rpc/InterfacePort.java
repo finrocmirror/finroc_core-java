@@ -111,7 +111,7 @@ public class InterfacePort extends AbstractPort {
     }
 
     @Override
-    protected void rawConnectToTarget(AbstractPort target) {
+    protected void rawConnectToTarget(AbstractPort target, boolean finstructed) {
         InterfacePort target2 = (InterfacePort)target;
 
         // disconnect old port(s) - should always be max. one - however, defensive implementation
@@ -119,7 +119,7 @@ public class InterfacePort extends AbstractPort {
             target2.edgesDest.getIterable().get(0).disconnectFrom(target2);
         }
 
-        super.rawConnectToTarget(target);
+        super.rawConnectToTarget(target, finstructed);
     }
 
     @Override

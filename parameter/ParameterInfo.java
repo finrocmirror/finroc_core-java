@@ -71,6 +71,9 @@ public class ParameterInfo extends FinrocAnnotation {
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"parameter\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
 
+    /** Was config entry set from finstruct? */
+    private boolean entrySetFromFinstruct;
+
     public ParameterInfo() {}
 
     @JavaOnly
@@ -80,11 +83,13 @@ public class ParameterInfo extends FinrocAnnotation {
 
     @Override
     public void serialize(OutputStreamBuffer os) {
+        os.writeBoolean(entrySetFromFinstruct);
         os.writeString(configEntry);
     }
 
     @Override
     public void deserialize(InputStreamBuffer is) {
+        entrySetFromFinstruct = is.readBoolean();
 
         //JavaOnlyBlock
         if (remote) {
@@ -92,16 +97,18 @@ public class ParameterInfo extends FinrocAnnotation {
             return;
         }
 
-        setConfigEntry(is.readString());
+        setConfigEntry(is.readString(), entrySetFromFinstruct);
     }
 
     @Override
     public void serialize(StringOutputStream os) {
+        os.append(entrySetFromFinstruct ? '+' : ' ');
         os.append(configEntry);
     }
 
     @Override
     public void deserialize(StringInputStream is) throws Exception {
+        entrySetFromFinstruct = (is.read() == '+');
 
         //JavaOnlyBlock
         if (remote) {
@@ -109,7 +116,7 @@ public class ParameterInfo extends FinrocAnnotation {
             return;
         }
 
-        setConfigEntry(is.readAll());
+        setConfigEntry(is.readAll(), entrySetFromFinstruct);
     }
 
     /**
@@ -125,15 +132,27 @@ public class ParameterInfo extends FinrocAnnotation {
      * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
      */
     public void setConfigEntry(String configEntry) {
+        setConfigEntry(configEntry, false);
+    }
+
+    /**
+     * (loads value from configuration file, if is exists
+     *
+     * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
+     * @param finstructSet Is config entry set from finstruct?
+     */
+    public void setConfigEntry(String configEntry, boolean finstructSet) {
 
         //JavaOnlyBlock
         if (remote) {
             this.configEntry = configEntry;
+            this.entrySetFromFinstruct = finstructSet;
             return;
         }
 
         if (!this.configEntry.equals(configEntry)) {
             this.configEntry = configEntry;
+            this.entrySetFromFinstruct = finstructSet;
             try {
                 loadValue();
             } catch (Exception e) {
@@ -230,5 +249,12 @@ public class ParameterInfo extends FinrocAnnotation {
         } catch (Exception e) {
             log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
         }
+    }
+
+    /**
+     * @return Is config entry set from finstruct/xml?
+     */
+    public boolean isConfigEntrySetFromFinstruct() {
+        return entrySetFromFinstruct;
     }
 }
