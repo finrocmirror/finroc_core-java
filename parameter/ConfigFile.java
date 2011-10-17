@@ -94,10 +94,10 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      */
     public ConfigFile(String filename) throws Exception {
         this.filename = filename;
-        if (Files.exists(filename)) {
+        if (Files.finrocFileExists(filename)) {
             try {
-                wrapped = new XMLDocument(filename, false);// false = do not validate with dtd
-            } catch (XML2WrapperException e) {
+                wrapped = Files.getFinrocXMLDocument(filename, false);// false = do not validate with dtd
+            } catch (Exception e) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
                 wrapped = new XMLDocument();
                 wrapped.addRootNode(XML_BRANCH_NAME);
@@ -139,8 +139,19 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             fet.traverseElementTree(ann, this, false, tempBuffer);
         }
 
-        // write new tree to file
-        wrapped.writeToFile(filename);
+        try {
+            String saveTo = Files.getFinrocFileToSaveTo(filename);
+            if (saveTo.length() == 0) {
+                String saveToAlt = Files.getFinrocFileToSaveTo(filename.replace('/', '_'));
+                log(LogLevel.LL_ERROR, logDomain, "There does not seem to be any suitable location for: '" + filename + "' . For now, using '" + saveToAlt + "'.");
+                saveTo = saveToAlt;
+            }
+
+            // write new tree to file
+            wrapped.writeToFile(saveTo);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+        }
     }
 
     /**
@@ -355,10 +366,10 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         if (active && file.length() > 0 && content.length() == 0 && (!file.equals(filename))) {
 
             // load file
-            if (Files.exists(file)) {
+            if (Files.finrocFileExists(file)) {
                 try {
-                    wrapped = new XMLDocument(file, false);// false = do not validate with dtd
-                } catch (XML2WrapperException e) {
+                    wrapped = Files.getFinrocXMLDocument(filename, false);// false = do not validate with dtd
+                } catch (Exception e) {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
                     wrapped = new XMLDocument();
                     try {

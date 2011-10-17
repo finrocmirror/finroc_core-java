@@ -582,7 +582,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param warnIfNotAvailable Print warning message if connection cannot be established
      */
     public void connectToSource(FrameworkElement srcPortParent, @Const @Ref String srcPortName, @CppDefault("true") boolean warnIfNotAvailable) {
-        FrameworkElement p = srcPortParent.getChild(srcPortName);
+        FrameworkElement p = srcPortParent.getChildElement(srcPortName, false);
         if (p != null && p.isPort()) {
             connectToSource((AbstractPort)p);
         } else if (warnIfNotAvailable) {
@@ -633,7 +633,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param warnIfNotAvailable Print warning message if connection cannot be established
      */
     public void connectToTarget(FrameworkElement destPortParent, @Const @Ref String destPortName, @CppDefault("true") boolean warnIfNotAvailable) {
-        FrameworkElement p = destPortParent.getChild(destPortName);
+        FrameworkElement p = destPortParent.getChildElement(destPortName, false);
         if (p != null && p.isPort()) {
             connectToTarget((AbstractPort)p);
         } else if (warnIfNotAvailable) {

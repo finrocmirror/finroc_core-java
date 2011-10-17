@@ -127,7 +127,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             int newSize = is.readInt();
             for (@SizeT int i = 0; i < newSize; i++) {
                 StructureParameterBase param = new StructureParameterBase();
-                param.deserialize(is);
+                param.deserialize(is, null);
                 add(param);
             }
 
@@ -137,11 +137,12 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             if (createAction != is.readInt() || ((int)parameters.size()) != is.readInt()) {
                 throw new RuntimeException("Invalid action id or parameter number");
             }
+            FrameworkElement ann = (FrameworkElement)getAnnotated();
             for (@SizeT int i = 0; i < parameters.size(); i++) {
                 StructureParameterBase param = parameters.get(i);
-                param.deserialize(is);
+                param.deserialize(is, ann);
             }
-            ((FrameworkElement)getAnnotated()).structureParametersChanged();
+            ann.structureParametersChanged();
         }
     }
 
@@ -219,20 +220,28 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
         return result;
     }
 
-    // only used in FinstructableGroup
     @Override
     public void serialize(XMLNode node) throws Exception {
+        serialize(node, false);
+    }
+
+    // currently only used in FinstructableGroup
+    public void serialize(XMLNode node, boolean finstructContext) throws Exception {
         for (@SizeT int i = 0; i < size(); i++) {
             @Ref XMLNode child = node.addChildNode("parameter");
             StructureParameterBase param = get(i);
             child.setAttribute("name", param.getName());
-            param.serialize(child);
+            param.serialize(child, finstructContext);
         }
     }
 
-    // only used in FinstructableGroup
     @Override
     public void deserialize(XMLNode node) throws Exception {
+        deserialize(node, false);
+    }
+
+    // currently only used in FinstructableGroup
+    public void deserialize(XMLNode node, boolean finstructContext) throws Exception {
         @SizeT int numberOfChildren = node.childCount();
         if (numberOfChildren != size()) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
@@ -241,7 +250,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
         XMLNode.ConstChildIterator child = node.getChildrenBegin();
         for (int i = 0; i < count; i++) {
             StructureParameterBase param = get(i);
-            param.deserialize(child.get());
+            param.deserialize(child.get(), finstructContext, (FrameworkElement)getAnnotated());
             child.next();
         }
     }

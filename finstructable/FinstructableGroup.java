@@ -25,8 +25,11 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.LinkEdge;
+import org.finroc.core.RuntimeEnvironment;
+import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.ParameterInfo;
+import org.finroc.core.parameter.StructureParameterBase;
 import org.finroc.core.parameter.StructureParameterString;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
@@ -44,6 +47,7 @@ import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
 import org.rrlib.finroc_core_utils.xml.XMLDocument;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
@@ -78,6 +82,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
     /** Temporary variable for save operation: Save parameter config entries in callback (instead of edges)? */
     private boolean saveParameterConfigEntries = false;
+
+    /** Default name when group is main part */
+    private String mainName = "";
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
@@ -115,7 +122,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         if (!currentXmlFile.equals(xmlFile.getValue().toString())) {
             currentXmlFile = xmlFile.get();
             //if (this.childCount() == 0) { // TODO: original intension: changing xml files to mutliple existing ones in finstruct shouldn't load all of them
-            if (Files.exists(currentXmlFile)) {
+            if (Files.finrocFileExists(currentXmlFile)) {
                 loadXml(currentXmlFile);
             } else {
                 log(LogLevel.LL_WARNING, logDomain, "Cannot find XML file " + currentXmlFile + ". Creating empty group. You may edit and save this group using finstruct.");
@@ -132,13 +139,19 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         synchronized (getRegistryLock()) {
             try {
                 log(LogLevel.LL_DEBUG, logDomain, "Loading XML: " + xmlFile);
-                @PassByValue XMLDocument doc = new XMLDocument(xmlFile);
+                @PassByValue XMLDocument doc = Files.getFinrocXMLDocument(xmlFile, false);
                 @Ref XMLNode root = doc.getRootNode();
                 linkTmp = getQualifiedName() + "/";
+                if (mainName.length() == 0 && root.hasAttribute("defaultname")) {
+                    mainName = root.getStringAttribute("defaultname");
+                }
 
                 for (XMLNode.ConstChildIterator node = root.getChildrenBegin(); node.get() != root.getChildrenEnd(); node.next()) {
                     String name = node.get().getName();
-                    if (name.equals("element")) {
+                    if (name.equals("structureparameter")) {
+                        StructureParameterList spl = StructureParameterList.getOrCreate(this);
+                        spl.add(new StructureParameterBase(node.get().getStringAttribute("name"), new DataTypeBase(null), false, true));
+                    } else if (name.equals("element")) {
                         instantiate(node.get(), this);
                     } else if (name.equals("edge")) {
                         String src = node.get().getStringAttribute("src");
@@ -154,17 +167,27 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         } else {
                             srcPort.connectToTarget(destPort, true);
                         }
-                    } else if (name.equals("config")) {
-                        String param = node.get().getStringAttribute("parameter");
+                    } else if (name.equals("parameter")) {
+                        String param = node.get().getStringAttribute("link");
                         AbstractPort parameter = getChildPort(param);
                         if (parameter == null) {
                             log(LogLevel.LL_WARNING, logDomain, "Cannot set config entry, because parameter is not available: " + param);
                         } else {
                             ParameterInfo pi = parameter.getAnnotation(ParameterInfo.class);
+                            boolean outermostGroup = getParent() == RuntimeEnvironment.getInstance();
                             if (pi == null) {
                                 log(LogLevel.LL_WARNING, logDomain, "Port is not parameter: " + param);
                             } else {
-                                pi.setConfigEntry(node.get().getTextContent(), true);
+                                if (outermostGroup && node.get().hasAttribute("cmdline") && (!isResponsibleForConfigFileConnections(parameter))) {
+                                    pi.setCommandLineOption(node.get().getStringAttribute("cmdline"));
+                                } else {
+                                    pi.deserialize(node.get(), true, outermostGroup);
+                                }
+                                try {
+                                    pi.loadValue();
+                                } catch (Exception e) {
+                                    log(LogLevel.LL_WARNING, logDomain, "Unable to load parameter value: " + param + ". ", e);
+                                }
                             }
                         }
                     } else {
@@ -172,7 +195,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                     }
                 }
                 log(LogLevel.LL_DEBUG, logDomain, "Loading XML successful");
-            } catch (XML2WrapperException e) {
+            } catch (Exception e) {
                 log(LogLevel.LL_WARNING, logDomain, "Loading XML failed: " + xmlFile);
                 logException(e);
             }
@@ -226,7 +249,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             ConstructorParameters spl = null;
             if (constructorParams != null) {
                 spl = action.getParameterTypes().instantiate();
-                spl.deserialize(constructorParams);
+                spl.deserialize(constructorParams, true);
             }
             created = action.createModule(parent, name, spl);
             created.setFinstructed(action, spl);
@@ -288,7 +311,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      *
      * @param e Exception
      */
-    private void logException(@Const @Ref XML2WrapperException e) {
+    private void logException(@Const @Ref Exception e) {
         @InCpp("const char* msg = e._what();")
         String msg = e.getMessage();
         logDomain.log(LogLevel.LL_ERROR, getLogDescription(), msg);
@@ -299,10 +322,33 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      */
     public void saveXml() throws Exception {
         synchronized (getRegistryLock()) {
-            log(LogLevel.LL_USER, logDomain, "Saving XML: " + currentXmlFile);
+            String saveTo = Files.getFinrocFileToSaveTo(currentXmlFile);
+            if (saveTo.length() == 0) {
+                String saveToAlt = Files.getFinrocFileToSaveTo(currentXmlFile.replace('/', '_'));
+                log(LogLevel.LL_ERROR, logDomain, "There does not seem to be any suitable location for: '" + currentXmlFile + "' . For now, using '" + saveToAlt + "'.");
+                saveTo = saveToAlt;
+            }
+            log(LogLevel.LL_USER, logDomain, "Saving XML: " + saveTo);
             @PassByValue XMLDocument doc = new XMLDocument();
             try {
                 @Ref final XMLNode root = doc.addRootNode("FinstructableGroup");
+
+                // serialize default main name
+                if (mainName.length() > 0) {
+                    root.setAttribute("defaultname", mainName);
+                }
+
+                // serialize proxy parameters
+                StructureParameterList spl = getAnnotation(StructureParameterList.class);
+                if (spl != null) {
+                    for (@SizeT int i = 0; i < spl.size(); i++) {
+                        StructureParameterBase sp = spl.get(i);
+                        if (sp.isStructureParameterProxy()) {
+                            @Ref XMLNode proxy = root.addChildNode("structureparameter");
+                            proxy.setAttribute("name", sp.getName());
+                        }
+                    }
+                }
 
                 // serialize framework elements
                 serializeChildren(root, this);
@@ -322,7 +368,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 //Cpp filter.traverseElementTree(this, this, &root);
                 //Cpp saveParameterConfigEntries = true;
 
-                doc.writeToFile(currentXmlFile);
+                doc.writeToFile(saveTo);
                 log(LogLevel.LL_USER, logDomain, "Saving successful");
             } catch (XML2WrapperException e) {
                 @InCpp("const char* msg = e._what();")
@@ -333,6 +379,29 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         }
     }
 
+    /**
+     * Is this finstructable group the one responsible for saving parameter's config entry?
+     *
+     * @param ap Framework element to check this for (usually parameter port)
+     * @return Answer.
+     */
+    public boolean isResponsibleForConfigFileConnections(FrameworkElement ap) {
+        ConfigFile cf = ConfigFile.find(ap);
+        if (cf == null) {
+            return false;
+        }
+        FrameworkElement configElement = (FrameworkElement)cf.getAnnotated();
+        FrameworkElement responsible = configElement.getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? configElement : configElement.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+        if (responsible == null) { // ok, config file is probably attached to runtime. Choose outer-most finstructable group.
+            responsible = this;
+            FrameworkElement tmp;
+            while ((tmp = responsible.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP)) != null) {
+                responsible = tmp;
+            }
+        }
+        return responsible == this;
+    }
+
     @Override
     public void treeFilterCallback(FrameworkElement fe, @Ptr XMLNode root) {
         assert(fe.isPort());
@@ -340,15 +409,25 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
         // second pass?
         if (saveParameterConfigEntries) {
+
+            boolean outermostGroup = getParent() == RuntimeEnvironment.getInstance();
             ParameterInfo info = ap.getAnnotation(ParameterInfo.class);
-            if (info != null && info.isConfigEntrySetFromFinstruct()) {
-                try {
-                    @Ref XMLNode config = root.addChildNode("config");
-                    config.setAttribute("parameter", getEdgeLink(ap));
-                    config.setContent(info.getConfigEntry());
-                } catch (XML2WrapperException e) {
-                    e.printStackTrace();
+
+            if (info != null && info.hasNonDefaultFinstructInfo()) {
+                if (!isResponsibleForConfigFileConnections(ap)) {
+
+                    if (outermostGroup && info.getCommandLineOption().length() >= 0) {
+                        @Ref XMLNode config = root.addChildNode("parameter");
+                        config.setAttribute("link", getEdgeLink(ap));
+                        config.setAttribute("cmdline", info.getCommandLineOption());
+                    }
+
+                    return;
                 }
+
+                @Ref XMLNode config = root.addChildNode("parameter");
+                config.setAttribute("link", getEdgeLink(ap));
+                info.serialize(config, true, outermostGroup);
             }
             return;
         }
@@ -454,16 +533,64 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 n.setAttribute("type", cma.getName());
                 if (cps != null) {
                     @Ref XMLNode pn = n.addChildNode("constructor");
-                    cps.serialize(pn);
+                    cps.serialize(pn, true);
                 }
                 if (spl != null) {
                     @Ref XMLNode pn = n.addChildNode("parameters");
-                    spl.serialize(pn);
+                    spl.serialize(pn, true);
                 }
 
                 // serialize its children
                 serializeChildren(n, fe);
             }
         }
+    }
+
+    /**
+     * Scan for command line arguments in specified .finroc xml file.
+     * (for finroc executable)
+     *
+     * @param finrocFile File to scan in.
+     * @return List of command line arguments.
+     */
+    public static SimpleList<String> scanForCommandLineArgs(String finrocFile) {
+        SimpleList<String> result = new SimpleList<String>();
+        try {
+            @PassByValue XMLDocument doc = Files.getFinrocXMLDocument(finrocFile, false);
+            try {
+                logDomain.log(LogLevel.LL_DEBUG, "FinstructableGroup", "Scanning for command line options in " + finrocFile);
+                @Ref XMLNode root = doc.getRootNode();
+
+                scanForCommandLineArgsHelper(result, root);
+
+                logDomain.log(LogLevel.LL_DEBUG, "FinstructableGroup", "Scanning successful. Found " + result.size() + " additional options.");
+            } catch (Exception e) {
+                logDomain.log(LogLevel.LL_WARNING, "FinstructableGroup", "Scanning failed: " + finrocFile, e);
+            }
+        } catch (Exception e) {}
+        return result;
+    }
+
+    /**
+     * Recursive helper function for above
+     *
+     * @param result Result list
+     * @param parent Node to scan childs of
+     */
+    public static void scanForCommandLineArgsHelper(SimpleList<String> result, @Const @Ref XMLNode parent) throws XML2WrapperException {
+        for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
+            String name = node.get().getName();
+            if (node.get().hasAttribute("cmdline") && (name.equals("structureparameter") || name.equals("parameter"))) {
+                result.add(node.get().getStringAttribute("cmdline"));
+            }
+            scanForCommandLineArgsHelper(result, node.get());
+        }
+    }
+
+    /**
+     * @param mainName Default name when group is main part
+     */
+    public void setMainName(String mainName) {
+        this.mainName = mainName;
     }
 }

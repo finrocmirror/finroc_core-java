@@ -23,6 +23,7 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCPortDataManager;
@@ -44,7 +45,7 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
+import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
@@ -60,8 +61,8 @@ public class ParameterInfo extends FinrocAnnotation {
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
 
-    /** Place in Configuration tree, this parameter is configured from (nodes are separated with dots) */
-    private String configEntry;
+    /** Place in Configuration tree, this parameter is configured from (nodes are separated with '/') */
+    private String configEntry = "";
 
     /** Is this info on remote parameter? */
     @JavaOnly
@@ -74,6 +75,18 @@ public class ParameterInfo extends FinrocAnnotation {
     /** Was config entry set from finstruct? */
     private boolean entrySetFromFinstruct;
 
+    /**
+     * Command line option to set this parameter
+     * (set by outer-most finstructable group)
+     */
+    private String commandLineOption = "";
+
+    /**
+     * Default value set in finstruct (optional)
+     * (set by finstructable group responsible for connecting this parameter to attribute tree)
+     */
+    private String finstructDefault = "";
+
     public ParameterInfo() {}
 
     @JavaOnly
@@ -85,38 +98,79 @@ public class ParameterInfo extends FinrocAnnotation {
     public void serialize(OutputStreamBuffer os) {
         os.writeBoolean(entrySetFromFinstruct);
         os.writeString(configEntry);
+        os.writeString(commandLineOption);
+        os.writeString(finstructDefault);
     }
 
     @Override
     public void deserialize(InputStreamBuffer is) {
         entrySetFromFinstruct = is.readBoolean();
+        String configEntryTmp = is.readString();
+        String commandLineOptionTmp = is.readString();
+        String finstructDefaultTmp = is.readString();
+        boolean same = configEntryTmp.equals(configEntry) && commandLineOptionTmp.equals(commandLineOption) && finstructDefaultTmp.equals(finstructDefault);
+        configEntry = configEntryTmp;
+        commandLineOption = commandLineOptionTmp;
+        finstructDefault = finstructDefaultTmp;
 
         //JavaOnlyBlock
         if (remote) {
-            configEntry = is.readString();
             return;
         }
 
-        setConfigEntry(is.readString(), entrySetFromFinstruct);
-    }
-
-    @Override
-    public void serialize(StringOutputStream os) {
-        os.append(entrySetFromFinstruct ? '+' : ' ');
-        os.append(configEntry);
-    }
-
-    @Override
-    public void deserialize(StringInputStream is) throws Exception {
-        entrySetFromFinstruct = (is.read() == '+');
-
-        //JavaOnlyBlock
-        if (remote) {
-            configEntry = is.readAll();
-            return;
+        if (!same) {
+            try {
+                loadValue();
+            } catch (Exception e) {
+                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+            }
         }
+    }
 
-        setConfigEntry(is.readAll(), entrySetFromFinstruct);
+    @Override
+    public void serialize(XMLNode node) throws Exception {
+        serialize(node, false, true);
+    }
+
+    public void serialize(XMLNode node, boolean finstructContext, boolean includeCommandLine) {
+        assert(!(node.hasAttribute("default") || node.hasAttribute("cmdline") || node.hasAttribute("config")));
+        if (configEntry.length() > 0 && (entrySetFromFinstruct || (!finstructContext))) {
+            node.setAttribute("config", configEntry);
+        }
+        if (includeCommandLine) {
+            if (commandLineOption.length() > 0) {
+                node.setAttribute("cmdline", commandLineOption);
+            }
+        }
+        if (finstructDefault.length() > 0) {
+            node.setAttribute("default", finstructDefault);
+        }
+    }
+
+    @Override
+    public void deserialize(XMLNode node) throws Exception {
+        deserialize(node, false, true);
+    }
+
+    public void deserialize(XMLNode node, boolean finstructContext, boolean includeCommandLine) throws XML2WrapperException {
+        if (node.hasAttribute("config")) {
+            configEntry = node.getStringAttribute("config");
+            entrySetFromFinstruct = finstructContext;
+        } else {
+            configEntry = "";
+        }
+        if (includeCommandLine) {
+            if (node.hasAttribute("cmdline")) {
+                commandLineOption = node.getStringAttribute("cmdline");
+            } else {
+                commandLineOption = "";
+            }
+        }
+        if (node.hasAttribute("default")) {
+            finstructDefault = node.getStringAttribute("default");
+        } else {
+            finstructDefault = "";
+        }
     }
 
     /**
@@ -178,11 +232,43 @@ public class ParameterInfo extends FinrocAnnotation {
         AbstractPort ann = (AbstractPort)getAnnotated();
         synchronized (ann.getRegistryLock()) {
             if (ann != null && (ignoreReady || ann.isReady())) {
-                ConfigFile cf = ConfigFile.find(ann);
-                if (cf == null) {
-                    return;
+
+                // command line option
+                if (commandLineOption.length() > 0) {
+                    String arg = RuntimeEnvironment.getInstance().getCommandLineArgument(commandLineOption);
+                    if (arg.length() > 0) {
+                        StringInputStream sis = new StringInputStream(arg);
+                        if (FinrocTypeInfo.isCCType(ann.getDataType())) {
+                            CCPortBase port = (CCPortBase)ann;
+                            CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
+                            try {
+                                c.getObject().deserialize(sis);
+                                port.browserPublishRaw(c);
+                                return;
+                            } catch (Exception e) {
+                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                c.recycleUnused();
+                            }
+                        } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
+                            PortBase port = (PortBase)ann;
+                            PortDataManager pd = port.getUnusedBufferRaw();
+                            try {
+                                pd.getObject().deserialize(sis);
+                                port.browserPublish(pd);
+                                return;
+                            } catch (Exception e) {
+                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                pd.recycleUnused();
+                            }
+                        } else {
+                            throw new RuntimeException("Port Type not supported as a parameter");
+                        }
+                    }
                 }
-                if (cf.hasEntry(configEntry)) {
+
+                // config file entry
+                ConfigFile cf = ConfigFile.find(ann);
+                if (cf != null && configEntry.length() > 0 && cf.hasEntry(configEntry)) {
                     @Ref XMLNode node = cf.getEntry(configEntry, false);
                     if (FinrocTypeInfo.isCCType(ann.getDataType())) {
                         CCPortBase port = (CCPortBase)ann;
@@ -190,7 +276,9 @@ public class ParameterInfo extends FinrocAnnotation {
                         try {
                             c.getObject().deserialize(node);
                             port.browserPublishRaw(c);
+                            return;
                         } catch (Exception e) {
+                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + configEntry + "': ", e);
                             c.recycleUnused();
                         }
                     } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -199,7 +287,39 @@ public class ParameterInfo extends FinrocAnnotation {
                         try {
                             pd.getObject().deserialize(node);
                             port.browserPublish(pd);
+                            return;
                         } catch (Exception e) {
+                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + configEntry + "': ", e);
+                            pd.recycleUnused();
+                        }
+                    } else {
+                        throw new RuntimeException("Port Type not supported as a parameter");
+                    }
+                }
+
+                // finstruct default
+                if (finstructDefault.length() > 0) {
+                    StringInputStream sis = new StringInputStream(finstructDefault);
+                    if (FinrocTypeInfo.isCCType(ann.getDataType())) {
+                        CCPortBase port = (CCPortBase)ann;
+                        CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
+                        try {
+                            c.getObject().deserialize(sis);
+                            port.browserPublishRaw(c);
+                            return;
+                        } catch (Exception e) {
+                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
+                            c.recycleUnused();
+                        }
+                    } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
+                        PortBase port = (PortBase)ann;
+                        PortDataManager pd = port.getUnusedBufferRaw();
+                        try {
+                            pd.getObject().deserialize(sis);
+                            port.browserPublish(pd);
+                            return;
+                        } catch (Exception e) {
+                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
                             pd.recycleUnused();
                         }
                     } else {
@@ -256,5 +376,44 @@ public class ParameterInfo extends FinrocAnnotation {
      */
     public boolean isConfigEntrySetFromFinstruct() {
         return entrySetFromFinstruct;
+    }
+
+    /**
+     * @return Command line option to set this parameter
+     * (set by outer-most finstructable group)
+     */
+    public String getCommandLineOption() {
+        return commandLineOption;
+    }
+
+    /**
+     * @param commandLineOption Command line option to set this parameter
+     * (set by outer-most finstructable group)
+     */
+    public void setCommandLineOption(String commandLineOption) {
+        this.commandLineOption = commandLineOption;
+    }
+
+    /**
+     * @return Default value set in finstruct (optional)
+     * (set by finstructable group responsible for connecting this parameter to attribute tree)
+     */
+    public String getFinstructDefault() {
+        return finstructDefault;
+    }
+
+    /**
+     * @param finstructDefault Default value set in finstruct.
+     * (set by finstructable group responsible for connecting this parameter to attribute tree)
+     */
+    public void setFinstructDefault(String finstructDefault) {
+        this.finstructDefault = finstructDefault;
+    }
+
+    /**
+     * @return Does parameter have any non-default info relevant for finstructed group?
+     */
+    public boolean hasNonDefaultFinstructInfo() {
+        return (configEntry.length() > 0 && entrySetFromFinstruct) || commandLineOption.length() > 0 || finstructDefault.length() > 0;
     }
 }

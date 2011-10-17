@@ -96,7 +96,7 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
      * @return CoreNumber buffer
      */
     private @Ptr CoreNumber getBuffer() {
-        @Ptr GenericObject go = ccValue.getObject();
+        @Ptr GenericObject go = valPointer();
         return go.<CoreNumber>getData();
     }
 

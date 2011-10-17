@@ -566,6 +566,15 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     }
 
     /**
+     * @param name Name of command line argument
+     * @return Value of argument - or "" if not set.
+     */
+    public String getCommandLineArgument(String name) {
+        // TODO
+        return "";
+    }
+
+    /**
      * @return Lock order of registry
      */
     @Const @Ptr Registry getRegistryHelper() {
