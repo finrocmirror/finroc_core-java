@@ -111,11 +111,24 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param tmp Temporary, currently unused string buffer
      * @return Is framework element accepted by filter?
      */
+    @JavaOnly
     @ConstMethod public boolean accept(FrameworkElement element, @Ref StringBuilder tmp) {
+        return accept(element, tmp, 0);
+    }
+
+
+    /**
+     * @param element Framework element
+     * @param tmp Temporary, currently unused string buffer
+     * @param ignoreFlags These flags are ignored when checking flags
+     * @return Is framework element accepted by filter?
+     */
+    @ConstMethod public boolean accept(FrameworkElement element, @Ref StringBuilder tmp, int ignoreFlags) {
         if (element == null) {
             return false;
         }
-        if ((element.getAllFlags() & relevantFlags) == flagResult) {
+        int notIgnore = ~ignoreFlags;
+        if ((element.getAllFlags() & relevantFlags & notIgnore) == (flagResult & notIgnore)) {
             if (paths.size() == 0) {
                 return true;
             }

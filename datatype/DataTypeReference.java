@@ -36,7 +36,7 @@ public class DataTypeReference extends CoreString {
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
 
-    public void DataType() {
+    public DataTypeReference() {
         set(CoreNumber.TYPE); // default is CoreNumber
     }
 
