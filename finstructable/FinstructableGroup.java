@@ -450,7 +450,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             while (!ap2.isChildOf(commonParent)) {
                 commonParent = commonParent.getParent();
             }
-            FrameworkElement commonFinstructableParent = getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? this : commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+            FrameworkElement commonFinstructableParent = commonParent.getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? commonParent : commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
             if (commonFinstructableParent != this) {
                 continue;
             }
@@ -541,7 +541,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 }
 
                 // serialize its children
-                serializeChildren(n, fe);
+                if (!fe.getFlag(CoreFlags.FINSTRUCTABLE_GROUP)) {
+                    serializeChildren(n, fe);
+                }
             }
         }
     }
