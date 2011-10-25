@@ -450,7 +450,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             while (!ap2.isChildOf(commonParent)) {
                 commonParent = commonParent.getParent();
             }
-            FrameworkElement commonFinstructableParent = commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+            FrameworkElement commonFinstructableParent = getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? this : commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
             if (commonFinstructableParent != this) {
                 continue;
             }
