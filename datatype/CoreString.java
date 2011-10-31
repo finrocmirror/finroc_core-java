@@ -21,6 +21,8 @@
  */
 package org.finroc.core.datatype;
 
+import java.io.Serializable;
+
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
@@ -43,7 +45,10 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
  */
 @PostInclude("rrlib/serialization/DataType.h")
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::CoreString>;"})
-public class CoreString extends RRLibSerializableImpl {
+public class CoreString extends RRLibSerializableImpl implements Serializable {
+
+    /** UID */
+    private static final long serialVersionUID = 7483490124678921514L;
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<CoreString>(CoreString.class);

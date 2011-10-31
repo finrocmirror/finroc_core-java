@@ -168,7 +168,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     @InCpp("return PortUtil<T>::getUnusedBuffer(wrapped);")
     @Inline public @CustomPtr("tPortDataPtr") T getUnusedBuffer() {
         if (hasCCType()) {
-            return (T)ThreadLocalCache.getFast().getUnusedBuffer(getDataType());
+            return (T)ThreadLocalCache.getFast().getUnusedBuffer(getDataType()).getObject().getData();
         } else {
             return (T)((PortBase)wrapped).getUnusedBufferRaw().getObject().getData();
         }

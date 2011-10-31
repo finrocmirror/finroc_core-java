@@ -33,11 +33,21 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::DataTypeReference>;"})
 public class DataTypeReference extends CoreString {
 
+    /** UID */
+    private static final long serialVersionUID = -1404401288635243235L;
+
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
 
     public DataTypeReference() {
         set(CoreNumber.TYPE); // default is CoreNumber
+    }
+
+    /**
+     * @param dt DataType to reference
+     */
+    public DataTypeReference(DataTypeBase dt) {
+        set(dt);
     }
 
     /**
@@ -52,5 +62,9 @@ public class DataTypeReference extends CoreString {
      */
     public DataTypeBase get() {
         return DataTypeBase.findType(getBuffer().toString());
+    }
+
+    public boolean equals(Object other) {
+        return (other instanceof DataTypeReference) && toString().equals(other.toString());
     }
 }
