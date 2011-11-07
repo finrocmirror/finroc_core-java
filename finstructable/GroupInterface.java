@@ -30,6 +30,7 @@ import org.finroc.core.plugin.ConstructorCreateModuleAction;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.PortFlags;
+import org.finroc.core.port.PortGroup;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
@@ -43,7 +44,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
  */
 @IncludeClass(ConstructorCreateModuleAction.class)
 //@Include("plugin/FunctionCreateModuleAction.h")
-public class GroupInterface extends EdgeAggregator {
+public class GroupInterface extends PortGroup {
 
     /** Classifies data in this interface */
     public enum DataClassification { SENSOR_DATA, CONTROLLER_DATA, ANY }
@@ -72,7 +73,7 @@ public class GroupInterface extends EdgeAggregator {
      * @param parent Parent element
      */
     public GroupInterface(FrameworkElement parent, @Const @Ref String description) {
-        super(parent, description, EdgeAggregator.IS_INTERFACE);
+        super(parent, description, EdgeAggregator.IS_INTERFACE, 0);
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
@@ -89,7 +90,7 @@ public class GroupInterface extends EdgeAggregator {
      * @return flags for these parameters
      */
     public GroupInterface(FrameworkElement parent, @Const @Ref String description, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
-        super(parent, description, computeFlags(dataClass, shared, uniqueLink));
+        super(parent, description, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);
     }

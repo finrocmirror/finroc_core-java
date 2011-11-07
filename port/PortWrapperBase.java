@@ -353,4 +353,11 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
     public <A extends FinrocAnnotation> A getAnnotation(@CppDefault("rrlib::serialization::DataType<A>()") DataTypeBase dt) {
         return (A)wrapped.getAnnotation(dt);
     }
+
+    /**
+     * @return Primary parent framework element
+     */
+    public FrameworkElement getParent() {
+        return wrapped.getParent();
+    }
 }

@@ -26,7 +26,7 @@ import org.finroc.core.datatype.PortCreationList;
 import org.finroc.core.parameter.StructureParameter;
 import org.finroc.core.parameter.StructureParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
-import org.finroc.core.port.EdgeAggregator;
+import org.finroc.core.port.PortGroup;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
@@ -36,7 +36,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
  *
  * Simple group for creating hierarchy
  */
-public class Group extends EdgeAggregator {
+public class Group extends PortGroup {
 
     /** List of ports */
     private StructureParameter<PortCreationList> ports = new StructureParameter<PortCreationList>("Ports", PortCreationList.TYPE);
@@ -47,7 +47,7 @@ public class Group extends EdgeAggregator {
         new StandardCreateModuleAction<Group>("Group", Group.class);
 
     public Group(FrameworkElement parent, @Const @Ref String description) {
-        super(parent, description, 0);
+        super(parent, description, 0, 0);
         addAnnotation(new StructureParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
