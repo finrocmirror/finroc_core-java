@@ -241,7 +241,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
 
     @Override @InCppFile
     public void runtimeChange(byte changeType, FrameworkElement element) {
-        if (element.isChildOf(this.threadContainer)) {
+        if (element.isChildOf(this.threadContainer, true)) {
             reschedule = true;
         }
     }

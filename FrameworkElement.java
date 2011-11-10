@@ -1009,10 +1009,9 @@ public class FrameworkElement extends Annotatable {
      * (also considers links)
      *
      * @param re Possible parent of this Runtime element
-     * @param ignoreDeleteFlag Perform check even if delete flag is already set on object (deprecated in C++!)
+     * @param ignoreDeleteFlag Perform check even if delete flag is already set on object (deprecated in C++ - except of directly calling on runtime change)
      * @return Answer
      */
-    @Protected
     @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re, boolean ignoreDeleteFlag) {
         synchronized (getRegistryLock()) { // absolutely safe this way
             if ((!ignoreDeleteFlag) && isDeleted()) {

@@ -194,6 +194,20 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     virtual ~AbstractPort();
      */
 
+    /**
+     * Print notification that port is not ready in debug mode.
+     * (this is not RT-capable in debug mode)
+     *
+     * @param extraMessage Message after standard message (what is done now?)
+     */
+    public void printNotReadyMessage(String extraMessage) {
+        if (isDeleted()) {
+            log(LogLevel.LL_DEBUG, logDomain, "Port is about to be deleted. " + extraMessage + " (This may happen occasionally due to non-blocking nature)");
+        } else {
+            log(LogLevel.LL_WARNING, logDomain, "Port has not been initialized yet and thus cannot be used. Fix your application. " + extraMessage);
+        }
+    }
+
     @Override
     protected synchronized void prepareDelete() {
 

@@ -332,7 +332,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @InCpp("") final boolean INFORM_LISTENERS = informListeners;
 
         assert data.getObject().getType() != null : "Port data type not initialized";
-        assert isInitialized() || INFORM_LISTENERS : "Port not initialized";
+        if (!(isInitialized() || INFORM_LISTENERS)) {
+            printNotReadyMessage("Ignoring publishing request.");
+            return;
+        }
 
         @Ptr ArrayWrapper<CCPortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
 

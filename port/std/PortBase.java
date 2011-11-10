@@ -338,7 +338,10 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @InCpp("") final boolean INFORM_LISTENERS = informListeners;
 
         assert data.getType() != null : "Port data type not initialized";
-        assert isInitialized() || INFORM_LISTENERS;
+        if (!(isInitialized() || INFORM_LISTENERS)) {
+            printNotReadyMessage("Ignoring publishing request.");
+            return;
+        }
 
         // assign
         @Ptr ArrayWrapper<PortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
