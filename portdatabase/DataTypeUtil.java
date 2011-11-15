@@ -27,7 +27,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
 import org.rrlib.finroc_core_utils.jc.annotation.CppName;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.serialization.EnumValue;
 import org.rrlib.finroc_core_utils.serialization.GenericChangeable;
 
 @JavaOnly
@@ -56,6 +55,5 @@ public class DataTypeUtil {
     public static void initCCTypes() {
         FinrocTypeInfo.get(CoreNumber.TYPE).init(FinrocTypeInfo.Type.CC);
         FinrocTypeInfo.get(CoreBoolean.TYPE).init(FinrocTypeInfo.Type.CC);
-        FinrocTypeInfo.get(EnumValue.TYPE).init(FinrocTypeInfo.Type.CC);
     }
 }
