@@ -35,10 +35,10 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 /**
  * @author max
  *
- * Numeric Structure parameter.
+ * Numeric Static parameter.
  */
 @JavaOnly
-public class StructureParameterNumeric<T extends Number> extends StructureParameter<CoreNumber> {
+public class StaticParameterNumeric<T extends Number> extends StaticParameter<CoreNumber> {
 
     /** Unit of parameter */
     private Unit unit = Unit.NO_UNIT;
@@ -53,16 +53,16 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
     /** Default value */
     private T defaultVal;
 
-    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype) {
+    public StaticParameterNumeric(String name, T defaultValue, boolean constructorPrototype) {
         this(name, defaultValue, constructorPrototype, new Bounds<T>());
     }
 
-    public StructureParameterNumeric(String name, T defaultValue) {
+    public StaticParameterNumeric(String name, T defaultValue) {
         this(name, defaultValue, false, new Bounds<T>());
     }
 
     @SuppressWarnings("unchecked")
-    public StructureParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds<T> bounds) {
+    public StaticParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds<T> bounds) {
         super(name, getDataType(), constructorPrototype);
         this.bounds = bounds;
 
@@ -75,7 +75,7 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
         }
     }
 
-    public StructureParameterNumeric(String name, T defaultValue, Bounds<T> bounds2) {
+    public StaticParameterNumeric(String name, T defaultValue, Bounds<T> bounds2) {
         this(name, defaultValue, false, bounds2);
     }
 
@@ -154,8 +154,8 @@ public class StructureParameterNumeric<T extends Number> extends StructureParame
     }
 
     @Override
-    public StructureParameterBase deepCopy() {
-        return new StructureParameterNumeric<T>(getName(), defaultVal, false, bounds);
+    public StaticParameterBase deepCopy() {
+        return new StaticParameterNumeric<T>(getName(), defaultVal, false, bounds);
     }
 
 }

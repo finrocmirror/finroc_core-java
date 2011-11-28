@@ -44,18 +44,18 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
 /**
  * @author max
  *
- * List of structure parameters
+ * List of static parameters
  */
 @PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::StructureParameterList>;"})
-public class StructureParameterList extends FinrocAnnotation implements HasDestructor {
+@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::StaticParameterList>;"})
+public class StaticParameterList extends FinrocAnnotation implements HasDestructor {
 
     /** Data Type */
-    public final static DataType<StructureParameterList> TYPE = new DataType<StructureParameterList>(StructureParameterList.class);
+    public final static DataType<StaticParameterList> TYPE = new DataType<StaticParameterList>(StaticParameterList.class);
 
     /** List of parameters */
     @PassByValue
-    private SimpleList<StructureParameterBase> parameters = new SimpleList<StructureParameterBase>();
+    private SimpleList<StaticParameterBase> parameters = new SimpleList<StaticParameterBase>();
 
     /**
      * Index of CreateModuleAction that was used to create framework element
@@ -65,33 +65,13 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
 
     /** Empty parameter list */
     @PassByValue
-    public static final StructureParameterList EMPTY = new StructureParameterList();
+    public static final StaticParameterList EMPTY = new StaticParameterList();
 
-    /*Cpp
-    // slightly ugly... but safe
-    StructureParameterList(StructureParameterBase* p1, StructureParameterBase* p2 = NULL, StructureParameterBase* p3 = NULL,
-                    StructureParameterBase* p4 = NULL, StructureParameterBase* p5 = NULL, StructureParameterBase* p6 = NULL,
-                    StructureParameterBase* p7 = NULL, StructureParameterBase* p8 = NULL, StructureParameterBase* p9 = NULL,
-                    StructureParameterBase* p10 = NULL, StructureParameterBase* p11 = NULL, StructureParameterBase* p12 = NULL,
-                    StructureParameterBase* p13 = NULL, StructureParameterBase* p14 = NULL, StructureParameterBase* p15 = NULL,
-                    StructureParameterBase* p16 = NULL, StructureParameterBase* p17 = NULL, StructureParameterBase* p18 = NULL,
-                    StructureParameterBase* p19 = NULL, StructureParameterBase* p20 = NULL) :
-            FinrocAnnotation(),
-            parameters(),
-            createAction(-1)
-    {
-        add(p1);add(p2);add(p3);add(p4);add(p5);
-        add(p6);add(p7);add(p8);add(p9);add(p10);
-        add(p11);add(p12);add(p13);add(p14);add(p15);
-        add(p16);add(p17);add(p18);add(p19);add(p20);
-    }
-     */
-
-    public StructureParameterList() {}
+    public StaticParameterList() {}
 
     @JavaOnly
-    public StructureParameterList(@Ptr StructureParameterBase... params) {
-        for (StructureParameterBase param : params) {
+    public StaticParameterList(@Ptr StaticParameterBase... params) {
+        for (StaticParameterBase param : params) {
             add(param);
         }
     }
@@ -126,7 +106,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             clear();
             int newSize = is.readInt();
             for (@SizeT int i = 0; i < newSize; i++) {
-                StructureParameterBase param = new StructureParameterBase();
+                StaticParameterBase param = new StaticParameterBase();
                 param.deserialize(is, null);
                 add(param);
             }
@@ -139,10 +119,10 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
             }
             FrameworkElement ann = (FrameworkElement)getAnnotated();
             for (@SizeT int i = 0; i < parameters.size(); i++) {
-                StructureParameterBase param = parameters.get(i);
+                StaticParameterBase param = parameters.get(i);
                 param.deserialize(is, ann);
             }
-            ann.structureParametersChanged();
+            ann.doStaticParameterEvaluation();
         }
     }
 
@@ -157,7 +137,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
      * @param i Index
      * @return Parameter with specified index
      */
-    @ConstMethod public @Ptr StructureParameterBase get(int i) {
+    @ConstMethod public @Ptr StaticParameterBase get(int i) {
         return parameters.get(i);
     }
 
@@ -169,10 +149,10 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
      */
     @ConstMethod public ConstructorParameters instantiate() {
         ConstructorParameters cp = new ConstructorParameters();
-        StructureParameterList c = cp;
+        StaticParameterList c = cp;
         c.createAction = createAction;
         for (@SizeT int i = 0; i < parameters.size(); i++) {
-            StructureParameterBase p = parameters.get(i);
+            StaticParameterBase p = parameters.get(i);
             c.add(p.deepCopy());
         }
         return cp;
@@ -183,7 +163,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
      *
      * @param param Parameter
      */
-    public void add(StructureParameterBase param) {
+    public void add(StaticParameterBase param) {
         if (param != null) {
             param.listIndex = parameters.size();
             parameters.add(param);
@@ -206,15 +186,15 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     }
 
     /**
-     * Get or create StructureParameterList for Framework element
+     * Get or create StaticParameterList for Framework element
      *
      * @param fe Framework element
-     * @return StructureParameterList
+     * @return StaticParameterList
      */
-    public static StructureParameterList getOrCreate(FrameworkElement fe) {
-        StructureParameterList result = (StructureParameterList)fe.getAnnotation(TYPE);
+    public static StaticParameterList getOrCreate(FrameworkElement fe) {
+        StaticParameterList result = (StaticParameterList)fe.getAnnotation(TYPE);
         if (result == null) {
-            result = new StructureParameterList();
+            result = new StaticParameterList();
             fe.addAnnotation(result);
         }
         return result;
@@ -229,7 +209,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
     public void serialize(XMLNode node, boolean finstructContext) throws Exception {
         for (@SizeT int i = 0; i < size(); i++) {
             @Ref XMLNode child = node.addChildNode("parameter");
-            StructureParameterBase param = get(i);
+            StaticParameterBase param = get(i);
             child.setAttribute("name", param.getName());
             param.serialize(child, finstructContext);
         }
@@ -249,7 +229,7 @@ public class StructureParameterList extends FinrocAnnotation implements HasDestr
         int count = Math.min(numberOfChildren, size());
         XMLNode.ConstChildIterator child = node.getChildrenBegin();
         for (int i = 0; i < count; i++) {
-            StructureParameterBase param = get(i);
+            StaticParameterBase param = get(i);
             param.deserialize(child.get(), finstructContext, (FrameworkElement)getAnnotated());
             child.next();
         }

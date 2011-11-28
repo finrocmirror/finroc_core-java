@@ -23,7 +23,7 @@ package org.finroc.core.plugin;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterList;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
@@ -53,7 +53,7 @@ public interface CreateFrameworkElementAction {
     /**
      * @return Returns types of parameters that the create method requires
      */
-    @ConstMethod @Const @Ptr public StructureParameterList getParameterTypes();
+    @ConstMethod @Const @Ptr public StaticParameterList getParameterTypes();
 
     /**
      * @return Returns name of group to which this create module action belongs

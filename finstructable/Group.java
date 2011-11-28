@@ -23,8 +23,8 @@ package org.finroc.core.finstructable;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.PortCreationList;
-import org.finroc.core.parameter.StructureParameter;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameter;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.PortGroup;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
@@ -39,7 +39,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 public class Group extends PortGroup {
 
     /** List of ports */
-    private StructureParameter<PortCreationList> ports = new StructureParameter<PortCreationList>("Ports", PortCreationList.TYPE);
+    private StaticParameter<PortCreationList> ports = new StaticParameter<PortCreationList>("Ports", PortCreationList.TYPE);
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
@@ -48,7 +48,7 @@ public class Group extends PortGroup {
 
     public Group(FrameworkElement parent, @Const @Ref String description) {
         super(parent, description, 0, 0);
-        addAnnotation(new StructureParameterList(ports));
+        addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
 }

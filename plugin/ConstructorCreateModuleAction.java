@@ -27,14 +27,14 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.CoreString;
-import org.finroc.core.parameter.StructureParameterBool;
+import org.finroc.core.parameter.StaticParameterBool;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.StructureParameterEnum;
-import org.finroc.core.parameter.StructureParameterNumeric;
-import org.finroc.core.parameter.StructureParameterString;
-import org.finroc.core.parameter.StructureParameter;
-import org.finroc.core.parameter.StructureParameterBase;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterEnum;
+import org.finroc.core.parameter.StaticParameterNumeric;
+import org.finroc.core.parameter.StaticParameterString;
+import org.finroc.core.parameter.StaticParameter;
+import org.finroc.core.parameter.StaticParameterBase;
+import org.finroc.core.parameter.StaticParameterList;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.Include;
@@ -74,24 +74,24 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
     /**
      * Parameters
      */
-    public @CppType("_SPT1") StructureParameterBase p1;
-    public @CppType("_SPT2") StructureParameterBase p2;
-    public @CppType("_SPT3") StructureParameterBase p3;
-    public @CppType("_SPT4") StructureParameterBase p4;
-    public @CppType("_SPT5") StructureParameterBase p5;
-    public @CppType("_SPT6") StructureParameterBase p6;
-    public @CppType("_SPT7") StructureParameterBase p7;
-    public @CppType("_SPT8") StructureParameterBase p8;
-    public @CppType("_SPT9") StructureParameterBase p9;
-    public @CppType("_SPT10") StructureParameterBase p10;
-    public @CppType("_SPT11") StructureParameterBase p11;
-    public @CppType("_SPT12") StructureParameterBase p12;
+    public @CppType("_SPT1") StaticParameterBase p1;
+    public @CppType("_SPT2") StaticParameterBase p2;
+    public @CppType("_SPT3") StaticParameterBase p3;
+    public @CppType("_SPT4") StaticParameterBase p4;
+    public @CppType("_SPT5") StaticParameterBase p5;
+    public @CppType("_SPT6") StaticParameterBase p6;
+    public @CppType("_SPT7") StaticParameterBase p7;
+    public @CppType("_SPT8") StaticParameterBase p8;
+    public @CppType("_SPT9") StaticParameterBase p9;
+    public @CppType("_SPT10") StaticParameterBase p10;
+    public @CppType("_SPT11") StaticParameterBase p11;
+    public @CppType("_SPT12") StaticParameterBase p12;
 
     /**
-     * StructureParameterList
+     * StaticParameterList
      */
     @PassByValue @Mutable
-    protected StructureParameterList spl = new StructureParameterList();
+    protected StaticParameterList spl = new StaticParameterList();
 
     /** Name and group of module */
     public final String name;
@@ -125,14 +125,14 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
         p11 = _SP11::create(names.get(10));
         p12 = _SP12::create(names.get(11));
 
-        checkStructureParameterList();
+        checkStaticParameterList();
          */
     }
 
     /**
      * builds parameter list, if it's not built already
      */
-    @ConstMethod private void checkStructureParameterList() {
+    @ConstMethod private void checkStaticParameterList() {
         if (spl.size() > 0 || p1 == null) {
             return;
         }
@@ -160,7 +160,7 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
      * @param param
      */
     @Inline @ConstMethod
-    private void add(StructureParameterBase param) {
+    private void add(StaticParameterBase param) {
         if (param != null) {
             spl.add(param);
         }
@@ -182,8 +182,8 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
      */
 
     @Override
-    public StructureParameterList getParameterTypes() {
-        checkStructureParameterList();
+    public StaticParameterList getParameterTypes() {
+        checkStaticParameterList();
         return spl;
     }
 
@@ -265,19 +265,19 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
     }
 
     @SuppressWarnings( { "unchecked" })
-    private StructureParameterBase createParam(Class<?> c, String name) {
+    private StaticParameterBase createParam(Class<?> c, String name) {
         if (c == null) {
             return null;
         } else if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c) || c.equals(CoreBoolean.class)) {
-            return new StructureParameterBool(name, false, true);
+            return new StaticParameterBool(name, false, true);
         } else if (c.equals(CoreNumber.class) || c.equals(int.class) || c.equals(double.class) || c.equals(float.class) || c.equals(long.class) || Number.class.isAssignableFrom(c)) {
-            return new StructureParameterNumeric(name, 0, true);
+            return new StaticParameterNumeric(name, 0, true);
         } else if (Enum.class.isAssignableFrom(c)) {
-            return new StructureParameterEnum(name, (Enum)c.getEnumConstants()[0], true);
+            return new StaticParameterEnum(name, (Enum)c.getEnumConstants()[0], true);
         } else if (c.equals(String.class) || c.equals(CoreString.class)) {
-            return new StructureParameterString(name, "", true);
+            return new StaticParameterString(name, "", true);
         } else {
-            return new StructureParameter(name, DataTypeBase.findType(c), true, "");
+            return new StaticParameter(name, DataTypeBase.findType(c), true, "");
         }
     }
 
@@ -299,23 +299,23 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
      * @return Converted parameter
      */
     @SuppressWarnings( { "unchecked" })
-    private Object convertParam(Class<?> c, StructureParameterBase p) {
+    private Object convertParam(Class<?> c, StaticParameterBase p) {
         if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c)) {
-            return ((StructureParameterBool)p).get();
+            return ((StaticParameterBool)p).get();
         } else if (c.equals(int.class)) {
-            return ((StructureParameterNumeric<Integer>)p).get();
+            return ((StaticParameterNumeric<Integer>)p).get();
         } else if (c.equals(double.class)) {
-            return ((StructureParameterNumeric<Double>)p).get();
+            return ((StaticParameterNumeric<Double>)p).get();
         } else if (c.equals(float.class)) {
-            return ((StructureParameterNumeric<Float>)p).get();
+            return ((StaticParameterNumeric<Float>)p).get();
         } else if (c.equals(long.class)) {
-            return ((StructureParameterNumeric<Long>)p).get();
+            return ((StaticParameterNumeric<Long>)p).get();
         } else if (Number.class.isAssignableFrom(c)) {
-            return ((StructureParameterNumeric<Long>)p).getValue();
+            return ((StaticParameterNumeric<Long>)p).getValue();
         } else if (Enum.class.isAssignableFrom(c)) {
-            return ((StructureParameterEnum)p).get();
+            return ((StaticParameterEnum)p).get();
         } else if (c.equals(String.class)) {
-            return ((StructureParameterString)p).get();
+            return ((StaticParameterString)p).get();
         } else {
             return p.valPointer().getData();
         }

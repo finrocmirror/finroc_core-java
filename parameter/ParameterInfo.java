@@ -61,7 +61,10 @@ public class ParameterInfo extends FinrocAnnotation {
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
 
-    /** Place in Configuration tree, this parameter is configured from (nodes are separated with '/') */
+    /**
+     * Place in Configuration tree, this parameter is configured from (nodes are separated with '/')
+     * (starting with '/' => absolute link - otherwise relative)
+     */
     private String configEntry = "";
 
     /** Is this info on remote parameter? */
@@ -268,32 +271,35 @@ public class ParameterInfo extends FinrocAnnotation {
 
                 // config file entry
                 ConfigFile cf = ConfigFile.find(ann);
-                if (cf != null && configEntry.length() > 0 && cf.hasEntry(configEntry)) {
-                    @Ref XMLNode node = cf.getEntry(configEntry, false);
-                    if (FinrocTypeInfo.isCCType(ann.getDataType())) {
-                        CCPortBase port = (CCPortBase)ann;
-                        CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
-                        try {
-                            c.getObject().deserialize(node);
-                            port.browserPublishRaw(c);
-                            return;
-                        } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + configEntry + "': ", e);
-                            c.recycleUnused();
+                if (cf != null && configEntry.length() > 0) {
+                    String fullConfigEntry = ConfigNode.getFullConfigEntry(ann, configEntry);
+                    if (cf.hasEntry(fullConfigEntry)) {
+                        @Ref XMLNode node = cf.getEntry(fullConfigEntry, false);
+                        if (FinrocTypeInfo.isCCType(ann.getDataType())) {
+                            CCPortBase port = (CCPortBase)ann;
+                            CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
+                            try {
+                                c.getObject().deserialize(node);
+                                port.browserPublishRaw(c);
+                                return;
+                            } catch (Exception e) {
+                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                c.recycleUnused();
+                            }
+                        } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
+                            PortBase port = (PortBase)ann;
+                            PortDataManager pd = port.getUnusedBufferRaw();
+                            try {
+                                pd.getObject().deserialize(node);
+                                port.browserPublish(pd);
+                                return;
+                            } catch (Exception e) {
+                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                pd.recycleUnused();
+                            }
+                        } else {
+                            throw new RuntimeException("Port Type not supported as a parameter");
                         }
-                    } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
-                        PortBase port = (PortBase)ann;
-                        PortDataManager pd = port.getUnusedBufferRaw();
-                        try {
-                            pd.getObject().deserialize(node);
-                            port.browserPublish(pd);
-                            return;
-                        } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + configEntry + "': ", e);
-                            pd.recycleUnused();
-                        }
-                    } else {
-                        throw new RuntimeException("Port Type not supported as a parameter");
                     }
                 }
 

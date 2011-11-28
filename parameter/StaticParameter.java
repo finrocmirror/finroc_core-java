@@ -33,32 +33,23 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 /**
  * @author max
  *
- * Structure Parameter.
+ * Static Parameter.
  *
- * Structure paratemers are more or less construction parameters
+ * Unlike "normal" parameters, static parameters cannot be changed while
+ * a Finroc application is executing.
+ * Thus, static paratemers are more or less construction parameters
  * of modules and groups.
- * They typically influence the port structure of these modules and groups.
- *
- * Unlike "normal" parameters, ...
- * - ...they cannot be changed while modules are running.
- * - ...they are stored in an FinstructableGroup's XML-file rather than
- * the attribute tree.
+ * They often influence the port structure of these modules and groups.
  */
 @RawTypeArgs @JavaOnly
-public class StructureParameter<T extends RRLibSerializable> extends StructureParameterBase {
-
-    /*Cpp
-    StructureParameter(const util::String& name) :
-         StructureParameterBase(name, rrlib::serialization::DataType<T>(), false)
-    {}
-     */
+public class StaticParameter<T extends RRLibSerializable> extends StaticParameterBase {
 
     /**
      * @param name Name of parameter
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      */
-    public StructureParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype) {
+    public StaticParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype) {
         super(name, type, constructorPrototype);
     }
 
@@ -68,7 +59,7 @@ public class StructureParameter<T extends RRLibSerializable> extends StructurePa
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      * @param defaultValue Default value
      */
-    public StructureParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype, @Const @Ref String defaultValue) {
+    public StaticParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype, @Const @Ref String defaultValue) {
         super(name, type, constructorPrototype);
         String dv = defaultValue;
         if ((!constructorPrototype) && dv.length() > 0) {
@@ -88,7 +79,7 @@ public class StructureParameter<T extends RRLibSerializable> extends StructurePa
      * @param type DataType of parameter
      * @param defaultValue Default value
      */
-    public StructureParameter(@Const @Ref String name, DataTypeBase type, @Const @Ref String defaultValue) {
+    public StaticParameter(@Const @Ref String name, DataTypeBase type, @Const @Ref String defaultValue) {
         this(name, type, false, defaultValue);
     }
 
@@ -96,7 +87,7 @@ public class StructureParameter<T extends RRLibSerializable> extends StructurePa
      * @param name Name of parameter
      * @param type DataType of parameter
      */
-    public StructureParameter(@Const @Ref String name, DataTypeBase type) {
+    public StaticParameter(@Const @Ref String name, DataTypeBase type) {
         this(name, type, "");
     }
 
@@ -110,8 +101,8 @@ public class StructureParameter<T extends RRLibSerializable> extends StructurePa
     }
 
     @Override
-    public StructureParameterBase deepCopy() {
-        return new StructureParameter<T>(getName(), getType(), false, "");
+    public StaticParameterBase deepCopy() {
+        return new StaticParameter<T>(getName(), getType(), false, "");
     }
 
 }

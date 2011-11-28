@@ -25,7 +25,7 @@ import java.lang.reflect.Constructor;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterList;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
@@ -103,7 +103,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
     }
 
     @Override
-    public StructureParameterList getParameterTypes() {
+    public StaticParameterList getParameterTypes() {
         return null;
     }
 

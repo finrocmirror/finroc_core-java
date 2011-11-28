@@ -22,7 +22,7 @@
 package org.finroc.core.plugin;
 
 import org.finroc.core.admin.AdminClient;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterList;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 
 /**
@@ -43,7 +43,7 @@ public class RemoteCreateModuleAction implements Comparable<RemoteCreateModuleAc
     public final int remoteIndex;
 
     /** Parameter types - may contain null entries, if type is not known in this runtime */
-    public final StructureParameterList parameters = new StructureParameterList();
+    public final StaticParameterList parameters = new StaticParameterList();
 
     /** Admin interface that this action comes from */
     public final AdminClient adminInterface;

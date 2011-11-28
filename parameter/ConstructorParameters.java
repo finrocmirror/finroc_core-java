@@ -27,10 +27,10 @@ import org.rrlib.finroc_core_utils.serialization.DataType;
  * @author max
  *
  * Parameters used to instantiate a module
- * Are stored separately from Structure parameters.
+ * Are stored separately from Static parameters.
  * Therefore, we need an extra class for this.
  */
-public class ConstructorParameters extends StructureParameterList {
+public class ConstructorParameters extends StaticParameterList {
 
     /** Data Type */
     public final static DataType<ConstructorParameters> TYPE = new DataType<ConstructorParameters>(ConstructorParameters.class);

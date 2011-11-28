@@ -32,10 +32,10 @@ import org.rrlib.finroc_core_utils.serialization.EnumValue;
 /**
  * @author max
  *
- * Enum structure parameter
+ * Enum static parameter
  */
 @JavaOnly
-public class StructureParameterEnum<E extends Enum<E>> extends StructureParameter<EnumValue> {
+public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<EnumValue> {
 
     /** Reference to default value */
     @JavaOnly private Class<E> enumClass;
@@ -46,7 +46,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype) {
+    public StaticParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype) {
         super(name, new DataType(defaultValue.getDeclaringClass()), constructorPrototype);
         if (!constructorPrototype) {
             set(defaultValue);
@@ -60,7 +60,7 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public StructureParameterEnum(@Const @Ref String name, @PassByValue E defaultValue) {
+    public StaticParameterEnum(@Const @Ref String name, @PassByValue E defaultValue) {
         super(name, new DataType(defaultValue.getDeclaringClass()));
         set(defaultValue);
         this.enumClass = defaultValue.getDeclaringClass();
@@ -91,8 +91,8 @@ public class StructureParameterEnum<E extends Enum<E>> extends StructureParamete
     }
 
     @Override
-    public StructureParameterBase deepCopy() {
-        return new StructureParameterEnum<E>(getName(), getValueForInt(0), false);
+    public StaticParameterBase deepCopy() {
+        return new StaticParameterEnum<E>(getName(), getValueForInt(0), false);
     }
 
 }

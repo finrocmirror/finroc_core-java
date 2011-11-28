@@ -21,7 +21,7 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.datatype.CoreBoolean;
+import org.finroc.core.datatype.CoreString;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
@@ -31,50 +31,48 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 /**
  * @author max
  *
- * Boolean Structure parameter.
+ * String StaticParameter class for convenience
  */
 @Inline @NoCpp @JavaOnly
-public class StructureParameterBool extends StructureParameter<CoreBoolean> {
+public class StaticParameterString extends StaticParameter<CoreString> {
 
-    @JavaOnly
-    public StructureParameterBool(String name) {
-        this(name, false, false);
+    public StaticParameterString(String name, String defaultValue, boolean constructorPrototype) {
+        super(name, getDataType(), constructorPrototype, defaultValue);
     }
 
-    public StructureParameterBool(String name, boolean defaultValue, boolean constructorPrototype) {
-        super(name, getDataType(), constructorPrototype, "");
-        if (!constructorPrototype) {
-            set(defaultValue);
-        }
+    public StaticParameterString(String name, String defaultValue) {
+        super(name, getDataType(), defaultValue);
+    }
+
+    public StaticParameterString(String name) {
+        super(name, getDataType(), "");
     }
 
     /** Helper to get this safely during static initialization */
-    @InCpp("return rrlib::serialization::DataType<Boolean>();")
+    @InCpp("return rrlib::serialization::DataType<CoreString>();")
     public static DataTypeBase getDataType() {
-        return CoreBoolean.TYPE;
-    }
-
-    public StructureParameterBool(String name, boolean defaultValue) {
-        this(name, defaultValue, false);
+        return CoreString.TYPE;
     }
 
     /**
      * @return Current value
      */
-    public boolean get() {
-        return super.getValue().get();
+    public String get() {
+        return getValue().toString();
     }
 
     /**
-     * @param newValue New Value
+     * @param sb Buffer to store current value in
      */
-    public void set(boolean newValue) {
-        super.getValue().set(newValue);
+    public void get(StringBuilder sb) {
+        getValue().get(sb);
     }
 
+    /* (non-Javadoc)
+     * @see org.finroc.core.parameter.StaticParameter#deepCopy()
+     */
     @Override
-    public StructureParameterBase deepCopy() {
-        return new StructureParameterBool(getName(), false, false);
+    public StaticParameterBase deepCopy() {
+        return new StaticParameterString(getName(), "", false);
     }
-
 }

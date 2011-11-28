@@ -24,9 +24,9 @@ package org.finroc.core.thread;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.finstructable.Group;
-import org.finroc.core.parameter.StructureParameterBool;
-import org.finroc.core.parameter.StructureParameterNumeric;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterBool;
+import org.finroc.core.parameter.StaticParameterNumeric;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
@@ -43,13 +43,13 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 public class ThreadContainer extends Group implements StartAndPausable {
 
     /** Should this container contain a real-time thread? */
-    private final StructureParameterBool rtThread = new StructureParameterBool("Realtime Thread", false);
+    private final StaticParameterBool rtThread = new StaticParameterBool("Realtime Thread", false);
 
     /** Thread cycle time */
-    private final StructureParameterNumeric<Integer> cycleTime = new StructureParameterNumeric<Integer>("Cycle Time", 40, new Bounds<Integer>(1, 60000, true));
+    private final StaticParameterNumeric<Integer> cycleTime = new StaticParameterNumeric<Integer>("Cycle Time", 40, new Bounds<Integer>(1, 60000, true));
 
     /** Warn on cycle time exceed */
-    private final StructureParameterBool warnOnCycleTimeExceed = new StructureParameterBool("Warn on cycle time exceed", true);
+    private final StaticParameterBool warnOnCycleTimeExceed = new StaticParameterBool("Warn on cycle time exceed", true);
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
@@ -65,9 +65,9 @@ public class ThreadContainer extends Group implements StartAndPausable {
      */
     public ThreadContainer(FrameworkElement parent, @Const @Ref String description) {
         super(parent, description);
-        StructureParameterList.getOrCreate(this).add(rtThread);
-        StructureParameterList.getOrCreate(this).add(cycleTime);
-        StructureParameterList.getOrCreate(this).add(warnOnCycleTimeExceed);
+        StaticParameterList.getOrCreate(this).add(rtThread);
+        StaticParameterList.getOrCreate(this).add(cycleTime);
+        StaticParameterList.getOrCreate(this).add(warnOnCycleTimeExceed);
         addAnnotation(new ExecutionControl(this));
     }
 

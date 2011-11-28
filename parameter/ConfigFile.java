@@ -176,11 +176,19 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * set parameters of all child nodes to current values in tree
      */
     public void loadParameterValues() {
-        FrameworkElement ann = (FrameworkElement)getAnnotated();
-        assert(ann != null);
-        synchronized (ann.getRegistryLock()) { // nothing should change while we're doing this
+        loadParameterValues((FrameworkElement)getAnnotated());
+    }
+
+    /**
+     * set parameters of all framework element's child nodes to current values in tree
+     *
+     * @param fe Framework element
+     */
+    public void loadParameterValues(FrameworkElement fe) {
+        assert(fe != null);
+        synchronized (fe.getRegistryLock()) { // nothing should change while we're doing this
             FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
-            fet.traverseElementTree(ann, this, true, tempBuffer);
+            fet.traverseElementTree(fe, this, true, tempBuffer);
         }
     }
 

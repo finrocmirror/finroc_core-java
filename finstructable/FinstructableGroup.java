@@ -29,9 +29,9 @@ import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.ParameterInfo;
-import org.finroc.core.parameter.StructureParameterBase;
-import org.finroc.core.parameter.StructureParameterString;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterBase;
+import org.finroc.core.parameter.StaticParameterString;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.plugin.StandardCreateModuleAction;
@@ -65,10 +65,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
 public class FinstructableGroup extends FrameworkElement implements FrameworkElementTreeFilter.Callback<XMLNode> {
 
     /** contains name of XML to use */
-    private StructureParameterString xmlFile = new StructureParameterString("XML file", "");
-
-    /** contains name of XML that is currently used (variable is used to detect changes to xmlFile parameter) */
-    private String currentXmlFile = "";
+    private StaticParameterString xmlFile = new StaticParameterString("XML file", "");
 
     /** Log domain for edges */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"finstructable\");")
@@ -93,7 +90,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
     public FinstructableGroup(FrameworkElement parent, @Const @Ref String name) {
         super(parent, name, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
-        addAnnotation(new StructureParameterList(xmlFile));
+        addAnnotation(new StaticParameterList(xmlFile));
     }
 
     /**
@@ -112,20 +109,13 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     @Override
-    public void postChildInit() {
-        super.postChildInit();
-        structureParametersChanged();
-    }
-
-    @Override
-    public synchronized void structureParametersChanged() {
-        if (!currentXmlFile.equals(xmlFile.getValue().toString())) {
-            currentXmlFile = xmlFile.get();
+    public synchronized void evaluateStaticParameters() {
+        if (xmlFile.hasChanged()) {
             //if (this.childCount() == 0) { // TODO: original intension: changing xml files to mutliple existing ones in finstruct shouldn't load all of them
-            if (Files.finrocFileExists(currentXmlFile)) {
-                loadXml(currentXmlFile);
+            if (Files.finrocFileExists(xmlFile.get())) {
+                loadXml(xmlFile.get());
             } else {
-                log(LogLevel.LL_WARNING, logDomain, "Cannot find XML file " + currentXmlFile + ". Creating empty group. You may edit and save this group using finstruct.");
+                log(LogLevel.LL_WARNING, logDomain, "Cannot find XML file " + xmlFile.get() + ". Creating empty group. You may edit and save this group using finstruct.");
             }
         }
     }
@@ -148,9 +138,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
                 for (XMLNode.ConstChildIterator node = root.getChildrenBegin(); node.get() != root.getChildrenEnd(); node.next()) {
                     String name = node.get().getName();
-                    if (name.equals("structureparameter")) {
-                        StructureParameterList spl = StructureParameterList.getOrCreate(this);
-                        spl.add(new StructureParameterBase(node.get().getStringAttribute("name"), new DataTypeBase(null), false, true));
+                    if (name.equals("staticparameter")) {
+                        StaticParameterList spl = StaticParameterList.getOrCreate(this);
+                        spl.add(new StaticParameterBase(node.get().getStringAttribute("name"), new DataTypeBase(null), false, true));
                     } else if (name.equals("element")) {
                         instantiate(node.get(), this);
                     } else if (name.equals("edge")) {
@@ -253,11 +243,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
             created = action.createModule(parent, name, spl);
             created.setFinstructed(action, spl);
-            created.init();
             if (parameters != null) {
-                ((StructureParameterList)created.getAnnotation(StructureParameterList.TYPE)).deserialize(parameters);
-                created.structureParametersChanged();
+                ((StaticParameterList)created.getAnnotation(StaticParameterList.TYPE)).deserialize(parameters);
             }
+            created.init();
 
             // continue with children
             for (; childNode.get() != node.getChildrenEnd(); childNode.next()) {
@@ -322,10 +311,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      */
     public void saveXml() throws Exception {
         synchronized (getRegistryLock()) {
-            String saveTo = Files.getFinrocFileToSaveTo(currentXmlFile);
+            String saveTo = Files.getFinrocFileToSaveTo(xmlFile.get());
             if (saveTo.length() == 0) {
-                String saveToAlt = Files.getFinrocFileToSaveTo(currentXmlFile.replace('/', '_'));
-                log(LogLevel.LL_ERROR, logDomain, "There does not seem to be any suitable location for: '" + currentXmlFile + "' . For now, using '" + saveToAlt + "'.");
+                String saveToAlt = Files.getFinrocFileToSaveTo(xmlFile.get().replace('/', '_'));
+                log(LogLevel.LL_ERROR, logDomain, "There does not seem to be any suitable location for: '" + xmlFile.get() + "' . For now, using '" + saveToAlt + "'.");
                 saveTo = saveToAlt;
             }
             log(LogLevel.LL_USER, logDomain, "Saving XML: " + saveTo);
@@ -339,12 +328,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 }
 
                 // serialize proxy parameters
-                StructureParameterList spl = getAnnotation(StructureParameterList.class);
+                StaticParameterList spl = getAnnotation(StaticParameterList.class);
                 if (spl != null) {
                     for (@SizeT int i = 0; i < spl.size(); i++) {
-                        StructureParameterBase sp = spl.get(i);
-                        if (sp.isStructureParameterProxy()) {
-                            @Ref XMLNode proxy = root.addChildNode("structureparameter");
+                        StaticParameterBase sp = spl.get(i);
+                        if (sp.isStaticParameterProxy()) {
+                            @Ref XMLNode proxy = root.addChildNode("staticparameter");
                             proxy.setAttribute("name", sp.getName());
                         }
                     }
@@ -521,7 +510,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         ChildIterator ci = new ChildIterator(current);
         FrameworkElement fe = null;
         while ((fe = ci.next()) != null) {
-            StructureParameterList spl = (StructureParameterList)fe.getAnnotation(StructureParameterList.TYPE);
+            StaticParameterList spl = (StaticParameterList)fe.getAnnotation(StaticParameterList.TYPE);
             ConstructorParameters cps = (ConstructorParameters)fe.getAnnotation(ConstructorParameters.TYPE);
             if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED)) {
 
@@ -582,7 +571,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public static void scanForCommandLineArgsHelper(SimpleList<String> result, @Const @Ref XMLNode parent) throws XML2WrapperException {
         for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
             String name = node.get().getName();
-            if (node.get().hasAttribute("cmdline") && (name.equals("structureparameter") || name.equals("parameter"))) {
+            if (node.get().hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {
                 result.add(node.get().getStringAttribute("cmdline"));
             }
             scanForCommandLineArgsHelper(result, node.get());

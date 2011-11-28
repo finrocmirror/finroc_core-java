@@ -31,8 +31,8 @@ import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.ParameterInfo;
-import org.finroc.core.parameter.StructureParameterBase;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterBase;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.AbstractPort;
@@ -349,7 +349,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                 if (cma.getParameterTypes() != null) {
                     cma.getParameterTypes().serialize(co);
                 } else {
-                    StructureParameterList.EMPTY.serialize(co);
+                    StaticParameterList.EMPTY.serialize(co);
                 }
             }
         }
@@ -404,7 +404,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                             @InCpp("rrlib::serialization::InputStream ci(paramsBuffer._get());")
                             @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer);
                             for (@SizeT int i = 0; i < params.size(); i++) {
-                                StructureParameterBase param = params.get(i);
+                                StaticParameterBase param = params.get(i);
                                 String s = ci.readString();
                                 try {
                                     param.set(s);

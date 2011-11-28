@@ -59,8 +59,10 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.log.LogStream;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
+import org.finroc.core.parameter.ConfigFile;
+import org.finroc.core.parameter.ConfigNode;
 import org.finroc.core.parameter.ConstructorParameters;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
@@ -698,6 +700,8 @@ public class FrameworkElement extends Annotatable {
             synchronized (flagMutex) {
                 flags |= CoreFlags.READY;
             }
+
+            doStaticParameterEvaluation();
 
             notifyAnnotationsInitialized();
         }
@@ -1473,11 +1477,58 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     * Called whenever a structure parameter on this framework element changed
+     * Trigger evaluation of static parameters in this framework element and all of its children.
+     * (This must never be called when thread in surrounding thread container is running.)
+     */
+    public void doStaticParameterEvaluation() {
+        synchronized (getRuntime().getRegistryLock()) {
+
+            StaticParameterList spl = (StaticParameterList)this.getAnnotation(StaticParameterList.TYPE);
+            if (spl != null) {
+
+                // Reevaluate parameters and check whether they have changed
+                boolean changed = false;
+                for (int i = 0; i < spl.size(); i++) {
+                    spl.get(i).loadValue(this);
+                    changed |= spl.get(i).hasChanged();
+                }
+
+                if (changed) {
+                    evaluateStaticParameters();
+
+                    // Reset change flags for all parameters
+                    for (int i = 0; i < spl.size(); i++) {
+                        spl.get(i).resetChanged();
+                    }
+
+                    // initialize any new child elements
+                    if (isReady()) {
+                        init();
+                    }
+                }
+            }
+
+            // evaluate children's static parameters
+            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            for (int i = 0, n = iterable.size(); i < n; i++) {
+                @Ptr Link child = iterable.get(i);
+                if (child != null && child.isPrimaryLink() && (!child.getChild().isDeleted())) {
+                    child.getChild().doStaticParameterEvaluation();
+                }
+            }
+        }
+    }
+
+    /**
+     * Called whenever static parameters of this framework element need to be (re)evaluated.
      * (can be overridden to handle this event)
+     *
+     * This typically happens at initialization and when user changes them via finstruct.
+     * (This is never called when thread in surrounding thread container is running.)
+     * (This must only be called with lock on runtime registry.)
      */
     @Virtual
-    public void structureParametersChanged() {}
+    protected void evaluateStaticParameters() {}
 
     /**
      * Releases all automatically acquired locks
@@ -1515,11 +1566,40 @@ public class FrameworkElement extends Annotatable {
     @InCppFile
     public void setFinstructed(CreateFrameworkElementAction createAction, ConstructorParameters params) {
         assert(!getFlag(CoreFlags.FINSTRUCTED));
-        StructureParameterList list = StructureParameterList.getOrCreate(this);
+        StaticParameterList list = StaticParameterList.getOrCreate(this);
         list.setCreateAction(createAction);
         setFlag(CoreFlags.FINSTRUCTED);
         if (params != null) {
             addAnnotation(params);
+        }
+    }
+
+    /**
+     * @param node Common parent config file node for all child parameter config entries (starting with '/' => absolute link - otherwise relative).
+     */
+    public void setConfigNode(String node) {
+        synchronized (getRuntime().getRegistryLock()) {
+            ConfigNode cn = (ConfigNode)getAnnotation(ConfigNode.TYPE);
+            if (cn != null) {
+                if (cn.node.equals(node)) {
+                    return;
+                }
+                cn.node = node;
+            } else {
+                cn = new ConfigNode(node);
+                addAnnotation(cn);
+            }
+
+            // reevaluate static parameters
+            doStaticParameterEvaluation();
+
+            // reload parameters
+            if (isReady()) {
+                ConfigFile cf = ConfigFile.find(this);
+                if (cf != null) {
+                    cf.loadParameterValues(this);
+                }
+            }
         }
     }
 

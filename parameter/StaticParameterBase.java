@@ -44,6 +44,7 @@ import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.Serialization;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 import org.rrlib.finroc_core_utils.serialization.TypedObject;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
@@ -51,11 +52,11 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
 /**
  * @author max
  *
- * Structure Parameter class
+ * Static Parameter class
  * (Generic base class without template type)
  */
-@Ptr @Friend(StructureParameterList.class)
-public class StructureParameterBase implements HasDestructor {
+@Ptr @Friend(StaticParameterList.class)
+public class StaticParameterBase implements HasDestructor {
 
     /** Name of parameter */
     private String name;
@@ -66,13 +67,19 @@ public class StructureParameterBase implements HasDestructor {
     /** Current parameter value (in CreateModuleAction-prototypes this is null) */
     private @Ptr GenericObject value;
 
+    /** Last parameter value (to detect whether value has changed) */
+    private @Ptr GenericObject lastValue;
+
+    /** Is current value enforced (typically hard-coded)? In this case, any config file entries or command line parameters are ignored */
+    private boolean enforceCurrentValue;
+
     /**
-     * StructureParameterBase whose value buffer to use.
+     * StaticParameterBase whose value buffer to use.
      * Typically, this is set to this.
      * However, it is possible to attach this parameter to another (outer) parameter.
      * In this case they share the same buffer: This parameter uses useValueOf.valPointer(), too.
      */
-    private @Ptr StructureParameterBase useValueOf = this;
+    private @Ptr StaticParameterBase useValueOf = this;
 
     /** Index in parameter list */
     protected int listIndex;
@@ -92,7 +99,7 @@ public class StructureParameterBase implements HasDestructor {
     private String commandLineOption = "";
 
     /**
-     * Name of outer parameter if parameter is configured by structure parameter of finstructable group
+     * Name of outer parameter if parameter is configured by static parameter of finstructable group
      * (usually set by finstructable group containing module with this parameter)
      */
     private String outerParameterAttachment = "";
@@ -103,13 +110,14 @@ public class StructureParameterBase implements HasDestructor {
     /**
      * Place in Configuration tree, this parameter is configured from (nodes are separated with '/')
      * (usually set by finstructable group containing module with this parameter)
+     * (starting with '/' => absolute link - otherwise relative)
      */
     private String configEntry = "";
 
     /** Was configEntry set by finstruct? */
     private boolean configEntrySetByFinstruct;
 
-    /** Is this a proxy for other structure parameters? (as used in finstructable groups) */
+    /** Is this a proxy for other static parameters? (as used in finstructable groups) */
     private boolean structureParameterProxy;
 
     /** Log domain for this class */
@@ -118,7 +126,7 @@ public class StructureParameterBase implements HasDestructor {
 
     /** Constructor for remote parameters */
     @JavaOnly
-    public StructureParameterBase() {
+    public StaticParameterBase() {
         remote = true;
     }
 
@@ -127,7 +135,7 @@ public class StructureParameterBase implements HasDestructor {
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
      */
-    public StructureParameterBase(String name, DataTypeBase type, boolean constructorPrototype) {
+    public StaticParameterBase(String name, DataTypeBase type, boolean constructorPrototype) {
         this(name, type, constructorPrototype, false);
     }
 
@@ -136,7 +144,7 @@ public class StructureParameterBase implements HasDestructor {
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
      */
-    public StructureParameterBase(String name, DataTypeBase type, boolean constructorPrototype, @CppDefault("false") boolean structureParameterProxy) {
+    public StaticParameterBase(String name, DataTypeBase type, boolean constructorPrototype, @CppDefault("false") boolean structureParameterProxy) {
         this.name = name;
         this.type = type;
         this.structureParameterProxy = structureParameterProxy;
@@ -157,6 +165,7 @@ public class StructureParameterBase implements HasDestructor {
         os.writeBoolean(createOuterParameter);
         os.writeString(configEntry);
         os.writeBoolean(configEntrySetByFinstruct);
+        os.writeBoolean(enforceCurrentValue);
         TypedObject val = valPointer();
 
         //JavaOnlyBlock
@@ -190,6 +199,7 @@ public class StructureParameterBase implements HasDestructor {
         createOuterParameter = is.readBoolean();
         String configEntryTmp = is.readString();
         configEntrySetByFinstruct = is.readBoolean();
+        enforceCurrentValue = is.readBoolean();
         updateOuterParameterAttachment(parameterized);
         updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp, parameterized);
 
@@ -213,40 +223,7 @@ public class StructureParameterBase implements HasDestructor {
         configEntry = configEntryTmp;
 
         if (useValueOf == this && (cmdlineChanged || configEntryChanged)) {
-
-            // command line
-            FrameworkElement fg = parameterized.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
-            if (commandLineOption.length() > 0 && (fg == null || fg.getParent() == RuntimeEnvironment.getInstance())) { // outermost group?
-                String arg = RuntimeEnvironment.getInstance().getCommandLineArgument(commandLineOption);
-                if (arg.length() > 0) {
-                    try {
-                        set(arg);
-                        return;
-                    } catch (Exception e) {
-                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
-                    }
-                }
-            }
-
-            // config entry
-            if (configEntry.length() > 0) {
-                if (configEntrySetByFinstruct) {
-                    if (fg == null || (!((FinstructableGroup)fg).isResponsibleForConfigFileConnections(parameterized))) {
-                        return;
-                    }
-                }
-                ConfigFile cf = ConfigFile.find(parameterized);
-                if (cf != null) {
-                    if (cf.hasEntry(configEntry)) {
-                        @Ref XMLNode node = cf.getEntry(configEntry, false);
-                        try {
-                            value.deserialize(node);
-                        } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + configEntry + "': ", e);
-                        }
-                    }
-                }
-            }
+            loadValue(parameterized);
         }
     }
 
@@ -265,7 +242,7 @@ public class StructureParameterBase implements HasDestructor {
                 attachTo(this);
             }
         } else {
-            StructureParameterBase sp = getParameterWithBuffer();
+            StaticParameterBase sp = getParameterWithBuffer();
             if (!sp.getName().equals(outerParameterAttachment)) {
 
                 // find parameter to attach to
@@ -275,7 +252,7 @@ public class StructureParameterBase implements HasDestructor {
                     return;
                 }
 
-                StructureParameterList spl = StructureParameterList.getOrCreate(fg);
+                StaticParameterList spl = StaticParameterList.getOrCreate(fg);
                 for (@SizeT int i = 0; i < spl.size(); i++) {
                     sp = spl.get(i);
                     if (sp.getName().equals(outerParameterAttachment)) {
@@ -285,7 +262,7 @@ public class StructureParameterBase implements HasDestructor {
                 }
 
                 if (createOuterParameter) {
-                    sp = new StructureParameterBase(outerParameterAttachment, type, false, true);
+                    sp = new StaticParameterBase(outerParameterAttachment, type, false, true);
                     attachTo(sp);
                     spl.add(sp);
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
@@ -306,7 +283,6 @@ public class StructureParameterBase implements HasDestructor {
 
     @Override
     public void delete() {
-        //Cpp delete value;
     }
 
     /**
@@ -369,7 +345,7 @@ public class StructureParameterBase implements HasDestructor {
      * @param type Type
      */
     private void createBuffer(DataTypeBase type) {
-        StructureParameterBase sp = getParameterWithBuffer();
+        StaticParameterBase sp = getParameterWithBuffer();
 
         //Cpp delete sp->value;
         sp.value = type.createInstanceGeneric(null);
@@ -418,6 +394,9 @@ public class StructureParameterBase implements HasDestructor {
         if (val.getType() != type || structureParameterProxy) {
             node.setAttribute("type", val.getType().getName());
         }
+        if (enforceCurrentValue) {
+            node.setAttribute("enforcevalue", true);
+        }
         val.serialize(node);
 
         if (commandLineOption.length() > 0) {
@@ -436,6 +415,7 @@ public class StructureParameterBase implements HasDestructor {
         if (node.hasAttribute("type")) {
             dt = DataTypeBase.findType(node.getStringAttribute("type"));
         }
+        enforceCurrentValue = node.hasAttribute("enforcevalue") && node.getBoolAttribute("enforcevalue");
         TypedObject val = valPointer();
         if (val == null || val.getType() != dt) {
             createBuffer(dt);
@@ -471,7 +451,7 @@ public class StructureParameterBase implements HasDestructor {
      * (should be overridden by subclasses)
      * @return Deep copy of parameter (without value)
      */
-    public @Managed StructureParameterBase deepCopy() {
+    public @Managed StaticParameterBase deepCopy() {
         throw new RuntimeException("Unsupported");
     }
 
@@ -494,7 +474,7 @@ public class StructureParameterBase implements HasDestructor {
     }
 
     /**
-     * @return Name of outer parameter if parameter is configured by structure parameter of finstructable group
+     * @return Name of outer parameter if parameter is configured by static parameter of finstructable group
      * (set by finstructable group containing module with this parameter)
      */
     @JavaOnly
@@ -542,9 +522,9 @@ public class StructureParameterBase implements HasDestructor {
     }
 
     /**
-     * @return Is this a proxy for other structure parameters? (only used in finstructable groups)
+     * @return Is this a proxy for other static parameters? (only used in finstructable groups)
      */
-    public boolean isStructureParameterProxy() {
+    public boolean isStaticParameterProxy() {
         return structureParameterProxy;
     }
 
@@ -553,7 +533,7 @@ public class StructureParameterBase implements HasDestructor {
      *
      * @return Parameter containing buffer we are using/sharing.
      */
-    private StructureParameterBase getParameterWithBuffer() {
+    private StaticParameterBase getParameterWithBuffer() {
         if (useValueOf == this) {
             return this;
         }
@@ -561,14 +541,14 @@ public class StructureParameterBase implements HasDestructor {
     }
 
     /**
-     * Attach this structure parameter to another one.
+     * Attach this static parameter to another one.
      * They will share the same value/buffer.
      *
      * @param other Other parameter to attach this one to. Use null or this to detach.
      */
-    public void attachTo(StructureParameterBase other) {
+    public void attachTo(StaticParameterBase other) {
         useValueOf = other == null ? this : other;
-        StructureParameterBase sp = getParameterWithBuffer();
+        StaticParameterBase sp = getParameterWithBuffer();
         if (sp.type.getInfo() == null) {
             sp.type = type;
         }
@@ -580,6 +560,75 @@ public class StructureParameterBase implements HasDestructor {
                 GenericObject tmp = sp.value;
                 sp.value = value;
                 value = tmp;
+            }
+        }
+    }
+
+    /**
+     * Reset "changed flag".
+     * The current value will now be the one any new value is compared with when
+     * checking whether value has changed.
+     */
+    public void resetChanged() {
+        StaticParameterBase sp = getParameterWithBuffer();
+
+        if (sp.lastValue == null || sp.lastValue.getType() != sp.value.getType()) {
+            sp.lastValue = sp.value.getType().createInstanceGeneric(null);
+            assert(sp.lastValue != null);
+        }
+
+        Serialization.deepCopy(sp.value, sp.lastValue, null);
+    }
+
+    /**
+     * @return Has parameter changed since last call to "resetChanged" (or creation).
+     */
+    public boolean hasChanged() {
+        StaticParameterBase sp = getParameterWithBuffer();
+        return !Serialization.equals(sp.value, sp.lastValue);
+    }
+
+    /**
+     * Load value (from any config file entries or command line or whereever)
+     *
+     * @param parent Parent framework element
+     */
+    public void loadValue(FrameworkElement parent) {
+        if (!enforceCurrentValue) {
+
+            // command line
+            FrameworkElement fg = parent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+            if (commandLineOption.length() > 0 && (fg == null || fg.getParent() == RuntimeEnvironment.getInstance())) { // outermost group?
+                String arg = RuntimeEnvironment.getInstance().getCommandLineArgument(commandLineOption);
+                if (arg.length() > 0) {
+                    try {
+                        set(arg);
+                        return;
+                    } catch (Exception e) {
+                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
+                    }
+                }
+            }
+
+            // config entry
+            if (configEntry.length() > 0) {
+                if (configEntrySetByFinstruct) {
+                    if (fg == null || (!((FinstructableGroup)fg).isResponsibleForConfigFileConnections(parent))) {
+                        return;
+                    }
+                }
+                ConfigFile cf = ConfigFile.find(parent);
+                String fullConfigEntry = ConfigNode.getFullConfigEntry(parent, configEntry);
+                if (cf != null) {
+                    if (cf.hasEntry(fullConfigEntry)) {
+                        @Ref XMLNode node = cf.getEntry(fullConfigEntry, false);
+                        try {
+                            value.deserialize(node);
+                        } catch (Exception e) {
+                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                        }
+                    }
+                }
             }
         }
     }

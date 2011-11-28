@@ -24,8 +24,8 @@ package org.finroc.core.finstructable;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.PortCreationList;
-import org.finroc.core.parameter.StructureParameter;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameter;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.ConstructorCreateModuleAction;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.EdgeAggregator;
@@ -53,7 +53,7 @@ public class GroupInterface extends PortGroup {
     public enum PortDirection { INPUT_ONLY, OUTPUT_ONLY, BOTH }
 
     /** List of ports */
-    private StructureParameter<PortCreationList> ports = new StructureParameter<PortCreationList>("Ports", PortCreationList.TYPE);
+    private StaticParameter<PortCreationList> ports = new StaticParameter<PortCreationList>("Ports", PortCreationList.TYPE);
 
     /** CreateModuleAction */
     @SuppressWarnings("unused") @PassByValue
@@ -74,7 +74,7 @@ public class GroupInterface extends PortGroup {
      */
     public GroupInterface(FrameworkElement parent, @Const @Ref String description) {
         super(parent, description, EdgeAggregator.IS_INTERFACE, 0);
-        addAnnotation(new StructureParameterList(ports));
+        addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
 
@@ -91,7 +91,7 @@ public class GroupInterface extends PortGroup {
      */
     public GroupInterface(FrameworkElement parent, @Const @Ref String description, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
         super(parent, description, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
-        addAnnotation(new StructureParameterList(ports));
+        addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);
     }
 

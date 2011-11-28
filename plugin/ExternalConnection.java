@@ -33,8 +33,8 @@ import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.core.parameter.StructureParameterString;
-import org.finroc.core.parameter.StructureParameterList;
+import org.finroc.core.parameter.StaticParameterString;
+import org.finroc.core.parameter.StaticParameterList;
 
 /**
  * @author max
@@ -66,7 +66,7 @@ public abstract class ExternalConnection extends FrameworkElement {
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
     /** if set, this module automatically connects to this address */
-    private StructureParameterString autoConnectTo = new StructureParameterString("Autoconnect to", "");
+    private StaticParameterString autoConnectTo = new StaticParameterString("Autoconnect to", "");
 
     /**
      * @param description Description of class
@@ -74,7 +74,7 @@ public abstract class ExternalConnection extends FrameworkElement {
      */
     public ExternalConnection(String description, String defaultAddress) {
         super(RuntimeEnvironment.getInstance(), description, CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
-        StructureParameterList.getOrCreate(this).add(autoConnectTo);
+        StaticParameterList.getOrCreate(this).add(autoConnectTo);
         lastAddress = defaultAddress;
     }
 
@@ -217,7 +217,7 @@ public abstract class ExternalConnection extends FrameworkElement {
     }
 
     @Override
-    public void structureParametersChanged() {
+    public void evaluateStaticParameters() {
         String s = autoConnectTo.get();
         if (s.length() > 0) {
             if (!s.equals(lastAddress)) {

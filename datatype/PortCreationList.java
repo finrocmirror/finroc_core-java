@@ -61,7 +61,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
  * @author max
  *
  * List of ports to create.
- * Is only meant to be used in StructureParameters
+ * Is only meant to be used in StaticParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
 @Include( {"rrlib/serialization/Serializable.h", "rrlib/serialization/StlContainerSuitable.h"})
