@@ -24,6 +24,7 @@ package org.finroc.core.port;
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
@@ -77,7 +78,7 @@ public class EdgeAggregator extends FrameworkElement {
     static void edgeAdded(AbstractPort source, AbstractPort target) {
         EdgeAggregator src = getAggregator(source);
         EdgeAggregator dest = getAggregator(target);
-        if (src != null && dest != null) {
+        if (src != null && dest != null && (!FinrocTypeInfo.isMethodType(source.getDataType()))) {
             //System.out.println("edgeAdded: " + src.getQualifiedName() + "->" + dest.getQualifiedName() + " (because of " + source.getQualifiedName() + "->" + target.getQualifiedName() + ")");
             src.edgeAdded(dest);
         }
@@ -93,7 +94,7 @@ public class EdgeAggregator extends FrameworkElement {
     static void edgeRemoved(AbstractPort source, AbstractPort target) {
         EdgeAggregator src = getAggregator(source);
         EdgeAggregator dest = getAggregator(target);
-        if (src != null && dest != null) {
+        if (src != null && dest != null && (!FinrocTypeInfo.isMethodType(source.getDataType()))) {
             //System.out.println("edgeRemoved: " + src.getQualifiedName() + "->" + dest.getQualifiedName() + " (because of " + source.getQualifiedName() + "->" + target.getQualifiedName() + ")");
             src.edgeRemoved(dest);
         }

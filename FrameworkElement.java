@@ -51,6 +51,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.annotation.SpinLock;
 import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
+import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
@@ -62,6 +63,7 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConfigNode;
 import org.finroc.core.parameter.ConstructorParameters;
+import org.finroc.core.parameter.StaticParameterBase;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.port.AbstractPort;
@@ -1483,14 +1485,20 @@ public class FrameworkElement extends Annotatable {
     public void doStaticParameterEvaluation() {
         synchronized (getRuntime().getRegistryLock()) {
 
+            // all parameters attached to any of the module's parameters
+            SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
+            SimpleList<StaticParameterBase> attachedParametersTmp = new SimpleList<StaticParameterBase>();
+
             StaticParameterList spl = (StaticParameterList)this.getAnnotation(StaticParameterList.TYPE);
             if (spl != null) {
 
                 // Reevaluate parameters and check whether they have changed
                 boolean changed = false;
                 for (int i = 0; i < spl.size(); i++) {
-                    spl.get(i).loadValue(this);
+                    spl.get(i).loadValue();
                     changed |= spl.get(i).hasChanged();
+                    spl.get(i).getAllAttachedParameters(attachedParametersTmp);
+                    attachedParameters.addAll(attachedParametersTmp);
                 }
 
                 if (changed) {
@@ -1514,6 +1522,13 @@ public class FrameworkElement extends Annotatable {
                 @Ptr Link child = iterable.get(i);
                 if (child != null && child.isPrimaryLink() && (!child.getChild().isDeleted())) {
                     child.getChild().doStaticParameterEvaluation();
+                }
+            }
+
+            // evaluate any attached parameters that have changed, too
+            for (int i = 0; i < attachedParameters.size(); i++) {
+                if (attachedParameters.get(i).hasChanged()) {
+                    attachedParameters.get(i).getParentList().getAnnotated().doStaticParameterEvaluation();
                 }
             }
         }

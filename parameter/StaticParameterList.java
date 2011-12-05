@@ -107,7 +107,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
             int newSize = is.readInt();
             for (@SizeT int i = 0; i < newSize; i++) {
                 StaticParameterBase param = new StaticParameterBase();
-                param.deserialize(is, null);
+                param.deserialize(is);
                 add(param);
             }
 
@@ -120,7 +120,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
             FrameworkElement ann = (FrameworkElement)getAnnotated();
             for (@SizeT int i = 0; i < parameters.size(); i++) {
                 StaticParameterBase param = parameters.get(i);
-                param.deserialize(is, ann);
+                param.deserialize(is);
             }
             ann.doStaticParameterEvaluation();
         }
@@ -166,6 +166,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     public void add(StaticParameterBase param) {
         if (param != null) {
             param.listIndex = parameters.size();
+            param.parentList = this;
             parameters.add(param);
         }
     }
@@ -230,8 +231,13 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
         XMLNode.ConstChildIterator child = node.getChildrenBegin();
         for (int i = 0; i < count; i++) {
             StaticParameterBase param = get(i);
-            param.deserialize(child.get(), finstructContext, (FrameworkElement)getAnnotated());
+            param.deserialize(child.get(), finstructContext);
             child.next();
         }
+    }
+
+    @Override
+    public FrameworkElement getAnnotated() {
+        return (FrameworkElement)super.getAnnotated();
     }
 }

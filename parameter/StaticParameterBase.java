@@ -37,6 +37,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Managed;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
+import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -81,6 +82,9 @@ public class StaticParameterBase implements HasDestructor {
      */
     private @Ptr StaticParameterBase useValueOf = this;
 
+    /** List that this structure parameter is member of */
+    protected StaticParameterList parentList;
+
     /** Index in parameter list */
     protected int listIndex;
 
@@ -119,6 +123,9 @@ public class StaticParameterBase implements HasDestructor {
 
     /** Is this a proxy for other static parameters? (as used in finstructable groups) */
     private boolean structureParameterProxy;
+
+    /** List of attached parameters */
+    private SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"parameters\");")
@@ -181,7 +188,7 @@ public class StaticParameterBase implements HasDestructor {
         }
     }
 
-    public void deserialize(InputStreamBuffer is, FrameworkElement parameterized) {
+    public void deserialize(InputStreamBuffer is) {
         if (remoteValue()) {
 
             //JavaOnlyBlock
@@ -200,8 +207,8 @@ public class StaticParameterBase implements HasDestructor {
         String configEntryTmp = is.readString();
         configEntrySetByFinstruct = is.readBoolean();
         enforceCurrentValue = is.readBoolean();
-        updateOuterParameterAttachment(parameterized);
-        updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp, parameterized);
+        updateOuterParameterAttachment();
+        updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp);
 
         if (is.readBoolean()) {
             try {
@@ -216,25 +223,23 @@ public class StaticParameterBase implements HasDestructor {
      * Set commandLineOption and configEntry.
      * Check if they changed and possibly load value.
      */
-    private void updateAndPossiblyLoad(String commandLineOptionTmp, String configEntryTmp, FrameworkElement parameterized) {
+    private void updateAndPossiblyLoad(String commandLineOptionTmp, String configEntryTmp) {
         boolean cmdlineChanged = !commandLineOption.equals(commandLineOptionTmp);
         boolean configEntryChanged = !configEntry.equals(configEntryTmp);
         commandLineOption = commandLineOptionTmp;
         configEntry = configEntryTmp;
 
         if (useValueOf == this && (cmdlineChanged || configEntryChanged)) {
-            loadValue(parameterized);
+            loadValue();
         }
     }
 
     /**
      * Check whether change to outerParameterAttachment occured and perform any
      * changes required.
-     *
-     * @param parameterized Parameterized framework element.
      */
-    private void updateOuterParameterAttachment(FrameworkElement parameterized) {
-        if (parameterized == null) {
+    private void updateOuterParameterAttachment() {
+        if (parentList == null) {
             return;
         }
         if (outerParameterAttachment.length() == 0) {
@@ -246,7 +251,7 @@ public class StaticParameterBase implements HasDestructor {
             if (!sp.getName().equals(outerParameterAttachment)) {
 
                 // find parameter to attach to
-                FrameworkElement fg = parameterized.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+                FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
                 if (fg == null) {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "No parent finstructable group. Ignoring...");
                     return;
@@ -265,7 +270,7 @@ public class StaticParameterBase implements HasDestructor {
                     sp = new StaticParameterBase(outerParameterAttachment, type, false, true);
                     attachTo(sp);
                     spl.add(sp);
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
+                    logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
                 } else {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "No parameter named '" + outerParameterAttachment + "' found in parent group.");
                 }
@@ -410,7 +415,7 @@ public class StaticParameterBase implements HasDestructor {
         }
     }
 
-    public void deserialize(XMLNode node, boolean finstructContext, FrameworkElement parameterized) throws Exception {
+    public void deserialize(XMLNode node, boolean finstructContext) throws Exception {
         DataTypeBase dt = type;
         if (node.hasAttribute("type")) {
             dt = DataTypeBase.findType(node.getStringAttribute("type"));
@@ -431,10 +436,10 @@ public class StaticParameterBase implements HasDestructor {
         }
         if (node.hasAttribute("attachouter")) {
             outerParameterAttachment = node.getStringAttribute("attachouter");
-            updateOuterParameterAttachment(parameterized);
+            updateOuterParameterAttachment();
         } else {
             outerParameterAttachment = "";
-            updateOuterParameterAttachment(parameterized);
+            updateOuterParameterAttachment();
         }
         String configEntryTmp;
         if (node.hasAttribute("config")) {
@@ -444,7 +449,7 @@ public class StaticParameterBase implements HasDestructor {
             configEntryTmp = "";
         }
 
-        updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp, parameterized);
+        updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp);
     }
 
     /**
@@ -547,7 +552,14 @@ public class StaticParameterBase implements HasDestructor {
      * @param other Other parameter to attach this one to. Use null or this to detach.
      */
     public void attachTo(StaticParameterBase other) {
+        if (useValueOf != this) {
+            useValueOf.attachedParameters.removeElem(this);
+        }
         useValueOf = other == null ? this : other;
+        if (useValueOf != this) {
+            useValueOf.attachedParameters.add(this);
+        }
+
         StaticParameterBase sp = getParameterWithBuffer();
         if (sp.type.getInfo() == null) {
             sp.type = type;
@@ -572,12 +584,12 @@ public class StaticParameterBase implements HasDestructor {
     public void resetChanged() {
         StaticParameterBase sp = getParameterWithBuffer();
 
-        if (sp.lastValue == null || sp.lastValue.getType() != sp.value.getType()) {
-            sp.lastValue = sp.value.getType().createInstanceGeneric(null);
-            assert(sp.lastValue != null);
+        if (lastValue == null || lastValue.getType() != sp.value.getType()) {
+            lastValue = sp.value.getType().createInstanceGeneric(null);
+            assert(lastValue != null);
         }
 
-        Serialization.deepCopy(sp.value, sp.lastValue, null);
+        Serialization.deepCopy(sp.value, lastValue, null);
     }
 
     /**
@@ -585,7 +597,7 @@ public class StaticParameterBase implements HasDestructor {
      */
     public boolean hasChanged() {
         StaticParameterBase sp = getParameterWithBuffer();
-        return !Serialization.equals(sp.value, sp.lastValue);
+        return !Serialization.equals(sp.value, lastValue);
     }
 
     /**
@@ -593,8 +605,10 @@ public class StaticParameterBase implements HasDestructor {
      *
      * @param parent Parent framework element
      */
-    public void loadValue(FrameworkElement parent) {
-        if (!enforceCurrentValue) {
+    public void loadValue() {
+
+        FrameworkElement parent = parentList.getAnnotated();
+        if (useValueOf == this && (!enforceCurrentValue)) {
 
             // command line
             FrameworkElement fg = parent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
@@ -628,6 +642,34 @@ public class StaticParameterBase implements HasDestructor {
                             logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * @return List that this structure parameter is member of
+     */
+    public StaticParameterList getParentList() {
+        return parentList;
+    }
+
+    /**
+     * @param result Result buffer for all attached parameters (including those from parameters this parameter is possibly (indirectly) attached to)
+     */
+    public void getAllAttachedParameters(SimpleList<StaticParameterBase> result) {
+        result.clear();
+        result.add(this);
+
+        for (int i = 0; i < result.size(); i++) {
+            StaticParameterBase param = result.get(i);
+            if (param.useValueOf != null && param.useValueOf != this && (!result.contains(param))) {
+                result.add(param.useValueOf);
+            }
+            for (int j = 0; j < param.attachedParameters.size(); i++) {
+                StaticParameterBase at = param.attachedParameters.get(j);
+                if (at != this && (!result.contains(at))) {
+                    result.add(at);
                 }
             }
         }
