@@ -377,7 +377,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public boolean isResponsibleForConfigFileConnections(FrameworkElement ap) {
         ConfigFile cf = ConfigFile.find(ap);
         if (cf == null) {
-            return false;
+            return this.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP) == null;
         }
         FrameworkElement configElement = (FrameworkElement)cf.getAnnotated();
         FrameworkElement responsible = configElement.getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? configElement : configElement.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
@@ -405,7 +405,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             if (info != null && info.hasNonDefaultFinstructInfo()) {
                 if (!isResponsibleForConfigFileConnections(ap)) {
 
-                    if (outermostGroup && info.getCommandLineOption().length() >= 0) {
+                    if (outermostGroup && info.getCommandLineOption().length() > 0) {
                         @Ref XMLNode config = root.addChildNode("parameter");
                         config.setAttribute("link", getEdgeLink(ap));
                         config.setAttribute("cmdline", info.getCommandLineOption());
