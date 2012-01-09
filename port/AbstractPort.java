@@ -117,6 +117,13 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /** Has port changed since last reset? (see constants above) */
     private volatile byte changed;
 
+    /**
+     * Has port changed since last reset? Flag for use by custom API - not used/accessed by core port classes.
+     * Defined here, because it shouldn't require any more memory due to alignment.
+     * Alternative would be letting the API allocate an extra memory block per port, just to store this.
+     */
+    private byte customChangedFlag;
+
     /** Type of port data */
     protected final @Const DataTypeBase dataType;
 
@@ -1295,5 +1302,19 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             return false;
         }
         return outgoingEdgesFinstructed.get(idx);
+    }
+
+    /**
+     * @return Has port changed since last reset? (Flag for use by custom API - not used/accessed by core port classes.)
+     */
+    byte getCustomChangedFlag() {
+        return customChangedFlag;
+    }
+
+    /**
+     * @param new_value New value for custom changed flag (for use by custom API - not used/accessed by core port classes.)
+     */
+    void setCustomChangedFlag(byte newValue) {
+        customChangedFlag = newValue;
     }
 }
