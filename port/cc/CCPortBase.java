@@ -334,6 +334,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         assert data.getObject().getType() != null : "Port data type not initialized";
         if (!(isInitialized() || INFORM_LISTENERS)) {
             printNotReadyMessage("Ignoring publishing request.");
+
+            // Possibly recycle
+            data.addLock();
+            data.releaseLock();
             return;
         }
 
