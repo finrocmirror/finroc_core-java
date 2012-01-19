@@ -87,8 +87,8 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
 
     @Override
     public void deserialize(StringInputStream is) throws Exception {
-        String s = is.readWhile("", StringInputStream.LETTER | StringInputStream.WHITESPACE, true);
-        value = s.toLowerCase().equals("true");
+        String s = is.readWhile("", StringInputStream.LETTER | StringInputStream.DIGIT | StringInputStream.WHITESPACE, true);
+        value = s.toLowerCase().equals("true") || s.equals("1");
     }
 
     public static @Const CoreBoolean getInstance(boolean value) {
