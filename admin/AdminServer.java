@@ -96,8 +96,8 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
  */
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements FrameworkElementTreeFilter.Callback<AdminServer.CallbackParameters>, Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
-        Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
-            Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
+    Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
+    Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
 
     /** Struct for callback parameters for GET_PARAMETER_INFO method */
     @Struct @AtFront

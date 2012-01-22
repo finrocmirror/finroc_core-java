@@ -154,7 +154,9 @@ public class InterfacePort extends AbstractPort {
     }
 
     @Override
-    public void notifyDisconnect() { /* don't do anything here... only in network ports */ }
+    public void notifyDisconnect() {
+        /* don't do anything here... only in network ports */
+    }
 
     @Override
     public void setMaxQueueLength(int length) {

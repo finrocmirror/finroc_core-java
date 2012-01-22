@@ -403,7 +403,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     // -59 = Constant
     // -58 to 63 absolute value
     static final byte INT64 = -64, INT32 = -63, INT16 = -62, FLOAT64 = -61,
-                                           FLOAT32 = -60, CONST = -59, MIN_BARRIER = -58;
+                      FLOAT32 = -60, CONST = -59, MIN_BARRIER = -58;
 
     @Override
     public void serialize(OutputStreamBuffer oos) {
