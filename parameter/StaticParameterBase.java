@@ -502,7 +502,6 @@ public class StaticParameterBase implements HasDestructor {
      * @return Place in Configuration tree, this parameter is configured from
      * (set by finstructable group containing module with this parameter)
      */
-    @JavaOnly
     public String getConfigEntry() {
         return configEntry;
     }
@@ -520,7 +519,6 @@ public class StaticParameterBase implements HasDestructor {
      * (set by finstructable group containing module with this parameter)
      * @param finstructSet Is outer parameter attachment set by finstruct?
      */
-    @JavaOnly
     public void setConfigEntry(String configEntry, @CppDefault("false") boolean finstructSet) {
         this.configEntry = configEntry;
         configEntrySetByFinstruct = finstructSet;

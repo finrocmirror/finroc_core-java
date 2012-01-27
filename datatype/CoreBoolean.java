@@ -36,6 +36,7 @@ import org.rrlib.finroc_core_utils.serialization.Copyable;
 import org.rrlib.finroc_core_utils.serialization.DataType;
 import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
@@ -51,7 +52,7 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
 @CppName("Boolean") @CppFilename("Boolean") @Superclass( {RRLibSerializable.class, CCType.class})
 @PostInclude("rrlib/serialization/DataType.h")
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Boolean>;"})
-public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType {
+public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType, NumericRepresentation {
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "bool");
@@ -122,5 +123,15 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     @Override
     public void copyFrom(@Const @Ref CoreBoolean source) {
         value = source.value;
+    }
+
+    @Override
+    public Number getNumericRepresentation() {
+        return value ? 1 : 0;
+    }
+
+    @Override
+    public String toString() {
+        return value ? "true" : "false";
     }
 }

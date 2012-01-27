@@ -28,6 +28,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.CppName;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.serialization.GenericChangeable;
+import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
 
 @JavaOnly
 @CppName("typeutil") @CppFilename("typeutil")
@@ -55,5 +56,6 @@ public class DataTypeUtil {
     public static void initCCTypes() {
         FinrocTypeInfo.get(CoreNumber.TYPE).init(FinrocTypeInfo.Type.CC);
         FinrocTypeInfo.get(CoreBoolean.TYPE).init(FinrocTypeInfo.Type.CC);
+        FinrocTypeInfo.get(NumericRepresentation.TYPE).init(FinrocTypeInfo.Type.CC);
     }
 }

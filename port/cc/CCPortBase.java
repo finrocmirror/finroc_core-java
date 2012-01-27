@@ -578,7 +578,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         // not the same thread: create auto-locked new container
         ThreadLocalCache tc = ThreadLocalCache.get();
-        CCPortDataManagerTL ccitc = tc.getUnusedBuffer(dataType);
+        CCPortDataManagerTL ccitc = tc.getUnusedBuffer(valC.getObject().getType());
         ccitc.refCounter = 1;
         for (;;) {
             ccitc.getObject().deepCopyFrom(valC.getObject(), null);
@@ -587,6 +587,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
             }
             val = value;
             valC = val.getContainer();
+            if (valC.getObject().getType() != ccitc.getObject().getType()) {
+                ccitc.recycleUnused();
+                ccitc = tc.getUnusedBuffer(valC.getObject().getType());
+                ccitc.refCounter = 1;
+            }
         }
     }
 

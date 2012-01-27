@@ -44,6 +44,7 @@ import org.rrlib.finroc_core_utils.serialization.Copyable;
 import org.rrlib.finroc_core_utils.serialization.DataType;
 import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
@@ -65,7 +66,7 @@ import org.finroc.core.portdatabase.MaxStringSerializationLength;
 @Superclass( {RRLibSerializable.class, Object.class, CCType.class})
 @PostInclude( {"rrlib/serialization/DataType.h", "Constant.h"})
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Number>;"})
-public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType {
+public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType, NumericRepresentation {
 
     /** UID */
     private static final long serialVersionUID = 8;
@@ -672,6 +673,25 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     @Override @JavaOnly
     public void deserialize(XMLNode node) throws Exception {
         deserialize(new StringInputStream(node.getTextContent()));
+    }
+
+    @Override
+    public Number getNumericRepresentation() {
+        switch (numType) {
+        case INT:
+            return intValue();
+        case LONG:
+            return longValue();
+        case DOUBLE:
+            return doubleValue();
+        case FLOAT:
+            return floatValue();
+        case CONSTANT:
+            return ((Constant)unit).getValue().getNumericRepresentation();
+        default:
+            // Should not happen
+            return (int)Float.NaN;
+        }
     }
 
     /*Cpp
