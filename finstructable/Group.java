@@ -46,8 +46,8 @@ public class Group extends PortGroup {
     private static final StandardCreateModuleAction<Group> CREATE_ACTION =
         new StandardCreateModuleAction<Group>("Group", Group.class);
 
-    public Group(FrameworkElement parent, @Const @Ref String description) {
-        super(parent, description, 0, 0);
+    public Group(FrameworkElement parent, @Const @Ref String name) {
+        super(parent, name, 0, 0);
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }

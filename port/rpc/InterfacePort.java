@@ -70,16 +70,16 @@ public class InterfacePort extends AbstractPort {
     /** Pool with diverse data buffers */
     final @Ptr MultiTypePortDataBufferPool bufPool;
 
-    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type) {
-        this(new PortCreationInfo(description, parent, dataType, 0), type, -1);
+    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type) {
+        this(new PortCreationInfo(name, parent, dataType, 0), type, -1);
     }
 
-    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags) {
-        this(new PortCreationInfo(description, parent, dataType, customFlags), type, -1);
+    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags) {
+        this(new PortCreationInfo(name, parent, dataType, customFlags), type, -1);
     }
 
-    public InterfacePort(String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags, int lockLevel) {
-        this(new PortCreationInfo(description, parent, dataType, customFlags), type, lockLevel);
+    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags, int lockLevel) {
+        this(new PortCreationInfo(name, parent, dataType, customFlags), type, lockLevel);
     }
 
     public InterfacePort(PortCreationInfo pci, Type type, int lockLevel) {

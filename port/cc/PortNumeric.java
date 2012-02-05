@@ -58,12 +58,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
         super(pci.derive(CoreNumber.TYPE));
     }
 
-    public PortNumeric(String description, boolean outputPort) {
-        this(new PortCreationInfo(description, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+    public PortNumeric(String name, boolean outputPort) {
+        this(new PortCreationInfo(name, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
 
-    public PortNumeric(String description, FrameworkElement parent, boolean outputPort) {
-        this(new PortCreationInfo(description, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+    public PortNumeric(String name, FrameworkElement parent, boolean outputPort) {
+        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
@@ -72,13 +72,13 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     }
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public PortNumeric(String description, boolean outputPort, Bounds<T> b) {
-        this(new PortCreationInfo(description, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
+    public PortNumeric(String name, boolean outputPort, Bounds<T> b) {
+        this(new PortCreationInfo(name, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
     }
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public PortNumeric(String description, FrameworkElement parent, boolean outputPort, Bounds<T> b) {
-        this(new PortCreationInfo(description, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
+    public PortNumeric(String name, FrameworkElement parent, boolean outputPort, Bounds<T> b) {
+        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
     }
 
     /**

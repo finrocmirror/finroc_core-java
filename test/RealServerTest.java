@@ -46,7 +46,7 @@ public class RealServerTest extends NetworkTestSuite {
 
         // create Server
         TCPServer server = new TCPServer(4444, true, null);
-        server.getDescription(); // dummy instruction... avoids warning
+        server.getName(); // dummy instruction... avoids warning
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();
 

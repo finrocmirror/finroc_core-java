@@ -125,8 +125,8 @@ public class FrameworkElement extends Annotatable {
     @Ptr @NoSuperclass @AtFront @Friend(FrameworkElement.class)
     public class Link implements HasDestructor {
 
-        /** Description of Framework Element - in link context */
-        private String description;
+        /** Name of Framework Element - in link context */
+        private String name;
 
         /** Parent - Element in which this link was inserted */
         private @Ptr FrameworkElement parent;
@@ -142,10 +142,10 @@ public class FrameworkElement extends Annotatable {
         }
 
         /**
-         * @return Description of Framework Element - in link context
+         * @return Name of Framework Element - in link context
          */
-        @ConstMethod public String getDescription() {
-            return description;
+        @ConstMethod public String getName() {
+            return name;
         }
 
         /**
@@ -167,13 +167,13 @@ public class FrameworkElement extends Annotatable {
 
         @JavaOnly
         public String toString() {
-            return description;
+            return name;
         }
     }
 
     //Cpp friend class Lock;
 
-    /** Primary link to framework element - the place at which it actually is in FrameworkElement tree - contains description etc. */
+    /** Primary link to framework element - the place at which it actually is in FrameworkElement tree - contains name etc. */
     @PassByValue
     private final Link primary = new Link();
 
@@ -205,21 +205,19 @@ public class FrameworkElement extends Annotatable {
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"edges\");")
     public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
 
-    @JavaOnly public FrameworkElement(@Ptr FrameworkElement parent, @Const @Ref String description) {
-        this(parent, description, CoreFlags.ALLOWS_CHILDREN, -1);
+    @JavaOnly public FrameworkElement(@Ptr FrameworkElement parent, @Const @Ref String name) {
+        this(parent, name, CoreFlags.ALLOWS_CHILDREN, -1);
     }
 
     /**
-     * @param description_ Description of framework element (will be shown in browser etc.) - may not be null
+     * @param name Name of framework element (will be shown in browser etc.) - may not be null
      * @param parent_ Parent of framework element (only use non-initialized parent! otherwise null and addChild() later; meant only for convenience)
      * @param flags_ Any special flags for framework element
      * @param lockOrder_ Custom value for lock order (needs to be larger than parent's) - negative indicates unused.
      */
     @SuppressWarnings("unchecked")
-    @Init( {/*"description(description_.length() > 0 ? description_ : util::String(\"(anonymous)\"))",*/
-        "children(getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0, getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0)"
-    })
-    public FrameworkElement(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String description_,
+    @Init( {"children(getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0, getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0)"})
+    public FrameworkElement(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String name,
                             @CppDefault("CoreFlags::ALLOWS_CHILDREN") int flags_, @CppDefault("-1") int lockOrder_) {
         createrThreadUid = ThreadUtil.getCurrentThreadId();
         constFlags = flags_ & CoreFlags.CONSTANT_FLAGS;
@@ -227,11 +225,11 @@ public class FrameworkElement extends Annotatable {
         assert((flags_ & CoreFlags.STATUS_FLAGS) == 0);
 
         // JavaOnlyBlock
-        if (description_ == null) {
-            description_ = "";
+        if (name == null) {
+            name = "";
         }
 
-        primary.description = description_;
+        primary.name = name;
 
         objMutex = new MutexLockOrder(getLockOrder(flags_, parent_, lockOrder_), getFlag(CoreFlags.IS_RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this));
 
@@ -274,8 +272,8 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
-    @JavaOnly public FrameworkElement(@Const @Ref String description) {
-        this(null, description);
+    @JavaOnly public FrameworkElement(@Const @Ref String name) {
+        this(null, name);
     }
 
     @JavaOnly public FrameworkElement() {
@@ -336,65 +334,65 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     *  same as getDescription()
-     *  except that we return a const char* in C++ - this way, no memory needs to be allocated
+     * Same as getName()
+     * (except that we return a const char* in C++)
      */
     @Const @CppType("char*") @ConstMethod
-    public String getCDescription() {
+    public String getCName() {
 
         //JavaOnlyBlock
-        return getDescription();
+        return getName();
 
-        //Cpp return primary.description.length() == 0 ? "(anonymous)" : primary.description.getCString();
+        //Cpp return primary.name.length() == 0 ? "(anonymous)" : primary.name.getCString();
     }
 
     /**
-     * @return Name/Description
+     * @return Name of this framework element
      */
-    @ConstMethod public @Const String getDescription() {
+    @ConstMethod public @Const String getName() {
         if (isReady() || getFlag(CoreFlags.IS_RUNTIME)) {
-            return primary.description.length() == 0 ? "(anonymous)" : primary.description;
+            return primary.name.length() == 0 ? "(anonymous)" : primary.name;
         } else {
-            synchronized (getRegistryLock()) { // synchronize, while description can be changed (C++ strings may not be thread safe...)
+            synchronized (getRegistryLock()) { // synchronize, while name can be changed (C++ strings may not be thread safe...)
                 if (isDeleted()) {
                     return "(deleted element)";
                 }
-                return primary.description.length() == 0 ? "(anonymous)" : primary.description;
+                return primary.name.length() == 0 ? "(anonymous)" : primary.name;
             }
         }
     }
 
     /**
-     * Write description of link number i to Output stream
+     * Write name of link number i to Output stream
      *
      * @param os OutputStream
-     * @param i Link Number (0 is primary link/description)
+     * @param i Link Number (0 is primary link/name)
      */
-    @ConstMethod public void writeDescription(@Ref OutputStreamBuffer os, int i) {
+    @ConstMethod public void writeName(@Ref OutputStreamBuffer os, int i) {
         if (isReady()) {
-            os.writeString(getLink(i).description);
+            os.writeString(getLink(i).name);
         } else {
-            synchronized (getRegistryLock()) { // synchronize, while description can be changed (C++ strings may not be thread safe...)
-                os.writeString(isDeleted() ? "deleted element" : getLink(i).description);
+            synchronized (getRegistryLock()) { // synchronize, while name can be changed (C++ strings may not be thread safe...)
+                os.writeString(isDeleted() ? "deleted element" : getLink(i).name);
             }
         }
     }
 
     /**
-     * @param description New Port description
+     * @param name New Port name
      * (only valid/possible before, element is initialized)
      */
-    public void setDescription(@Const @Ref String description) {
+    public void setName(@Const @Ref String name) {
         assert(!getFlag(CoreFlags.IS_RUNTIME));
         synchronized (getRegistryLock()) { // synchronize, C++ strings may not be thread safe...
             assert(isConstructing());
             assert(isCreator());
-            primary.description = description;
+            primary.name = name;
         }
 
         // JavaOnlyBlock
         /*if (treeNode != null) {
-            treeNode.setUserObject(description);
+            treeNode.setUserObject(name);
         }*/
     }
 
@@ -406,7 +404,7 @@ public class FrameworkElement extends Annotatable {
     }
 
     public String toString() {
-        return getDescription();
+        return getName();
     }
 
     /**
@@ -486,17 +484,17 @@ public class FrameworkElement extends Annotatable {
 
             // Check if child with same name already exists and possibly rename (?)
             if (getFlag(CoreFlags.AUTO_RENAME) && (!getFlag(CoreFlags.IS_PORT))) {
-                String childDesc = child.getDescription();
+                String childDesc = child.getName();
                 int postfixIndex = 1;
                 @Ptr ArrayWrapper<Link> ch = children.getIterable();
                 for (int i = 0, n = ch.size(); i < n; i++) {
                     @Ptr Link re = ch.get(i);
-                    if (re != null && re.getDescription().equals(childDesc)) {
+                    if (re != null && re.getName().equals(childDesc)) {
                         // name clash
                         /*if (postfixIndex == 1) {
-                            System.out.println("Warning: name conflict in " + getUid() + " - " + child.getDescription());
+                            System.out.println("Warning: name conflict in " + getUid() + " - " + child.getName());
                         }*/
-                        re.getChild().setDescription(childDesc + "[" + postfixIndex + "]");
+                        re.getChild().setName(childDesc + "[" + postfixIndex + "]");
                         postfixIndex++;
                         continue;
                     }
@@ -560,14 +558,14 @@ public class FrameworkElement extends Annotatable {
             @Ptr ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
                 @Ptr Link child = iterable.get(i);
-                if (child != null && name.regionMatches(nameIndex, child.description, 0, child.description.length()) && (!child.getChild().isDeleted())) {
-                    if (name.length() == nameIndex + child.description.length()) {
+                if (child != null && name.regionMatches(nameIndex, child.name, 0, child.name.length()) && (!child.getChild().isDeleted())) {
+                    if (name.length() == nameIndex + child.name.length()) {
                         if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
                             return child.getChild();
                         }
                     }
-                    if (name.charAt(nameIndex + child.description.length()) == '/') {
-                        FrameworkElement result = child.getChild().getChildElement(name, nameIndex + child.description.length() + 1, onlyGloballyUniqueChildren, root);
+                    if (name.charAt(nameIndex + child.name.length()) == '/') {
+                        FrameworkElement result = child.getChild().getChildElement(name, nameIndex + child.name.length() + 1, onlyGloballyUniqueChildren, root);
                         if (result != null) {
                             return result;
                         }
@@ -597,7 +595,7 @@ public class FrameworkElement extends Annotatable {
             }
 
             @Managed Link l = new Link();
-            l.description = linkName;
+            l.name = linkName;
             l.parent = null; // will be set in addChild
             Link lprev = getLinkInternal(getLinkCount() - 1);
             assert lprev.next == null;
@@ -1090,15 +1088,15 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     * @param name Description
-     * @return Returns first child with specified description - null if none exists
+     * @param name Name
+     * @return Returns first child with specified name - null if none exists
      */
     @ConstMethod public FrameworkElement getChild(String name) {
         @Ptr ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             Link child = iterable.get(i);
             if (child.getChild().isReady()) {
-                if (child.getDescription().equals(name)) {
+                if (child.getName().equals(name)) {
                     return child.getChild();
                 }
             } else {
@@ -1109,7 +1107,7 @@ public class FrameworkElement extends Annotatable {
                     if (child.getChild().isDeleted()) {
                         continue;
                     }
-                    if (child.getDescription().equals(name)) {
+                    if (child.getName().equals(name)) {
                         return child.getChild();
                     }
                 }
@@ -1135,7 +1133,7 @@ public class FrameworkElement extends Annotatable {
 
     /**
      * (Use StringBuilder version if efficiency or real-time is an issue)
-     * @return Concatenation of parent descriptions and this element's description
+     * @return Concatenation of parent names and this element's name
      */
     @Inline @ConstMethod public String getQualifiedName() {
         StringBuilder sb = new StringBuilder();
@@ -1257,7 +1255,7 @@ public class FrameworkElement extends Annotatable {
             if (abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) { // if unique_link element is at the same time a link root
                 break;
             }
-            length += l.description.length() + 1;
+            length += l.name.length() + 1;
         }
         sb.delete(0, sb.length());
         sb.ensureCapacity(length);
@@ -1350,7 +1348,7 @@ public class FrameworkElement extends Annotatable {
         }
         getNameHelper(sb, l.parent.primary, abortAtLinkRoot);
         sb.append('/');
-        sb.append(l.description);
+        sb.append(l.name);
     }
 
     /**
@@ -1430,7 +1428,7 @@ public class FrameworkElement extends Annotatable {
                 return;
             }
 
-            output.append(getCDescription()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
+            output.append(getCName()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
 
             // print child element info
             @Ptr ArrayWrapper<Link> iterable = children.getIterable();
@@ -1444,21 +1442,21 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     * Are description of this element and String 'other' identical?
-     * (result is identical to getDescription().equals(other); but more efficient in C++)
+     * Are name of this element and String 'other' identical?
+     * (result is identical to getName().equals(other); but more efficient in C++)
      *
      * @param other Other String
      * @return Result
      */
-    @ConstMethod public boolean descriptionEquals(@Const @Ref String other) {
+    @ConstMethod public boolean nameEquals(@Const @Ref String other) {
         if (isReady()) {
-            return primary.description.equals(other);
+            return primary.name.equals(other);
         } else {
             synchronized (getRegistryLock()) {
                 if (isDeleted()) {
                     return false;
                 }
-                return primary.description.equals(other);
+                return primary.name.equals(other);
             }
         }
     }
@@ -1558,14 +1556,14 @@ public class FrameworkElement extends Annotatable {
         if (!getFlag(CoreFlags::IS_RUNTIME)) {
             streamQualifiedParent(output);
         }
-        output << getCDescription();
+        output << getCName();
     }
 
     void streamQualifiedParent(std::ostream& output) const {
         const FrameworkElement* parent = getParent();
         if (parent != NULL && (!parent->getFlag(CoreFlags::IS_RUNTIME))) {
             parent->streamQualifiedParent(output);
-            output << parent->getCDescription();
+            output << parent->getCName();
             output << "/";
         }
     }

@@ -69,11 +69,11 @@ public abstract class ExternalConnection extends FrameworkElement {
     private StaticParameterString autoConnectTo = new StaticParameterString("Autoconnect to", "");
 
     /**
-     * @param description Description of class
+     * @param name Name of class
      * @param defaultAddress Default connection address (some string)
      */
-    public ExternalConnection(String description, String defaultAddress) {
-        super(RuntimeEnvironment.getInstance(), description, CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
+    public ExternalConnection(String name, String defaultAddress) {
+        super(RuntimeEnvironment.getInstance(), name, CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
         StaticParameterList.getOrCreate(this).add(autoConnectTo);
         lastAddress = defaultAddress;
     }

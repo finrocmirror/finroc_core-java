@@ -154,7 +154,7 @@ public class PortCreationList extends RRLibSerializableImpl {
                 os.writeInt(size);
                 for (int i = 0; i < size; i++) {
                     AbstractPort p = ports.get(i);
-                    os.writeString(p.getCDescription());
+                    os.writeString(p.getCName());
                     os.writeString(p.getDataType().getName());
                     os.writeBoolean(p.isOutputPort());
                 }
@@ -222,7 +222,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param prototype Port prototype (only interesting for listener)
      */
     private void checkPort(@Managed AbstractPort ap, FrameworkElement ioVector, int flags, @Const @Ref String name, DataTypeBase dt, boolean output, AbstractPort prototype) {
-        if (ap != null && ap.descriptionEquals(name) && ap.getDataType() == dt && (ap.getAllFlags() & RELEVANT_FLAGS) == (flags & RELEVANT_FLAGS)) {
+        if (ap != null && ap.nameEquals(name) && ap.getDataType() == dt && (ap.getAllFlags() & RELEVANT_FLAGS) == (flags & RELEVANT_FLAGS)) {
             if ((!showOutputPortSelection) || (output == ap.isOutputPort())) {
                 return;
             }
@@ -272,7 +272,7 @@ public class PortCreationList extends RRLibSerializableImpl {
             for (@SizeT int i = 0; i < ports1.size(); i++) {
                 AbstractPort ap1 = ports1.get(i);
                 AbstractPort ap2 = i < ports2.size() ? ports2.get(i) : null;
-                checkPort(ap2, ioVector, flags, ap1.getDescription(), ap1.getDataType(), ap1.isOutputPort(), ap1);
+                checkPort(ap2, ioVector, flags, ap1.getName(), ap1.getDataType(), ap1.isOutputPort(), ap1);
             }
             for (@SizeT int i = ports1.size(); i < ports2.size(); i++) {
                 ports2.get(i).managedDelete();
@@ -291,7 +291,7 @@ public class PortCreationList extends RRLibSerializableImpl {
             for (int i = 0; i < size; i++) {
                 AbstractPort p = ports.get(i);
                 @Ref XMLNode child = node.addChildNode("port");
-                child.setAttribute("name", p.getCDescription());
+                child.setAttribute("name", p.getCName());
                 child.setAttribute("type", p.getDataType().getName());
                 if (showOutputPortSelection) {
                     child.setAttribute("output", p.isOutputPort());

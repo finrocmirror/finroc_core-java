@@ -106,31 +106,31 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
     /** Number cache instance used for this parameter */
     @SharedPtr public NumberCache cache = new NumberCache();
 
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref String configEntry) {
-        super(description, parent, configEntry, CoreNumber.TYPE);
+    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref String configEntry) {
+        super(name, parent, configEntry, CoreNumber.TYPE);
         this.addPortListener(cache);
     }
 
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Unit u, @Const @Ref String configEntry) {
-        super(description, parent, getDefaultValue(defaultValue), u, configEntry, CoreNumber.TYPE);
+    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Unit u, @Const @Ref String configEntry) {
+        super(name, parent, getDefaultValue(defaultValue), u, configEntry, CoreNumber.TYPE);
         cache.currentValue = defaultValue;
         this.addPortListener(cache);
     }
 
     @JavaOnly
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
-        this(description, parent, defaultValue, b, Unit.NO_UNIT, "");
+    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
+        this(name, parent, defaultValue, b, Unit.NO_UNIT, "");
     }
 
     @JavaOnly
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b, Unit u) {
-        this(description, parent, defaultValue, b, u, "");
+    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b, Unit u) {
+        this(name, parent, defaultValue, b, u, "");
     }
 
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public ParameterNumeric(@Const @Ref String description, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b, Unit u, @Const @Ref String configEntry) {
-        super(description, parent, getDefaultValue(defaultValue), b, u, configEntry, CoreNumber.TYPE);
+    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b, Unit u, @Const @Ref String configEntry) {
+        super(name, parent, getDefaultValue(defaultValue), b, u, configEntry, CoreNumber.TYPE);
         @InCpp("T d = defaultValue;")
         double d = defaultValue.doubleValue();
         if (b.inBounds(d)) {

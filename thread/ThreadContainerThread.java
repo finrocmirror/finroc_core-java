@@ -58,7 +58,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     public ThreadContainerThread(ThreadContainer threadContainer, long defaultCycleTime, boolean warnOnCycleTimeExceed) {
         super(defaultCycleTime, warnOnCycleTimeExceed);
         this.threadContainer = threadContainer;
-        this.setName("ThreadContainer " + threadContainer.getDescription());
+        this.setName("ThreadContainer " + threadContainer.getName());
     }
 
     @InCppFile

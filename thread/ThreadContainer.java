@@ -60,11 +60,11 @@ public class ThreadContainer extends Group implements StartAndPausable {
     private ThreadContainerThread thread;
 
     /**
-     * @param description Name
+     * @param name Name
      * @param parent parent
      */
-    public ThreadContainer(FrameworkElement parent, @Const @Ref String description) {
-        super(parent, description);
+    public ThreadContainer(FrameworkElement parent, @Const @Ref String name) {
+        super(parent, name);
         StaticParameterList.getOrCreate(this).add(rtThread);
         StaticParameterList.getOrCreate(this).add(cycleTime);
         StaticParameterList.getOrCreate(this).add(warnOnCycleTimeExceed);

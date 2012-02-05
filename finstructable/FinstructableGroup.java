@@ -516,7 +516,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
                 // serialize framework element
                 @Ref XMLNode n = node.addChildNode("element");
-                n.setAttribute("name", fe.getCDescription());
+                n.setAttribute("name", fe.getCName());
                 CreateFrameworkElementAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
                 n.setAttribute("group", cma.getModuleGroup());
                 n.setAttribute("type", cma.getName());

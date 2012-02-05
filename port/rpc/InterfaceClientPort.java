@@ -35,15 +35,15 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortWrapperBase;
 
 /** Base class for client interface ports */
-public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
+public class InterfaceClientPort extends PortWrapperBase {
 
     /** Special Port class to load value when initialized */
     @AtFront
     private class PortImpl extends InterfacePort {
 
         @InCppFile
-        public PortImpl(String description, FrameworkElement parent, @Const @Ref DataTypeBase type, Type client) {
-            super(description, parent, type, client);
+        public PortImpl(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, Type client) {
+            super(name, parent, type, client);
         }
 
         @InCppFile
@@ -59,8 +59,8 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
         }
     }
 
-    public InterfaceClientPort(String description, FrameworkElement parent, @Const @Ref DataTypeBase type) {
-        wrapped = new PortImpl(description, parent, type, InterfacePort.Type.Client);
+    public InterfaceClientPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+        wrapped = new PortImpl(name, parent, type, InterfacePort.Type.Client);
     }
 
     /**
@@ -77,7 +77,7 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
      * @return "Server" Port that handles method call - either InterfaceServerPort or InterfaceNetPort (the latter if we have remote server)
      */
     public InterfacePort getServer() {
-        return wrapped.getServer();
+        return ((InterfacePort)wrapped).getServer();
     }
 
     /**
@@ -89,7 +89,7 @@ public class InterfaceClientPort extends PortWrapperBase<InterfacePort> {
      */
     @SkipArgs("1")
     public @CustomPtr("tPortDataPtr") <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
-        return wrapped.<T>getBufferForCall(dt);
+        return ((InterfacePort)wrapped).<T>getBufferForCall(dt);
     }
 
     /**

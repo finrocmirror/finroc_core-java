@@ -29,7 +29,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
@@ -53,11 +52,10 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  * - Connect() methods can be hidden/reimplemented (via name hiding). This can be used to enforce that only certain connections can be created at compile time.
  */
 @Inline @NoCpp @PassByValue @RawTypeArgs
-@HAppend("template <typename T> inline bool operator==(const AbstractPort* p, PortWrapperBase<T> pw) { return pw == p; }")
-public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
+public class PortWrapperBase implements HasDestructor {
 
     /** Wrapped port */
-    @Ptr protected T wrapped;
+    @Ptr protected AbstractPort wrapped;
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"ports\");")
@@ -71,24 +69,24 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
     /**
      * @return Wrapped port. For rare case that someone really needs to access ports.
      */
-    public @Ptr T getWrapped() {
+    public @Ptr AbstractPort getWrapped() {
         return wrapped;
     }
 
     /**
-     * same as getDescription()
-     * except that we return a const char* in C++ - this way, no memory needs to be allocated
+     * Same as getName()
+     * (except that we return a const char* in C++)
      */
     @Const @CppType("char*") @ConstMethod
-    public String getCDescription() {
-        return wrapped.getCDescription();
+    public String getCName() {
+        return wrapped.getCName();
     }
 
     /**
-     * @return Name/Description
+     * @return Name of this framework element
      */
-    @ConstMethod public @Const String getDescription() {
-        return wrapped.getDescription();
+    @ConstMethod public @Const String getName() {
+        return wrapped.getName();
     }
 
     /**
@@ -191,14 +189,14 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
     }
 
     /**
-     * Are description of this element and String 'other' identical?
-     * (result is identical to getDescription().equals(other); but more efficient in C++)
+     * Are name of this element and String 'other' identical?
+     * (result is identical to getName().equals(other); but more efficient in C++)
      *
      * @param other Other String
      * @return Result
      */
-    @ConstMethod public boolean descriptionEquals(@Const @Ref String other) {
-        return wrapped.descriptionEquals(other);
+    @ConstMethod public boolean nameEquals(@Const @Ref String other) {
+        return wrapped.nameEquals(other);
     }
 
     /**
@@ -245,7 +243,7 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
      *
      * @param target Target port
      */
-    public void connectToTarget(@Const @Ref PortWrapperBase<T> target) {
+    public void connectToTarget(@Const @Ref PortWrapperBase target) {
         wrapped.connectToTarget(target.wrapped);
     }
 
@@ -263,7 +261,7 @@ public class PortWrapperBase<T extends AbstractPort> implements HasDestructor {
      *
      * @param source Source port
      */
-    public void connectToSource(@Const @Ref PortWrapperBase<T> source) {
+    public void connectToSource(@Const @Ref PortWrapperBase source) {
         wrapped.connectToSource(source.wrapped);
     }
 

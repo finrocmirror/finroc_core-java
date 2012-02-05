@@ -68,8 +68,8 @@ public class PortCreationInfo {
      */
     public boolean managesPorts;
 
-    /** Port name/description */
-    public String description = "";
+    /** Port name */
+    public String name = "";
 
     /** Lock order */
     public int lockOrder = -1;
@@ -83,53 +83,53 @@ public class PortCreationInfo {
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, int flags) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, int flags) {
+        this.name = name;
         this.flags = flags;
     }
 
     @JavaOnly
-    public PortCreationInfo(@Const @Ref String description, Class<?> dataType, int flags) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, Class<?> dataType, int flags) {
+        this.name = name;
         this.dataType = DataTypeBase.findType(dataType);
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, @Const @Ref DataTypeBase dataType, int flags) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, @Const @Ref DataTypeBase dataType, int flags) {
+        this.name = name;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags) {
+        this.name = name;
         this.parent = parent;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags, Unit u) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags, Unit u) {
+        this.name = name;
         this.parent = parent;
         this.dataType = dataType;
         this.flags = flags;
         this.unit = u;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, @Const @Ref DataTypeBase dataType) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType) {
+        this.name = name;
         this.parent = parent;
         this.dataType = dataType;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, int flags) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, int flags) {
+        this.name = name;
         this.parent = parent;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String description, FrameworkElement parent, int flags, Unit unit) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, int flags, Unit unit) {
+        this.name = name;
         this.parent = parent;
         this.flags = flags;
         this.unit = unit;
@@ -158,8 +158,8 @@ public class PortCreationInfo {
 
     public PortCreationInfo() {}
 
-    public PortCreationInfo(@Const @Ref String description) {
-        this.description = description;
+    public PortCreationInfo(@Const @Ref String name) {
+        this.name = name;
     }
 
     public PortCreationInfo(FrameworkElement parent) {
@@ -171,14 +171,14 @@ public class PortCreationInfo {
         this.dataType = dt;
     }
 
-    public PortCreationInfo(String description, int flags, int qSize) {
-        this.description = description;
+    public PortCreationInfo(String name, int flags, int qSize) {
+        this.name = name;
         this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
         this.maxQueueSize = qSize;
     }
 
-    public PortCreationInfo(String description, @Const @Ref DataTypeBase dataType, int flags, int qSize) {
-        this.description = description;
+    public PortCreationInfo(String name, @Const @Ref DataTypeBase dataType, int flags, int qSize) {
+        this.name = name;
         this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
         this.dataType = dataType;
         this.maxQueueSize = qSize;
@@ -189,7 +189,7 @@ public class PortCreationInfo {
     public PortCreationInfo(PortCreationInfo p) {
         altSendBufferSize = p.altSendBufferSize;
         dataType = p.dataType;
-        description = p.description;
+        name = p.name;
         flags = p.flags;
         lockOrder = p.lockOrder;
         managesPorts = p.managesPorts;
@@ -215,9 +215,9 @@ public class PortCreationInfo {
 
     // derive methods: Copy port creation info and change something
 
-    public PortCreationInfo derive(String newDescription) {
+    public PortCreationInfo derive(String newName) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
-        pci2.description = newDescription;
+        pci2.name = newName;
         return pci2;
     }
 
@@ -225,16 +225,16 @@ public class PortCreationInfo {
         return (flags & flag) > 0;
     }
 
-    public PortCreationInfo derive(String newDescription, FrameworkElement parent) {
+    public PortCreationInfo derive(String newName, FrameworkElement parent) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
-        pci2.description = newDescription;
+        pci2.name = newName;
         pci2.parent = parent;
         return pci2;
     }
 
-    public PortCreationInfo derive(String newDescription, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+    public PortCreationInfo derive(String newName, FrameworkElement parent, @Const @Ref DataTypeBase type) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
-        pci2.description = newDescription;
+        pci2.name = newName;
         pci2.parent = parent;
         pci2.dataType = type;
         return pci2;

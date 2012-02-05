@@ -179,7 +179,7 @@ public class FrameworkElementInfo {
                         if (parent.getFlag(CoreFlags.EDGE_AGGREGATOR)) {
                             tp.writeByte((parent.getAllFlags() & EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS) >> 8);
                         }
-                        fe.writeDescription(tp, i);
+                        fe.writeName(tp, i);
                         tp.writeInt(parent.getHandle());
                     }
                 }

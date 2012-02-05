@@ -53,8 +53,8 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 @JavaOnly
 public class AdminClient extends InterfaceClientPort {
 
-    public AdminClient(String description, FrameworkElement parent) {
-        super(description, parent, AdminServer.DATA_TYPE);
+    public AdminClient(String name, FrameworkElement parent) {
+        super(name, parent, AdminServer.DATA_TYPE);
     }
 
     /**

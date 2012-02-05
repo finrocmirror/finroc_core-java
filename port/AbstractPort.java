@@ -168,7 +168,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param pci PortCreationInformation
      */
     public AbstractPort(PortCreationInfo pci) {
-        super(pci.parent, pci.description, processFlags(pci), pci.lockOrder < 0 ? LockOrderLevels.PORT : pci.lockOrder);
+        super(pci.parent, pci.name, processFlags(pci), pci.lockOrder < 0 ? LockOrderLevels.PORT : pci.lockOrder);
 
         // init types
         dataType = pci.dataType;

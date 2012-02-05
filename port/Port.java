@@ -82,7 +82,7 @@ import org.rrlib.finroc_core_utils.serialization.Serialization;
     "extern template class Port<EnumValue>;",
     "extern template class Port<rrlib::serialization::MemoryBuffer>;"
 })
-public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractPort> {
+public class Port<T extends RRLibSerializable> extends PortWrapperBase {
 
     /** Does port have "cheap-copy" type? */
     @JavaOnly boolean ccType;
@@ -123,13 +123,13 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase<AbstractP
     }
 
     /**
-     * @param description Port description
+     * @param name Port name
      * @param parent Parent
      * @param outputPort Output port? (or rather input port)
      */
-    @InCpp("wrapped = new PortBaseType(processPci(PortCreationInfo(description, parent, outputPort ? PortFlags::OUTPUT_PORT : PortFlags::INPUT_PORT)));")
-    Port(String description, FrameworkElement parent, boolean outputPort) {
-        this(new PortCreationInfo(description, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+    @InCpp("wrapped = new PortBaseType(processPci(PortCreationInfo(name, parent, outputPort ? PortFlags::OUTPUT_PORT : PortFlags::INPUT_PORT)));")
+    Port(String name, FrameworkElement parent, boolean outputPort) {
+        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
 
     /**

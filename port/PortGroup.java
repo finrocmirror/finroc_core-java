@@ -74,7 +74,7 @@ public class PortGroup extends EdgeAggregator {
         ChildIterator ci = new ChildIterator(this);
         AbstractPort p = null;
         while ((p = ci.nextPort()) != null) {
-            String name = p.getDescription();
+            String name = p.getName();
             if (p == startWith) {
                 startWith = null;
             }

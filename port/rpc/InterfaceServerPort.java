@@ -41,17 +41,17 @@ public class InterfaceServerPort extends InterfacePort {
     /** Handler that will handle method calls */
     private @Ptr AbstractMethodCallHandler handler = null;
 
-    public InterfaceServerPort(String description, FrameworkElement parent, @Const @Ref DataTypeBase type) {
-        super(description, parent, type, Type.Server);
+    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+        super(name, parent, type, Type.Server);
     }
 
-    public InterfaceServerPort(String description, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, @CppDefault("0") int customFlags) {
-        super(description, parent, type, Type.Server, customFlags);
+    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, @CppDefault("0") int customFlags) {
+        super(name, parent, type, Type.Server, customFlags);
         setCallHandler(ch);
     }
 
-    public InterfaceServerPort(String description, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, int customFlags, int lockLevel) {
-        super(description, parent, type, Type.Server, customFlags, lockLevel);
+    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, int customFlags, int lockLevel) {
+        super(name, parent, type, Type.Server, customFlags, lockLevel);
         setCallHandler(ch);
     }
 

@@ -163,7 +163,7 @@ public class InitialPushTest {
     }
 
     private static void print(@Ref PortNumeric<Integer> o2, int i) {
-        System.out.println("Port " + o2.getDescription() + ": " + o2.getIntRaw() + " (expected: " + i + ")");
+        System.out.println("Port " + o2.getName() + ": " + o2.getIntRaw() + " (expected: " + i + ")");
     }
 
 }

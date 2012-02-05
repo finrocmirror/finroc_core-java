@@ -113,13 +113,13 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"stream_ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
-    public InputStreamPort(String description, PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
-        wrapped = new PortImpl<T>(processPCI(pci, description), user, connHandler);
+    public InputStreamPort(String name, PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
+        wrapped = new PortImpl<T>(processPCI(pci, name), user, connHandler);
     }
 
-    private static PortCreationInfo processPCI(PortCreationInfo pci, String description) {
+    private static PortCreationInfo processPCI(PortCreationInfo pci, String name) {
         pci.maxQueueSize = Integer.MAX_VALUE;  // unlimited size
-        pci.description = description;
+        pci.name = name;
         pci.setFlag(PortFlags.HAS_AND_USES_QUEUE, true);
         pci.setFlag(PortFlags.OUTPUT_PORT, false);
         //pci.setFlag(PortFlags.ACCEPTS_REVERSE_DATA, false);

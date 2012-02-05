@@ -69,11 +69,11 @@ public class GroupInterface extends PortGroup {
     /**
      * Default constructor
      *
-     * @param description Interface description
+     * @param name Interface name
      * @param parent Parent element
      */
-    public GroupInterface(FrameworkElement parent, @Const @Ref String description) {
-        super(parent, description, EdgeAggregator.IS_INTERFACE, 0);
+    public GroupInterface(FrameworkElement parent, @Const @Ref String name) {
+        super(parent, name, EdgeAggregator.IS_INTERFACE, 0);
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
@@ -81,7 +81,7 @@ public class GroupInterface extends PortGroup {
     /**
      * Advanced constructor
      *
-     * @param description Interface description
+     * @param name Interface name
      * @param parent Parent element
      * @param dataClass Classifies data in this interface
      * @param portDir Which types of ports can be created in this interface?
@@ -89,8 +89,8 @@ public class GroupInterface extends PortGroup {
      * @param uniqueLink Do ports habe globally unique link
      * @return flags for these parameters
      */
-    public GroupInterface(FrameworkElement parent, @Const @Ref String description, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
-        super(parent, description, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
+    public GroupInterface(FrameworkElement parent, @Const @Ref String name, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
+        super(parent, name, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);
     }

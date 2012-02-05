@@ -63,13 +63,13 @@ public class ParameterBool extends Parameter<CoreBoolean> {
     /** Bool cache instance used for this parameter */
     @SharedPtr public BoolCache cache = new BoolCache();
 
-    public ParameterBool(@Const @Ref String description, FrameworkElement parent, boolean defaultValue, @Const @Ref String configEntry) {
-        this(description, parent, defaultValue);
+    public ParameterBool(@Const @Ref String name, FrameworkElement parent, boolean defaultValue, @Const @Ref String configEntry) {
+        this(name, parent, defaultValue);
         setConfigEntry(configEntry);
     }
 
-    public ParameterBool(@Const @Ref String description, FrameworkElement parent, boolean defaultValue) {
-        super(description, parent, CoreBoolean.TYPE);
+    public ParameterBool(@Const @Ref String name, FrameworkElement parent, boolean defaultValue) {
+        super(name, parent, CoreBoolean.TYPE);
         this.addPortListener(cache);
         cache.currentValue = defaultValue;
         setDefault(CoreBoolean.getInstance(defaultValue));

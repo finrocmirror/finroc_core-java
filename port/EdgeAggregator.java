@@ -64,8 +64,8 @@ public class EdgeAggregator extends FrameworkElement {
     private SafeConcurrentlyIterableList<AggregatedEdge> emergingEdges = new SafeConcurrentlyIterableList<AggregatedEdge>(0, 5);
 
     /** see FrameworkElement for parameter description */
-    public EdgeAggregator(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String description_, @CppDefault("0") int flags_) {
-        super(parent_, description_, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
+    public EdgeAggregator(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String name, @CppDefault("0") int flags_) {
+        super(parent_, name, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
     }
 
     /**
