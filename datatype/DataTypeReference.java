@@ -22,8 +22,8 @@
 package org.finroc.core.datatype;
 
 import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.serialization.DataType;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataType;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max

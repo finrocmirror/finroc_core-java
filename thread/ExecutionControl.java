@@ -32,8 +32,8 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.serialization.DataType;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataType;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max

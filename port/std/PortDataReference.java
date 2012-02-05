@@ -29,7 +29,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
  * @author max

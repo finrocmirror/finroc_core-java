@@ -29,7 +29,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Inline;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max

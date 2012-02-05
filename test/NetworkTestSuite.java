@@ -44,7 +44,7 @@ import org.finroc.plugins.blackboard.BlackboardReadAccess;
 import org.finroc.plugins.blackboard.BlackboardServer;
 import org.finroc.plugins.blackboard.BlackboardWriteAccess;
 import org.finroc.plugins.blackboard.SingleBufferedBlackboardServer;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;

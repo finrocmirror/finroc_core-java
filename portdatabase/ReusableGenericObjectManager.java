@@ -31,8 +31,8 @@ import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.GenericObjectManager;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
 /**
  * @author max

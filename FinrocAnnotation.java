@@ -29,10 +29,10 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.TypedObjectImpl;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.TypedObjectImpl;
 
 /**
  * @author max

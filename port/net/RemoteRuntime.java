@@ -28,7 +28,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.serialization.DataType;
+import org.rrlib.finroc_core_utils.rtti.DataType;
 
 /**
  * @author max

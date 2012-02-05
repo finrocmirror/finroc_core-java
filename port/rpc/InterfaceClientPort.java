@@ -29,7 +29,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SkipArgs;
 import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortWrapperBase;

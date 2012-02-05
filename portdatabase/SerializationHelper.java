@@ -34,15 +34,15 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.Copyable;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.DefaultFactory;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.Copyable;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DefaultFactory;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.TypedObject;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.TypedObject;
 
 /**
  * @author max

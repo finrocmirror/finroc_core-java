@@ -46,8 +46,8 @@ import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.GenericObjectManager;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
 import org.finroc.core.port.Port;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;

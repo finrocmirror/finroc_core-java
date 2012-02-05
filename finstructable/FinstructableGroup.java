@@ -47,7 +47,7 @@ import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
 import org.rrlib.finroc_core_utils.xml.XMLDocument;
 import org.rrlib.finroc_core_utils.xml.XMLNode;

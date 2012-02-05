@@ -35,7 +35,7 @@ import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
  * @author max

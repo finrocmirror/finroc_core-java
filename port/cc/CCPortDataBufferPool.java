@@ -37,7 +37,7 @@ import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPoolTL;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueue;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.ThreadLocalCache;
 

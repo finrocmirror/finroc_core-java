@@ -44,7 +44,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Mutable;
 import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max

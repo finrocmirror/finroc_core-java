@@ -31,7 +31,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.annotation.SpinLock;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogStream;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max

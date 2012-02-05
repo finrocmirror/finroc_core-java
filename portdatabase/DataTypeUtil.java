@@ -27,7 +27,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
 import org.rrlib.finroc_core_utils.jc.annotation.CppName;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.serialization.GenericChangeable;
+import org.rrlib.finroc_core_utils.rtti.GenericChangeable;
 import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
 
 @JavaOnly

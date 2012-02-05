@@ -26,8 +26,8 @@ import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 
 /**

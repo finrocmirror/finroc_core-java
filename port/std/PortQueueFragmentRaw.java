@@ -24,7 +24,7 @@ package org.finroc.core.port.std;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.container.QueueFragment;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**

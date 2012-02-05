@@ -27,7 +27,7 @@ import org.finroc.core.port.rpc.InterfacePort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

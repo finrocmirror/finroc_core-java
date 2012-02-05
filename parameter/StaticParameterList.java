@@ -36,7 +36,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.DataType;
+import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.xml.XMLNode;

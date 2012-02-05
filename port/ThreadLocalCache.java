@@ -67,9 +67,9 @@ import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.GenericObjectManager;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 
 /**

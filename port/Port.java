@@ -52,8 +52,8 @@ import org.rrlib.finroc_core_utils.jc.annotation.RValueRef;
 import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.EnumValue;
-import org.rrlib.finroc_core_utils.serialization.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 

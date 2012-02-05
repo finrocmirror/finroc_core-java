@@ -23,7 +23,7 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.port.rpc.method.PortInterface;
 import org.rrlib.finroc_core_utils.jc.AutoDeleter;
-import org.rrlib.finroc_core_utils.serialization.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
  * @author max
