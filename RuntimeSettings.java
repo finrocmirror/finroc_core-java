@@ -127,6 +127,17 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /** Collect edge statistics ? */
     public static final boolean COLLECT_EDGE_STATISTICS = false;
 
+    /**
+     * Should cc ports be used in backend?
+     * (This is mainly an optimization. In non-data-intensive/non-runtime-critical applications (such as tooling) this may be disabled to reduce memory footprint.)
+     */
+    private static boolean useCCPorts = true;
+
+    /**
+     * Determines maximum number of ports in CoreRegister (2 ^ maxCoreRegisterIndexBits)
+     */
+    private static int maxCoreRegisterIndexBits = 16;
+
     /** List with listeners for update times */
     @PassByValue
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
@@ -243,4 +254,40 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     public static boolean isRunningInApplet() {
         return false;
     }
+
+    /**
+     * @return Should cc ports be used in backend?
+     */
+    public static boolean useCCPorts() {
+        return useCCPorts;
+    }
+
+    /**
+     * @param newUseCCPorts Should cc ports be used in backend?
+     * (This is mainly an optimization. In non-data-intensive/non-runtime-critical applications (such as tooling) this may be disabled to reduce memory footprint.)
+     * (This may only be changed before any data type has been registered and any port created)
+     */
+    public static void setUseCCPorts(boolean newUseCCPorts) {
+        if (DataTypeBase.getTypeCount() > 0) {
+            throw new RuntimeException("This is only possible before any type has been loaded.");
+        }
+        useCCPorts = newUseCCPorts;
+    }
+
+    /**
+     * @return Determines maximum number of ports in CoreRegister (2 ^ maxCoreRegisterIndexBits)
+     */
+    public static int getMaxCoreRegisterIndexBits() {
+        return maxCoreRegisterIndexBits;
+    }
+
+    /**
+     * (will only have an effect if set before runtime environment was created)
+     *
+     * @param maxCoreRegisterIndexBits Determines maximum number of ports in CoreRegister (2 ^ maxCoreRegisterIndexBits)
+     */
+    public static void setMaxCoreRegisterIndexBits(int maxCoreRegisterIndexBits) {
+        RuntimeSettings.maxCoreRegisterIndexBits = maxCoreRegisterIndexBits;
+    }
+
 }

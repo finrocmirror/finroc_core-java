@@ -26,6 +26,7 @@ import org.rrlib.finroc_core_utils.jc.IntArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
 import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
+import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
  * @author max
@@ -46,19 +47,19 @@ import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
 public class CoreRegister<T> {
 
     /** Maximum number of elements */
-    public final static int MAX_ELEMENTS = 0xFFFF;
+    public final static int MAX_ELEMENTS = (1 << RuntimeSettings.getMaxCoreRegisterIndexBits()) - 1;
 
     /** Maximum UID index */
-    public final static int MAX_UID = 0x7FFF;
+    public final static int MAX_UID = (1 << (31 - RuntimeSettings.getMaxCoreRegisterIndexBits())) - 1;
 
     /** Element index mask */
-    public final static int ELEM_INDEX_MASK = 0xFFFF;
+    public final static int ELEM_INDEX_MASK = MAX_ELEMENTS;
 
     /** Element UID mask */
-    public final static int ELEM_UID_MASK = 0x7FFF0000;
+    public final static int ELEM_UID_MASK = 0x7FFFFFFF & (~ELEM_INDEX_MASK);
 
     /** Amount of bits the UID needs to be shifted */
-    public final static int UID_SHIFT = 16;
+    public final static int UID_SHIFT = RuntimeSettings.getMaxCoreRegisterIndexBits();
 
     /** Sign of handles... either 0 or 0x80000000 */
     @Const private final int sign;
@@ -82,6 +83,7 @@ public class CoreRegister<T> {
      * @param positiveIndices Positive handles? (or rather negative??)
      */
     public CoreRegister(boolean positiveIndices) {
+        RuntimeEnvironment.logDomain.log(LogLevel.LL_DEBUG, "CoreRegister", "Created Core Register with a maximum of " + MAX_ELEMENTS + " elements.");
         sign = positiveIndices ? 0 : 0x80000000;
     }
 
@@ -120,6 +122,7 @@ public class CoreRegister<T> {
         // increment index
         incrementCurElementIndex();
 
+        elemCount++;
         return handle;
     }
 

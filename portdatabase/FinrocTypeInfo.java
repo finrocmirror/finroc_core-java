@@ -168,6 +168,10 @@ public class FinrocTypeInfo {
         if (this.type != Type.STD) {
             return;
         }
+        if (type == Type.CC && (!RuntimeSettings.useCCPorts())) {
+            this.type = Type.STD;
+            return;
+        }
         this.type = type;
 
         if (type == Type.CC) {

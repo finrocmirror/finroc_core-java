@@ -22,6 +22,7 @@
 package org.finroc.core.port;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
@@ -115,9 +116,14 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
     public Port(PortCreationInfo pci, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> bounds) {
 
         //JavaOnlyBlock
-        assert(pci.dataType == CoreNumber.TYPE);
-        ccType = true;
-        wrapped = new CCPortBoundedNumeric<CoreNumber>(pci, (Bounds)bounds);
+        if (RuntimeSettings.useCCPorts()) {
+            assert(pci.dataType == CoreNumber.TYPE);
+            ccType = true;
+            wrapped = new CCPortBoundedNumeric<CoreNumber>(pci, (Bounds)bounds);
+        } else {
+            ccType = false;
+            wrapped = new PortBase(processPci(pci)); // no bounds... however, this mode is only active in GUI and finstruct where we should not need this feature
+        }
 
         //Cpp wrapped = new typename PortTypeMap<T>::BoundedPortBaseType(processPci(pci), bounds);
     }

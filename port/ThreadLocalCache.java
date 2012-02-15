@@ -26,6 +26,7 @@ import java.lang.ref.WeakReference;
 import org.finroc.core.CoreRegister;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
+import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataBufferPool;
@@ -106,7 +107,7 @@ public class ThreadLocalCache extends LogUser {
     // ThreadLocal port information
 
     /** Contains port data that was last written to every port - list index is last part of port handle (see CoreRegister) */
-    public final CCPortDataManagerTL[] lastWrittenToPort = new CCPortDataManagerTL[CoreRegister.MAX_ELEMENTS];
+    public final CCPortDataManagerTL[] lastWrittenToPort = RuntimeSettings.useCCPorts() ? new CCPortDataManagerTL[CoreRegister.MAX_ELEMENTS] : null;
 
     /** Thread-local pools of buffers for every "cheap-copy" port data type */
     public final CCPortDataBufferPool[] ccTypePools = new CCPortDataBufferPool[FinrocTypeInfo.MAX_CCTYPES];
