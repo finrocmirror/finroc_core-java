@@ -35,6 +35,7 @@ import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
@@ -525,8 +526,15 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
             ((CCPortBase)wrapped).publish(mgr);
         } else {
             PortDataManager mgr = PortDataManager.getManager(data, true);
-            assert(mgr != null) : "You should acquire buffers to publish large data with getUnusedBuffer()";
-            ((PortBase)wrapped).publish(mgr);
+            if (mgr != null) {
+                ((PortBase)wrapped).publish(mgr);
+            } else if (data instanceof CCType) {
+                mgr = ((PortBase)wrapped).getUnusedBufferRaw();
+                Serialization.deepCopy(data, mgr.getObject().getData(), null);
+                ((PortBase)wrapped).publish(mgr);
+            } else {
+                throw new RuntimeException("You should acquire buffers to publish large data with getUnusedBuffer()");
+            }
         }
 
 //        /*Cpp
