@@ -614,7 +614,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 // return local port data
                 PortDataManager pd = lockCurrentValueForRead();
                 pd.getCurrentRefCounter().addLocks((byte)(addLocks - 1)); // we already have one lock
-                pc.recycle();
+                //pc.recycle();  // Careful, this would recycle object twice
                 return pd;
             }
         }
