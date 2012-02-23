@@ -199,7 +199,7 @@ public class Unit {
 
     /** Angular Units */
     private static final SimpleList<Unit> angle = new SimpleList<Unit>();
-    @PassByValue public static final Unit deg = new Unit(angle, "deg", 57.295779506);
+    @PassByValue public static final Unit deg = new Unit(angle, "deg", 0.017453292);
     @PassByValue public static final Unit rad = new Unit(angle, "rad", 1);
 
     /** Frequency */

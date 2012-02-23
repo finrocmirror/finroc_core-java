@@ -164,6 +164,11 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     @JavaOnly public CoreNumber(@Const @Ref Number value) {
         setValue(value);
     }
+    public CoreNumber(CoreNumber cn) {
+        numType = cn.numType;
+        unit = cn.unit;
+        value = cn.value;
+    }
 
     // All kinds of variations of setters
     public void setValue(int value) {

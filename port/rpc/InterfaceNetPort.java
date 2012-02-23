@@ -79,7 +79,6 @@ public abstract class InterfaceNetPort extends InterfacePort {
             } else {
                 mc.prepareForwardSyncRemoteExecution(this, inp); // always do this in extra thread
                 RPCThreadPool.getInstance().executeTask(mc);
-                sendSyncCallReturn(mc);
             }
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
             @Ptr AbstractMethodCallHandler mhandler = (AbstractMethodCallHandler)((InterfaceServerPort)ip).getHandler();
