@@ -59,7 +59,7 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
     "extern template class ParameterBase<CoreString>;",
     "extern template class ParameterBase<bool>;",
     "extern template class ParameterBase<EnumValue>;",
-    "extern template class ParameterBase<rrlib::serialization::MemoryBuffer>;",
+    "extern template class ParameterBase<rrlib::serialization::MemoryBuffer>;"
 })
 @CppName("ParameterBase") @CppFilename("ParameterBase")
 public class Parameter<T extends RRLibSerializable> extends Port<T> {

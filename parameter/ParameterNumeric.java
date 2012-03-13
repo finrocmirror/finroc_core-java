@@ -57,7 +57,7 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
     "extern template class ParameterNumeric<int>;",
     "extern template class ParameterNumeric<long long int>;",
     "extern template class ParameterNumeric<float>;",
-    "extern template class ParameterNumeric<double>;",
+    "extern template class ParameterNumeric<double>;"
 })
 public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
 
