@@ -97,7 +97,10 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
             oos.writeObject(value);
             @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
-            if (pdm != null) {
+
+            boolean writeId = pdm != null && pdm.lockID != 0;
+            oos.writeBoolean(writeId);
+            if (writeId) {
                 oos.writeInt(pdm.lockID);
             }
         }
@@ -112,10 +115,15 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
             //value = (GenericObject)is.readObjectInInterThreadContainer(null);
             @Ptr GenericObject go = is.readObject(null, this);
             value = lock(go);
-            @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
+
             PortDataManager pdm = PortDataManager.getManager(value.getData());
-            if (pdm != null) {
-                pdm.lockID = is.readInt();
+            if (is.readBoolean()) {
+                int i = is.readInt();
+                if (pdm != null) {
+                    pdm.lockID = i;
+                }
+            } else if (pdm != null) {
+                pdm.lockID = 0;
             }
         }
     }
