@@ -71,11 +71,12 @@ public class ConfigNode extends FinrocAnnotation {
                     return result;
                 }
             }
-            fe = fe.getParent();
 
             if (fe == cf.getAnnotated()) {
                 return result;
             }
+
+            fe = fe.getParent();
         }
     }
 

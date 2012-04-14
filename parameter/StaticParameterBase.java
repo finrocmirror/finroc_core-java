@@ -248,7 +248,7 @@ public class StaticParameterBase implements HasDestructor {
             }
         } else {
             StaticParameterBase sp = getParameterWithBuffer();
-            if (!sp.getName().equals(outerParameterAttachment)) {
+            if ((!sp.getName().equals(outerParameterAttachment)) || (sp == this)) {
 
                 // find parameter to attach to
                 FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
