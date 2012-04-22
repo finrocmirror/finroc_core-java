@@ -221,32 +221,12 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @return Answer
      */
     public boolean hasEntry(@Const @Ref String entry) {
-        SimpleList<String> nodes = new SimpleList<String>();
-        nodes.addAll(entry.split(SEPARATOR));
-        @SizeT int idx = 0;
-        @InCpp("rrlib::xml2::XMLNode::const_iterator current = &wrapped.getRootNode();")
-        @Ptr XMLNode current = wrapped.getRootNode();
-        while (idx < nodes.size()) {
-            boolean found = false;
-            for (XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
-                if (XML_BRANCH_NAME.equals(child.get().getName()) || XML_LEAF_NAME.equals(child.get().getName())) {
-                    try {
-                        if (nodes.get(idx).equals(child.get().getStringAttribute("name"))) {
-                            idx++;
-                            current = child.get();
-                            found = true;
-                            break;
-                        }
-                    } catch (XML2WrapperException e) {
-                        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "tree node without name");
-                    }
-                }
-            }
-            if (!found) {
-                return false;
-            }
+        try {
+            getEntry(entry, false);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-        return XML_LEAF_NAME.equals(current.getName());
     }
 
     // TODO: reduce code duplication in hasEntry() and getEntry()
@@ -261,7 +241,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     public @Ref XMLNode getEntry(@Const @Ref String entry, @CppDefault("false") boolean create) {
         SimpleList<String> nodes = new SimpleList<String>();
         nodes.addAll(entry.split(SEPARATOR));
-        @SizeT int idx = 0;
+        @SizeT int idx = (nodes.size() > 0 && nodes.get(0).length() == 0) ? 1 : 0; // if entry starts with '/', skip first empty string
         @InCpp("rrlib::xml2::XMLNode::iterator current = &wrapped.getRootNode();")
         @Ptr XMLNode current = wrapped.getRootNode();
         @InCpp("rrlib::xml2::XMLNode::iterator parent = current;")

@@ -51,7 +51,7 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
     private static final long serialVersionUID = 7483490124678921514L;
 
     /** Data Type */
-    public final static DataTypeBase TYPE = new DataType<CoreString>(CoreString.class);
+    public final static DataTypeBase TYPE = new DataType<CoreString>(CoreString.class, "String", false);
 
     /** String buffer */
     @PassByValue
