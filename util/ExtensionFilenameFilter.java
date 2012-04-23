@@ -24,8 +24,6 @@ package org.finroc.core.util;
 import java.io.File;
 import java.io.FilenameFilter;
 
-import javax.swing.filechooser.FileFilter;
-
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 
 
@@ -36,7 +34,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
  *
  */
 @JavaOnly
-public class ExtensionFilenameFilter extends FileFilter implements java.io.FileFilter, FilenameFilter {
+public class ExtensionFilenameFilter /* extends FileFilter */ implements java.io.FileFilter, FilenameFilter {
 
     /**
      * FilenameFilter accepts files with Extensions in list
@@ -82,7 +80,7 @@ public class ExtensionFilenameFilter extends FileFilter implements java.io.FileF
         return false;
     }
 
-    @Override
+    //@Override
     public String getDescription() {
         String tmp = "";
         for (String s : accepts) {

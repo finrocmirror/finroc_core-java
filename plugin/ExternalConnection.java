@@ -21,8 +21,6 @@
  */
 package org.finroc.core.plugin;
 
-import javax.swing.JOptionPane;
-
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
@@ -85,12 +83,9 @@ public abstract class ExternalConnection extends FrameworkElement {
      */
     public synchronized void connect(String address) throws Exception {
 
-        // JavaOnlyBlock
         if (needsAddress()) {
-            if (address == null) {
-                address = JOptionPane.showInputDialog(null, getClass().getSimpleName() + ": Please input connection address", lastAddress);
-            }
             if (address == null || address.equals("")) {  // cancel pressed
+                log(LogLevel.LL_ERROR, logDomain, "No address specified. Cancelling connection attempt.");
                 return;
             }
         }
@@ -127,10 +122,8 @@ public abstract class ExternalConnection extends FrameworkElement {
             disconnectImpl();
         } catch (Exception e) {
             log(LogLevel.LL_WARNING, logDomain, e);
-
             //JavaOnlyBlock
-            JOptionPane.showMessageDialog(null, e.getMessage(), "Error disconnecting", JOptionPane.ERROR_MESSAGE);
-
+            //JOptionPane.showMessageDialog(null, e.getMessage(), "Error disconnecting", JOptionPane.ERROR_MESSAGE);
         }
         fireConnectionEvent(ConnectionListener.NOT_CONNECTED);
     }
