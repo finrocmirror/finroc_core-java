@@ -55,6 +55,12 @@ import org.finroc.core.portdatabase.UnknownType;
 @CppInclude("parameter/Parameter.h")
 public class RemoteTypes extends LogUser implements TypeEncoder {
 
+    /** Selected C++ rrlib_rtti type traits */
+    public static final int IS_BINARY_SERIALIZABLE = 1 << 0;
+    public static final int IS_STRING_SERIALIZABLE = 1 << 1;
+    public static final int IS_XML_SERIALIZABLE = 1 << 2;
+    public static final int IS_ENUM = 1 << 3;
+
     /** Log domain for edges */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"remote_types\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("remote_types");
@@ -132,12 +138,23 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             int typesSize = types.size(); // to avoid warning
             assert(next == typesSize);
             Entry e = new Entry(local);
+            byte traits = ci.readByte();
             e.typesChecked = checkedTypes;
+
+            // remote enum type?
+            ArrayList<String> enumConstants = null;
+            if ((traits & IS_ENUM) != 0) {
+                enumConstants = new ArrayList<String>();
+                short n = ci.readShort();
+                for (int i = 0; i < n; i++) {
+                    enumConstants.add(ci.readString());
+                }
+            }
 
             //JavaOnlyBlock
             e.name = name;
             if (local == null) {
-                local = new UnknownType(name, type);
+                local = new UnknownType(name, type, enumConstants, traits);
             }
 
             /*Cpp
@@ -181,6 +198,15 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             co.writeShort(FinrocTypeInfo.get(i).getUpdateTime());
             co.writeByte(FinrocTypeInfo.get(i).getType().ordinal());
             co.writeString(dt.getName());
+            ArrayList<String> enumConstants = dt.getEnumConstants();
+            co.writeByte((enumConstants != null ? IS_ENUM : 0) | IS_BINARY_SERIALIZABLE | IS_STRING_SERIALIZABLE | IS_XML_SERIALIZABLE); // type traits
+            if (enumConstants != null) {
+                assert(enumConstants.size() <= Short.MAX_VALUE);
+                co.writeShort(enumConstants.size());
+                for (int j = 0; j < enumConstants.size(); j++) {
+                    co.writeString(enumConstants.get(j));
+                }
+            }
         }
         co.writeShort(-1); // terminator
         localTypesSent = typeCount;

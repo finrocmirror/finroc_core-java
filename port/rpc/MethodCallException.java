@@ -22,7 +22,6 @@
 package org.finroc.core.port.rpc;
 
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Inline;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
@@ -39,12 +38,9 @@ public class MethodCallException extends Exception {
     private static final long serialVersionUID = 3913576934099720293L;
 
     /** Type of exception */
-    public enum Type { TIMEOUT, NO_CONNECTION, UNKNOWN_METHOD, INVALID_PARAM, PROGRAMMING_ERROR }
+    public enum Type { NONE, TIMEOUT, NO_CONNECTION, UNKNOWN_METHOD, INVALID_PARAM, PROGRAMMING_ERROR }
     private final Type type;
 
-    /**
-     * @param timeout Timeout exception (or rather connection exception)?
-     */
     @JavaOnly
     public MethodCallException(Type type) {
         this.type = type;
@@ -55,16 +51,7 @@ public class MethodCallException extends Exception {
         this.type = Type.values()[type2];
     }
 
-    /*Cpp
-    MethodCallException(int type_, const char* func = NULL, const char* file = NULL, const int line = -1) : Exception("", func, file, line), type(static_cast<Type>(type_)) {}
-     */
-
     @ConstMethod public Type getType() {
         return type;
-    }
-
-    @InCpp("return static_cast<int8>(type);")
-    @ConstMethod public byte getTypeId() {
-        return (byte)type.ordinal();
     }
 }

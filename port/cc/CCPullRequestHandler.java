@@ -37,7 +37,8 @@ public interface CCPullRequestHandler {
      *
      * @param origin (Output) Port pull request comes from
      * @param resultBuffer Buffer with result
+     * @param intermediateAssign Assign pulled value to ports in between?
      * @return Was pull request handled (and result buffer filled) - or should it be handled by port in the standard way (now)?
      */
-    public boolean pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer);
+    public boolean pullRequest(CCPortBase origin, CCPortDataManagerTL resultBuffer, boolean intermediateAssign);
 }

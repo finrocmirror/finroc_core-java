@@ -248,7 +248,7 @@ public class Port1Method<HANDLER extends Method1Handler<R, P1>, R, P1> extends A
                 call.recycle();
                 retHandler.handleMethodCallException(this, e);
             } else {
-                call.setExceptionStatus(e.getTypeId());
+                call.setExceptionStatus(e.getType());
             }
         }
     }

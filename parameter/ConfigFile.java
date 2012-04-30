@@ -334,7 +334,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             if (wrapped == null) {
                 os.writeString("");
             } else {
-                os.writeString(wrapped.getXMLDump());
+                os.writeString(wrapped.getXMLDump(true));
             }
 
             //Cpp os.writeString(wrapped.getRootNode().getXMLDump());

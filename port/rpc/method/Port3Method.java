@@ -282,7 +282,7 @@ public class Port3Method<HANDLER extends Method3Handler<R, P1, P2, P3>, R, P1, P
                 call.recycle();
                 retHandler.handleMethodCallException(this, e);
             } else {
-                call.setExceptionStatus(e.getTypeId());
+                call.setExceptionStatus(e.getType());
             }
         }
     }

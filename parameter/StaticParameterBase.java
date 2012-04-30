@@ -88,10 +88,6 @@ public class StaticParameterBase implements HasDestructor {
     /** Index in parameter list */
     protected int listIndex;
 
-    /** If this is a remote parameter: value as string */
-    @JavaOnly
-    private String remoteValue;
-
     /** Is this a remote parameter? */
     @JavaOnly
     private final boolean remote;
@@ -173,18 +169,21 @@ public class StaticParameterBase implements HasDestructor {
         os.writeString(configEntry);
         os.writeBoolean(configEntrySetByFinstruct);
         os.writeBoolean(enforceCurrentValue);
-        TypedObject val = valPointer();
 
-        //JavaOnlyBlock
-        if (remoteValue != null) {
-            os.writeBoolean(true);
-            os.writeString(remoteValue);
-            return;
-        }
+        serializeValue(os);
+    }
 
+    /**
+     * Serializes value to output stream
+     *
+     * @param os Output stream
+     */
+    public void serializeValue(OutputStreamBuffer os) {
+        GenericObject val = valPointer();
         os.writeBoolean(val != null);
         if (val != null) {
-            os.writeString(SerializationHelper.typedStringSerialize(type, val));
+            os.writeType(val.getType());
+            Serialization.serialize(os, val, Serialization.DataEncoding.XML);
         }
     }
 
@@ -210,12 +209,27 @@ public class StaticParameterBase implements HasDestructor {
         updateOuterParameterAttachment();
         updateAndPossiblyLoad(commandLineOptionTmp, configEntryTmp);
 
+        try {
+            deserializeValue(is);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+        }
+    }
+
+    /**
+     * Deserializes value from stream
+     *
+     * @param is Input stream
+     */
+    public void deserializeValue(InputStreamBuffer is) {
         if (is.readBoolean()) {
-            try {
-                set(is.readString());
-            } catch (Exception e) {
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+            DataTypeBase dt = is.readType();
+            GenericObject val = valPointer();
+            if (val == null || val.getType() != dt) {
+                createBuffer(dt);
+                val = valPointer();
             }
+            Serialization.deserialize(is, val, Serialization.DataEncoding.XML);
         }
     }
 
@@ -311,36 +325,16 @@ public class StaticParameterBase implements HasDestructor {
      * @param s serialized as string
      */
     public void set(@Const @Ref String s) throws Exception {
-        if (remoteValue()) {
-
-            //JavaOnlyBlock
-            // try parsing value - if the type is available locally
-            if (type != null) {
-                DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
-                TypedObject val = valPointer();
-                if (val == null || val.getType() != dt) {
-                    createBuffer(dt);
-                    val = valPointer();
-                }
-                val.deserialize(new StringInputStream(s));
-                remoteValue = null;
-            } else {
-                remoteValue = s;
-                value = null;
-            }
-
-        } else {
-            assert(type != null);
-            DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
-            TypedObject val = valPointer();
-            if (val.getType() != dt) {
-                createBuffer(dt);
-                val = valPointer();
-            }
-
-            StringInputStream sis = new StringInputStream(s);
-            val.deserialize(sis);
+        assert(type != null);
+        DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
+        TypedObject val = valPointer();
+        if (val.getType() != dt) {
+            createBuffer(dt);
+            val = valPointer();
         }
+
+        StringInputStream sis = new StringInputStream(s);
+        val.deserialize(sis);
     }
 
     /**
@@ -383,14 +377,6 @@ public class StaticParameterBase implements HasDestructor {
      */
     public DataTypeBase getType() {
         return type;
-    }
-
-    /**
-     * @return Remote value as string if data type is null
-     */
-    @JavaOnly
-    public Object getRemoteValue() {
-        return remoteValue;
     }
 
     public void serialize(XMLNode node, boolean finstructContext) throws Exception {

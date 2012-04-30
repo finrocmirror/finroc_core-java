@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2010 Max Reichardt,
+ * Copyright (C) 2010-2012 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -25,12 +25,14 @@ import org.finroc.core.port.MultiTypePortDataBufferPool;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.std.PortDataManager;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
+import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Prefix;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
+import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -39,6 +41,8 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.DefaultFactory;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.TypedObject;
+import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
@@ -197,5 +201,59 @@ public class SerializationHelper {
             logDomain.log(LogLevel.LL_ERROR, "SerializationHelper", e);
             return null;
         }
+    }
+
+    /**
+     * Serialize Object of arbitrary type to stream (including unknown adapter types
+     * (including type information)
+     *
+     * @param os Output stream buffer to write to
+     * @param portType Data type of port
+     * @param to Object to write (may be null)
+     * @param enc Data encoding to use
+     */
+    public static void writeObject(OutputStreamBuffer os, DataTypeBase portType, @Const GenericObject to, Serialization.DataEncoding enc) {
+        if (to == null) {
+            os.writeType(null);
+            return;
+        }
+
+        os.writeType(portType);
+        if (FinrocTypeInfo.isUnknownType(portType)) {
+            ((UnknownType)portType).serialize(os, to, enc);
+        } else {
+            to.serialize(os, enc);
+        }
+    }
+
+    /**
+     * Deserialize object with yet unknown type from stream
+     * (should have been written to stream with OutputStream.WriteObject() before; typeencoder should be of the same type)
+     *
+     * @param is Input stream to deserialize from
+     * @param expectedType expected type (optional, may be null)
+     * @param factoryParameter Custom parameter for possibly user defined factory
+     * @param enc Data type encoding to use
+     * @return Buffer with read object (caller needs to take care of deleting it)
+     */
+    public static GenericObject readObject(InputStreamBuffer is, DataTypeBase expectedType, @VoidPtr @CppDefault("NULL") Object factoryParameter, Serialization.DataEncoding enc) {
+        //readSkipOffset();
+        DataTypeBase dt = is.readType();
+        if (dt == null) {
+            return null;
+        }
+
+        //JavaOnlyBlock
+        if (expectedType != null && (!dt.isConvertibleTo(expectedType))) {
+            dt = expectedType; // fix to cope with mca2 legacy blackboards
+        }
+
+        GenericObject buffer = is.getFactory().createGenericObject(dt, factoryParameter);
+        if (FinrocTypeInfo.isUnknownType(dt)) {
+            ((UnknownType)dt).deserialize(is, buffer, enc);
+        } else {
+            buffer.deserialize(is, enc);
+        }
+        return buffer;
     }
 }

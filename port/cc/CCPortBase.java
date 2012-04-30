@@ -616,7 +616,6 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Pull/read current value from source port
      * When multiple source ports are available an arbitrary one of them is used.
      *
-     * @param intermediateAssign Assign pulled value to ports in between?
      * @return Locked port data (non-const!)
      */
     protected CCPortDataManagerTL pullValueRaw() {
@@ -654,7 +653,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @Ptr ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
             CCPortDataManagerTL resBuf = tc.getUnusedBuffer(dataType);
-            if (pullRequestHandler.pullRequest(this, resBuf)) {
+            if (pullRequestHandler.pullRequest(this, resBuf, intermediateAssign)) {
                 tc.data = resBuf;
                 tc.data.setRefCounter(1); // one lock for caller
                 tc.ref = tc.data.getCurrentRef();

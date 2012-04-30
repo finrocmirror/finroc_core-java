@@ -231,7 +231,7 @@ public class Port0Method<HANDLER extends Method0Handler<R>, R> extends AbstractN
                 call.recycle();
                 retHandler.handleMethodCallException(this, e);
             } else {
-                call.setExceptionStatus(e.getTypeId());
+                call.setExceptionStatus(e.getType());
             }
         }
     }

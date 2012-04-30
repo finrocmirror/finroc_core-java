@@ -215,10 +215,21 @@ public class FinrocTypeInfo {
 
     /**
      * @param dt Data type to look this up for
-     * @return It this an unknown type
+     * @return Is this an unknown type?
      */
     public static boolean isUnknownType(DataTypeBase dt) {
         return get(dt).getType().ordinal() >= Type.UNKNOWN_STD.ordinal();
+    }
+
+    /**
+     * @param dt Data type to look this up for
+     * @return Is this an unknown type that can be represented/serialized by a local data type?
+     */
+    public static boolean isUnknownAdaptableType(DataTypeBase dt) {
+        if (dt instanceof UnknownType) {
+            return ((UnknownType)dt).isAdaptable();
+        }
+        return false;
     }
 
     /**

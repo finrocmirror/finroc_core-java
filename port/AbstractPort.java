@@ -1268,7 +1268,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     @Override
     public GenericObject createGenericObject(DataTypeBase dt, @VoidPtr Object factoryParameter) {
-        if (FinrocTypeInfo.isStdType(dt)) {
+        if (FinrocTypeInfo.isStdType(dt) || FinrocTypeInfo.isUnknownAdaptableType(dt)) {
             return getUnusedBufferRaw(dt).getObject();
         } else if (FinrocTypeInfo.isCCType(dt)) {
             if (factoryParameter == null) {

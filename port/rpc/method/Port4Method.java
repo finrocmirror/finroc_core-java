@@ -316,7 +316,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
                 call.recycle();
                 retHandler.handleMethodCallException(this, e);
             } else {
-                call.setExceptionStatus(e.getTypeId());
+                call.setExceptionStatus(e.getType());
             }
         }
     }

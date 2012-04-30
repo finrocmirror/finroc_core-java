@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2011 Max Reichardt,
+ * Copyright (C) 2011-2012 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -21,9 +21,24 @@
  */
 package org.finroc.core.portdatabase;
 
+import java.util.ArrayList;
+
+import org.finroc.core.datatype.CoreString;
+import org.finroc.core.datatype.XML;
+import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.rrlib.finroc_core_utils.jc.annotation.Const;
+import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
+import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.Factory;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObjectInstance;
+import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
+import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
  * @author max
@@ -34,16 +49,21 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 @JavaOnly
 public class UnknownType extends DataTypeBase {
 
-    /** Original type
-    private FinrocTypeInfo.Type originalType;
+    /** Type traits of remote type */
+    private final byte traits;
 
     /**
      * @param name Name of RPC Inteface
-     * @param methods Referenced PortInterface
+     * @param type Type of unknown type
+     * @param enumConstants Enum constants if this is a enum type - otherwise NULL
+     * @param Type traits of remote type
      */
-    public UnknownType(String name, FinrocTypeInfo.Type type) {
-        super(getDataTypeInfo(name));
+    public UnknownType(String name, FinrocTypeInfo.Type type, ArrayList<String> enumConstants, byte traits) {
+        super(getDataTypeInfo(name, traits));
+        ((UnknownTypeInfo)info).dataType = this;
         FinrocTypeInfo.get(this).init(getUnknownType(type));
+        info.enumConstants = enumConstants;
+        this.traits = traits;
     }
 
     /**
@@ -54,14 +74,121 @@ public class UnknownType extends DataTypeBase {
         return FinrocTypeInfo.Type.values()[type.ordinal() + FinrocTypeInfo.Type.UNKNOWN_STD.ordinal()];
     }
 
-    private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {
+    private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name, byte traits) {
         DataTypeBase dt = findType(name);
         if (dt != null) {
             return dt.getInfo();
         }
-        DataTypeInfoRaw info = new DataTypeInfoRaw();
-        info.setName(name);
-        return info;
+        return new UnknownTypeInfo(name, traits);
     }
 
+    // Type-trait queries
+    public boolean isBinarySerializable() {
+        return (traits & RemoteTypes.IS_BINARY_SERIALIZABLE) != 0;
+    }
+    public boolean isStringSerializable() {
+        return (traits & RemoteTypes.IS_STRING_SERIALIZABLE) != 0;
+    }
+    public boolean isXmlSerializable() {
+        return (traits & RemoteTypes.IS_XML_SERIALIZABLE) != 0;
+    }
+    public boolean isEnum() {
+        return (traits & RemoteTypes.IS_ENUM) != 0;
+    }
+
+    /**
+     * @return Can this type be used in ports? (although it is unknown)
+     */
+    public boolean isAdaptable() {
+        FinrocTypeInfo.Type ftype = FinrocTypeInfo.get(this).getType();
+        return (ftype == FinrocTypeInfo.Type.UNKNOWN_CC || ftype == FinrocTypeInfo.Type.UNKNOWN_STD) && (isStringSerializable() || isXmlSerializable() || isEnum());
+    }
+
+    /**
+     * @return Encoding to use for this unknown type
+     */
+    public Serialization.DataEncoding determineEncoding() {
+        if (isStringSerializable()) {
+            return Serialization.DataEncoding.STRING;
+        } else if (isXmlSerializable()) {
+            return Serialization.DataEncoding.XML;
+        }
+        return Serialization.DataEncoding.BINARY;
+    }
+
+
+    static class UnknownTypeInfo extends DataTypeInfoRaw {
+
+        DataTypeBase dataType;
+
+        public UnknownTypeInfo(String name, byte traits) {
+            type = Type.PLAIN;
+            javaClass = ((traits & RemoteTypes.IS_STRING_SERIALIZABLE) != 0) ? CoreString.class : XML.class;
+            this.name = name;
+        }
+
+        public Object createInstance(int placement) {
+            try {
+                return javaClass.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @SuppressWarnings( { "unchecked", "rawtypes" })
+        public GenericObject createInstanceGeneric(int placement, int managerSize) {
+            return new GenericObjectInstance((RRLibSerializable)createInstance(placement), dataType, null);
+        }
+
+        @Override
+        public void deepCopy(Object src, Object dest, @Ptr Factory f) {
+            @Const @Ptr @InCpp("const T* s = static_cast<const T*>(src);")
+            RRLibSerializable s = (RRLibSerializable)src;
+            @Ptr @InCpp("T* d = static_cast<T*>(dest);")
+            RRLibSerializable d = (RRLibSerializable)dest;
+            Serialization.deepCopy(s, d, f);
+        }
+
+        @Override
+        public void serialize(OutputStreamBuffer os, Object obj) {
+            ((RRLibSerializable)obj).serialize(os);
+        }
+
+        @Override
+        public void deserialize(InputStreamBuffer is, Object obj) {
+            ((RRLibSerializable)obj).deserialize(is);
+        }
+
+    }
+
+    /**
+     * Serialize object of this type to stream
+     *
+     * @param os Output stream buffer to write to
+     * @param go Object to write (may be null)
+     * @param enc Data encoding to use
+     */
+    public void serialize(OutputStreamBuffer os, GenericObject go, Serialization.DataEncoding enc) {
+        if (enc == Serialization.DataEncoding.XML) {
+            go.serialize(os, Serialization.DataEncoding.STRING);
+        } else {
+            go.serialize(os, enc);
+        }
+    }
+
+    /**
+     * Deserialize object of this type from stream
+     *
+     * @param is Input stream to deserialize from
+     * @param go Object to deserialize
+     * @param enc Data type encoding to use
+     * @return Buffer with read object (caller needs to take care of deleting it)
+     */
+    public void deserialize(InputStreamBuffer is, GenericObject go, Serialization.DataEncoding enc) {
+        if (enc == Serialization.DataEncoding.XML) {
+            go.deserialize(is, Serialization.DataEncoding.STRING);
+        } else {
+            go.deserialize(is, enc);
+        }
+    }
 }

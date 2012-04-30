@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2007-2010 Max Reichardt,
+ * Copyright (C) 2007-2012 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -22,17 +22,25 @@
 package org.finroc.core.port.rpc;
 
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
+import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
+import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
+import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
+import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.rpc.method.AbstractAsyncReturnHandler;
 import org.finroc.core.port.rpc.method.AbstractMethod;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
  * @author max
@@ -73,10 +81,18 @@ public class MethodCall extends AbstractCall implements Task {
     /** Needed when executed as a task with synch forward over the net - Port from which call originates */
     private InterfaceNetPort sourceNetPort;
 
+    /** Maximum number of parameters */
+    private static final @SizeT int MAX_PARAMS = 4;
+
+    /** Storage for parameters that are used in call - for usage in local runtime (fixed size, since this is smaller & less hassle than dynamic array) */
+    @InCpp("CallParameter params[MAX_PARAMS];")
+    private CallParameter[] params = new CallParameter[MAX_PARAMS];
 
     /** (Typically not instantiated directly - possible though) */
     public MethodCall() {
-        super(/*MAX_CALL_DEPTH*/);
+        for (int i = 0; i < MAX_PARAMS; i++) {
+            params[i] = new CallParameter();
+        }
     }
 
     /**
@@ -99,12 +115,15 @@ public class MethodCall extends AbstractCall implements Task {
     @Override
     public void serialize(OutputStreamBuffer oos) {
         oos.writeByte(method == null ? -1 : method.getMethodId());
-        assert(getStatus() != SYNCH_CALL || netTimeout > 0) : "Network timeout needs to be >0 with a synch call";
+        assert(getStatus() != Status.SYNCH_CALL || netTimeout > 0) : "Network timeout needs to be >0 with a synch call";
         oos.writeInt(netTimeout);
         super.serialize(oos);
+
+        // Serialize parameters
+        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+            params[i].serialize(oos);
+        }
     }
-
-
 
     @Override
     public void deserialize(InputStreamBuffer is) {
@@ -125,13 +144,23 @@ public class MethodCall extends AbstractCall implements Task {
         byte b = is.readByte();
         method = (dt == null) ? null : FinrocTypeInfo.get(dt).getPortInterface().getMethod(b);
         netTimeout = is.readInt();
-        super.deserializeImpl(is, skipParameters);
+        super.deserializeImpl(is);
+
+        // deserialize parameters
+        if (skipParameters) {
+            return;
+        }
+        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+            params[i].deserialize(is);
+        }
     }
 
+    @Override
     public void genericRecycle() {
         recycle();
     }
 
+    @Override
     public void recycle() {
         method = null;
         handler = null;
@@ -139,6 +168,7 @@ public class MethodCall extends AbstractCall implements Task {
         netPort = null;
         netTimeout = -1;
         sourceNetPort = null;
+        recycleParameters();
         super.recycle();
     }
 
@@ -259,6 +289,90 @@ public class MethodCall extends AbstractCall implements Task {
      */
     public @Const DataTypeBase getPortInterfaceType() {
         return portInterfaceType;
+    }
+
+    /**
+     * Recycle all parameters, but keep empty method call
+     */
+    public void recycleParameters() {
+        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+            params[i].recycle();
+        }
+    }
+
+    @JavaOnly
+    public void addParam(int paramIndex, @Const Object o) {
+        CallParameter p = params[paramIndex];
+        if (o == null) {
+            p.type = CallParameter.NULLPARAM;
+            p.value = null;
+        } else if (o instanceof Number) {
+            p.type = CallParameter.NUMBER;
+            p.number.setValue((Number)o);
+        } else if (o instanceof GenericObject) {
+            p.type = CallParameter.OBJECT;
+            p.value = (GenericObject)o;
+        } else {
+            p.type = CallParameter.OBJECT;
+            GenericObjectManager mgr = ReusableGenericObjectManager.getManager(o);
+            assert(mgr != null && mgr instanceof ReusableGenericObjectManager);
+            p.value = mgr.getObject();
+        }
+    }
+
+    /**
+     * Get parameter with specified index
+     */
+    @SuppressWarnings("unchecked") @JavaOnly
+    public <P> P getParam(int index) {
+        CallParameter p = params[index];
+        if (p.type == CallParameter.NULLPARAM) {
+            return null;
+        } else if (p.type == CallParameter.NUMBER) {
+            if (p.number.getNumberType() == CoreNumber.Type.INT) {
+                return (P)(Integer)p.number.intValue();
+            } else if (p.number.getNumberType() == CoreNumber.Type.LONG) {
+                return (P)(Long)p.number.longValue();
+            } else if (p.number.getNumberType() == CoreNumber.Type.DOUBLE) {
+                return (P)(Double)p.number.doubleValue();
+            } else {
+                return (P)(Float)p.number.floatValue();
+            }
+        } else {
+            P result = (P)p.value.getData();
+            p.clear();
+            return result;
+        }
+    }
+
+    public @CustomPtr("tPortDataPtr") GenericObject getParamGeneric(int index) {
+        @Ref CallParameter p = params[index];
+        if (p.type == CallParameter.NULLPARAM || p.value == null) {
+
+            //JavaOnlyBlock
+            return null;
+
+            //Cpp return PortDataPtr<rrlib::serialization::GenericObject>();
+        } else {
+
+            //JavaOnlyBlock
+            @Ref @CustomPtr("tPortDataPtr") GenericObject go = p.value;
+            p.clear();
+            return go;
+
+            //Cpp return std::_move(p.value);
+        }
+    }
+
+    /**
+     * Clear parameters and set method call status to exception
+     *
+     * @param typeId Type of exception
+     */
+    @Override
+    public void setExceptionStatus(MethodCallException.Type typeId) {
+        recycleParameters();
+        super.setExceptionStatus(typeId);
     }
 
     /*Cpp

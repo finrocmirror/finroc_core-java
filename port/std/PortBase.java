@@ -131,7 +131,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     @Init("value()")
     public PortBase(PortCreationInfo pci) {
         super(processPci(pci));
-        assert(FinrocTypeInfo.isStdType(pci.dataType));
+        assert(FinrocTypeInfo.isStdType(pci.dataType) || FinrocTypeInfo.isUnknownAdaptableType(pci.dataType));
         initLists(edgesSrc, edgesDest);
 
         // init types
@@ -519,7 +519,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * Pull/read current value from source port
      * When multiple source ports are available an arbitrary one of them is used.
      *
-     * @param intermediateAssign Assign pulled value to ports in between?
      * @return Locked port data
      */
     protected PortDataManager pullValueRaw() {
@@ -570,7 +569,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         @Ptr ArrayWrapper<PortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) {
             pc.lockEstimate++; // for local assign
-            PortDataManager mgr = pullRequestHandler.pullRequest(this, (byte)pc.lockEstimate);
+            PortDataManager mgr = pullRequestHandler.pullRequest(this, (byte)pc.lockEstimate, intermediateAssign);
             if (mgr != null) {
                 PortDataReference pdr = mgr.getCurReference();
                 pc.curRef = pdr;

@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2007-2010 Max Reichardt,
+ * Copyright (C) 2007-2012 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -26,14 +26,18 @@ import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.finroc.core.port.cc.CCPortDataManager;
+import org.rrlib.finroc_core_utils.serialization.Serialization;
+import org.rrlib.finroc_core_utils.serialization.Serialization.DataEncoding;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.portdatabase.ReusableGenericObjectManager;
+import org.finroc.core.portdatabase.SerializationHelper;
 
 /**
  * @author max
@@ -45,42 +49,58 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 public class PullCall extends AbstractCall implements Task {
 
     /** Assign pulled value to ports in between? */
-    public boolean intermediateAssign;
-
-    /** Is this a pull call for a cc port? */
-    public boolean ccPull;
+    private boolean intermediateAssign;
 
     /** when received through network and executed in separate thread: Port to call pull on and port to send result back over */
-    public NetPort port;
+    private NetPort port;
+
+    /** Desired data encoding for port data */
+    private Serialization.DataEncoding desiredEncoding = Serialization.DataEncoding.BINARY;
+
+    /** If pull call is returning: Pulled buffer */
+    private ReusableGenericObjectManager pulledBuffer;
 
     /** Log domain for this class */
     @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public PullCall() {
-        super(/*MAX_CALL_DEPTH*/);
-        reset();
     }
 
-    /**
-     * Reset all variable in order to reuse object
-     */
-    private void reset() {
-        recycleParameters();
+    @Override
+    public void recycle() {
+        intermediateAssign = false;
+        port = null;
+        desiredEncoding = Serialization.DataEncoding.BINARY;
+        if (pulledBuffer != null) {
+            pulledBuffer.genericLockRelease();
+            pulledBuffer = null;
+        }
+        super.recycle();
     }
 
     @Override
     public void deserialize(InputStreamBuffer is) {
         super.deserialize(is);
         intermediateAssign = is.readBoolean();
-        ccPull = is.readBoolean();
+        desiredEncoding = is.readEnum(Serialization.DataEncoding.class);
+        if (isReturning(false)) {
+            pulledBuffer = (ReusableGenericObjectManager)SerializationHelper.readObject(is, null, this, desiredEncoding).getManager();
+            if (pulledBuffer instanceof PortDataManager) {
+                ((PortDataManager)pulledBuffer).getCurrentRefCounter().setOrAddLock();
+            }
+        }
     }
 
     @Override
     public void serialize(OutputStreamBuffer oos) {
         super.serialize(oos);
         oos.writeBoolean(intermediateAssign);
-        oos.writeBoolean(ccPull);
+        oos.writeEnum(desiredEncoding);
+        if (isReturning(false)) {
+            assert(port != null);
+            SerializationHelper.writeObject(oos, port.getDataType(), pulledBuffer.getObject(), desiredEncoding);
+        }
     }
 
     /**
@@ -100,31 +120,16 @@ public class PullCall extends AbstractCall implements Task {
                 log(LogLevel.LL_DEBUG, logDomain, "pull call received for port that will soon be deleted");
                 recycle();
             }
+            assert(pulledBuffer == null);
 
             if (FinrocTypeInfo.isCCType(port.getPort().getDataType())) {
                 CCPortBase cp = (CCPortBase)port.getPort();
-                CCPortDataManager cpd = cp.getPullInInterthreadContainerRaw(true, true);
-                recycleParameters();
-
-                //JavaOnlyBlock
-                addParam(0, cpd.getObject());
-
-                //Cpp PortDataPtr<rrlib::serialization::GenericObject> tmp(cpd->getObject(), cpd);
-                //Cpp addParam(0, tmp);
-
+                pulledBuffer = cp.getPullInInterthreadContainerRaw(true, true);
                 setStatusReturn();
                 port.sendCallReturn(this);
             } else if (FinrocTypeInfo.isStdType(port.getPort().getDataType())) {
                 PortBase p = (PortBase)port.getPort();
-                PortDataManager pd = p.getPullLockedUnsafe(true, true);
-                recycleParameters();
-
-                //JavaOnlyBlock
-                addParam(0, pd.getObject());
-
-                //Cpp PortDataPtr<rrlib::serialization::GenericObject> tmp(pd->getObject(), pd);
-                //Cpp addParam(0, tmp);
-
+                pulledBuffer = p.getPullLockedUnsafe(true, true);
                 setStatusReturn();
                 port.sendCallReturn(this);
             } else {
@@ -136,6 +141,26 @@ public class PullCall extends AbstractCall implements Task {
 
     public String toString() {
         return "PullCall (" + getStatusString() + ", callid: " + super.getMethodCallIndex() + ", threaduid: " + super.getThreadUid() + ")";
+    }
+
+    /**
+     * @return If pull call is returning: Pulled buffer
+     */
+    public GenericObject getPulledBuffer() {
+        return pulledBuffer.getObject();
+    }
+
+    /**
+     * Setup pull call for remote execution
+     *
+     * @param remoteHandle Destination port handle - only used while call is enqueued in network queue
+     * @param intermediateAssign Assign pulled value to ports in between?
+     * @param encoding Data encoding to use for serialization of pulled buffer
+     */
+    public void setupPullCall(int remoteHandle, boolean intermediateAssign, DataEncoding encoding) {
+        setRemotePortHandle(remoteHandle);
+        this.intermediateAssign = intermediateAssign;
+        this.desiredEncoding = encoding;
     }
 
     /*Cpp

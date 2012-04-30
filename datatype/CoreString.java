@@ -38,10 +38,10 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Simple string (buffer) type to use in ports
- * Has 512 bytes initially.
+ * Has 128 bytes initially.
  */
 @PostInclude("rrlib/serialization/DataType.h")
 @HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::CoreString>;"})

@@ -121,7 +121,7 @@ public abstract class InterfaceNetPort extends InterfacePort {
         try {
             mc = netPort.synchCallOverTheNet(mc, mc.getNetTimeout());
         } catch (MethodCallException e) {
-            mc.setExceptionStatus(e.getTypeId());
+            mc.setExceptionStatus(e.getType());
         }
         sendSyncCallReturn(mc);
     }

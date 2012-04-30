@@ -36,6 +36,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.finroc_core_utils.serialization.Serialization;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.std.PortDataManager;
@@ -94,7 +95,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         if (type == NUMBER) {
             number.serialize(oos);
         } else if (type == OBJECT) {
-            oos.writeObject(value);
+            oos.writeObject(value, Serialization.DataEncoding.BINARY);
             @InCpp("PortDataManager* pdm = value.getManagerT<PortDataManager>();")
             PortDataManager pdm = PortDataManager.getManager(value.getData());
 
@@ -113,7 +114,7 @@ public @PassByValue @NoSuperclass @AtFront @Friend(AbstractCall.class) class Cal
         } else if (type == OBJECT) {
             assert(value == null);
             //value = (GenericObject)is.readObjectInInterThreadContainer(null);
-            @Ptr GenericObject go = is.readObject(null, this);
+            @Ptr GenericObject go = is.readObject(null, this, Serialization.DataEncoding.BINARY);
             value = lock(go);
 
             PortDataManager pdm = PortDataManager.getManager(value.getData());

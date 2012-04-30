@@ -29,14 +29,14 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ParameterInfo;
+import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.RemoteCreateModuleAction;
-import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.net.RemoteRuntime;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
-import org.finroc.core.port.rpc.method.AsyncReturnHandler;
 import org.finroc.core.port.std.PortDataManager;
+import org.finroc.core.portdatabase.SerializationHelper;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -121,8 +121,8 @@ public class AdminClient extends InterfaceClientPort {
             try {
                 MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
                 OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
-                co.writeType(container.getObject().getType());
-                container.getObject().serialize(co);
+                co.writeEnum(np.getEncoding());
+                SerializationHelper.writeObject(co, np.getDataType(), container.getObject(), np.getEncoding());
                 co.close();
                 AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 0, false);
                 return;
@@ -131,43 +131,6 @@ public class AdminClient extends InterfaceClientPort {
             }
         }
         logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
-    }
-
-    /**
-     * Sets value of remote port
-     *
-     * @param np network port of remote port
-     * @param dt Data type of object
-     * @param newValue new value as string (that remote runtime will deserialize from)
-     */
-    public void setRemotePortValue(NetPort np, DataTypeBase dt, String newValue) {
-        if (np != null && getAdminInterface(np) == this) {
-            try {
-                MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-                OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
-                co.writeType(dt);
-                co.writeString(newValue);
-                co.close();
-                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 1, false);
-                return;
-            } catch (MethodCallException e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
-            }
-        }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
-    }
-
-    /**
-     * Gets value of remote port as string
-     *
-     * @param np Network port of remote port
-     * @param returnHandler To keep UI responsive, function returns and result is passed to this return handler later
-     */
-    public void getRemotePortValue(NetPort np, AsyncReturnHandler<CoreString> returnHandler) {
-        if (np != null && getAdminInterface(np) == this) {
-            ThreadLocalCache.get();
-            AdminServer.GET_PORT_VALUE_AS_STRING.callAsync(this, returnHandler, np.getRemoteHandle(), 0, 0, 5000, false);
-        }
     }
 
     /**
@@ -207,16 +170,16 @@ public class AdminClient extends InterfaceClientPort {
      * @param cma Remote create module action (retrieved from getRemoteModuleTypes())
      * @param name Name of new module
      * @param parentHandle Remote handle of parent module
-     * @param params Parameters
+     * @param spl Parameters
      * @return Did module creation succeed?
      */
     @JavaOnly
-    public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, String[] params) {
+    public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
         MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
         OutputStreamBuffer co = new OutputStreamBuffer(mb);
-        if (params != null) {
-            for (String p : params) {
-                co.writeString(p);
+        if (spl != null) {
+            for (int i = 0; i < spl.size(); i++) {
+                spl.get(i).serializeValue(co);
             }
         }
         co.close();

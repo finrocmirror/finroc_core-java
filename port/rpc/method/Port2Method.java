@@ -265,7 +265,7 @@ public class Port2Method<HANDLER extends Method2Handler<R, P1, P2>, R, P1, P2> e
                 call.recycle();
                 retHandler.handleMethodCallException(this, e);
             } else {
-                call.setExceptionStatus(e.getTypeId());
+                call.setExceptionStatus(e.getType());
             }
         }
     }

@@ -47,11 +47,9 @@ import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 import org.finroc.core.port.rpc.method.Method0Handler;
 import org.finroc.core.port.rpc.method.Method1Handler;
 import org.finroc.core.port.rpc.method.Method2Handler;
-import org.finroc.core.port.rpc.method.Method3Handler;
 import org.finroc.core.port.rpc.method.Port0Method;
 import org.finroc.core.port.rpc.method.Port1Method;
 import org.finroc.core.port.rpc.method.Port2Method;
-import org.finroc.core.port.rpc.method.Port3Method;
 import org.finroc.core.port.rpc.method.PortInterface;
 import org.finroc.core.port.rpc.method.Void1Handler;
 import org.finroc.core.port.rpc.method.Void1Method;
@@ -82,12 +80,10 @@ import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 
 /**
  * @author max
@@ -97,7 +93,7 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 @Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements FrameworkElementTreeFilter.Callback<AdminServer.CallbackParameters>, Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
     Void3Handler < Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
-    Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer>, Method3Handler< CoreString, Integer, Integer, Integer> {
+    Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer> {
 
     /** Struct for callback parameters for GET_PARAMETER_INFO method */
     @Struct @AtFront
@@ -130,7 +126,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     /** Set a port's value */
     @CppType("Void3Method<AdminServer*, int, PortDataPtr<const rrlib::serialization::MemoryBuffer>, int>")
     @PassByValue public static Void3Method < AdminServer, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
-        new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "as string?", false);
+        new Void3Method < AdminServer, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "dummy", false);
 
     /** Get module types */
     @CppType("Port0Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer> >")
@@ -171,11 +167,6 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     /** Is framework element with specified handle currently executing? */
     @PassByValue public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
         new Port1Method<AdminServer, Integer, Integer>(METHODS, "Is Framework element running", "handle", false);
-
-    /** Get current port value as string */
-    @CppType("Port3Method<AdminServer*, PortDataPtr<CoreString>, int, int, int >")
-    @PassByValue public static Port3Method<AdminServer, CoreString, Integer, Integer, Integer> GET_PORT_VALUE_AS_STRING =
-        new Port3Method<AdminServer, CoreString, Integer, Integer, Integer>(METHODS, "Get port value as string", "handle", "dummy", "dummy", false);
 
     /** Get parameter info for specified framework element: ConfigFile, children with config file, info on all parameters with same config file  */
     @CppType("Port2Method<AdminServer*, PortDataPtr<rrlib::serialization::MemoryBuffer>, int, PortDataPtr<CoreString> >")
@@ -285,40 +276,18 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                 if (port.isReady()) {
                     @InCpp("rrlib::serialization::InputStream ci(buf._get(), rrlib::serialization::InputStream::eNames);")
                     @PassByValue InputStreamBuffer ci = new InputStreamBuffer(buf, InputStreamBuffer.TypeEncoding.Names);
+                    Serialization.DataEncoding enc = ci.readEnum(Serialization.DataEncoding.class);
                     DataTypeBase dt = ci.readType();
                     if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
                         CCPortBase p = (CCPortBase)port;
                         CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(dt);
-                        if (asString == 0) {
-                            c.getObject().deserialize(ci);
-                        } else {
-                            String s = ci.readString();
-                            @PassByValue StringInputStream sis = new StringInputStream(s);
-                            try {
-                                c.getObject().deserialize(sis);
-                            } catch (Exception e) {
-                                c.recycleUnused();
-                                log(LogLevel.LL_WARNING, logDomain, "Cannot deserialize from string " + s, e);
-                            }
-                        }
+                        c.getObject().deserialize(ci, enc);
                         p.browserPublishRaw(c);
                     } else if (FinrocTypeInfo.isStdType(port.getDataType()) && FinrocTypeInfo.isStdType(dt)) {
                         PortBase p = (PortBase)port;
                         PortDataManager portData = p.getDataType() != dt ? p.getUnusedBufferRaw(dt) : p.getUnusedBufferRaw();
-                        if (asString == 0) {
-                            portData.getObject().deserialize(ci);
-                        } else {
-                            String s = ci.readString();
-                            @PassByValue StringInputStream sis = new StringInputStream(s);
-                            try {
-                                portData.getObject().deserialize(sis);
-                            } catch (Exception e) {
-                                portData.recycleUnused();
-                                log(LogLevel.LL_WARNING, logDomain, "Cannot deserialize from string " + s, e);
-                            }
-                        }
+                        portData.getObject().deserialize(ci, enc);
                         p.browserPublish(portData);
-                        portData = null;
                     }
                 }
             }
@@ -405,11 +374,10 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                             @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer);
                             for (@SizeT int i = 0; i < params.size(); i++) {
                                 StaticParameterBase param = params.get(i);
-                                String s = ci.readString();
                                 try {
-                                    param.set(s);
+                                    param.deserializeValue(ci);
                                 } catch (Exception e) {
-                                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error parsing '" + s + "' for parameter " + param.getName());
+                                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error parsing value for parameter " + param.getName());
                                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
                                 }
                             }
@@ -600,34 +568,6 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
                 result.add(ec);
             }
         }
-    }
-
-    @Override
-    public @CustomPtr("tPortDataPtr") CoreString handleCall(AbstractMethod method, Integer p1, Integer p2, Integer p3) throws MethodCallException {
-        assert(method == GET_PORT_VALUE_AS_STRING);
-        AbstractPort ap = getRuntime().getPort(p1);
-        if (ap != null && ap.isReady()) {
-            if (FinrocTypeInfo.isCCType(ap.getDataType())) {
-                @CustomPtr("tPortDataPtr") CoreString cs = this.<CoreString>getBufferForReturn(CoreString.TYPE);
-                CCPortBase p = (CCPortBase)ap;
-                @Const GenericObject go = p.getAutoLockedRaw();
-                cs.set(Serialization.serialize(go));
-                p.releaseAutoLocks();
-                return cs;
-            } else if (FinrocTypeInfo.isStdType(ap.getDataType())) {
-                @CustomPtr("tPortDataPtr") CoreString cs = this.<CoreString>getBufferForReturn(CoreString.TYPE);
-                PortBase p = (PortBase)ap;
-                PortDataManager go = p.getAutoLockedRaw();
-                cs.set(Serialization.serialize(go.getObject()));
-                p.releaseAutoLocks();
-                return cs;
-            }
-        }
-
-        //JavaOnlyBlock
-        return null;
-
-        //Cpp return PortDataPtr<CoreString>();
     }
 
     @Override
