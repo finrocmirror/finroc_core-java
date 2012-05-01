@@ -70,15 +70,14 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param defaultValue new value
      */
     public void set(@PassByValue E e) {
-        super.getValue().set(e);
+        super.getValue().set(e.ordinal());
     }
 
     /**
      * @return Current value
      */
-    @SuppressWarnings("unchecked")
     public E get() {
-        return (E)(super.getValue().get());
+        return enumClass.getEnumConstants()[super.getValue().getOrdinal()];
     }
 
     /**

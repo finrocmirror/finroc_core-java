@@ -24,7 +24,6 @@ package org.finroc.core.port;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Bounds;
-import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
@@ -55,7 +54,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.EnumValue;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
@@ -69,7 +67,7 @@ import org.rrlib.finroc_core_utils.serialization.Serialization;
  * In C++ code for correct casting is generated.
  */
 @Include( {"PortTypeMap.h", "PortUtil.h", "PortQueueFragment.h"})
-@IncludeClass( {PortWrapperBase.class, CoreBoolean.class, EnumValue.class})
+@IncludeClass( {PortWrapperBase.class})
 @Inline @NoCpp @RawTypeArgs
 //@Superclass2({"PortWrapperBase<typename PortTypeMap<T>::PortBaseType>"})
 @Superclass2( {"PortParent<T>"})

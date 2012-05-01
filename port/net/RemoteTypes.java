@@ -154,7 +154,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             //JavaOnlyBlock
             e.name = name;
             if (local == null) {
-                local = new UnknownType(name, type, enumConstants, traits);
+                local = new UnknownType(name, type, enumConstants != null ? enumConstants.toArray() : null, traits);
             }
 
             /*Cpp
@@ -198,13 +198,13 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             co.writeShort(FinrocTypeInfo.get(i).getUpdateTime());
             co.writeByte(FinrocTypeInfo.get(i).getType().ordinal());
             co.writeString(dt.getName());
-            ArrayList<String> enumConstants = dt.getEnumConstants();
+            Object[] enumConstants = dt.getEnumConstants();
             co.writeByte((enumConstants != null ? IS_ENUM : 0) | IS_BINARY_SERIALIZABLE | IS_STRING_SERIALIZABLE | IS_XML_SERIALIZABLE); // type traits
             if (enumConstants != null) {
-                assert(enumConstants.size() <= Short.MAX_VALUE);
-                co.writeShort(enumConstants.size());
-                for (int j = 0; j < enumConstants.size(); j++) {
-                    co.writeString(enumConstants.get(j));
+                assert(enumConstants.length <= Short.MAX_VALUE);
+                co.writeShort(enumConstants.length);
+                for (int j = 0; j < enumConstants.length; j++) {
+                    co.writeString(enumConstants[j].toString());
                 }
             }
         }

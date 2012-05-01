@@ -134,4 +134,12 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     public String toString() {
         return value ? "true" : "false";
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof CoreBoolean) {
+            return ((CoreBoolean)other).value == value;
+        }
+        return false;
+    }
 }
