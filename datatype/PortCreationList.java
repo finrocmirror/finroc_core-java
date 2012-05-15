@@ -282,50 +282,67 @@ public class PortCreationList extends RRLibSerializableImpl {
 
     @Override
     public void serialize(XMLNode node) throws Exception {
-        assert(ioVector != null) : "Only available on local systems";
-        synchronized (ioVector) {
-            node.setAttribute("showOutputSelection", showOutputPortSelection);
-            @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
-            getPorts(ioVector, ports);
-            int size = ports.size();
+        node.setAttribute("showOutputSelection", showOutputPortSelection);
+        if (ioVector == null) {
+            int size = list.size();
             for (int i = 0; i < size; i++) {
-                AbstractPort p = ports.get(i);
                 @Ref XMLNode child = node.addChildNode("port");
-                child.setAttribute("name", p.getCName());
-                child.setAttribute("type", p.getDataType().getName());
-                if (showOutputPortSelection) {
-                    child.setAttribute("output", p.isOutputPort());
+                @Const @Ref Entry e = list.get(i);
+                child.setAttribute("name", e.name);
+                child.setAttribute("type", e.type.toString());
+                child.setAttribute("output", e.outputPort);
+            }
+        } else {
+            synchronized (ioVector) {
+                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                getPorts(ioVector, ports);
+                int size = ports.size();
+                for (int i = 0; i < size; i++) {
+                    AbstractPort p = ports.get(i);
+                    @Ref XMLNode child = node.addChildNode("port");
+                    child.setAttribute("name", p.getCName());
+                    child.setAttribute("type", p.getDataType().getName());
+                    if (showOutputPortSelection) {
+                        child.setAttribute("output", p.isOutputPort());
+                    }
                 }
             }
         }
-
     }
 
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        assert(ioVector != null) : "Only available on local systems";
-        synchronized (ioVector) {
-            showOutputPortSelection = node.getBoolAttribute("showOutputSelection");
-            @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
-            getPorts(ioVector, ports);
-            @SizeT int i = 0;
-            for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {
-                AbstractPort ap = i < ports.size() ? ports.get(i) : null;
+        showOutputPortSelection = node.getBoolAttribute("showOutputSelection");
+        if (ioVector == null) {
+            for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next()) {
                 String portName = port.get().getName();
                 assert(portName.equals("port"));
-                boolean b = false;
-                if (showOutputPortSelection) {
-                    b = port.get().getBoolAttribute("output");
-                }
-                String dtName = port.get().getStringAttribute("type");
-                DataTypeBase dt = DataTypeBase.findType(dtName);
-                if (dt == null) {
-                    throw new RuntimeException("Type " + dtName + " not available");
-                }
-                checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, b, null);
+                list.add(new Entry(port.get().getStringAttribute("name"), port.get().getStringAttribute("type"), port.get().hasAttribute("output") ? port.get().getBoolAttribute("output") : false));
             }
-            for (; i < ports.size(); i++) {
-                ports.get(i).managedDelete();
+        } else {
+            assert(ioVector != null) : "Only available on local systems";
+            synchronized (ioVector) {
+                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                getPorts(ioVector, ports);
+                @SizeT int i = 0;
+                for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {
+                    AbstractPort ap = i < ports.size() ? ports.get(i) : null;
+                    String portName = port.get().getName();
+                    assert(portName.equals("port"));
+                    boolean b = false;
+                    if (showOutputPortSelection) {
+                        b = port.get().getBoolAttribute("output");
+                    }
+                    String dtName = port.get().getStringAttribute("type");
+                    DataTypeBase dt = DataTypeBase.findType(dtName);
+                    if (dt == null) {
+                        throw new RuntimeException("Type " + dtName + " not available");
+                    }
+                    checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, b, null);
+                }
+                for (; i < ports.size(); i++) {
+                    ports.get(i).managedDelete();
+                }
             }
         }
     }
