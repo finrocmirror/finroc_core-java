@@ -120,7 +120,7 @@ public class EdgeAggregator extends FrameworkElement {
      *
      * @param dest Destination aggregating element
      */
-    private synchronized void edgeAdded(EdgeAggregator dest) {
+    private void edgeAdded(EdgeAggregator dest) {
         AggregatedEdge ae = findAggregatedEdge(dest);
         if (ae != null) {
             ae.edgeCount++;
@@ -153,7 +153,7 @@ public class EdgeAggregator extends FrameworkElement {
      *
      * @param dest Destination aggregating element
      */
-    private synchronized void edgeRemoved(EdgeAggregator dest) {
+    private void edgeRemoved(EdgeAggregator dest) {
         AggregatedEdge ae = findAggregatedEdge(dest);
         if (ae != null) {
             ae.edgeCount--;

@@ -109,7 +109,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     @Override
-    public synchronized void evaluateStaticParameters() {
+    public void evaluateStaticParameters() {
         if (xmlFile.hasChanged()) {
             //if (this.childCount() == 0) { // TODO: original intension: changing xml files to mutliple existing ones in finstruct shouldn't load all of them
             if (Files.finrocFileExists(xmlFile.get())) {
@@ -125,7 +125,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      *
      * @param xmlFile xml file to load
      */
-    private synchronized void loadXml(@Const @Ref String xmlFile) {
+    private void loadXml(@Const @Ref String xmlFile) {
         synchronized (getRegistryLock()) {
             try {
                 log(LogLevel.LL_DEBUG, logDomain, "Loading XML: " + xmlFile);

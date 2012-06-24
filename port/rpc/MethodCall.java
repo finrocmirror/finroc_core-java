@@ -116,7 +116,7 @@ public class MethodCall extends AbstractCall implements Task {
     public void serialize(OutputStreamBuffer oos) {
         oos.writeByte(method == null ? -1 : method.getMethodId());
         assert(getStatus() != Status.SYNCH_CALL || netTimeout > 0) : "Network timeout needs to be >0 with a synch call";
-        oos.writeInt(netTimeout);
+        oos.writeDuration(netTimeout);
         super.serialize(oos);
 
         // Serialize parameters
@@ -143,7 +143,7 @@ public class MethodCall extends AbstractCall implements Task {
         portInterfaceType = dt;
         byte b = is.readByte();
         method = (dt == null) ? null : FinrocTypeInfo.get(dt).getPortInterface().getMethod(b);
-        netTimeout = is.readInt();
+        netTimeout = (int)is.readDuration();
         super.deserializeImpl(is);
 
         // deserialize parameters
