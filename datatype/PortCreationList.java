@@ -170,7 +170,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      */
     private static void getPorts(@Const FrameworkElement elem, @Ref SimpleList<AbstractPort> result) {
         result.clear();
-        FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(elem);
+        FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(elem, false);
         AbstractPort ap = null;
         while ((ap = ci.nextPort()) != null) {
             result.add(ap);

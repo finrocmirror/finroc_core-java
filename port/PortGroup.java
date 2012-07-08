@@ -71,7 +71,7 @@ public class PortGroup extends EdgeAggregator {
      */
     private void connectImpl(int op, PortGroup group, String groupLink, boolean createMissingPorts, AbstractPort startWith, int count, String portPrefix, String otherPortPrefix) {
         int orgCount = count;
-        ChildIterator ci = new ChildIterator(this);
+        ChildIterator ci = new ChildIterator(this, false);
         AbstractPort p = null;
         while ((p = ci.nextPort()) != null) {
             String name = p.getName();
@@ -211,7 +211,7 @@ public class PortGroup extends EdgeAggregator {
      * @param count Number of ports to disconnect - starting with start port (-1 = all ports)
      */
     public void disconnectAll(boolean incoming, boolean outgoing, AbstractPort startWith, int count) {
-        ChildIterator ci = new ChildIterator(this);
+        ChildIterator ci = new ChildIterator(this, false);
         AbstractPort p = null;
         while ((p = ci.nextPort()) != null) {
             if (p == startWith) {

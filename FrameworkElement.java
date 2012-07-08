@@ -1654,6 +1654,14 @@ public class FrameworkElement extends Annotatable {
 
         /**
          * @param parent Framework element over whose child to iterate
+         * @param onlyReadyElements Include only children that are fully initialized?
+         */
+        public ChildIterator(@Const FrameworkElement parent, boolean onlyReadyElements) {
+            reset(parent, onlyReadyElements);
+        }
+
+        /**
+         * @param parent Framework element over whose child to iterate
          * @param flags Flags that children must have in order to be considered
          */
         @Init( {"nextElem(NULL)", "last(NULL)"})
@@ -1675,11 +1683,11 @@ public class FrameworkElement extends Annotatable {
          * @param parent Framework element over whose child to iterate
          * @param flags Relevant flags
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
-         * @param includeNonReady Include children that are not fully initialized yet?
+         * @param onlyReadyElements Include only children that are fully initialized?
          */
         @Init( {"nextElem(NULL)", "last(NULL)"})
-        public ChildIterator(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
-            reset(parent, flags, result, includeNonReady);
+        public ChildIterator(@Const FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
+            reset(parent, flags, result, onlyReadyElements);
         }
 
         /**
@@ -1739,7 +1747,17 @@ public class FrameworkElement extends Annotatable {
          * @param parent Framework element over whose child to iterate
          */
         public void reset(@Const FrameworkElement parent) {
-            reset(parent, 0, 0);
+            reset(parent, true);
+        }
+
+        /**
+         * Use Iterator for different framework element
+         * (or same and reset)
+         *
+         * @param parent Framework element over whose child to iterate
+         */
+        public void reset(@Const FrameworkElement parent, boolean onlyReadyElements) {
+            reset(parent, 0, 0, onlyReadyElements);
         }
 
         /**
@@ -1762,7 +1780,7 @@ public class FrameworkElement extends Annotatable {
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          */
         public void reset(@Const FrameworkElement parent, int flags, int result) {
-            reset(parent, flags, result, false);
+            reset(parent, flags, result, true);
         }
 
         /**
@@ -1774,13 +1792,13 @@ public class FrameworkElement extends Annotatable {
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          * @param includeNonReady Include children that are not fully initialized yet?
          */
-        public void reset(@Const FrameworkElement parent, int flags, int result, boolean includeNonReady) {
+        public void reset(@Const FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
             assert(parent != null);
             this.flags = flags | CoreFlags.DELETED;
             this.result = result;
-            if (!includeNonReady) {
-                flags |= CoreFlags.READY;
-                result |= CoreFlags.READY;
+            if (onlyReadyElements) {
+                this.flags |= CoreFlags.READY;
+                this.result |= CoreFlags.READY;
             }
             curParent = parent;
 

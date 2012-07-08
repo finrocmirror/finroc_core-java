@@ -198,7 +198,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         //Cpp util::Thread::stopThreads();
 
         // delete all children - (runtime settings last)
-        ChildIterator ci = new ChildIterator(this);
+        ChildIterator ci = new ChildIterator(this, false);
         FrameworkElement next = null;
         while ((next = ci.next()) != null) {
             if (next != RuntimeSettings.getInstance()) {
