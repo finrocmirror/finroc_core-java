@@ -174,4 +174,8 @@ public class Bounds<T> {
     @ConstMethod public @CppType("T") double getMax() {
         return max;
     }
+
+    public String toString() {
+        return "[" + min + "; " + max + "]";
+    }
 }

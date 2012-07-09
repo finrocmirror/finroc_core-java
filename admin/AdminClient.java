@@ -35,6 +35,7 @@ import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.net.RemoteRuntime;
 import org.finroc.core.port.rpc.InterfaceClientPort;
 import org.finroc.core.port.rpc.MethodCallException;
+import org.finroc.core.port.rpc.method.AsyncReturnHandler;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.SerializationHelper;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
@@ -115,20 +116,17 @@ public class AdminClient extends InterfaceClientPort {
      *
      * @param np network port of remote port
      * @param container Data to assign to remote port
+     * @param handler Method return handler. Receives empty string if everything worked out - otherwise an error message.
      */
-    public void setRemotePortValue(NetPort np, GenericObjectManager container) {
+    public void setRemotePortValue(NetPort np, GenericObjectManager container, AsyncReturnHandler<CoreString> handler) {
         if (np != null && getAdminInterface(np) == this) {
-            try {
-                MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
-                OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
-                co.writeEnum(np.getEncoding());
-                SerializationHelper.writeObject(co, np.getDataType(), container.getObject(), np.getEncoding());
-                co.close();
-                AdminServer.SET_PORT_VALUE.call(this, np.getRemoteHandle(), mb, 0, false);
-                return;
-            } catch (MethodCallException e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
-            }
+            MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
+            OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+            co.writeEnum(np.getEncoding());
+            SerializationHelper.writeObject(co, np.getDataType(), container.getObject(), np.getEncoding());
+            co.close();
+            AdminServer.SET_PORT_VALUE.callAsync(this, handler, np.getRemoteHandle(), mb, 0, -1, false);
+            return;
         }
         logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
     }
@@ -171,10 +169,10 @@ public class AdminClient extends InterfaceClientPort {
      * @param name Name of new module
      * @param parentHandle Remote handle of parent module
      * @param spl Parameters
-     * @return Did module creation succeed?
+     * @return Did module creation succeed? If not, contains error message.
      */
     @JavaOnly
-    public boolean createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
+    public String createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
         MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
         OutputStreamBuffer co = new OutputStreamBuffer(mb);
         if (spl != null) {
@@ -188,12 +186,17 @@ public class AdminClient extends InterfaceClientPort {
         name2.set(name);
 
         try {
-            AdminServer.CREATE_MODULE.call(this, cma.remoteIndex, name2, parentHandle, mb, true);
-            return true;
+            CoreString cs = AdminServer.CREATE_MODULE.call(this, cma.remoteIndex, name2, parentHandle, mb, 2000);
+            if (cs != null) {
+                String s = cs.toString();
+                PortDataManager.getManager(cs).releaseLock();
+                return s;
+            }
+            return "";
         } catch (Exception e) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            return e.getMessage();
         }
-        return false;
     }
 
     /**

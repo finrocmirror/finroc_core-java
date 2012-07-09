@@ -483,21 +483,12 @@ public class FrameworkElement extends Annotatable {
             }
 
             // Check if child with same name already exists and possibly rename (?)
-            if (getFlag(CoreFlags.AUTO_RENAME) && (!getFlag(CoreFlags.IS_PORT))) {
-                String childDesc = child.getName();
-                int postfixIndex = 1;
-                @Ptr ArrayWrapper<Link> ch = children.getIterable();
-                for (int i = 0, n = ch.size(); i < n; i++) {
-                    @Ptr Link re = ch.get(i);
-                    if (re != null && re.getName().equals(childDesc)) {
-                        // name clash
-                        /*if (postfixIndex == 1) {
-                            System.out.println("Warning: name conflict in " + getUid() + " - " + child.getName());
-                        }*/
-                        re.getChild().setName(childDesc + "[" + postfixIndex + "]");
-                        postfixIndex++;
-                        continue;
-                    }
+            if (getFlag(CoreFlags.AUTO_RENAME) && (!getFlag(CoreFlags.IS_PORT)) && getChild(child.getName()) != null) {
+                String pointerBuffer = " (" + child.getChild().hashCode() + ")";
+                child.getChild().setName(child.getChild().getName() + pointerBuffer);
+                while (getChild(child.getName()) != null) {
+                    log(LogLevel.LL_DEBUG_WARNING, logDomain, "Spooky framework elements name duplicates: " + child.getName());
+                    child.getChild().setName(child.getChild().getName() + pointerBuffer);
                 }
             }
 

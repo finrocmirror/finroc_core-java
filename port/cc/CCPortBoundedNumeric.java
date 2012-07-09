@@ -23,6 +23,7 @@ package org.finroc.core.port.cc;
 
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
@@ -68,6 +69,9 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         @Const @Ptr CoreNumber cn = tc.data.getObject().<CoreNumber>getData();
         @InCpp("T val = cn->value<T>();")
         double val = cn.doubleValue();
+        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+            val = cn.getUnit().convertTo(val, getUnit());
+        }
         if (!bounds.inBounds(val)) {
             if (tc.ref.getContainer().getRefCounter() == 0) { // still unused
                 log(LogLevel.LL_DEBUG_WARNING, logDomain, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
@@ -112,6 +116,9 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         @Const @Ptr CoreNumber cn = mgr.getObject().<CoreNumber>getData();
         @InCpp("T val = cn->value<T>();")
         double val = cn.doubleValue();
+        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+            val = cn.getUnit().convertTo(val, getUnit());
+        }
         if (!bounds.inBounds(val)) {
             if (bounds.discard()) {
                 logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot discard value - applying default");
@@ -125,5 +132,22 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
             }
         }
         mgr.recycle2();
+    }
+
+    @Override
+    public String browserPublishRaw(CCPortDataManagerTL buffer) {
+        if (buffer.getObject().getType() != CoreNumber.TYPE) {
+            return "Buffer has wrong type";
+        }
+        CoreNumber cn = buffer.getObject().getData();
+        double val = cn.doubleValue();
+        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+            val = cn.getUnit().convertTo(val, getUnit());
+        }
+        if (!bounds.inBounds(val)) {
+            return "Value " + val + " is out of bounds " + bounds.toString();
+        }
+
+        return super.browserPublishRaw(buffer);
     }
 }

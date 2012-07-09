@@ -26,7 +26,6 @@ import org.rrlib.finroc_core_utils.jc.AtomicPtr;
 import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
 import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
 import org.rrlib.finroc_core_utils.jc.annotation.CppType;
 import org.rrlib.finroc_core_utils.jc.annotation.Friend;
@@ -319,7 +318,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         //Cpp publishImpl<false, CHANGED, true>(data);
     }
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT, bool _cINFORM_LISTENERS>
     /**
      * (only for use by port classes)
      *
@@ -330,15 +328,11 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param cnc Data buffer acquired from a port using getUnusedBuffer
      * @param reverse Publish in reverse direction? (typical is forward)
      * @param changedConstant changedConstant to use
-     * @param informListeners Inform this port's listeners on change? (usually only when value comes from browser)
+     * @param browserPublish Inform this port's listeners on change and also publish in reverse direction? (only set from BrowserPublish())
      */
-    @Inline private void publishImpl(@Const PortDataManager data, @CppDefault("false") boolean reverse, @CppDefault("CHANGED") byte changedConstant, @CppDefault("false") boolean informListeners) {
-        @InCpp("") final boolean REVERSE = reverse;
-        @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
-        @InCpp("") final boolean INFORM_LISTENERS = informListeners;
-
+    @Inline private void publishImpl(@Const PortDataManager data, final boolean reverse, final byte changedConstant, final boolean browserPublish) {
         assert data.getType() != null : "Port data type not initialized";
-        if (!(isInitialized() || INFORM_LISTENERS)) {
+        if (!(isInitialized() || browserPublish)) {
             printNotReadyMessage("Ignoring publishing request.");
 
             // Possibly recycle
@@ -348,7 +342,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         }
 
         // assign
-        @Ptr ArrayWrapper<PortBase> dests = REVERSE ? edgesDest.getIterable() : edgesSrc.getIterable();
+        @Ptr ArrayWrapper<PortBase> dests = reverse ? edgesDest.getIterable() : edgesSrc.getIterable();
 
         @InCpp("PublishCache pc;")
         @PassByValue PublishCache pc = cacheTL.getFast();
@@ -368,8 +362,8 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         assign(pc);
 
         // inform listeners?
-        if (INFORM_LISTENERS) {
-            setChanged(CHANGE_CONSTANT);
+        if (browserPublish) {
+            setChanged(changedConstant);
             notifyListeners(pc);
         }
 
@@ -377,12 +371,25 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         for (@SizeT int i = 0; i < dests.size(); i++) {
             PortBase dest = dests.get(i);
             @InCpp("bool push = (dest != NULL) && dest->wantsPush<REVERSE, CHANGE_CONSTANT>(REVERSE, CHANGE_CONSTANT);")
-            boolean push = (dest != null) && dest.wantsPush(REVERSE, CHANGE_CONSTANT);
+            boolean push = (dest != null) && dest.wantsPush(reverse, changedConstant);
             if (push) {
                 //JavaOnlyBlock
-                dest.receive(pc, this, REVERSE, CHANGE_CONSTANT);
+                dest.receive(pc, this, reverse, changedConstant);
 
                 //Cpp dest->receive<REVERSE, CHANGE_CONSTANT>(pc, this, REVERSE, CHANGE_CONSTANT);
+            }
+        }
+
+        if (browserPublish) {
+            assert(!reverse);
+
+            dests = edgesDest.getIterable();
+            for (int i = 0, n = dests.size(); i < n; i++) {
+                @Ptr PortBase dest = dests.get(i);
+                boolean push = (dest != null) && dest.wantsPush(true, changedConstant);
+                if (push) {
+                    dest.receive(pc, this, true, changedConstant);
+                }
             }
         }
 

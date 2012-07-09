@@ -138,6 +138,13 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      */
     private static int maxCoreRegisterIndexBits = 16;
 
+    /**
+     * Is creation of framework elements with the same qualified names allowed?
+     * (by default it is not, because this causes undefined behaviour with port connections by-string
+     *  when ports have the same names (e.g. in fingui and in finstructable groups)
+     */
+    private static boolean duplicateQualifiedNamesAllowed;
+
     /** List with listeners for update times */
     @PassByValue
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
@@ -290,4 +297,19 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
         RuntimeSettings.maxCoreRegisterIndexBits = maxCoreRegisterIndexBits;
     }
 
+    /**
+     * Allow creation of framework elements with the same qualified names.
+     * Activating this is somewhat dangerous. Only do this if you really have to!
+     * If ports have the same qualified names, connecting to them by-string causes undefined behaviour.
+     */
+    public static void allowDuplicateQualifiedNames() {
+        duplicateQualifiedNamesAllowed = true;
+    }
+
+    /**
+     * @return Is creation of framework elements with the same qualified names allowed?
+     */
+    public static boolean duplicateQualifiedNamesAllowed() {
+        return duplicateQualifiedNamesAllowed;
+    }
 }
