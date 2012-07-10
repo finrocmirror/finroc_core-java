@@ -1086,11 +1086,11 @@ public class FrameworkElement extends Annotatable {
         @Ptr ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             Link child = iterable.get(i);
-            if (child.getChild().isReady()) {
+            if (child != null && child.getChild().isReady()) {
                 if (child.getName().equals(name)) {
                     return child.getChild();
                 }
-            } else {
+            } else if (child != null) {
                 synchronized (getRegistryLock()) {
                     if (isDeleted()) {
                         return null;
