@@ -32,6 +32,8 @@ import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Single;
+
 /**
  * @author max
  *
@@ -126,6 +128,9 @@ public class MethodCallSyncher extends LogUser {
      * @return Syncher object
      */
     public static @Ptr MethodCallSyncher get(int syncherID) {
+        if (syncherID < 0 || syncherID >= slots.length) {
+            return null;
+        }
         return slots[syncherID];
     }
 

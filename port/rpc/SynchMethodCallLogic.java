@@ -117,6 +117,10 @@ public class SynchMethodCallLogic {
     public static void handleMethodReturn(AbstractCall call) {
         // return value
         @Ptr MethodCallSyncher mcs = MethodCallSyncher.get(call.getSyncherID());
-        mcs.returnValue(call);
+        if (mcs != null) {
+            mcs.returnValue(call);
+        } else {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Received method return value with invalid synchronization id " + call.getSyncherID() + ": '" + call.toString() + "'. Ignoring.");
+        }
     }
 }

@@ -115,7 +115,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             if (Files.finrocFileExists(xmlFile.get())) {
                 loadXml(xmlFile.get());
             } else {
-                log(LogLevel.LL_WARNING, logDomain, "Cannot find XML file " + xmlFile.get() + ". Creating empty group. You may edit and save this group using finstruct.");
+                log(LogLevel.LL_DEBUG, logDomain, "Cannot find XML file " + xmlFile.get() + ". Creating empty group. You may edit and save this group using finstruct.");
             }
         }
     }
