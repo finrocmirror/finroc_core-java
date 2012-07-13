@@ -58,6 +58,9 @@ public class RPCThread extends CoreLoopThreadBase {
     /** Task to execute next */
     private volatile Task nextTask = null;
 
+    /** Indicates whether thread is currently in use and therefore should not be enqueued in unused thread pool */
+    private boolean used = true;
+
     public RPCThread() {
         super(0);
     }
@@ -66,11 +69,9 @@ public class RPCThread extends CoreLoopThreadBase {
     public void mainLoopCallback() throws Exception {
         synchronized (this) {
             if (nextTask == null) {
-
-                //JavaOnlyBlock
-                RPCThreadPool.getInstance().enqueueThread(container);
-
-                //Cpp RPCThreadPool::getInstance()->enqueueThread(this);
+                if (!used) {
+                    RPCThreadPool.getInstance().enqueueThread(container);
+                }
 
                 if (!isStopSignalSet()) {
                     wait();
@@ -81,6 +82,7 @@ public class RPCThread extends CoreLoopThreadBase {
             Task tmp = nextTask;
             nextTask = null;
             tmp.executeTask();
+            used = false;
         }
     }
 
