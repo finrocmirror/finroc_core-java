@@ -207,11 +207,21 @@ public class FinrocTypeInfo {
 
     /**
      * @param dt Data type to look this up for
-     * @return is this a RPC interface port data type?
+     * @return is this a RPC interface port data type? (excluding unknown RPC type)
      */
     public static boolean isMethodType(@Const @Ref DataTypeBase dt) {
         return get(dt).getType() == Type.METHOD;
     }
+
+    /**
+     * @param dt Data type to look this up for
+     * @param includeUnknownTypes Also return true for unknown RPC types?
+     * @return is this a RPC interface port data type?
+     */
+    public static boolean isMethodType(@Const @Ref DataTypeBase dt, boolean includeUnknownTypes) {
+        return get(dt).getType() == Type.METHOD || (includeUnknownTypes && get(dt).getType() == Type.UNKNOWN_METHOD);
+    }
+
 
     /**
      * @param dt Data type to look this up for
