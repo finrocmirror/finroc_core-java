@@ -48,40 +48,40 @@ public class RealClientTest extends NetworkTestSuite {
         // connect ports
         if (CC_TESTS) {
             if (PUSH_TESTS) {
-                ccPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/CCPush Input");
-                ccPushIn.connectToSource("/TCP/localhost:4444/Unrelated/CCPush Output");
+                ccPushOut.connectTo("/TCP/localhost:4444/Unrelated/CCPush Input");
+                ccPushIn.connectTo("/TCP/localhost:4444/Unrelated/CCPush Output");
             }
             if (PULL_PUSH_TESTS) {
-                ccPullPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/CCPullPush Input");
-                ccPullPushIn.connectToSource("/TCP/localhost:4444/Unrelated/CCPullPush Output");
+                ccPullPushOut.connectTo("/TCP/localhost:4444/Unrelated/CCPullPush Input");
+                ccPullPushIn.connectTo("/TCP/localhost:4444/Unrelated/CCPullPush Output");
             }
             if (REVERSE_PUSH_TESTS) {
-                ccRevPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/CCRevPush Input");
-                ccRevPushIn.connectToSource("/TCP/localhost:4444/Unrelated/CCRevPush Output");
+                ccRevPushOut.connectTo("/TCP/localhost:4444/Unrelated/CCRevPush Input");
+                ccRevPushIn.connectTo("/TCP/localhost:4444/Unrelated/CCRevPush Output");
             }
             if (Q_TESTS) {
-                ccQOut.connectToTarget("/TCP/localhost:4444/Unrelated/CCPush Queue Input");
-                ccQIn.connectToSource("/TCP/localhost:4444/Unrelated/CCPush Queue Output");
+                ccQOut.connectTo("/TCP/localhost:4444/Unrelated/CCPush Queue Input");
+                ccQIn.connectTo("/TCP/localhost:4444/Unrelated/CCPush Queue Output");
             }
         }
 
         // connect ports
         if (STD_TESTS) {
             if (PUSH_TESTS) {
-                stdPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/StdPush Input");
-                stdPushIn.connectToSource("/TCP/localhost:4444/Unrelated/StdPush Output");
+                stdPushOut.connectTo("/TCP/localhost:4444/Unrelated/StdPush Input");
+                stdPushIn.connectTo("/TCP/localhost:4444/Unrelated/StdPush Output");
             }
             if (PULL_PUSH_TESTS) {
-                stdPullPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/StdPullPush Input");
-                stdPullPushIn.connectToSource("/TCP/localhost:4444/Unrelated/StdPullPush Output");
+                stdPullPushOut.connectTo("/TCP/localhost:4444/Unrelated/StdPullPush Input");
+                stdPullPushIn.connectTo("/TCP/localhost:4444/Unrelated/StdPullPush Output");
             }
             if (REVERSE_PUSH_TESTS) {
-                stdRevPushOut.connectToTarget("/TCP/localhost:4444/Unrelated/StdRevPush Input");
-                stdRevPushIn.connectToSource("/TCP/localhost:4444/Unrelated/StdRevPush Output");
+                stdRevPushOut.connectTo("/TCP/localhost:4444/Unrelated/StdRevPush Input");
+                stdRevPushIn.connectTo("/TCP/localhost:4444/Unrelated/StdRevPush Output");
             }
             if (Q_TESTS) {
-                stdQOut.connectToTarget("/TCP/localhost:4444/Unrelated/StdPush Queue Input");
-                stdQIn.connectToSource("/TCP/localhost:4444/Unrelated/StdPush Queue Output");
+                stdQOut.connectTo("/TCP/localhost:4444/Unrelated/StdPush Queue Input");
+                stdQIn.connectTo("/TCP/localhost:4444/Unrelated/StdPush Queue Output");
             }
         }
 

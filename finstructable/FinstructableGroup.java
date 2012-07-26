@@ -151,11 +151,11 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         if (srcPort == null && destPort == null) {
                             log(LogLevel.LL_WARNING, logDomain, "Cannot create edge because neither port is available: " + src + ", " + dest);
                         } else if (srcPort == null || srcPort.isVolatile()) { // source volatile
-                            destPort.connectToSource(qualifyLink(src), true);
+                            destPort.connectTo(qualifyLink(src), AbstractPort.ConnectDirection.AUTO, true);
                         } else if (destPort == null || destPort.isVolatile()) { // destination volatile
-                            srcPort.connectToTarget(qualifyLink(dest), true);
+                            srcPort.connectTo(qualifyLink(dest), AbstractPort.ConnectDirection.AUTO, true);
                         } else {
-                            srcPort.connectToTarget(destPort, true);
+                            srcPort.connectTo(destPort, AbstractPort.ConnectDirection.AUTO, true);
                         }
                     } else if (name.equals("parameter")) {
                         String param = node.get().getStringAttribute("link");

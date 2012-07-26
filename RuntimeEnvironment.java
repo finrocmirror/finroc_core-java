@@ -370,9 +370,9 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                 registry.linkEdges.put(link, edge);
             } else {
                 // insert edge
-                LinkEdge next = interested.getNext();
-                interested.setNext(edge);
-                edge.setNext(next);
+                LinkEdge next = interested.getNextEdge();
+                interested.setNextEdge(edge);
+                edge.setNextEdge(next);
             }
 
             // directly notify link edge?
@@ -394,40 +394,23 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         synchronized (registry) {
             LinkEdge current = registry.linkEdges.get(link);
             if (current == edge) {
-                if (current.getNext() == null) { // remove entries for this link completely
+                if (current.getNextEdge() == null) { // remove entries for this link completely
                     registry.linkEdges.remove(link);
                 } else { // remove first element
-                    registry.linkEdges.put(link, current.getNext());
+                    registry.linkEdges.put(link, current.getNextEdge());
                 }
             } else { // remove element out of linked list
                 LinkEdge prev = current;
-                current = current.getNext();
+                current = current.getNextEdge();
                 while (current != null) {
                     if (current == edge) {
-                        prev.setNext(current.getNext());
+                        prev.setNextEdge(current.getNextEdge());
                         return;
                     }
                     prev = current;
-                    current = current.getNext();
+                    current = current.getNextEdge();
                 }
                 log(LogLevel.LL_DEBUG_WARNING, logDomain, "warning: Could not remove link edge for link: " + link);
-            }
-        }
-    }
-
-    /**
-     * Remove linked edges from specified link to specified partner port
-     *
-     * @param link Link
-     * @param partnerPort connected port
-     */
-    public void removeLinkEdge(@Const @Ref String link, AbstractPort partnerPort) {
-        synchronized (registry) {
-            for (LinkEdge current = registry.linkEdges.get(link); current != null; current = current.getNext()) {
-                if (current.getPortHandle() == partnerPort.getHandle()) {
-                    current.delete();
-                    return;
-                }
             }
         }
     }
@@ -513,7 +496,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                         LinkEdge le = registry.linkEdges.get(s);
                         while (le != null) {
                             le.linkAdded(this, s, ap);
-                            le = le.getNext();
+                            le = le.getNextEdge();
                         }
                     }
 

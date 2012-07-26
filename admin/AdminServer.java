@@ -218,13 +218,9 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
             if (src.isVolatile() && dest.isVolatile()) {
                 logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot really persistently connect two network ports: " + src.getQualifiedLink() + ", " + dest.getQualifiedLink());
             }
-            if (src.mayConnectTo(dest)) {
-                connect(src, dest);
-            } else if (dest.mayConnectTo(src)) {
-                connect(dest, src);
-            }
+            connect(src, dest);
             if (!src.isConnectedTo(dest)) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Could not connect ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
+                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Could not connect ports '" + src.getQualifiedName() + "' and '" + dest.getQualifiedName() + "'.");
             } else {
                 logDomain.log(LogLevel.LL_USER, getLogDescription(), "Connected ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
             }
@@ -253,11 +249,11 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
      */
     private void connect(AbstractPort src, AbstractPort dest) {
         if (src.isVolatile() && (!dest.isVolatile())) {
-            dest.connectToSource(src.getQualifiedLink(), true);
+            dest.connectTo(src.getQualifiedLink(), AbstractPort.ConnectDirection.AUTO, true);
         } else if (dest.isVolatile() && (!src.isVolatile())) {
-            src.connectToTarget(dest.getQualifiedLink(), true);
+            src.connectTo(dest.getQualifiedLink(), AbstractPort.ConnectDirection.AUTO, true);
         } else {
-            src.connectToTarget(dest, true);
+            src.connectTo(dest, AbstractPort.ConnectDirection.AUTO, true);
         }
     }
 

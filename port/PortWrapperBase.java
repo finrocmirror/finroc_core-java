@@ -23,6 +23,7 @@ package org.finroc.core.port;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.port.AbstractPort.ConnectDirection;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
@@ -208,81 +209,42 @@ public class PortWrapperBase implements HasDestructor {
     }
 
     /**
-     * Connect port to specified target port
+     * Connect port to specified partner port
      *
-     * @param target Target port
+     * @param to Port to connect this port to
      */
-    public void connectToTarget(AbstractPort target) {
-        wrapped.connectToTarget(target);
+    public void connectTo(AbstractPort to) {
+        wrapped.connectTo(to);
     }
 
     /**
-     * Connect port to specified source port
+     * Connect port to specified partner port
      *
-     * @param srcPortParent Parent of source port
-     * @param srcPortName Name of source port
+     * @param partnerPortParent Parent of port to connect to
+     * @param partnerPortName Name of port to connect to
      * @param warnIfNotAvailable Print warning message if connection cannot be established
      */
-    public void connectToSource(FrameworkElement srcPortParent, String srcPortName, boolean warnIfNotAvailable) {
-        wrapped.connectToSource(srcPortParent, srcPortName, warnIfNotAvailable);
+    public void connectToTarget(FrameworkElement partnerPortParent, String partnerPortName, boolean warnIfNotAvailable) {
+        wrapped.connectTo(partnerPortParent, partnerPortName, warnIfNotAvailable, ConnectDirection.AUTO);
     }
 
     /**
-     * Connect port to specified destination port
+     * Connect port to specified partner port
      *
-     * @param destPortParent Parent of destination port
-     * @param destPortName Name of destination port
-     * @param warnIfNotAvailable Print warning message if connection cannot be established
+     * @param to Port to connect this port to
      */
-    public void connectToTarget(FrameworkElement destPortParent, String destPortName, boolean warnIfNotAvailable) {
-        wrapped.connectToTarget(destPortParent, destPortName, warnIfNotAvailable);
+    public void connectTo(@Const @Ref PortWrapperBase to) {
+        wrapped.connectTo(to.wrapped);
     }
 
     /**
-     * Connect port to specified target port
-     *
-     * @param target Target port
-     */
-    public void connectToTarget(@Const @Ref PortWrapperBase target) {
-        wrapped.connectToTarget(target.wrapped);
-    }
-
-    /**
-     * Connect port to specified source port
-     *
-     * @param source Source port
-     */
-    public void connectToSource(AbstractPort source) {
-        wrapped.connectToSource(source);
-    }
-
-    /**
-     * Connect port to specified source port
-     *
-     * @param source Source port
-     */
-    public void connectToSource(@Const @Ref PortWrapperBase source) {
-        wrapped.connectToSource(source.wrapped);
-    }
-
-    /**
-     * Connect port to specified source port
-     * (connection is (re)established when link is available)
-     *
-     * @param linkName Link name of source port (relative to parent framework element)
-     */
-    public void connectToSource(String srcLink) {
-        wrapped.connectToSource(srcLink);
-    }
-
-    /**
-     * Connect port to specified target port
+     * Connect port to specified partner port
      * (connection is (re)established when link is available)
      *
      * @param linkName Link name of target port (relative to parent framework element)
      */
-    public void connectToTarget(String destLink) {
-        wrapped.connectToTarget(destLink);
+    public void connectTo(String linkName) {
+        wrapped.connectTo(linkName);
     }
 
     /**

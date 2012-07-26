@@ -2,7 +2,7 @@
  * You received this file as part of an advanced experimental
  * robotics framework prototype ('finroc')
  *
- * Copyright (C) 2007-2010 Max Reichardt,
+ * Copyright (C) 2007-2012 Max Reichardt,
  *   Robotics Research Lab, University of Kaiserslautern
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@ package org.finroc.core;
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
+import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
  * @author max
@@ -36,73 +37,90 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 public class LinkEdge implements HasDestructor {
 
     /**
-     * Links that edge operates on.
-     * One may be empty ("")
-     * SourceLink is link for source port, targetLink is link for target port
+     * Reference to a port - either link or pointer
      */
-    private final String sourceLink, targetLink;
+    public static class PortReference {
 
-    /** If one link is null - this contains handle of partner port */
-    private final int portHandle;
+        private final String link;
+        private final AbstractPort pointer;
+
+        public PortReference(String link) {
+            this.link = link;
+            pointer = null;
+        }
+
+        public PortReference(AbstractPort port) {
+            this.link = "";
+            pointer = port;
+        }
+    }
+
+    /**
+     * Ports that edge operates on.
+     * At least one of the two is linked
+     */
+    final PortReference[] ports = new PortReference[2];
+
+    /**
+     * Should the two ports be connected in any direction?
+     * If false, only connections from ports[0] to ports[1] will be created
+     */
+    final boolean bothConnectDirections;
 
     /** Pointer to next edge - for a singly linked list */
-    private @Ptr LinkEdge next;
+    LinkEdge nextEdge;
 
     /** Is this a finstructed link edge? */
-    private boolean finstructed;
+    final boolean finstructed;
 
     /**
      * Creates link edge for handle and link
      *
-     * @param sourceLink_ source link
-     * @param targetHandle handle of target port
+     * @param port1 Link or pointer to first port
+     * @param port2 Link or pointer to second port
+     * @param bothConnectDirections If false, only connections from port1 to port2 will be created
      * @param finstructed Is this a finstructed link edge?
      */
-    public LinkEdge(String sourceLink_, int targetHandle, boolean finstructed) {
-        this(sourceLink_, "", targetHandle, finstructed);
-    }
-
-    /**
-     * Creates link edge for two links
-     *
-     * @param sourceLink_ source link
-     * @param targetLink_ target link
-     * @param finstructed Is this a finstructed link edge?
-     */
-    public LinkEdge(String sourceLink_, String targetLink_, boolean finstructed) {
-        this(sourceLink_, targetLink_, -1, finstructed);
-    }
-
-    /**
-     * Creates link edge for handle and link
-     *
-     * @param sourceHandle handle of source port
-     * @param targetLink_ target link
-     * @param finstructed Is this a finstructed link edge?
-     */
-    public LinkEdge(int sourceHandle, String targetLink_, boolean finstructed) {
-        this("", targetLink_, sourceHandle, finstructed);
-    }
-
-    /**
-     * Creates link edge for two links
-     *
-     * @param sourceLink_ source link
-     * @param targetLink_ target link
-     * @param portHandle_ If one link is null - this contains handle of partner port
-     * @param finstructed Is this a finstructed link edge?
-     */
-    private LinkEdge(String sourceLink_, String targetLink_, int portHandle_, boolean finstructed) {
-        sourceLink = sourceLink_;
-        targetLink = targetLink_;
-        portHandle = portHandle_;
+    private LinkEdge(PortReference port1, PortReference port2, boolean bothConnectDirections, boolean finstructed) {
+        ports[0] = port1;
+        ports[1] = port2;
+        this.bothConnectDirections = bothConnectDirections;
         this.finstructed = finstructed;
-        if (sourceLink.length() > 0) {
-            RuntimeEnvironment.getInstance().addLinkEdge(sourceLink, this);
+        if (ports[0].link.length() == 0 && ports[1].link.length() == 0) {
+            FrameworkElement.logDomain.log(LogLevel.LL_ERROR, "LinkEdge", "At least one of two ports needs to be linked. Otherwise, it does not make sense to use this class.");
+            throw new RuntimeException();
         }
-        if (targetLink.length() > 0) {
-            RuntimeEnvironment.getInstance().addLinkEdge(targetLink, this);
+        synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
+            for (int i = 0; i < 2; i++) {
+                if (ports[i].link.length() > 0) {
+                    RuntimeEnvironment.getInstance().addLinkEdge(ports[i].link, this);
+                }
+            }
         }
+    }
+
+    /**
+     * Creates link edge for handle and link
+     *
+     * @param port1 Pointer to first port
+     * @param port2 Link to second port
+     * @param bothConnectDirections If false, only connections from port1 to port2 will be created
+     * @param finstructed Is this a finstructed link edge?
+     */
+    public LinkEdge(AbstractPort port1, String port2, boolean bothConnectDirections, boolean finstructed) {
+        this(new PortReference(port1), new PortReference(port2), bothConnectDirections, finstructed);
+    }
+
+    /**
+     * Creates link edge for handle and link
+     *
+     * @param port1 Link to first port
+     * @param port2 Pointer to second port
+     * @param bothConnectDirections If false, only connections from port1 to port2 will be created
+     * @param finstructed Is this a finstructed link edge?
+     */
+    public LinkEdge(String port1, AbstractPort port2, boolean bothConnectDirections, boolean finstructed) {
+        this(new PortReference(port1), new PortReference(port2), bothConnectDirections, finstructed);
     }
 
     /**
@@ -110,27 +128,26 @@ public class LinkEdge implements HasDestructor {
      *
      * @return Pointer to next edge - for a singly linked list
      */
-    LinkEdge getNext() {
-        return next;
+    LinkEdge getNextEdge() {
+        return nextEdge;
     }
 
     /**
      * (should only be called by RuntimeEnvironment)
      *
-     * @param next Pointer to next edge - for a singly linked list
+     * @param nextEdge Pointer to next edge - for a singly linked list
      */
-    void setNext(LinkEdge next) {
-        this.next = next;
+    void setNextEdge(LinkEdge nextEdge) {
+        this.nextEdge = nextEdge;
     }
 
     @Override
     public void delete() {
         synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
-            if (sourceLink.length() > 0) {
-                RuntimeEnvironment.getInstance().removeLinkEdge(sourceLink, this);
-            }
-            if (targetLink.length() > 0) {
-                RuntimeEnvironment.getInstance().removeLinkEdge(targetLink, this);
+            for (int i = 0; i < 2; i++) {
+                if (ports[i].link.length() > 0) {
+                    RuntimeEnvironment.getInstance().removeLinkEdge(ports[i].link, this);
+                }
             }
         }
     }
@@ -145,30 +162,26 @@ public class LinkEdge implements HasDestructor {
      */
     void linkAdded(RuntimeEnvironment re, String link, AbstractPort port) {
         synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {
-            if (link.equals(sourceLink)) {
-                AbstractPort target = targetLink.length() > 0 ? re.getPort(targetLink) : re.getPort(portHandle);
+            if (link.equals(ports[0].link)) {
+                AbstractPort target = ports[1].link.length() > 0 ? re.getPort(ports[1].link) : ports[1].pointer;
                 if (target != null) {
-                    port.connectToTarget(target, finstructed);
+                    port.connectTo(target, bothConnectDirections ? AbstractPort.ConnectDirection.AUTO : AbstractPort.ConnectDirection.TO_TARGET, finstructed);
                 }
-            } else {
-                AbstractPort source = sourceLink.length() > 0 ? re.getPort(sourceLink) : re.getPort(portHandle);
+            } else if (link.equals(ports[1].link)) {
+                AbstractPort source = ports[0].link.length() > 0 ? re.getPort(ports[0].link) : ports[0].pointer;
                 if (source != null) {
-                    source.connectToTarget(port, finstructed);
+                    port.connectTo(source, bothConnectDirections ? AbstractPort.ConnectDirection.AUTO : AbstractPort.ConnectDirection.TO_SOURCE, finstructed);
                 }
             }
         }
     }
 
-    public int getPortHandle() {
-        return portHandle;
-    }
-
     public String getSourceLink() {
-        return sourceLink;
+        return ports[0].link;
     }
 
     public String getTargetLink() {
-        return targetLink;
+        return ports[1].link;
     }
 
     /**

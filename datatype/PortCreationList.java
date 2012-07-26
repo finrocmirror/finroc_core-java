@@ -244,7 +244,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         } else if (FinrocTypeInfo.isCCType(dt)) {
             ap = new CCPortBase(new PortCreationInfo(name, ioVector, dt, flags));
         } else if (FinrocTypeInfo.isMethodType(dt)) {
-            ap = new InterfacePort(name, ioVector, dt, InterfacePort.Type.Routing);
+            ap = new InterfacePort(name, ioVector, dt, InterfacePort.Type.Routing, flags & PortFlags.IS_OUTPUT_PORT);
         } else {
             log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + dt.getName());
         }

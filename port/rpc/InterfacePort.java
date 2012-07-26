@@ -39,6 +39,7 @@ import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
+import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
@@ -94,14 +95,14 @@ public class InterfacePort extends AbstractPort {
     private static PortCreationInfo processPci(PortCreationInfo pci, Type type, int lockLevel) {
         switch (type) {
         case Server:
-            pci.flags |= PortFlags.EMITS_DATA | PortFlags.OUTPUT_PORT;
+            pci.flags |= PortFlags.ACCEPTS_DATA;
             break;
         case Client:
-            pci.flags |= PortFlags.ACCEPTS_DATA;
+            pci.flags |= PortFlags.EMITS_DATA | PortFlags.OUTPUT_PORT;
             break;
         case Network:
         case Routing:
-            pci.flags |= PortFlags.EMITS_DATA | PortFlags.ACCEPTS_DATA;
+            pci.flags |= PortFlags.EMITS_DATA | PortFlags.ACCEPTS_DATA | PortFlags.PROXY;
             break;
         }
         if (lockLevel >= 0) {
@@ -112,11 +113,14 @@ public class InterfacePort extends AbstractPort {
 
     @Override
     protected void rawConnectToTarget(AbstractPort target, boolean finstructed) {
-        InterfacePort target2 = (InterfacePort)target;
-
-        // disconnect old port(s) - should always be max. one - however, defensive implementation
-        while (target2.edgesDest.size() > 0) { // disconnect old port
-            target2.edgesDest.getIterable().get(0).disconnectFrom(target2);
+        // Disconnect any server ports we might already be connected to.
+        ArrayWrapper<InterfacePort> it = edgesSrc.getIterable();
+        for (int i = 0; i < it.size(); i++) {
+            AbstractPort port = it.get(i);
+            if (port != null) {
+                log(LogLevel.LL_WARNING, logDomain, "Port already connected to a server. Removing connection to '" + port.getQualifiedName() + "' and adding the new one to '" + getQualifiedName() + "'.");
+                port.disconnectFrom(this);
+            }
         }
 
         super.rawConnectToTarget(target, finstructed);
@@ -184,7 +188,7 @@ public class InterfacePort extends AbstractPort {
         @Ptr InterfacePort current = this;
         while (true) {
             @Ptr InterfacePort last = current;
-            @Ptr ArrayWrapper<InterfacePort> it = current.edgesDest.getIterable();
+            @Ptr ArrayWrapper<InterfacePort> it = current.edgesSrc.getIterable();
             for (@SizeT int i = 0, n = it.size(); i < n; i++) {
                 InterfacePort ip = (InterfacePort)it.get(i);
                 if (ip != null) {
@@ -246,5 +250,20 @@ public class InterfacePort extends AbstractPort {
         T t = (T)pdm.getObject().getData();
         pdm.getCurrentRefCounter().setOrAddLocks((byte)1);
         return t;
+    }
+
+    protected ConnectDirection inferConnectDirection(AbstractPort other) {
+        // Check whether one of the two ports is connected to a server
+        InterfacePort otherInterfacePort = (InterfacePort)other;
+        InterfacePort serverPortOfThis = (getType() == Type.Server || getType() == Type.Network) ? this : getServer();
+        InterfacePort serverPortOfOther = (otherInterfacePort.getType() == Type.Server || otherInterfacePort.getType() == Type.Network) ? otherInterfacePort : otherInterfacePort.getServer();
+        if (serverPortOfThis != null && serverPortOfOther != null) {
+            log(LogLevel.LL_WARNING, edgeLog, "Both ports (this and %s) are connected to a server already." + other.getQualifiedLink());
+        } else if (serverPortOfThis != null) {
+            return ConnectDirection.TO_SOURCE;
+        } else if (serverPortOfOther != null) {
+            return ConnectDirection.TO_TARGET;
+        }
+        return super.inferConnectDirection(other);
     }
 }

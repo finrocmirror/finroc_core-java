@@ -52,8 +52,8 @@ public class Peer2PeerTest {
         output.getWrapped().link(linkTest, "linkTestPort");
         PortNumeric<Integer> output2 = new PortNumeric<Integer>(new PortCreationInfo("testOutGlobal", PortFlags.SHARED_OUTPUT_PORT | CoreFlags.GLOBALLY_UNIQUE_LINK));
         PortNumeric<Integer> input = new PortNumeric<Integer>(new PortCreationInfo("testIn", PortFlags.INPUT_PORT));
-        input.connectToSource("/TCP/localhost:4444/Unrelated/testOut");
-        input.connectToSource("/Unrelated/testOutGlobal");
+        input.connectTo("/TCP/localhost:4444/Unrelated/testOut");
+        input.connectTo("/Unrelated/testOutGlobal");
 
         // Create TCP peer
         String addr = "localhost:4444";

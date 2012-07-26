@@ -42,13 +42,23 @@ public class PortFlags extends CoreFlags {
     /** Does the flag ACCEPTS_REVERSE_DATA may change at runtime? */
     public static final int MAY_ACCEPT_REVERSE_DATA = FIRST_PORT_FLAG << 2;
 
-    /** Does port accept incoming data? - fixed */
+    /**
+     * Does port accept incoming data? - fixed
+     * Also set for server RPC ports, since they accept RPC calls
+     */
     public static final int ACCEPTS_DATA = FIRST_PORT_FLAG << 3;
 
-    /** Does port emit data (normal direction)? - fixed */
+    /**
+     * Does port emit data (normal direction)? - fixed+
+     * Also set for client RPC ports, since they "emit" RPC calls
+     */
     public static final int EMITS_DATA = FIRST_PORT_FLAG << 4;
 
-    /** From it's general characteristics... is port input or output port? (for proxies from the outside group view) - fixed */
+    /**
+     * From it's general characteristics: Is port input or output port? - fixed
+     * (for proxies from the outside group view)
+     * (for RPC ports client ports are output port since they "emit" RPC calls)
+     */
     public static final int IS_OUTPUT_PORT = FIRST_PORT_FLAG << 5;
 
     /** Transport data for this port through the network with low priority */

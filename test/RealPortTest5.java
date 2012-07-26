@@ -77,7 +77,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         re = RuntimeEnvironment.getInstance();
         output = new PortNumeric<Integer>("test1", null, true);
         input = new PortNumeric<Integer>("test2", null, false);
-        output.connectToTarget(input);
+        output.connectTo(input);
         p1 = new PortNumeric<Integer>("p1", null, false);
         p2 = new PortNumeric<Integer>("p2", null, false);
         p3 = new PortNumeric<Integer>("p3", null, false);
@@ -169,7 +169,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         @InCpp("Port<finroc::blackboard::BlackboardBuffer> output(PortCreationInfo(\"output\", PortFlags::OUTPUT_PORT));")
         Port<BlackboardBuffer> output = new Port<BlackboardBuffer>(new PortCreationInfo("output", BlackboardBuffer.class, PortFlags.OUTPUT_PORT));
 
-        output.connectToTarget(input);
+        output.connectTo(input);
         FrameworkElement.initAll();
 
         @CustomPtr("tPortDataPtr") BlackboardBuffer buf = output.getUnusedBuffer();

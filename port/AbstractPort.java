@@ -89,6 +89,15 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 public abstract class AbstractPort extends FrameworkElement implements HasDestructor, Factory {
 
     /**
+     * Connection direction
+     */
+    public enum ConnectDirection {
+        AUTO,      // Automatically determine connection direction. Usually a good choice
+        TO_TARGET, // Specified port is target port
+        TO_SOURCE  // Specified port is source port
+    }
+
+    /**
      * List class for edges
      */
     @AtFront @DefaultType("AbstractPort*") @Inline
@@ -223,14 +232,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     }
 
     /**
-     * disconnects all edges
+     * Disconnects all edges
      */
     public void disconnectAll() {
         disconnectAll(true, true);
     }
 
     /**
-     * disconnects all edges
+     * Disconnects all edges
      *
      * @param incoming disconnect incoming edges?
      * @param outgoing disconnect outgoing edges?
@@ -296,50 +305,93 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * (may be overridden by subclass - should usually call superclass method, too)
      *
      * @param target Target port?
+     * @param warnIfImpossible Print warning to console if connecting is not possible?
      * @return Answer
      */
-    public boolean mayConnectTo(AbstractPort target) {
-        if (!(getFlag(PortFlags.EMITS_DATA) && target.getFlag(PortFlags.ACCEPTS_DATA))) {
+    public boolean mayConnectTo(AbstractPort target, boolean warnIfImpossible) {
+        if (!getFlag(PortFlags.EMITS_DATA)) {
+            if (warnIfImpossible) {
+                log(LogLevel.LL_WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because this (source) port does not emit data.");
+            }
+            return false;
+        }
+
+        if (!target.getFlag(PortFlags.ACCEPTS_DATA)) {
+            if (warnIfImpossible) {
+                log(LogLevel.LL_WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because it does not accept data.");
+            }
             return false;
         }
 
         if (!dataType.isConvertibleTo(target.dataType)) {
+            if (warnIfImpossible) {
+                log(LogLevel.LL_WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because data types are incompatible ('" + getDataType().getName() + "' and '" + target.getDataType().getName() + "').");
+            }
             return false;
         }
         return true;
     }
 
     /**
-     * Connect port to specified target port
+     * Connect port to specified partner port
      *
-     * @param target Target port
+     * @param to Port to connect this port to
      */
     @JavaOnly
-    public void connectToTarget(@Ptr AbstractPort target) {
-        connectToTarget(target, false);
+    public void connectTo(@Ptr AbstractPort target) {
+        connectTo(target, ConnectDirection.AUTO, false);
     }
 
 
     /**
-     * Connect port to specified target port
+     * Connect port to specified partner port
      *
-     * @param target Target port
-     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
+     * @param to Port to connect this port to
+     * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
+     * @param finstructed Was edge created using finstruct (or loaded from XML file)? (Should never be called with true by application developer)
      */
-    public void connectToTarget(@Ptr AbstractPort target, @CppDefault("false") boolean finstructed) {
+    public void connectTo(@Ptr AbstractPort to, ConnectDirection connectDirection, @CppDefault("false") boolean finstructed) {
         synchronized (getRegistryLock()) {
-            if (isDeleted()) {
+            if (isDeleted() || to.isDeleted()) {
+                log(LogLevel.LL_WARNING, edgeLog, "Ports already deleted!");
                 return;
             }
-            if (mayConnectTo(target) && (!isConnectedTo(target))) {
-                rawConnectToTarget(target, finstructed);
-                target.propagateStrategy(null, this);
-                newConnection(target);
-                target.newConnection(this);
-                log(LogLevel.LL_DEBUG_VERBOSE_1, edgeLog, "creating Edge from " + getQualifiedName() + " to " + target.getQualifiedName());
+            if (to == this) {
+                log(LogLevel.LL_WARNING, edgeLog, "Cannot connect port to itself.");
+                return;
+            }
+            if (isConnectedTo(to)) {
+                return;
+            }
+
+            // determine connect direction
+            if (connectDirection == ConnectDirection.AUTO) {
+                boolean to_target_possible = mayConnectTo(to, false);
+                boolean to_source_possible = to.mayConnectTo(this, false);
+                if (to_target_possible && to_source_possible) {
+                    connectDirection = inferConnectDirection(to);
+                } else if (to_target_possible || to_source_possible) {
+                    connectDirection = to_target_possible ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
+                } else {
+                    log(LogLevel.LL_WARNING, edgeLog, "Could not connect ports '" + getQualifiedName() + "' and '" + to.getQualifiedName() + "' for the following reasons:");
+                    mayConnectTo(to, true);
+                    to.mayConnectTo(this, true);
+                }
+            }
+
+            // connect
+            AbstractPort source = (connectDirection == ConnectDirection.TO_TARGET) ? this : to;
+            AbstractPort target = (connectDirection == ConnectDirection.TO_TARGET) ? to : this;
+
+            if (source.mayConnectTo(target, true)) {
+                source.rawConnectToTarget(target, finstructed);
+                target.propagateStrategy(null, source);
+                source.newConnection(target);
+                target.newConnection(source);
+                log(LogLevel.LL_DEBUG_VERBOSE_1, edgeLog, "Creating Edge from " + source.getQualifiedName() + " to " + target.getQualifiedName());
 
                 // check whether we need an initial reverse push
-                considerInitialReversePush(target);
+                source.considerInitialReversePush(target);
             }
         }
     }
@@ -474,15 +526,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     }
 
     /**
-     * Connect port to specified source port
-     *
-     * @param source Source port
-     */
-    public void connectToSource(@Ptr AbstractPort source) {
-        source.connectToTarget(this);
-    }
-
-    /**
      * (relevant for input ports only)
      *
      * Sets change flag
@@ -560,105 +603,65 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     }
 
     /**
-     * Connect port to specified source port
+     * Connect port to specified partner port
      * (connection is (re)established when link is available)
      *
-     * @param linkName Link name of source port (relative to parent framework element)
+     * @param linkName Link name of target port (relative to parent framework element)
      */
     @JavaOnly
-    public void connectToSource(@Const @Ref String srcLink) {
-        connectToSource(srcLink, false);
+    public void connectTo(@Const @Ref String linkName) {
+        connectTo(linkName, ConnectDirection.AUTO, false);
     }
 
-
     /**
-     * Connect port to specified source port
+     * Connect port to specified partner port
      * (connection is (re)established when link is available)
      *
-     * @param linkName Link name of source port (relative to parent framework element)
-     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
+     * @param linkName Link name of target port (relative to parent framework element)
+     * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
+     * @param finstructed Was edge created using finstruct (or loaded from XML file)? (Should never be called with true by application developer)
      */
-    public void connectToSource(@Const @Ref String srcLink, @CppDefault("false") boolean finstructed) {
+    public void connectTo(@Const @Ref String linkName, ConnectDirection connectDirection, @CppDefault("false") boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
+                log(LogLevel.LL_WARNING, edgeLog, "Ports already deleted!");
                 return;
             }
             if (linkEdges == null) { // lazy initialization
                 linkEdges = new SimpleList<LinkEdge>();
             }
             for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-                if (linkEdges.get(i).getSourceLink().equals(srcLink)) {
+                if (linkEdges.get(i).getTargetLink().equals(linkName) || linkEdges.get(i).getSourceLink().equals(linkName)) {
                     return;
                 }
             }
-            linkEdges.add(new LinkEdge(makeAbsoluteLink(srcLink), getHandle(), finstructed));
+
+            switch (connectDirection) {
+            case AUTO:
+            case TO_TARGET:
+                linkEdges.add(new LinkEdge(this, makeAbsoluteLink(linkName), connectDirection == ConnectDirection.AUTO, finstructed));
+                break;
+            case TO_SOURCE:
+                linkEdges.add(new LinkEdge(makeAbsoluteLink(linkName), this, false, finstructed));
+                break;
+            }
         }
     }
 
     /**
-     * Connect port to specified source port
+     * Connect port to specified partner port
      *
-     * @param srcPortParent Parent of source port
-     * @param srcPortName Name of source port
+     * @param partnerPortParent Parent of port to connect to
+     * @param partnerPortName Name of port to connect to
      * @param warnIfNotAvailable Print warning message if connection cannot be established
+     * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
      */
-    public void connectToSource(FrameworkElement srcPortParent, @Const @Ref String srcPortName, @CppDefault("true") boolean warnIfNotAvailable) {
-        FrameworkElement p = srcPortParent.getChildElement(srcPortName, false);
+    public void connectTo(FrameworkElement partnerPortParent, @Const @Ref String partnerPortName, @CppDefault("true") boolean warnIfNotAvailable, ConnectDirection connectDirection) {
+        FrameworkElement p = partnerPortParent.getChildElement(partnerPortName, false);
         if (p != null && p.isPort()) {
-            connectToSource((AbstractPort)p);
+            connectTo((AbstractPort)p, connectDirection, false);
         } else if (warnIfNotAvailable) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find port '" + srcPortName + "' in " + srcPortParent.getQualifiedName() + ".");
-        }
-    }
-
-    /**
-     * Connect port to specified target port
-     * (connection is (re)established when link is available)
-     *
-     * @param linkName Link name of target port (relative to parent framework element)
-     */
-    @JavaOnly
-    public void connectToTarget(@Const @Ref String destLink) {
-        connectToTarget(destLink, false);
-    }
-
-    /**
-     * Connect port to specified target port
-     * (connection is (re)established when link is available)
-     *
-     * @param linkName Link name of target port (relative to parent framework element)
-     * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
-     */
-    public void connectToTarget(@Const @Ref String destLink, @CppDefault("false") boolean finstructed) {
-        synchronized (getRegistryLock()) {
-            if (isDeleted()) {
-                return;
-            }
-            if (linkEdges == null) { // lazy initialization
-                linkEdges = new SimpleList<LinkEdge>();
-            }
-            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
-                if (linkEdges.get(i).getTargetLink().equals(destLink)) {
-                    return;
-                }
-            }
-            linkEdges.add(new LinkEdge(getHandle(), makeAbsoluteLink(destLink), finstructed));
-        }
-    }
-
-    /**
-     * Connect port to specified destination port
-     *
-     * @param destPortParent Parent of destination port
-     * @param destPortName Name of destination port
-     * @param warnIfNotAvailable Print warning message if connection cannot be established
-     */
-    public void connectToTarget(FrameworkElement destPortParent, @Const @Ref String destPortName, @CppDefault("true") boolean warnIfNotAvailable) {
-        FrameworkElement p = destPortParent.getChildElement(destPortName, false);
-        if (p != null && p.isPort()) {
-            connectToTarget((AbstractPort)p);
-        } else if (warnIfNotAvailable) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find port '" + destPortName + "' in " + destPortParent.getQualifiedName() + ".");
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find port '" + partnerPortName + "' in " + partnerPortParent.getQualifiedName() + ".");
         }
     }
 
@@ -1316,5 +1319,72 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     void setCustomChangedFlag(byte newValue) {
         customChangedFlag = newValue;
+    }
+
+    /**
+     * Infers connect direction to specified partner port
+     *
+     * @param other Port to determine connect direction to.
+     * @return Either TO_TARGET or TO_SOURCE depending on whether 'other' should be target or source of a connection with this port.
+     */
+    protected ConnectDirection inferConnectDirection(AbstractPort other) {
+        // If one port is no proxy port (only emits or accepts data), direction is clear
+        if (!getFlag(PortFlags.PROXY)) {
+            return getFlag(PortFlags.EMITS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
+        }
+        if (!other.getFlag(PortFlags.PROXY)) {
+            return other.getFlag(PortFlags.ACCEPTS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
+        }
+
+        // Temporary variable to store result: Return tConnectDirection::TO_TARGET?
+        boolean returnToTarget = true;
+
+        // Do we have input or output proxy ports?
+        boolean thisOutputProxy = this.isOutputPort();
+        boolean otherOutputProxy = other.isOutputPort();
+
+        // Do ports belong to the same module or group?
+        EdgeAggregator thisAggregator = EdgeAggregator.getAggregator(this);
+        EdgeAggregator otherAggregator = EdgeAggregator.getAggregator(other);
+        boolean portsHaveSameParent = thisAggregator != null && otherAggregator != null &&
+                                      ((thisAggregator == otherAggregator) || (thisAggregator.getParent() == otherAggregator.getParent() && thisAggregator.getFlag(EdgeAggregator.IS_INTERFACE) && otherAggregator.getFlag(EdgeAggregator.IS_INTERFACE)));
+
+        // Ports of network interfaces typically determine connection direction
+        if (this.getFlag(CoreFlags.NETWORK_ELEMENT)) {
+            returnToTarget = thisOutputProxy;
+        } else if (other.getFlag(CoreFlags.NETWORK_ELEMENT)) {
+            returnToTarget = !otherOutputProxy;
+        } else if (thisOutputProxy != otherOutputProxy) {
+            // If we have an output and an input port, typically, the output port is connected to the input port
+            returnToTarget = thisOutputProxy;
+
+            // If ports are in interfaces of the same group/module, connect in the reverse of the typical direction
+            if (portsHaveSameParent) {
+                returnToTarget = !returnToTarget;
+            }
+        } else {
+            // count parents
+            int thisParentNodeCount = 1;
+            FrameworkElement parent = this.getParent();
+            while ((parent = parent.getParent()) != null) {
+                thisParentNodeCount++;
+            }
+
+            int otherParentNodeCount = 1;
+            parent = other.getParent();
+            while ((parent = parent.getParent()) != null) {
+                otherParentNodeCount++;
+            }
+
+            // Are ports forwarded to outer interfaces?
+            if (thisParentNodeCount != otherParentNodeCount) {
+                returnToTarget = (thisOutputProxy && otherParentNodeCount < thisParentNodeCount) ||
+                                 ((!thisOutputProxy) && thisParentNodeCount < otherParentNodeCount);
+            } else {
+                log(LogLevel.LL_WARNING, edgeLog, "Two proxy ports ('" + getQualifiedName() + "' and '" + other.getQualifiedName() + "') in the same direction and on the same level are to be connected. Cannot infer direction. Guessing TO_TARGET.");
+            }
+        }
+
+        return returnToTarget ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
     }
 }

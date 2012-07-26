@@ -63,7 +63,7 @@ public class RealPortQueueTest extends Thread {
         inputPCI.maxQueueSize = 0;
         PortNumeric<Integer> unlimitedInput = new PortNumeric<Integer>(inputPCI);
         PortNumeric<Integer> unlimitedInput2 = new PortNumeric<Integer>(inputPCI);
-        output.connectToTarget(input);
+        output.connectTo(input);
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();
 
@@ -130,8 +130,8 @@ public class RealPortQueueTest extends Thread {
         System.out.println("\nAnd now for Concurrency :-)  ...");
 
         // connect to unlimited input
-        output.connectToTarget(unlimitedInput);
-        output.connectToTarget(unlimitedInput2);
+        output.connectTo(unlimitedInput);
+        output.connectTo(unlimitedInput2);
 
         // remove values from initial push
         unlimitedInput.dequeueSingleAutoLocked();

@@ -138,7 +138,7 @@ public class NetworkTestSuite extends LogUser {
                 ccRevPushOutLocal = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output Local", PortFlags.SHARED_OUTPUT_PORT));
                 ccRevPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Input", PortFlags.SHARED_INPUT_PORT));
                 ccRevPushIn.setMinNetUpdateInterval(RECV_FREQ);
-                ccRevPushOutLocal.connectToTarget(ccRevPushIn);
+                ccRevPushOutLocal.connectTo(ccRevPushIn);
             }
             if (Q_TESTS) {
                 ccQOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Output", PortFlags.SHARED_OUTPUT_PORT));
@@ -164,7 +164,7 @@ public class NetworkTestSuite extends LogUser {
                 stdRevPushOutLocal = new TestStdPort(new PortCreationInfo("StdRevPush Output Local", bt, PortFlags.SHARED_OUTPUT_PORT));
                 stdRevPushIn = new TestStdPort(new PortCreationInfo("StdRevPush Input", bt, PortFlags.SHARED_INPUT_PORT));
                 stdRevPushIn.setMinNetUpdateInterval(RECV_FREQ);
-                stdRevPushOutLocal.connectToTarget(stdRevPushIn);
+                stdRevPushOutLocal.connectTo(stdRevPushIn);
             }
             if (Q_TESTS) {
                 stdQOut = new TestStdPort(new PortCreationInfo("StdPush Queue Output", bt, PortFlags.SHARED_OUTPUT_PORT));

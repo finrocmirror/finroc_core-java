@@ -104,7 +104,7 @@ public class EdgeAggregator extends FrameworkElement {
      * @param source Port
      * @return EdgeAggregator parent - or null if there's none
      */
-    private static EdgeAggregator getAggregator(AbstractPort source) {
+    public static EdgeAggregator getAggregator(AbstractPort source) {
         FrameworkElement current = source.getParent();
         while (current != null) {
             if (current.getFlag(CoreFlags.EDGE_AGGREGATOR) && (!current.getFlag(CoreFlags.NETWORK_ELEMENT))) {
