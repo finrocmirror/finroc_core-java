@@ -320,7 +320,7 @@ public abstract class NetPort extends LogUser implements PortListener {
         boolean useQ = wrapped.getFlag(PortFlags.USES_QUEUE);
         boolean first = true;
         co.writeEnum(encoding);
-        if (isStdType() || isTransactionType()) {
+        if (isStdType() || isTransactionType() || isUnknownAdaptableType()) {
             StdNetPort pb = (StdNetPort)wrapped;
             if (!useQ) {
                 PortDataManager pd = pb.getLockedUnsafeRaw(true);
