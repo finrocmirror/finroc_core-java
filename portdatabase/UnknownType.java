@@ -21,6 +21,8 @@
  */
 package org.finroc.core.portdatabase;
 
+import java.util.ArrayList;
+
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.XML;
 import org.finroc.core.port.net.RemoteTypes;
@@ -51,6 +53,9 @@ public class UnknownType extends DataTypeBase {
     /** Type traits of remote type */
     private final byte traits;
 
+    /** Listener for new unknown types */
+    private static final ArrayList<UnknownTypeListener> listener = new ArrayList<UnknownTypeListener>();
+
     /**
      * @param name Name of RPC Interface
      * @param type Type of unknown type
@@ -63,6 +68,9 @@ public class UnknownType extends DataTypeBase {
         FinrocTypeInfo.get(this).init(getUnknownType(type));
         info.enumConstants = enumConstants;
         this.traits = traits;
+        for (UnknownTypeListener utListener : listener) {
+            utListener.unknownTypeAdded(this);
+        }
     }
 
     /**
@@ -117,6 +125,21 @@ public class UnknownType extends DataTypeBase {
         return Serialization.DataEncoding.BINARY;
     }
 
+    /**
+     * @param utListener Listener to add
+     */
+    public static void addUnknownTypeListener(UnknownTypeListener utListener) {
+        if (!listener.contains(utListener)) {
+            listener.add(utListener);
+        }
+    }
+
+    /**
+     * @param utListener Listener to remove
+     */
+    public static void removeUnknownTypeListener(UnknownTypeListener utListener) {
+        listener.remove(utListener);
+    }
 
     static class UnknownTypeInfo extends DataTypeInfoRaw {
 

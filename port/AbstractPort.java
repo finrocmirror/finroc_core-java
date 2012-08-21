@@ -376,6 +376,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     log(LogLevel.LL_WARNING, edgeLog, "Could not connect ports '" + getQualifiedName() + "' and '" + to.getQualifiedName() + "' for the following reasons:");
                     mayConnectTo(to, true);
                     to.mayConnectTo(this, true);
+                    return;
                 }
             }
 
