@@ -59,6 +59,8 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     /** Qualified names of framework elements need to start with one of these in order to be published */
     private final @SharedPtr SimpleList<String> paths = new SimpleList<String>();
 
+    /** Send tags of each framework element? (TODO: maybe we'll need a generic mechanism for annotations one day) */
+    private boolean sendTags;
 
     public FrameworkElementTreeFilter() {
         this(CoreFlags.STATUS_FLAGS, CoreFlags.READY | CoreFlags.PUBLISHED, getEmptyString());
@@ -85,6 +87,17 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
         }
     }
 
+    /**
+     * @param relevantFlags Framework element's flags that are relevant
+     * @param flagResult Result that needs to be achieved when ANDing element's flags with relevant flags (see ChildIterator)
+     * @param sendTags Send tags of each framework element?
+     */
+    public FrameworkElementTreeFilter(int relevantFlags, int flagResult, boolean sendTags) {
+        this.relevantFlags = relevantFlags;
+        this.flagResult = flagResult;
+        this.sendTags = sendTags;
+    }
+
     /** Constant for empty string - to allow this-constructor in c++ */
     @InCpp("static util::String EMPTY; return EMPTY;") @InCppFile
     @Const @Ref private static final String getEmptyString() {
@@ -104,6 +117,13 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      */
     @ConstMethod public boolean isAcceptAllFilter() {
         return (relevantFlags & (~CoreFlags.STATUS_FLAGS)) == 0;
+    }
+
+    /**
+     * @return Send tags of each framework element?
+     */
+    public boolean sendTags() {
+        return sendTags;
     }
 
     /**
@@ -155,21 +175,23 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     public void deserialize(InputStreamBuffer is) {
         relevantFlags = is.readInt();
         flagResult = is.readInt();
-        paths.clear();
+        sendTags = is.readBoolean();
+        /*paths.clear();
         byte count = is.readByte();
         for (int i = 0; i < count; i++) {
             paths.add(is.readString());
-        }
+        }*/
     }
 
     @Override
     public void serialize(OutputStreamBuffer os) {
         os.writeInt(relevantFlags);
         os.writeInt(flagResult);
-        os.writeByte(paths.size());
+        os.writeBoolean(sendTags);
+        /*os.writeByte(paths.size());
         for (@SizeT int i = 0; i < paths.size(); i++) {
             os.writeString(paths.get(i));
-        }
+        }*/
     }
 
     /**

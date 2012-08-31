@@ -38,6 +38,7 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
 import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementTags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.port.AbstractPort;
@@ -115,6 +116,9 @@ public class FrameworkElementInfo {
 
     /** Stores outgoing connection destination ports - if this is a port */
     private SimpleList<ConnectionInfo> connections = new SimpleList<ConnectionInfo>();
+
+    /** Framework element tags */
+    private FrameworkElementTags tags = new FrameworkElementTags();
 
     /** Register Data type */
     //@ConstPtr
@@ -201,6 +205,17 @@ public class FrameworkElementInfo {
                 tp.writeByte(0);
             }
         }
+
+        // possibly send tags
+        if (elementFilter.sendTags()) {
+            FrameworkElementTags tags = (FrameworkElementTags)fe.getAnnotation(FrameworkElementTags.TYPE);
+            tp.writeBoolean(tags != null);
+            if (tags != null) {
+                tags.serialize(tp);
+            }
+        } else {
+            tp.writeBoolean(false);
+        }
     }
 
     /**
@@ -253,6 +268,12 @@ public class FrameworkElementInfo {
                     connections.add(new ConnectionInfo(handle, is.readBoolean()));
                 }
             }
+        }
+
+        // possibly read tags
+        tags.clear();
+        if (is.readBoolean()) {
+            tags.deserialize(is);
         }
     }
 
