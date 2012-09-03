@@ -108,7 +108,6 @@ public abstract class AbstractCall extends SerializableReusable {
     public void serialize(OutputStreamBuffer oos) {
         oos.writeEnum(status);
         oos.writeEnum(exceptionType);
-        System.out.println("Writing " + syncherID + " " + threadUid + " " + methodCallIndex);
         oos.writeByte(syncherID);
         oos.writeInt(threadUid);
         oos.writeShort(methodCallIndex);
@@ -125,7 +124,6 @@ public abstract class AbstractCall extends SerializableReusable {
         syncherID = is.readByte();
         threadUid = is.readInt();
         methodCallIndex = is.readShort();
-        System.out.println("Reading " + syncherID + " " + threadUid + " " + methodCallIndex);
     }
 
     /**

@@ -21,6 +21,8 @@
  */
 package org.finroc.core.datatype;
 
+import java.util.List;
+
 import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
 import org.rrlib.finroc_core_utils.jc.annotation.Const;
 import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
@@ -288,6 +290,7 @@ public class FrameworkElementInfo {
         minNetUpdateTime = 0;
         linkCount = 0;
         connections.clear();
+        tags.clear();
     }
 
     /**
@@ -338,6 +341,13 @@ public class FrameworkElementInfo {
      */
     @ConstMethod public short getMinNetUpdateInterval() {
         return minNetUpdateTime;
+    }
+
+    /**
+     * @return Framework element's tags in remote runtime
+     */
+    public List<String> getTags() {
+        return tags.getTags();
     }
 
     /**

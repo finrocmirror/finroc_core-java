@@ -22,6 +22,7 @@
 package org.finroc.core;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -65,10 +66,10 @@ public class FrameworkElementTags extends FinrocAnnotation {
      * Adds tags to framework element.
      * Any tags that framework element is already tagged with, are ignored.
      *
-     * @param fe Framework element to add tagd to
+     * @param fe Framework element to add tag to
      * @param tag Tags to add to framework element
      */
-    public static void addTags(FrameworkElement fe, ArrayList<String> tags) {
+    public static void addTags(FrameworkElement fe, List<String> tags) {
         for (String tag : tags) {
             addTag(fe, tag);
         }
@@ -112,6 +113,13 @@ public class FrameworkElementTags extends FinrocAnnotation {
         for (int i = 0; i < size; i++) {
             tags.add(is.readString());
         }
+    }
+
+    /**
+     * @return Copy of list with tags
+     */
+    public List<String> getTags() {
+        return new ArrayList<String>(tags);
     }
 
 }

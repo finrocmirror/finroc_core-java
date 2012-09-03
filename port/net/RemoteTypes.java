@@ -114,7 +114,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      * @param ci Input Stream Buffer to read from
      */
     private void deserialize(@Ref InputStreamBuffer ci) {
-        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG, getLogDescription());
+        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
         if (types.size() == 0) {
             assert(!initialized()) : "Already initialized";
             globalDefault = ci.readShort();
