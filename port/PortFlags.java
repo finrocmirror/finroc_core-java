@@ -84,8 +84,14 @@ public class PortFlags extends CoreFlags {
     /** Deactivates initial pushing when this (output) port is connected to another port with push strategy */
     public static final int NO_INITIAL_PUSHING = FIRST_PORT_FLAG << 11;
 
+    /**
+     * Port from network connection from tooling (e.g. finstruct/fingui)
+     * Connection constraints are ignored for such ports
+     */
+    public static final int TOOL_PORT = FIRST_PORT_FLAG << 12;
+
     /** First custom flag for special port types */
-    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_PORT_FLAG << 12;
+    public static final int FIRST_CUSTOM_PORT_FLAG = FIRST_PORT_FLAG << 13;
 
     // Non-constant flags
 
