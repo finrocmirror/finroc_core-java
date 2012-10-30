@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import org.finroc.core.RuntimeSettings;
 import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
@@ -397,6 +398,10 @@ public class Files {
      * @return root directory
      */
     public static String getRootDir(Class<?> caller) {
+
+        if (RuntimeSettings.ANDROID_PLATFORM) {
+            return ".";
+        }
 
         String dirName = caller.getResource(caller.getSimpleName() + ".class").toString();
         String packageName = caller.getName().replaceAll("[.]", "/");

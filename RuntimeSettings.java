@@ -96,11 +96,14 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     public static final int EDGE_LIST_DEFAULT_SIZE = 0;
     public static final int EDGE_LIST_SIZE_INCREASE_FACTOR = 2;
 
+    /** Is Finroc running on Android platform? */
+    public final static boolean ANDROID_PLATFORM = System.getProperty("java.vm.vendor").equals("The Android Project");
+
     /** Absolute Root Directory of Runtime (location of finroc_core.jar) */
     @JavaOnly private final static File rootDir = new File(Files.getRootDir(RuntimeSettings.class)); //new File(new File(Files.getRootDir(RuntimeSettings.class)).getParentFile().getAbsolutePath());
 
     /** Is runtime executed as .class files (usually in Debug mode) or in .jar file */
-    @JavaOnly private final static Boolean debugging = !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
+    @JavaOnly private final static Boolean debugging = ANDROID_PLATFORM ? false : !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
     // new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin") || new File(Files.getRootDir(RuntimeSettings.class) + "/org/finroc/core/RuntimeSettings.java").exists();
 
     /** Loop time for buffer tracker (in ms) */
