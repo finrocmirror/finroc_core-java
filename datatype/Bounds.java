@@ -21,36 +21,26 @@
  */
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Information about bounds used, for instance, in bounded port or numerical setting
  * (Not meant to be used as port data)
  */
-@PassByValue @Inline @NoCpp
 public class Bounds<T> {
 
     /** Minimum and maximum bounds - Double for simplicity & efficiency reasons */
-    @CppType("T") private double min, max;
+    private double min, max;
 
     /**
      * Action to perform when value is out of range
      * Apply default value when value is out of range? (or rather adjust to minimum or maximum or discard value?)
      */
     private enum OutOfBoundsAction { NONE, DISCARD, ADJUST_TO_RANGE, APPLY_DEFAULT }
-    @CppType("OutOfBoundsAction")
     private OutOfBoundsAction action;
 
     /** Default value when value is out of bounds */
-    @CppType("T") @PassByValue private CoreNumber outOfBoundsDefault = new CoreNumber();
+    private CoreNumber outOfBoundsDefault = new CoreNumber();
 
 //    /** Data Type */
 //    public final static DataType<Bounds> TYPE = new DataType<Bounds>(Bounds.class);
@@ -66,7 +56,7 @@ public class Bounds<T> {
      * @param min Minimum bound
      * @param max Maximum bound
      */
-    public Bounds(@CppType("T") double min, @CppType("T") double max) {
+    public Bounds(double min, double max) {
         this(min, max, true);
     }
 
@@ -75,7 +65,7 @@ public class Bounds<T> {
      * @param max Maximum bound
      * @param adjustToRange Adjust values lying outside to range (or rather discard them)?
      */
-    public Bounds(@CppType("T") double min, @CppType("T") double max, boolean adjustToRange) {
+    public Bounds(double min, double max, boolean adjustToRange) {
         this.min = min;
         this.max = max;
         action = adjustToRange ? OutOfBoundsAction.ADJUST_TO_RANGE : OutOfBoundsAction.DISCARD;
@@ -86,15 +76,11 @@ public class Bounds<T> {
      * @param max Maximum bound
      * @param outOfBoundsDefault Default value when value is out of bounds
      */
-    public Bounds(@CppType("T") double min, @CppType("T") double max, CoreNumber outOfBoundsDefault) {
+    public Bounds(double min, double max, CoreNumber outOfBoundsDefault) {
         this.min = min;
         this.max = max;
         action = OutOfBoundsAction.APPLY_DEFAULT;
-
-        //JavaOnlyBlock
         this.outOfBoundsDefault.setValue(outOfBoundsDefault);
-
-        //Cpp this->outOfBoundsDefault = outOfBoundsDefault_.value<T>();
     }
 
     /**
@@ -103,35 +89,35 @@ public class Bounds<T> {
      * @param val Value
      * @return Answer
      */
-    @ConstMethod public boolean inBounds(@CppType("T") double val) {
+    public boolean inBounds(double val) {
         return (!(val < min)) && (!(max < val));
     }
 
     /**
      * @return Discard values which are out of bounds?
      */
-    @ConstMethod public boolean discard() {
+    public boolean discard() {
         return action == OutOfBoundsAction.DISCARD;
     }
 
     /**
      * @return Adjust value to range?
      */
-    @ConstMethod public boolean adjustToRange() {
+    public boolean adjustToRange() {
         return action == OutOfBoundsAction.ADJUST_TO_RANGE;
     }
 
     /**
      * @return Adjust value to range?
      */
-    @ConstMethod public boolean applyDefault() {
+    public boolean applyDefault() {
         return action == OutOfBoundsAction.APPLY_DEFAULT;
     }
 
     /**
      * @return Default value when value is out of bounds
      */
-    @ConstMethod @Const public @CppType("T") CoreNumber getOutOfBoundsDefault() {
+    public CoreNumber getOutOfBoundsDefault() {
         return outOfBoundsDefault;
     }
 
@@ -139,7 +125,7 @@ public class Bounds<T> {
      * @param val Value to adjust to range
      * @return Adjusted value
      */
-    @ConstMethod public @CppType("T") double toBounds(@CppType("T") double val) {
+    public double toBounds(double val) {
         if (val < min) {
             return min;
         } else if (max < val) {
@@ -154,7 +140,7 @@ public class Bounds<T> {
      *
      * @param newBounds new value
      */
-    public void set(@Const @Ref Bounds<T> newBounds) {
+    public void set(Bounds<T> newBounds) {
         action = newBounds.action;
         max = newBounds.max;
         min = newBounds.min;
@@ -164,14 +150,14 @@ public class Bounds<T> {
     /**
      * @return Minimum value
      */
-    @ConstMethod public @CppType("T") double getMin() {
+    public double getMin() {
         return min;
     }
 
     /**
      * @return Maximum value
      */
-    @ConstMethod public @CppType("T") double getMax() {
+    public double getMax() {
         return max;
     }
 

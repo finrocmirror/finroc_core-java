@@ -22,12 +22,10 @@
 package org.finroc.core.port.std;
 
 import org.finroc.core.port.ThreadLocalCache;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueueBounded;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * FIFO Queue that is used in ports.
  *
@@ -36,7 +34,6 @@ import org.rrlib.finroc_core_utils.jc.container.WonderQueueBounded;
  *
  * Use concurrentDequeue, with threads reading from this queue concurrently.
  */
-@Inline @NoCpp
 public class PortQueue extends WonderQueueBounded<PortDataReference, PortQueueElement> {
 
     public PortQueue(int maxLength) {

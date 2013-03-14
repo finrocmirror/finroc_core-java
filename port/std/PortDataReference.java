@@ -21,18 +21,10 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Reference to port data.
  *
@@ -45,20 +37,18 @@ import org.rrlib.finroc_core_utils.rtti.GenericObject;
  *
  * Is immutable
  */
-@Ptr @Superclass2( {"CombinedPointer<PortDataManager>"}) @Inline @NoCpp
-@Include("CombinedPointer.h")
 public class PortDataReference {
 
     /** Port data manager that is referenced */
-    @JavaOnly private final PortDataManager portDataManager;
+    private final PortDataManager portDataManager;
 
     /** Reference counter associated with this reference */
-    @JavaOnly private final PortDataManager.RefCounter refCounter;
+    private final PortDataManager.RefCounter refCounter;
 
     /**
      * @param portData Port data that is referenced
      */
-    @JavaOnly PortDataReference(PortDataManager portDataManager, PortDataManager.RefCounter refCounter) {
+    PortDataReference(PortDataManager portDataManager, PortDataManager.RefCounter refCounter) {
         this.portDataManager = portDataManager;
         this.refCounter = refCounter;
     }
@@ -66,31 +56,28 @@ public class PortDataReference {
     /**
      * @return Referenced port data
      */
-    @InCpp("return getManager()->getObject();")
-    @Ptr @ConstMethod public GenericObject getData() {
+    public GenericObject getData() {
         return portDataManager.getObject();
     }
 
     /**
      * @return Reference counter associated with this reference
      */
-    @InCpp("return &(getManager()->refCounters[getInfo()]);")
-    @ConstMethod public PortDataManager.RefCounter getRefCounter() {
+    public PortDataManager.RefCounter getRefCounter() {
         return refCounter;
     }
 
     /**
      * @return Container of referenced data
      */
-    @InCpp("return getPointer();")
-    @ConstMethod public PortDataManager getManager() {
+    public PortDataManager getManager() {
         return portDataManager;
     }
 
     /**
      * @return Is data currently locked?
      */
-    @ConstMethod public boolean isLocked() {
+    public boolean isLocked() {
         return getRefCounter().isLocked();
     }
 }

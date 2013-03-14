@@ -31,7 +31,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.util.Files;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -41,10 +40,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  */
-@JavaOnly
 public class JavaDebugPluginLoader extends LogUser implements PluginLoader, FilenameFilter {
 
     /** Finroc repository root */

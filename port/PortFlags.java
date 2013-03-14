@@ -24,11 +24,10 @@ package org.finroc.core.port;
 import org.finroc.core.CoreFlags;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Contains Flags for Ports.
  */
-//@CppName("flags")
 public class PortFlags extends CoreFlags {
 
     // Constant flags

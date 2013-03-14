@@ -21,17 +21,11 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Struct;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Thread local cache for publishing operations in "ordinary" ports
  */
-@Struct @NoCpp @Ptr @Inline
 public class PublishCache {
 
     /** estimated number of locks for current publishing operation */
@@ -41,10 +35,10 @@ public class PublishCache {
     public int setLocks;
 
     /** Reference to port data used in current publishing operation */
-    public @Ptr PortDataReference curRef;
+    public PortDataReference curRef;
 
     /** Reference to port data's reference counter in current publishing operation */
-    public @Ptr PortDataManager.RefCounter curRefCounter;
+    public PortDataManager.RefCounter curRefCounter;
 
     public void releaseObsoleteLocks() {
         assert(setLocks <= lockEstimate) : "More locks set than estimated and set (=> not safe... please increase lockEstimate)";
@@ -52,8 +46,4 @@ public class PublishCache {
             curRefCounter.releaseLocks((byte)(lockEstimate - setLocks));
         }
     }
-
-    /*Cpp
-    PublishCache() {}  // if possible, no initialization
-     */
 }

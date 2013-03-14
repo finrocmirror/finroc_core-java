@@ -21,27 +21,8 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.AutoVariants;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.finroc.core.port.rpc.MethodCallException;
 
-@Superclass( {})
-@AutoVariants( {
-    "Method4Handler; R ;<R, P1, P2, P3, P4>;handleCall",
-    "Method3Handler; R ;<R, P1, P2, P3>;handleCall;\n\t * @param p4;4;, @AtFront P4;p4",
-    "Method2Handler; R ;<R, P1, P2>;handleCall;\n\t * @param p3;4;, @AtFront P3;p4",
-    "Method1Handler; R ;<R, P1>;handleCall;\n\t * @param p2;4;, @AtFront P2;p4",
-    "Method0Handler; R ;<R>;handleCall;\n\t * @param p1;4;, @AtFront P1;p4",
-    "Void4Handler; void ;<P1, P2, P3, P4>;handleVoidCall",
-    "Void3Handler; void ;<P1, P2, P3>;handleVoidCall;\n\t * @param p4;);, @AtFront P4;p4",
-    "Void2Handler; void ;<P1, P2>;handleVoidCall;\n\t * @param p3;);, @AtFront P3;p4",
-    "Void1Handler; void ;<P1>;handleVoidCall;\n\t * @param p2;);, @AtFront P2;p4",
-    "Void0Handler; void ; ;handleVoidCall;\n\t * @param p1;);, @AtFront P1;p4"
-})
 public interface Method4Handler<R, P1, P2, P3, P4> extends AbstractMethodCallHandler {
 
     /**
@@ -54,6 +35,5 @@ public interface Method4Handler<R, P1, P2, P3, P4> extends AbstractMethodCallHan
      * @param p4 Parameter 4 (with one lock - that server is now responsible of)
      * @return Return value of method (with one lock for further handling)
      */
-    @NonVirtual
-    public abstract R handleCall(@Const @Ptr AbstractMethod method, @AtFront P1 p1, @AtFront P2 p2, @AtFront P3 p3, @AtFront P4 p4) throws MethodCallException;
+    public abstract R handleCall(AbstractMethod method, P1 p1, P2 p2, P3 p3, P4 p4) throws MethodCallException;
 }

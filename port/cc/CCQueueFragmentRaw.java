@@ -21,20 +21,15 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.container.QueueFragment;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Fragment for dequeueing bunch of values
  */
-@Inline @NoCpp @RawTypeArgs
 public class CCQueueFragmentRaw extends QueueFragment<CCPortDataManager, CCPortQueueElement> {
 
     /**
@@ -53,7 +48,7 @@ public class CCQueueFragmentRaw extends QueueFragment<CCPortDataManager, CCPortQ
      *
      * @return Next element in QueueFragment
      */
-    public @Ptr GenericObject dequeueAutoLocked() {
+    public GenericObject dequeueAutoLocked() {
         CCPortDataManager tmp = super.dequeue();
         if (tmp == null) {
             return null;

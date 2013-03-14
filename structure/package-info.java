@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-@Namespace("finroc::core")
-@CppLocation("core/structure")
 
 /**
  * This package and its subpackages contain the minimal core
@@ -29,7 +27,3 @@
  * This core is available in Java and C++.
  */
 package org.finroc.core.structure;
-
-import org.rrlib.finroc_core_utils.jc.annotation.CppLocation;
-import org.rrlib.finroc_core_utils.jc.annotation.Namespace;
-

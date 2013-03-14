@@ -30,31 +30,15 @@ import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.RPCThreadPool;
-import org.rrlib.finroc_core_utils.jc.annotation.AutoVariants;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.NoMatching;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Void method with 3 parameters.
  */
 public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> extends AbstractVoidMethod {
-
-    /*Cpp
-    //1
-    typedef typename Arg<_P1>::type P1Arg; //2
-    typedef typename Arg<_P2>::type P2Arg; //3
-    typedef typename Arg<_P3>::type P3Arg;
-     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -64,7 +48,7 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
      * @param p3Name Name of parameter 3
      * @param handleInExtraThread Handle call in extra thread by default (should be true if call can block or can consume a significant amount of time)
      */
-    public Void3Method(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, boolean handleInExtraThread) {
+    public Void3Method(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, boolean handleInExtraThread) {
         super(portInterface, name, p1Name, p2Name, p3Name, NO_PARAM, handleInExtraThread);
     }
 
@@ -79,7 +63,7 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
+    public void call(InterfaceClientPort port, P1 p1, P2 p2, P3 p3, boolean forceSameThread) throws MethodCallException {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3
@@ -94,8 +78,7 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @InCpp("_HANDLER handler = static_cast<_HANDLER>((static_cast<InterfaceServerPort*>(ip))->getHandler());")
-            @Ptr HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
+            HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
             if (handler == null) {
                 //1
                 cleanup(p1); //2
@@ -125,35 +108,25 @@ public class Void3Method<HANDLER extends Void3Handler<P1, P2, P3>, P1, P2, P3> e
 
     @SuppressWarnings("unchecked")
     @Override
-    public void executeFromMethodCallObject(MethodCall call, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
+    public void executeFromMethodCallObject(MethodCall call, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         assert(retHandler == null);
-        @InCpp("_HANDLER h2 = static_cast<_HANDLER>(handler);")
         HANDLER h2 = (HANDLER)handler;
         executeFromMethodCallObject(call, h2);
     }
 
-    public void executeFromMethodCallObject(MethodCall call, @Const HANDLER handler) {
+    public void executeFromMethodCallObject(MethodCall call, HANDLER handler) {
         assert(call != null && handler != null);
-        @InCpp("_HANDLER handler2 = handler;")
-        @Ptr HANDLER handler2 = handler;
+        HANDLER handler2 = handler;
 
         //1
         P1 p1; //2
         P2 p2; //3
         P3 p3;
 
-        //JavaOnlyBlock
         //1
         p1 = call.<P1>getParam(0); //2
         p2 = call.<P2>getParam(1); //3
         p3 = call.<P3>getParam(2);
-
-        /*Cpp
-        //1
-        call->getParam(0, p1); //2
-        call->getParam(1, p2); //3
-        call->getParam(2, p3);
-         */
 
         try {
             handler2.handleVoidCall(this, p1, p2, p3);

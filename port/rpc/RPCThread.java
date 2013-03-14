@@ -21,38 +21,29 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.finroc.core.thread.CoreLoopThreadBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * (Helper) thread for remote procedure calls
  */
-@CppInclude("RPCThreadPool.h")
-@Superclass( {CoreLoopThreadBase.class, Reusable.class})
 public class RPCThread extends CoreLoopThreadBase {
 
     /** Container for thread queue */
-    @AtFront @JavaOnly
     class RPCThreadContainer extends Reusable {
 
         /**
          * @return Thread in container
          */
-        public @Ptr RPCThread getThread() {
+        public RPCThread getThread() {
             return RPCThread.this;
         }
     }
 
     /** Container for this thread */
-    @JavaOnly
     private RPCThreadContainer container = new RPCThreadContainer();
 
     /** Task to execute next */

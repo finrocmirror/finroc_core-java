@@ -38,7 +38,6 @@ import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.method.AsyncReturnHandler;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.SerializationHelper;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
@@ -47,11 +46,10 @@ import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Client port for admin interface
  */
-@JavaOnly
 public class AdminClient extends InterfaceClientPort {
 
     public AdminClient(String name, FrameworkElement parent) {
@@ -134,7 +132,6 @@ public class AdminClient extends InterfaceClientPort {
     /**
      * @return Module types in remote Runtime
      */
-    @JavaOnly
     public ArrayList<RemoteCreateModuleAction> getRemoteModuleTypes() {
         try {
             MemoryBuffer mb = AdminServer.GET_CREATE_MODULE_ACTIONS.call(this, 2000);
@@ -171,7 +168,6 @@ public class AdminClient extends InterfaceClientPort {
      * @param spl Parameters
      * @return Did module creation succeed? If not, contains error message.
      */
-    @JavaOnly
     public String createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
         MemoryBuffer mb = getBufferForCall(MemoryBuffer.TYPE);
         OutputStreamBuffer co = new OutputStreamBuffer(mb);

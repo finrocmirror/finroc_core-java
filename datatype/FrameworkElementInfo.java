@@ -23,16 +23,6 @@ package org.finroc.core.datatype;
 
 import java.util.List;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Struct;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -48,7 +38,7 @@ import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.net.RemoteTypes;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Framework element information to send to other runtime environments.
  */
@@ -57,7 +47,6 @@ public class FrameworkElementInfo {
     /**
      * Infos regarding links to this element
      */
-    @AtFront @PassByValue @Struct
     public static class LinkInfo {
 
         /** name */
@@ -73,7 +62,6 @@ public class FrameworkElementInfo {
     /**
      * Infos regarding edges emerging from this element
      */
-    @AtFront @PassByValue @Struct
     public static class ConnectionInfo {
 
         /** Handle of destination port */
@@ -92,7 +80,6 @@ public class FrameworkElementInfo {
     public static final byte EDGE_CHANGE = RuntimeListener.REMOVE + 1;
 
     /** Infos about links to this port - currently in fixed array for efficiency reasons - 4 should be enough */
-    @InCpp("LinkInfo links[4];")
     private LinkInfo[] links = new LinkInfo[] {new LinkInfo(), new LinkInfo(), new LinkInfo(), new LinkInfo()};
 
     /** Number of links */
@@ -137,7 +124,6 @@ public class FrameworkElementInfo {
         assert(EDGE_AGG_PARENT_FLAGS_TO_STORE & 0x7F7E) == EDGE_AGG_PARENT_FLAGS_TO_STORE;
     }
 
-    @Init("links()")
     public FrameworkElementInfo() {
     }
 
@@ -152,7 +138,7 @@ public class FrameworkElementInfo {
      *
      * (call in runtime-registry synchronized context only)
      */
-    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, @Ref OutputStreamBuffer tp, FrameworkElementTreeFilter elementFilter, @Ref StringBuilder tmp) {
+    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, OutputStreamBuffer tp, FrameworkElementTreeFilter elementFilter, StringBuilder tmp) {
 
         tp.writeByte(opCode); // write opcode (see base class)
 
@@ -224,7 +210,7 @@ public class FrameworkElementInfo {
      * @param is Input Stream to deserialize from
      * @param typeLookup Remote type information to lookup type
      */
-    public void deserialize(@Ref InputStreamBuffer is, RemoteTypes typeLookup) {
+    public void deserialize(InputStreamBuffer is, RemoteTypes typeLookup) {
         reset();
         opCode = is.readByte();
 
@@ -241,7 +227,7 @@ public class FrameworkElementInfo {
         byte next = 0;
         if (opCode == RuntimeListener.ADD) {
             while ((next = is.readByte()) != 0) {
-                @Ptr LinkInfo li = links[linkCount];
+                LinkInfo li = links[linkCount];
                 li.extraFlags = next & PARENT_FLAGS_TO_STORE;
                 if ((li.extraFlags & CoreFlags.EDGE_AGGREGATOR) > 0) {
                     li.extraFlags |= (((int)is.readByte()) << 8);
@@ -296,35 +282,35 @@ public class FrameworkElementInfo {
     /**
      * @return Type of port data
      */
-    @ConstMethod public DataTypeBase getDataType() {
+    public DataTypeBase getDataType() {
         return type;
     }
 
     /**
      * @return the index
      */
-    @ConstMethod public int getHandle() {
+    public int getHandle() {
         return handle;
     }
 
     /**
      * @return the flags
      */
-    @ConstMethod public int getFlags() {
+    public int getFlags() {
         return flags;
     }
 
     /**
      * @return Strategy to use if port is destination port
      */
-    @ConstMethod public short getStrategy() {
+    public short getStrategy() {
         return strategy;
     }
 
     /**
      * number of parents/links
      */
-    @ConstMethod public @SizeT int getLinkCount() {
+    public int getLinkCount() {
         return linkCount;
     }
 
@@ -332,14 +318,14 @@ public class FrameworkElementInfo {
      * @param index Link index
      * @return Information about links to this framework element
      */
-    @ConstMethod public @Ptr @Const LinkInfo getLink(int index) {
+    public LinkInfo getLink(int index) {
         return links[index];
     }
 
     /**
      * @return Minimum network update interval
      */
-    @ConstMethod public short getMinNetUpdateInterval() {
+    public short getMinNetUpdateInterval() {
         return minNetUpdateTime;
     }
 
@@ -353,7 +339,7 @@ public class FrameworkElementInfo {
     /**
      * @return Is this information about remote port?
      */
-    @ConstMethod public boolean isPort() {
+    public boolean isPort() {
         return (flags & CoreFlags.IS_PORT) != 0;
     }
 
@@ -368,7 +354,7 @@ public class FrameworkElementInfo {
     /**
      * @return OpCode as string
      */
-    @ConstMethod private String getOpCodeString() {
+    private String getOpCodeString() {
         switch (opCode) {
         case RuntimeListener.ADD:
             return "ADD";
@@ -388,7 +374,7 @@ public class FrameworkElementInfo {
      *
      * @param copyTo List to copy result of get operation to
      */
-    @ConstMethod public void getConnections(@Ref SimpleList<ConnectionInfo> copyTo) {
+    public void getConnections(SimpleList<ConnectionInfo> copyTo) {
         copyTo.clear();
         copyTo.addAll(connections);
     }

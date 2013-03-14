@@ -26,17 +26,10 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Framework element that aggregates edges to determine data dependencies
  * between higher level entities (and to collect usage data).
@@ -44,7 +37,6 @@ import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
  *
  * This information will be valuable for efficient scheduling
  */
-@IncludeClass( {SafeConcurrentlyIterableList.class, AggregatedEdge.class})
 public class EdgeAggregator extends FrameworkElement {
 
     /** Is this edge aggregator an interface of its parent (one of possibly many) */
@@ -60,11 +52,10 @@ public class EdgeAggregator extends FrameworkElement {
     public static final int ALL_EDGE_AGGREGATOR_FLAGS = IS_INTERFACE | SENSOR_DATA | CONTROLLER_DATA;
 
     /** List of emerging aggregated edges */
-    @CppType("util::SafeConcurrentlyIterableList<AggregatedEdge*, 5, true>")
     private SafeConcurrentlyIterableList<AggregatedEdge> emergingEdges = new SafeConcurrentlyIterableList<AggregatedEdge>(0, 5);
 
     /** see FrameworkElement for parameter description */
-    public EdgeAggregator(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String name, @CppDefault("0") int flags_) {
+    public EdgeAggregator(FrameworkElement parent_, String name, int flags_) {
         super(parent_, name, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
     }
 
@@ -138,7 +129,7 @@ public class EdgeAggregator extends FrameworkElement {
      * @return Edge that connects these elements - or null if such an edge does not yet exists
      */
     public AggregatedEdge findAggregatedEdge(EdgeAggregator dest) {
-        @Ptr ArrayWrapper<AggregatedEdge> iterable = emergingEdges.getIterable();
+        ArrayWrapper<AggregatedEdge> iterable = emergingEdges.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             AggregatedEdge ae = iterable.get(i);
             if (ae != null && ae.destination == dest) {
@@ -174,7 +165,7 @@ public class EdgeAggregator extends FrameworkElement {
      * @param target Destination port
      * @param estimatedDataSize Data Size of data
      */
-    public static void updateEdgeStatistics(AbstractPort source, AbstractPort target, @SizeT int estimatedDataSize) {
+    public static void updateEdgeStatistics(AbstractPort source, AbstractPort target, int estimatedDataSize) {
         EdgeAggregator src = getAggregator(source);
         EdgeAggregator dest = getAggregator(target);
         AggregatedEdge ar = src.findAggregatedEdge(dest);
@@ -186,7 +177,7 @@ public class EdgeAggregator extends FrameworkElement {
     /**
      * @return Array with emerging edges. Can be iterated over concurrently.
      */
-    public @Ptr ArrayWrapper<AggregatedEdge> getEmergingEdges() {
+    public ArrayWrapper<AggregatedEdge> getEmergingEdges() {
         return emergingEdges.getIterable();
     }
 }

@@ -21,8 +21,6 @@
  */
 package org.finroc.core.port.stream;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
@@ -30,7 +28,7 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PullRequestHandler;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is a port that provides an output stream to it's user and to the outside.
  *
@@ -40,7 +38,6 @@ import org.finroc.core.port.std.PullRequestHandler;
  *
  * (Implementation of this class is non-blocking... that's why it's slightly verbose)
  */
-@Inline @NoCpp
 public class OutputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
     /**

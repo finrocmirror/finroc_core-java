@@ -23,14 +23,12 @@ package org.finroc.core.plugin;
 
 import org.finroc.core.admin.AdminClient;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Remote create module action
  */
-@JavaOnly
 public class RemoteCreateModuleAction implements Comparable<RemoteCreateModuleAction> {
 
     /** Module name */

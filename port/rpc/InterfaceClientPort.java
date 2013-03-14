@@ -21,14 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SkipArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort;
@@ -38,28 +30,24 @@ import org.finroc.core.port.PortWrapperBase;
 public class InterfaceClientPort extends PortWrapperBase {
 
     /** Special Port class to load value when initialized */
-    @AtFront
     private class PortImpl extends InterfacePort {
 
-        @InCppFile
-        public PortImpl(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, Type client) {
+        public PortImpl(String name, FrameworkElement parent, DataTypeBase type, Type client) {
             super(name, parent, type, client);
         }
 
-        @InCppFile
         @Override
         protected void newConnection(AbstractPort partner) {
             InterfaceClientPort.this.newConnection(partner);
         }
 
-        @InCppFile
         @Override
         protected void connectionRemoved(AbstractPort partner) {
             InterfaceClientPort.this.connectionRemoved(partner);
         }
     }
 
-    public InterfaceClientPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+    public InterfaceClientPort(String name, FrameworkElement parent, DataTypeBase type) {
         wrapped = new PortImpl(name, parent, type, InterfacePort.Type.Client);
     }
 
@@ -87,8 +75,7 @@ public class InterfaceClientPort extends PortWrapperBase {
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    @SkipArgs("1")
-    public @CustomPtr("tPortDataPtr") <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    public <T> T getBufferForCall(DataTypeBase dt) {
         return ((InterfacePort)wrapped).<T>getBufferForCall(dt);
     }
 
@@ -99,7 +86,7 @@ public class InterfaceClientPort extends PortWrapperBase {
      *
      * @param partner Port at other end of connection
      */
-    @Virtual protected void newConnection(AbstractPort partner) {}
+    protected void newConnection(AbstractPort partner) {}
 
     /**
      * Called whenever a connection to this port was removed
@@ -108,5 +95,5 @@ public class InterfaceClientPort extends PortWrapperBase {
      *
      * @param partner Port at other end of connection
      */
-    @Virtual protected void connectionRemoved(AbstractPort partner) {}
+    protected void connectionRemoved(AbstractPort partner) {}
 }

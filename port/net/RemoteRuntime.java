@@ -24,19 +24,14 @@ package org.finroc.core.port.net;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.admin.AdminClient;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Annotation for remote runtime environments
  * (only meant for use on local system)
  */
-@JavaOnly
 public class RemoteRuntime extends FinrocAnnotation {
 
     /** Data Type */
@@ -51,7 +46,7 @@ public class RemoteRuntime extends FinrocAnnotation {
     /** Lookup for remote handles */
     private final RemoteHandleLookup remoteHandleLookup;
 
-    public RemoteRuntime(AdminClient adminInterface, RemoteTypes remoteTypes, @Ptr @CppType("void") @CppDefault("NULL") RemoteHandleLookup lookup) {
+    public RemoteRuntime(AdminClient adminInterface, RemoteTypes remoteTypes, RemoteHandleLookup lookup) {
         this.adminInterface = adminInterface;
         this.remoteTypes = remoteTypes;
 
@@ -70,7 +65,6 @@ public class RemoteRuntime extends FinrocAnnotation {
      * @param fe Remote framework
      * @return Handle of remote framework element (null if not found)
      */
-    @JavaOnly
     public Integer getRemoteHandle(FrameworkElement fe) {
         return remoteHandleLookup.getRemoteHandle(fe);
     }
@@ -79,7 +73,6 @@ public class RemoteRuntime extends FinrocAnnotation {
      * @param handle Remote handle
      * @return Framework element that represents remote framework element with this remote handle
      */
-    @JavaOnly
     public FrameworkElement getRemoteElement(int handle) {
         return remoteHandleLookup.getRemoteElement(handle);
     }

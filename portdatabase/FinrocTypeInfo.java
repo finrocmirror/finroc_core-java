@@ -24,22 +24,14 @@ package org.finroc.core.portdatabase;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.rpc.method.PortInterface;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Additional info finroc stores for each data type
  */
-@PassByValue
 public class FinrocTypeInfo {
 
     /** Types of data types */
@@ -64,15 +56,15 @@ public class FinrocTypeInfo {
     private short ccIndex = -1;
 
     /** Pointer to port interface in case of method type */
-    @Ptr private PortInterface portInterface;
+    private PortInterface portInterface;
 
     /** Data type uid */
-    @JavaOnly private short uid = -1;
+    private short uid = -1;
 
     // static stuff
 
     /** CC Type counter */
-    @JavaOnly public static final AtomicInt lastCcIndex = new AtomicInt();
+    public static final AtomicInt lastCcIndex = new AtomicInt();
 
     /** Maximum number of types */
     public static final int MAX_TYPES = 2000;
@@ -81,7 +73,7 @@ public class FinrocTypeInfo {
     public static final int MAX_CCTYPES = 50;
 
     /** Global storage for finroc type info */
-    @JavaOnly private static final FinrocTypeInfo[] info = new FinrocTypeInfo[MAX_TYPES];
+    private static final FinrocTypeInfo[] info = new FinrocTypeInfo[MAX_TYPES];
 
     static {
         for (short i = 0; i < MAX_TYPES; i++) {
@@ -93,9 +85,7 @@ public class FinrocTypeInfo {
     /**
      * @return Global storage for finroc type info
      */
-    @CppType("FinrocTypeInfo*") @InCppFile
     private static final FinrocTypeInfo[] infoArray() {
-        //Cpp static FinrocTypeInfo info[MAX_TYPES];
         return info;
     }
 
@@ -103,7 +93,7 @@ public class FinrocTypeInfo {
      * @param type Data Type
      * @return Finroc type info for type
      */
-    public static @Ref FinrocTypeInfo get(@Const @Ref DataTypeBase type) {
+    public static FinrocTypeInfo get(DataTypeBase type) {
         return infoArray()[type.getUid()];
     }
 
@@ -111,7 +101,7 @@ public class FinrocTypeInfo {
      * @param type Data Type uid
      * @return Finroc type info for type
      */
-    public static @Ref FinrocTypeInfo get(short uid) {
+    public static FinrocTypeInfo get(short uid) {
         return infoArray()[uid];
     }
 
@@ -153,7 +143,6 @@ public class FinrocTypeInfo {
     /**
      * @param newUpdateTime Current default minimum network update interval for type im ms
      */
-    @InCppFile
     public void setUpdateTime(short newUpdateTime) {
         updateTime = newUpdateTime;
         //RuntimeSettings.getInstance().getSharedPorts().publishUpdatedDataTypeInfo(this);
@@ -193,7 +182,7 @@ public class FinrocTypeInfo {
      * @param dt Data type to look this up for
      * @return is this a standard port data type?
      */
-    public static boolean isStdType(@Const @Ref DataTypeBase dt) {
+    public static boolean isStdType(DataTypeBase dt) {
         return get(dt).getType() == Type.STD;
     }
 
@@ -201,7 +190,7 @@ public class FinrocTypeInfo {
      * @param dt Data type to look this up for
      * @return is this a "cheap copy" port data type?
      */
-    public static boolean isCCType(@Const @Ref DataTypeBase dt) {
+    public static boolean isCCType(DataTypeBase dt) {
         return get(dt).getType() == Type.CC;
     }
 
@@ -209,7 +198,7 @@ public class FinrocTypeInfo {
      * @param dt Data type to look this up for
      * @return is this a RPC interface port data type? (excluding unknown RPC type)
      */
-    public static boolean isMethodType(@Const @Ref DataTypeBase dt) {
+    public static boolean isMethodType(DataTypeBase dt) {
         return get(dt).getType() == Type.METHOD;
     }
 
@@ -218,7 +207,7 @@ public class FinrocTypeInfo {
      * @param includeUnknownTypes Also return true for unknown RPC types?
      * @return is this a RPC interface port data type?
      */
-    public static boolean isMethodType(@Const @Ref DataTypeBase dt, boolean includeUnknownTypes) {
+    public static boolean isMethodType(DataTypeBase dt, boolean includeUnknownTypes) {
         return get(dt).getType() == Type.METHOD || (includeUnknownTypes && get(dt).getType() == Type.UNKNOWN_METHOD);
     }
 
@@ -257,10 +246,7 @@ public class FinrocTypeInfo {
      */
     public static int estimateDataSize(GenericObject data) {
         if (isCCType(data.getType())) {
-            //JavaOnlyBlock
             return 16;
-
-            //Cpp return data->getType().getSize();
         } else {
             return 4096; // very imprecise... but doesn't matter currently
         }

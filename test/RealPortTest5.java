@@ -21,17 +21,6 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.CppUnused;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -54,20 +43,17 @@ import org.finroc.core.port.cc.PortNumeric;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.std.PortDataManager;
 
-@CppPrepend("using rrlib::serialization::MemoryBuffer;")
-@CppInclude( {"plugins/blackboard/BlackboardPlugin.h", "core/plugin/Plugins.h"})
 public class RealPortTest5 { /*extends CoreThreadBase*/
 
     private static final int NUM_OF_PORTS = 1000;
     private static final int CYCLE_TIME = 3;
 
-    static @Managed @SharedPtr PortNumeric<Integer> input, output, p1, p2, p3;
+    static PortNumeric<Integer> input, output, p1, p2, p3;
     static RuntimeEnvironment re;
 
     private static final int CYCLES = 1000/*0000*/;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"test\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("test");
 
     public static void main(String[] args) {
@@ -118,11 +104,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             output.publish(i);
         }
         long time = System.currentTimeMillis() - start;
-
-        //JavaOnlyBlock
         System.out.println(time + " " + output.getIntRaw());
-
-        //Cpp std::cout << time << " " << output->getValue() << std::endl;
     }
 
     // test 100.000.000 set and get operations with two CC ports over a simple edge
@@ -135,11 +117,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         output.connectToTarget(input);*/
 
         output.publish(42);
-
-        //JavaOnlyBlock
         System.out.println(input.getDoubleRaw());
-
-        //Cpp std::cout << input->getValue() << std::endl;
 
         try {
             Thread.sleep(1000);
@@ -148,13 +126,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         long start = System.currentTimeMillis();
         int result = 0;
         for (int i = 0; i < CYCLES; i++) {
-            //for (int i = 0; i < 1000000; i++) {
             output.publish(i);
-
-            //JavaOnlyBlock
             result = input.getIntRaw();
-
-            //Cpp result = input->getValue();
         }
         long time = System.currentTimeMillis() - start;
         System.out.println(Long.toString(time) + " " + result);
@@ -164,23 +137,20 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     public static void testSimpleEdge2() {
         BlackboardManager.getInstance();
 
-        @InCpp("Port<finroc::blackboard::BlackboardBuffer> input(PortCreationInfo(\"input\", PortFlags::INPUT_PORT));")
         Port<BlackboardBuffer> input = new Port<BlackboardBuffer>(new PortCreationInfo("input", BlackboardBuffer.class, PortFlags.INPUT_PORT));
-        @InCpp("Port<finroc::blackboard::BlackboardBuffer> output(PortCreationInfo(\"output\", PortFlags::OUTPUT_PORT));")
         Port<BlackboardBuffer> output = new Port<BlackboardBuffer>(new PortCreationInfo("output", BlackboardBuffer.class, PortFlags.OUTPUT_PORT));
 
         output.connectTo(input);
         FrameworkElement.initAll();
 
-        @CustomPtr("tPortDataPtr") BlackboardBuffer buf = output.getUnusedBuffer();
-        @InCpp("rrlib::serialization::OutputStream co(buf.get());")
-        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf);
+        BlackboardBuffer buf = output.getUnusedBuffer();
+        OutputStreamBuffer co = new OutputStreamBuffer(buf);
         co.writeInt(42);
         co.close();
         output.publish(buf);
 
-        @Const BlackboardBuffer cbuf = input.getAutoLocked();
-        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(cbuf);
+        BlackboardBuffer cbuf = input.getAutoLocked();
+        InputStreamBuffer ci = new InputStreamBuffer(cbuf);
         System.out.println(ci.readInt());
         input.releaseAutoLocks();
 
@@ -210,7 +180,6 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     public static void testSimpleEdgeBB() {
         BlackboardManager.getInstance();
         @SuppressWarnings("unused")
-        @CppUnused
         //BlackboardServer<MemoryBuffer> server = new BlackboardServer<MemoryBuffer>("testbb");
         SingleBufferedBlackboardServer<MemoryBuffer> server2 = new SingleBufferedBlackboardServer<MemoryBuffer>("testbb", MemoryBuffer.TYPE);
         BlackboardClient<MemoryBuffer> client = new BlackboardClient<MemoryBuffer>("testbb", null, false, MemoryBuffer.TYPE);
@@ -221,23 +190,17 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             BlackboardWriteAccess<MemoryBuffer> bbw = new BlackboardWriteAccess<MemoryBuffer>(client, 4000000);
             bbw.resize(8/*, 8, 8, false*/);
 
-            @InCpp("rrlib::serialization::OutputStream co(&(bbw[0]));")
-            @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(bbw.get(0));
+            OutputStreamBuffer co = new OutputStreamBuffer(bbw.get(0));
             co.writeLong(0);
             co.close();
-
-            //JavaOnlyBlock
             bbw.delete();
         } catch (BBLockException ex) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Write-locking blackboard failed");
         }
 
-        @CppType("PortDataPtr<std::vector<MemoryBuffer> >")
-        //@CppType("blackboard::BlackboardClient<MemoryBuffer>::ChangeTransactionVar")
         PortDataList<MemoryBuffer> buf = client.getUnusedChangeBuffer();
         buf.resize(1);
-        @InCpp("rrlib::serialization::OutputStream co(&buf->_at(0));")
-        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf.get(0));
+        OutputStreamBuffer co = new OutputStreamBuffer(buf.get(0));
         co.writeInt(0x4BCDEF12);
         co.close();
         try {
@@ -246,15 +209,10 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
             e.printStackTrace();
         }
 
-        //JavaOnlyBlock
         buf = null;
 
-        //Cpp buf._reset();
-
-        @CppType("PortDataPtr<const std::vector<MemoryBuffer> >")
         PortDataList<MemoryBuffer> cbuf = client.read();
-        @InCpp("rrlib::serialization::InputStream ci(&cbuf->_at(0));")
-        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(cbuf.get(0));
+        InputStreamBuffer ci = new InputStreamBuffer(cbuf.get(0));
         System.out.println(ci.readInt());
 
         //JavaOnlyBlock
@@ -266,40 +224,20 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         int result = 0;
         long size = 0;
         for (int i = 0; i < CYCLES; i++) {
-            @Ptr @CppType("std::vector<MemoryBuffer>")
             PortDataList<MemoryBuffer> buf3 = client.writeLock(300000000);
-
-            //JavaOnlyBlock
             co.reset(buf3.get(0));
-
-            //Cpp co.reset(&buf3->_at(0));
-
             co.writeInt(i);
             co.writeInt(45);
             co.close();
-
-            //JavaOnlyBlock
             size = buf3.get(0).getSize();
-
-            //Cpp size = buf3->_at(0)._GetSize();
-
             client.unlock();
 
             /*cbuf = client.readPart(2, 4, 20000);
             cbuf.getManager().getCurrentRefCounter().releaseLock();*/
             cbuf = client.read();
-
-            //JavaOnlyBlock
             ci.reset(cbuf.get(0));
-
-            //Cpp ci.reset(&cbuf->_at(0));
-
             result = ci.readInt();
-
-            //JavaOnlyBlock
             PortDataManager.getManager(cbuf).releaseLock();
-
-            //Cpp cbuf._reset();
         }
         long time = System.currentTimeMillis() - start;
         System.out.println(Long.toString(time) + " " + result + " " + size);

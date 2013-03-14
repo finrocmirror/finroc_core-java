@@ -21,17 +21,11 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Class for any exceptions that can occur during method calls
  */
-@Inline @NoCpp
 public class MethodCallException extends Exception {
 
     /** UID */
@@ -41,17 +35,15 @@ public class MethodCallException extends Exception {
     public enum Type { NONE, TIMEOUT, NO_CONNECTION, UNKNOWN_METHOD, INVALID_PARAM, PROGRAMMING_ERROR }
     private final Type type;
 
-    @JavaOnly
     public MethodCallException(Type type) {
         this.type = type;
     }
 
-    @JavaOnly
     public MethodCallException(int type2) {
         this.type = Type.values()[type2];
     }
 
-    @ConstMethod public Type getType() {
+    public Type getType() {
         return type;
     }
 }

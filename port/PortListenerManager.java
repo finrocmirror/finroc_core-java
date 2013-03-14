@@ -22,17 +22,11 @@
 package org.finroc.core.port;
 
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 
 /**
  * Manager for port listeners
  */
 @SuppressWarnings("rawtypes")
-@DefaultType("PortData") @Inline @NoCpp @RawTypeArgs @JavaOnly
 public class PortListenerManager extends ListenerManager<AbstractPort, Object, PortListener, PortListenerManager> {
 
     @SuppressWarnings("unchecked")

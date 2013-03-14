@@ -21,18 +21,13 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class contains the logic for triggering synchronous (method) calls
  * (possibly over the net & without blocking further threads etc.)
@@ -40,7 +35,6 @@ import org.finroc.core.port.ThreadLocalCache;
 public class SynchMethodCallLogic {
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     /**
@@ -52,10 +46,8 @@ public class SynchMethodCallLogic {
      * @param timeout Timeout for call
      * @return Returns call object - might be the same as in call parameter (likely - if call wasn't transferred via network)
      */
-    @SuppressWarnings("unchecked") @Inline
+    @SuppressWarnings("unchecked")
     public static <T extends AbstractCall> T performSynchCall(T call, Callable<T> callMe, long timeout) throws MethodCallException {
-        //Cpp assert(((void*)(static_cast<AbstractCall*>(call))) == ((void*)call)); // ensure safety for Callable cast
-        @InCpp("Callable<AbstractCall>* tmp = reinterpret_cast<Callable<AbstractCall>*>(callMe);")
         Callable<AbstractCall> tmp = (Callable<AbstractCall>)callMe;
         return (T)performSynchCallImpl(call, tmp, timeout);
     }
@@ -71,8 +63,8 @@ public class SynchMethodCallLogic {
      * @return Returns call object - might be the same as in call parameter (likely - if call wasn't transferred via network)
      */
     private static AbstractCall performSynchCallImpl(AbstractCall call, Callable<AbstractCall> callMe, long timeout) throws MethodCallException {
-        @Ptr MethodCallSyncher mcs = ThreadLocalCache.get().getMethodSyncher();
-        @Ptr AbstractCall ret = null;
+        MethodCallSyncher mcs = ThreadLocalCache.get().getMethodSyncher();
+        AbstractCall ret = null;
         synchronized (mcs) {
             call.setupSynchCall(mcs);
             mcs.currentMethodCallIndex = call.getMethodCallIndex();
@@ -90,8 +82,6 @@ public class SynchMethodCallLogic {
             mcs.methodReturn = null;
 
             if (ret == null) {
-
-                // JavaOnlyBlock
                 logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Thread " + Thread.currentThread().toString() + ": Call timed out");
 
                 // (recycling is job of receiver)
@@ -104,7 +94,6 @@ public class SynchMethodCallLogic {
     /**
      * @return Description for logging
      */
-    @CppType("char*") @Const
     private static String getLogDescription() {
         return "SynchMethodCallLogic";
     }
@@ -116,7 +105,7 @@ public class SynchMethodCallLogic {
      */
     public static void handleMethodReturn(AbstractCall call) {
         // return value
-        @Ptr MethodCallSyncher mcs = MethodCallSyncher.get(call.getSyncherID());
+        MethodCallSyncher mcs = MethodCallSyncher.get(call.getSyncherID());
         if (mcs != null) {
             mcs.returnValue(call);
         } else {

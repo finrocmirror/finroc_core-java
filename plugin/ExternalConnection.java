@@ -21,8 +21,6 @@
  */
 package org.finroc.core.plugin;
 
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -35,7 +33,7 @@ import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameterList;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is an abstract base class for all (network-like) connections to
  * outside the runtime environment.
@@ -60,7 +58,6 @@ public abstract class ExternalConnection extends FrameworkElement {
     private boolean firstConnect = true;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"connections\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
 
     /** if set, this module automatically connects to this address */
@@ -112,7 +109,7 @@ public abstract class ExternalConnection extends FrameworkElement {
      * @param address Address that shall be connected to
      * @param sameAddress Is this the same address as with the last connect
      */
-    @Virtual protected abstract void connectImpl(String address, boolean sameAddress) throws Exception;
+    protected abstract void connectImpl(String address, boolean sameAddress) throws Exception;
 
     /**
      * Disconnect connection
@@ -204,7 +201,6 @@ public abstract class ExternalConnection extends FrameworkElement {
      * @param detailed Return more detailed information?
      * @return Connection status information for user
      */
-    @Virtual
     public String getStatus(boolean detailed) {
         return getConnectionAddress();
     }

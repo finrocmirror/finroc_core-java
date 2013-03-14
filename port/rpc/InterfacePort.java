@@ -31,19 +31,11 @@ import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is a port that can be used for remote procedure calls -
  * synchronous and asynchronous
@@ -53,7 +45,6 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  * One source may have multiple targets. However, a target may only
  * have one source in order to receive only one return value.
  */
-@Friend(InterfaceClientPort.class)
 public class InterfacePort extends AbstractPort {
 
     /** Edges emerging from this port */
@@ -69,17 +60,17 @@ public class InterfacePort extends AbstractPort {
     private final Type type;
 
     /** Pool with diverse data buffers */
-    final @Ptr MultiTypePortDataBufferPool bufPool;
+    final MultiTypePortDataBufferPool bufPool;
 
-    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type) {
+    public InterfacePort(String name, FrameworkElement parent, DataTypeBase dataType, Type type) {
         this(new PortCreationInfo(name, parent, dataType, 0), type, -1);
     }
 
-    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags) {
+    public InterfacePort(String name, FrameworkElement parent, DataTypeBase dataType, Type type, int customFlags) {
         this(new PortCreationInfo(name, parent, dataType, customFlags), type, -1);
     }
 
-    public InterfacePort(String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, Type type, int customFlags, int lockLevel) {
+    public InterfacePort(String name, FrameworkElement parent, DataTypeBase dataType, Type type, int customFlags, int lockLevel) {
         this(new PortCreationInfo(name, parent, dataType, customFlags), type, lockLevel);
     }
 
@@ -128,11 +119,6 @@ public class InterfacePort extends AbstractPort {
 
     @Override
     public void delete() {
-        /*Cpp
-        if (bufPool != NULL) {
-            delete bufPool;
-        }
-         */
     }
 
     /**
@@ -141,7 +127,7 @@ public class InterfacePort extends AbstractPort {
      * @return Unused buffer of type
      */
     @Override
-    public PortDataManager getUnusedBufferRaw(@Const @Ref DataTypeBase dt) {
+    public PortDataManager getUnusedBufferRaw(DataTypeBase dt) {
         assert(!FinrocTypeInfo.isCCType(dt));
         assert(bufPool != null);
         return bufPool.getUnusedBuffer(dt);
@@ -152,7 +138,7 @@ public class InterfacePort extends AbstractPort {
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    public CCPortDataManager getUnusedCCBuffer(@Const @Ref DataTypeBase dt) {
+    public CCPortDataManager getUnusedCCBuffer(DataTypeBase dt) {
         assert(FinrocTypeInfo.isCCType(dt));
         return ThreadLocalCache.get().getUnusedInterThreadBuffer(dt);
     }
@@ -185,11 +171,11 @@ public class InterfacePort extends AbstractPort {
      * @return "Server" Port that handles method call - either InterfaceServerPort or InterfaceNetPort (the latter if we have remote server)
      */
     public InterfacePort getServer() {
-        @Ptr InterfacePort current = this;
+        InterfacePort current = this;
         while (true) {
-            @Ptr InterfacePort last = current;
-            @Ptr ArrayWrapper<InterfacePort> it = current.edgesSrc.getIterable();
-            for (@SizeT int i = 0, n = it.size(); i < n; i++) {
+            InterfacePort last = current;
+            ArrayWrapper<InterfacePort> it = current.edgesSrc.getIterable();
+            for (int i = 0, n = it.size(); i < n; i++) {
                 InterfacePort ip = (InterfacePort)it.get(i);
                 if (ip != null) {
                     current = ip;
@@ -241,11 +227,7 @@ public class InterfacePort extends AbstractPort {
      * @return Unused buffer of type
      */
     @SuppressWarnings("unchecked")
-    @InCpp( {"PortDataManager* mgr = getUnusedBufferRaw(dt != NULL ? dt : rrlib::serialization::DataType<T>());",
-             "mgr->getCurrentRefCounter()->setOrAddLocks((int8_t)1);",
-             "return PortDataPtr<T>(mgr);"
-            })
-    protected @CustomPtr("tPortDataPtr") <T> T getBufferForCall(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    protected <T> T getBufferForCall(DataTypeBase dt) {
         PortDataManager pdm = getUnusedBufferRaw(dt);
         T t = (T)pdm.getObject().getData();
         pdm.getCurrentRefCounter().setOrAddLocks((byte)1);

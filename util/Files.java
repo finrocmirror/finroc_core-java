@@ -46,22 +46,18 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Contains helpful functions for files and streams
  */
-@JavaOnly
 public class Files {
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"files\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("files");
 
     /**

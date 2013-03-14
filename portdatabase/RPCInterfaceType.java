@@ -26,7 +26,7 @@ import org.rrlib.finroc_core_utils.jc.AutoDeleter;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * RPC interface data type.
  * (Should only be created once per data type with name and methods constructor!)
@@ -34,7 +34,7 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 public class RPCInterfaceType extends DataTypeBase {
 
     /**
-     * @param name Name of RPC Inteface
+     * @param name Name of RPC Interface
      * @param methods Referenced PortInterface
      */
     public RPCInterfaceType(String name, PortInterface methods) {
@@ -45,11 +45,7 @@ public class RPCInterfaceType extends DataTypeBase {
     private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {
         DataTypeBase dt = findType(name);
         if (dt != null) {
-
-            //JavaOnlyBlock
             return dt.getInfo();
-
-            //Cpp return const_cast<DataTypeBase::DataTypeInfoRaw*>(dt.getInfo());
         }
         DataTypeInfoRaw info = AutoDeleter.addStatic(new DataTypeInfoRaw());
         info.setName(name);

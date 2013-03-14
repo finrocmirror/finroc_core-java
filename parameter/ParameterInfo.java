@@ -32,11 +32,6 @@ import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -49,13 +44,11 @@ import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Annotates ports that are a parameter
  * and provides respective functionality
  */
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ParameterInfo>;"})
 public class ParameterInfo extends FinrocAnnotation {
 
     /** Data Type */
@@ -68,11 +61,9 @@ public class ParameterInfo extends FinrocAnnotation {
     private String configEntry = "";
 
     /** Is this info on remote parameter? */
-    @JavaOnly
     private boolean remote = false;
 
     /** Log domain */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"parameter\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
 
     /** Was config entry set from finstruct? */
@@ -92,7 +83,6 @@ public class ParameterInfo extends FinrocAnnotation {
 
     public ParameterInfo() {}
 
-    @JavaOnly
     public ParameterInfo(boolean remote) {
         this.remote = remote;
     }
@@ -274,7 +264,7 @@ public class ParameterInfo extends FinrocAnnotation {
                 if (cf != null && configEntry.length() > 0) {
                     String fullConfigEntry = ConfigNode.getFullConfigEntry(ann, configEntry);
                     if (cf.hasEntry(fullConfigEntry)) {
-                        @Ref XMLNode node = cf.getEntry(fullConfigEntry, false);
+                        XMLNode node = cf.getEntry(fullConfigEntry, false);
                         if (FinrocTypeInfo.isCCType(ann.getDataType())) {
                             CCPortBase port = (CCPortBase)ann;
                             CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(port.getDataType());
@@ -350,7 +340,7 @@ public class ParameterInfo extends FinrocAnnotation {
         if (FinrocTypeInfo.isCCType(ann.getDataType())) {
             CCPortBase port = (CCPortBase)ann;
             if (hasEntry || (!port.containsDefaultValue())) {
-                @Ref XMLNode node = cf.getEntry(configEntry, true);
+                XMLNode node = cf.getEntry(configEntry, true);
                 CCPortDataManager c = port.getInInterThreadContainer();
                 c.getObject().serialize(node);
                 c.recycle2();
@@ -358,7 +348,7 @@ public class ParameterInfo extends FinrocAnnotation {
         } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
             PortBase port = (PortBase)ann;
             if (hasEntry || (!port.containsDefaultValue())) {
-                @Ref XMLNode node = cf.getEntry(configEntry, true);
+                XMLNode node = cf.getEntry(configEntry, true);
                 PortDataManager pd = port.getLockedUnsafeRaw();
                 pd.getObject().serialize(node);
                 pd.releaseLock();

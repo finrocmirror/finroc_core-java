@@ -20,14 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-@Namespace("finroc::core")
-@CppLocation("core/parameter")
-
 /**
  * This package contains classes related to module/group parameters
  */
 package org.finroc.core.parameter;
-
-import org.rrlib.finroc_core_utils.jc.annotation.CppLocation;
-import org.rrlib.finroc_core_utils.jc.annotation.Namespace;
-

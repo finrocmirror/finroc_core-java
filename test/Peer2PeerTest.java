@@ -31,7 +31,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Tests whether different runtime environments find each other.
  * Start this multiple times - further runtime environments should appear

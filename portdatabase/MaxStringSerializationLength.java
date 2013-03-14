@@ -24,10 +24,8 @@ package org.finroc.core.portdatabase;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Hint for property editor:
  * How long is string serialization of this object
@@ -36,7 +34,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
  * value = 0 is normal (single-line editor)
  * value = -1 is long (multi-line text editor)
  */
-@JavaOnly
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MaxStringSerializationLength {
     int value();

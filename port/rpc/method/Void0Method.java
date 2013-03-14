@@ -30,35 +30,22 @@ import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.RPCThreadPool;
-import org.rrlib.finroc_core_utils.jc.annotation.AutoVariants;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.NoMatching;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Void method with 0 parameters.
  */
 public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMethod {
-
-    /*Cpp
-
-     */
 
     /**
      * @param portInterface PortInterface that method belongs to
      * @param name Name of method
      * @param handleInExtraThread Handle call in extra thread by default (should be true if call can block or can consume a significant amount of time)
      */
-    public Void0Method(@Ref PortInterface portInterface, @Const @Ref String name, boolean handleInExtraThread) {
+    public Void0Method(PortInterface portInterface, String name, boolean handleInExtraThread) {
         super(portInterface, name, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, handleInExtraThread);
     }
 
@@ -70,7 +57,7 @@ public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMeth
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void call(InterfaceClientPort port, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
+    public void call(InterfaceClientPort port, boolean forceSameThread) throws MethodCallException {
 
         InterfacePort ip = port.getServer();
         if (ip != null && ip.getType() == InterfacePort.Type.Network) {
@@ -79,8 +66,7 @@ public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMeth
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @InCpp("_HANDLER handler = static_cast<_HANDLER>((static_cast<InterfaceServerPort*>(ip))->getHandler());")
-            @Ptr HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
+            HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
             if (handler == null) {
 
                 throw new MethodCallException(MethodCallException.Type.NO_CONNECTION);
@@ -101,26 +87,15 @@ public class Void0Method<HANDLER extends Void0Handler > extends AbstractVoidMeth
 
     @SuppressWarnings("unchecked")
     @Override
-    public void executeFromMethodCallObject(MethodCall call, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
+    public void executeFromMethodCallObject(MethodCall call, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         assert(retHandler == null);
-        @InCpp("_HANDLER h2 = static_cast<_HANDLER>(handler);")
         HANDLER h2 = (HANDLER)handler;
         executeFromMethodCallObject(call, h2);
     }
 
-    public void executeFromMethodCallObject(MethodCall call, @Const HANDLER handler) {
+    public void executeFromMethodCallObject(MethodCall call, HANDLER handler) {
         assert(call != null && handler != null);
-        @InCpp("_HANDLER handler2 = handler;")
-        @Ptr HANDLER handler2 = handler;
-
-
-
-        //JavaOnlyBlock
-
-
-        /*Cpp
-
-         */
+        HANDLER handler2 = handler;
 
         try {
             handler2.handleVoidCall(this);

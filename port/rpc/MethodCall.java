@@ -21,14 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
@@ -43,7 +35,7 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the class for a complete method call.
  *
@@ -67,7 +59,7 @@ public class MethodCall extends AbstractCall implements Task {
     private DataTypeBase portInterfaceType = null;
 
     /** Needed when executed as a task: Handler that will handle this call */
-    private @Ptr AbstractMethodCallHandler handler;
+    private AbstractMethodCallHandler handler;
 
     /** Needed when executed as a task and method has return value: Handler that will handle return of this call */
     private AbstractAsyncReturnHandler retHandler;
@@ -82,10 +74,9 @@ public class MethodCall extends AbstractCall implements Task {
     private InterfaceNetPort sourceNetPort;
 
     /** Maximum number of parameters */
-    private static final @SizeT int MAX_PARAMS = 4;
+    private static final int MAX_PARAMS = 4;
 
     /** Storage for parameters that are used in call - for usage in local runtime (fixed size, since this is smaller & less hassle than dynamic array) */
-    @InCpp("CallParameter params[MAX_PARAMS];")
     private CallParameter[] params = new CallParameter[MAX_PARAMS];
 
     /** (Typically not instantiated directly - possible though) */
@@ -106,7 +97,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param m The Method that will be called (may not be changed - to avoid ugly programming errors)
      * @param portInterface Data type of interface that method belongs to
      */
-    public void setMethod(AbstractMethod m, @Const @Ref  DataTypeBase portInterface) {
+    public void setMethod(AbstractMethod m, DataTypeBase portInterface) {
         method = m;
         portInterfaceType = portInterface;
         assert(typeCheck());
@@ -120,7 +111,7 @@ public class MethodCall extends AbstractCall implements Task {
         super.serialize(oos);
 
         // Serialize parameters
-        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+        for (int i = 0; i < MAX_PARAMS; i++) {
             params[i].serialize(oos);
         }
     }
@@ -138,7 +129,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param skipParameters Skip deserialization of parameter stuff? (for cases when port has been deleted;
      * in this case we need to jump to skip target afterwards)
      */
-    public void deserializeCall(@Ref InputStreamBuffer is, @Const @Ref DataTypeBase dt, boolean skipParameters) {
+    public void deserializeCall(InputStreamBuffer is, DataTypeBase dt, boolean skipParameters) {
         //assert(skipParameters || (dt != null && dt.isMethodType())) : "Method type required here";
         portInterfaceType = dt;
         byte b = is.readByte();
@@ -150,7 +141,7 @@ public class MethodCall extends AbstractCall implements Task {
         if (skipParameters) {
             return;
         }
-        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+        for (int i = 0; i < MAX_PARAMS; i++) {
             params[i].deserialize(is);
         }
     }
@@ -197,7 +188,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param handler Handler (server port) that will handle method
      * @param retHandler asynchronous return handler (required for method calls with return value)
      */
-    public void prepareExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
+    public void prepareExecution(AbstractMethod method, DataTypeBase portInterface, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -215,7 +206,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param netPort Port over which call is sent
      * @param netTimeout Network timeout in ms for call
      */
-    public void prepareSyncRemoteExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, AbstractAsyncReturnHandler retHandler, InterfaceNetPort netPort, int netTimeout) {
+    public void prepareSyncRemoteExecution(AbstractMethod method, DataTypeBase portInterface, AbstractAsyncReturnHandler retHandler, InterfaceNetPort netPort, int netTimeout) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -232,7 +223,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param portInterface Data type of interface that method belongs to
      * @param netTimeout Network timeout in ms for call
      */
-    public void prepareSyncRemoteExecution(AbstractMethod method, @Const @Ref  DataTypeBase portInterface, int netTimeout) {
+    public void prepareSyncRemoteExecution(AbstractMethod method, DataTypeBase portInterface, int netTimeout) {
         assert(this.method == null && this.handler == null && method != null);
         this.method = method;
         this.portInterfaceType = portInterface;
@@ -245,7 +236,6 @@ public class MethodCall extends AbstractCall implements Task {
      *
      * @return Is everything all right?
      */
-    @InCppFile
     private boolean typeCheck() {
         return method != null && portInterfaceType != null && FinrocTypeInfo.get(portInterfaceType).getPortInterface() != null && FinrocTypeInfo.get(portInterfaceType).getPortInterface().containsMethod(method);
     }
@@ -270,7 +260,7 @@ public class MethodCall extends AbstractCall implements Task {
      * @param interfaceNetPort
      * @param mhandler
      */
-    public void prepareExecutionForCallFromNetwork(InterfaceNetPort source, @Ptr AbstractMethodCallHandler mhandler) {
+    public void prepareExecutionForCallFromNetwork(InterfaceNetPort source, AbstractMethodCallHandler mhandler) {
         assert(method != null);
         this.sourceNetPort = source;
         this.handler = mhandler;
@@ -287,7 +277,7 @@ public class MethodCall extends AbstractCall implements Task {
     /**
      * @return Data type of interface that method belongs to
      */
-    public @Const DataTypeBase getPortInterfaceType() {
+    public DataTypeBase getPortInterfaceType() {
         return portInterfaceType;
     }
 
@@ -295,13 +285,12 @@ public class MethodCall extends AbstractCall implements Task {
      * Recycle all parameters, but keep empty method call
      */
     public void recycleParameters() {
-        for (@SizeT int i = 0; i < MAX_PARAMS; i++) {
+        for (int i = 0; i < MAX_PARAMS; i++) {
             params[i].recycle();
         }
     }
 
-    @JavaOnly
-    public void addParam(int paramIndex, @Const Object o) {
+    public void addParam(int paramIndex, Object o) {
         CallParameter p = params[paramIndex];
         if (o == null) {
             p.type = CallParameter.NULLPARAM;
@@ -323,7 +312,7 @@ public class MethodCall extends AbstractCall implements Task {
     /**
      * Get parameter with specified index
      */
-    @SuppressWarnings("unchecked") @JavaOnly
+    @SuppressWarnings("unchecked")
     public <P> P getParam(int index) {
         CallParameter p = params[index];
         if (p.type == CallParameter.NULLPARAM) {
@@ -345,22 +334,14 @@ public class MethodCall extends AbstractCall implements Task {
         }
     }
 
-    public @CustomPtr("tPortDataPtr") GenericObject getParamGeneric(int index) {
-        @Ref CallParameter p = params[index];
+    public GenericObject getParamGeneric(int index) {
+        CallParameter p = params[index];
         if (p.type == CallParameter.NULLPARAM || p.value == null) {
-
-            //JavaOnlyBlock
             return null;
-
-            //Cpp return PortDataPtr<rrlib::serialization::GenericObject>();
         } else {
-
-            //JavaOnlyBlock
-            @Ref @CustomPtr("tPortDataPtr") GenericObject go = p.value;
+            GenericObject go = p.value;
             p.clear();
             return go;
-
-            //Cpp return std::_move(p.value);
         }
     }
 
@@ -374,10 +355,4 @@ public class MethodCall extends AbstractCall implements Task {
         recycleParameters();
         super.setExceptionStatus(typeId);
     }
-
-    /*Cpp
-    virtual void customDelete(bool b) {
-        Reusable::customDelete(b);
-    }
-     */
 }

@@ -22,17 +22,15 @@
 package org.finroc.core.finstructable;
 
 import org.finroc.core.RuntimeEnvironment;
-import org.rrlib.finroc_core_utils.jc.annotation.Prefix;
 import org.finroc.plugins.tcp.TCPServer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Executable for applications created completely with finstruct
  *
  * TODO: Command line parameters are finstructed-Group-XML, attribute tree, and port for Admin Server
  */
-@Prefix("p")
 public class Finstructed {
 
     public static void main(String[] args) {

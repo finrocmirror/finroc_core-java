@@ -23,23 +23,11 @@ package org.finroc.core.port;
 
 import java.util.EventListener;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Can register at port to receive callbacks whenever the port's value changes
  */
-@Include("PortListenerAdapter.h")
-@DefaultType("const void*") @Ptr @Inline @NoCpp @RawTypeArgs @Superclass2( {"PortListenerAdapter<T, typeutil::IsCCType<typename RawType<T>::t>::value, boost::is_integral<typename RawType<T>::t>::value || boost::is_floating_point<typename RawType<T>::t>::value || boost::is_enum<typename RawType<T>::t>::value>"})
 public interface PortListener<T> extends EventListener {
 
     /**
@@ -48,6 +36,6 @@ public interface PortListener<T> extends EventListener {
      * @param origin Port that value comes from
      * @param value Port's new value (locked for duration of method call)
      */
-    public void portChanged(AbstractPort origin, @Const @Ref T value);
+    public void portChanged(AbstractPort origin, T value);
 }
 

@@ -23,15 +23,9 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
-import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
-import org.rrlib.finroc_core_utils.jc.annotation.CppName;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.GenericChangeable;
 import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
 
-@JavaOnly
-@CppName("typeutil") @CppFilename("typeutil")
 public class DataTypeUtil {
 
     /**
@@ -42,7 +36,7 @@ public class DataTypeUtil {
      * @param param2 Custom parameter 2
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public static void applyChange(@Ptr Object obj, @Ptr Object transaction, long param1, long param2) {
+    public static void applyChange(Object obj, Object transaction, long param1, long param2) {
         if (obj instanceof GenericChangeable) {
             ((GenericChangeable)obj).applyChange(transaction, param1, param2);
         } else {

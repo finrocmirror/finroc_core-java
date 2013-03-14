@@ -21,13 +21,10 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  */
-@JavaOnly
 public class PortQueueTest {
 
     public static void main() {

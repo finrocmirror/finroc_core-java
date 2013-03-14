@@ -23,18 +23,13 @@ package org.finroc.core;
 
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Classes implementing this interface can register at the runtime and will
  * be informed whenever an port is added or removed
  */
-@Inline @NoCpp @Ptr
 public interface RuntimeListener {
 
     /** Constants for Change type (element added, element changed, element removed, edges changed) */
@@ -69,7 +64,6 @@ public interface RuntimeListener {
 /**
  * Manager for port listeners
  */
-@Inline @NoCpp
 class RuntimeListenerManager extends ListenerManager<FrameworkElement, Object, RuntimeListener, RuntimeListenerManager> {
 
     @Override
@@ -77,12 +71,8 @@ class RuntimeListenerManager extends ListenerManager<FrameworkElement, Object, R
         if (parameter != null) {
             byte changeType = (byte)callId;
             AbstractPort src = (AbstractPort)origin;
-            @Const AbstractPort dest = (AbstractPort)parameter;
-
-            //JavaOnlyBlock
+            AbstractPort dest = (AbstractPort)parameter;
             listener.runtimeEdgeChange(changeType, src, dest);
-
-            //Cpp listener->runtimeEdgeChange(changeType, src, const_cast<AbstractPort*>(dest));
         } else {
             listener.runtimeChange((byte)callId, origin);
         }

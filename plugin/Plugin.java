@@ -21,8 +21,6 @@
  */
 package org.finroc.core.plugin;
 
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-
 
 /**
  * @author Max Reichardt
@@ -31,7 +29,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
  *
  * The plugin class needs to have an empty constructor.
  */
-@SharedPtr
 public interface Plugin {
 
     /**

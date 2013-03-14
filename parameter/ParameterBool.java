@@ -28,27 +28,17 @@ import org.finroc.core.port.PortListener;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataManagerTL;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Parameter template class for cc types
  */
-@PassByValue @JavaOnly
 public class ParameterBool extends Parameter<CoreBoolean> {
 
     /**
      * Caches bool value of parameter port (optimization)
      */
-    @AtFront
     static class BoolCache implements PortListener<CoreBoolean> {
 
         /** Cached current value (we will much more often read than it will be changed) */
@@ -61,14 +51,14 @@ public class ParameterBool extends Parameter<CoreBoolean> {
     }
 
     /** Bool cache instance used for this parameter */
-    @SharedPtr public BoolCache cache = new BoolCache();
+    public BoolCache cache = new BoolCache();
 
-    public ParameterBool(@Const @Ref String name, FrameworkElement parent, boolean defaultValue, @Const @Ref String configEntry) {
+    public ParameterBool(String name, FrameworkElement parent, boolean defaultValue, String configEntry) {
         this(name, parent, defaultValue);
         setConfigEntry(configEntry);
     }
 
-    public ParameterBool(@Const @Ref String name, FrameworkElement parent, boolean defaultValue) {
+    public ParameterBool(String name, FrameworkElement parent, boolean defaultValue) {
         super(name, parent, CoreBoolean.TYPE);
         this.addPortListener(cache);
         cache.currentValue = defaultValue;
@@ -78,7 +68,6 @@ public class ParameterBool extends Parameter<CoreBoolean> {
     /**
      * @return Current parameter value
      */
-    @ConstMethod @Inline
     public boolean getValue() {
         return cache.currentValue;
     }

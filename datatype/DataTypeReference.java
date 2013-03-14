@@ -21,16 +21,14 @@
  */
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Reference to data type (type doesn't need to exist in local runtime)
  */
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::DataTypeReference>;"})
 public class DataTypeReference extends CoreString {
 
     /** UID */

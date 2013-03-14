@@ -21,24 +21,18 @@
  */
 package org.finroc.core.parameter;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.serialization.EnumValue;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Enum static parameter
  */
-@JavaOnly
 public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<EnumValue> {
 
     /** Reference to default value */
-    @JavaOnly private Class<E> enumClass;
+    private Class<E> enumClass;
 
     /**
      * @param name Parameter name
@@ -46,7 +40,7 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public StaticParameterEnum(@Const @Ref String name, @PassByValue E defaultValue, boolean constructorPrototype) {
+    public StaticParameterEnum(String name, E defaultValue, boolean constructorPrototype) {
         super(name, new DataType(defaultValue.getDeclaringClass()), constructorPrototype);
         if (!constructorPrototype) {
             set(defaultValue);
@@ -60,7 +54,7 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param stringConstants String constants for enum values (comma-separated string)
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public StaticParameterEnum(@Const @Ref String name, @PassByValue E defaultValue) {
+    public StaticParameterEnum(String name, E defaultValue) {
         super(name, new DataType(defaultValue.getDeclaringClass()));
         set(defaultValue);
         this.enumClass = defaultValue.getDeclaringClass();
@@ -69,7 +63,7 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
     /**
      * @param defaultValue new value
      */
-    public void set(@PassByValue E e) {
+    public void set(E e) {
         super.getValue().set(e.ordinal());
     }
 
@@ -84,7 +78,6 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param i integer
      * @return Enum value for this integer
      */
-    @InCpp("return (E)i;")
     private E getValueForInt(int i) {
         return enumClass.getEnumConstants()[i];
     }

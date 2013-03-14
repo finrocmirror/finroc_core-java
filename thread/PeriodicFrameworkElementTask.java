@@ -23,32 +23,25 @@ package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.port.EdgeAggregator;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Struct;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This represents a periodic task on the annotated Framework element
  *
  * Such tasks are executed by a ThreadContainer - in the order of the graph.
  */
-@Struct
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::PeriodicFrameworkElementTask>;"})
 public class PeriodicFrameworkElementTask extends FinrocAnnotation {
 
     /** Data Type */
     public static DataTypeBase TYPE = new DataType<PeriodicFrameworkElementTask>(PeriodicFrameworkElementTask.class);
 
     /** Task to execute */
-    public final @Ptr Task task;
+    public final Task task;
 
     /** Element containing incoming ports (relevant for execution order) */
     public final EdgeAggregator incoming;
@@ -67,7 +60,7 @@ public class PeriodicFrameworkElementTask extends FinrocAnnotation {
      * @param outgoingPorts Element containing outgoing ports (relevant for execution order)
      * @param task Task to execute
      */
-    public PeriodicFrameworkElementTask(EdgeAggregator incomingPorts, EdgeAggregator outgoingPorts, @Ptr Task task) {
+    public PeriodicFrameworkElementTask(EdgeAggregator incomingPorts, EdgeAggregator outgoingPorts, Task task) {
         this.task = task;
         incoming = incomingPorts;
         outgoing = outgoingPorts;

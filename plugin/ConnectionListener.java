@@ -24,9 +24,6 @@ package org.finroc.core.plugin;
 import java.util.EventListener;
 
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
  * @author Max Reichardt
@@ -34,7 +31,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
  * This interface can be used to get notified whenever the connection status
  * of an external connection changes.
  */
-@Inline @NoCpp @Ptr
 public interface ConnectionListener extends EventListener {
 
     /** Possible events */
@@ -52,13 +48,11 @@ public interface ConnectionListener extends EventListener {
 /**
  * Manager for connection listeners
  */
-@Inline @NoCpp
 class ConnectionListenerManager extends ListenerManager<ExternalConnection, Object, ConnectionListener, ConnectionListenerManager> {
 
     @Override
     public void singleNotify(ConnectionListener listener, ExternalConnection origin, Object parameter, int callId) {
         listener.connectionEvent(origin, callId);
     }
-
 
 }

@@ -24,20 +24,15 @@ package org.finroc.core.port.rpc.method;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port Interface.
  * A set of methods that can be registered as a method data type at DataTypeRegister
  */
-@Ptr
 public class PortInterface implements HasDestructor {
 
     /** List of methods in interface */
@@ -80,7 +75,7 @@ public class PortInterface implements HasDestructor {
      * @param id Method id
      * @return Method with specified id in this interface
      */
-    public AbstractMethod getMethod(@SizeT int id) {
+    public AbstractMethod getMethod(int id) {
         assert(id < methods.size());
         return methods.get(id);
     }
@@ -90,7 +85,7 @@ public class PortInterface implements HasDestructor {
      *
      * @param dataType Data type that has this port interface
      */
-    public void setDataType(@Const @Ref DataTypeBase dataType) {
+    public void setDataType(DataTypeBase dataType) {
         assert(FinrocTypeInfo.get(dataType).getPortInterface() == this);
         myType = dataType;
     }
@@ -98,7 +93,7 @@ public class PortInterface implements HasDestructor {
     /**
      * @return Data type of this port interface (must have been set before)
      */
-    public @Const DataTypeBase getDataType() {
+    public DataTypeBase getDataType() {
         assert(myType != null);
         return myType;
     }

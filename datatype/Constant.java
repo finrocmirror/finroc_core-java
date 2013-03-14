@@ -22,12 +22,9 @@
 package org.finroc.core.datatype;
 
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class contains a set of constants.
  * A constant is derived from the Unit class.
@@ -45,14 +42,14 @@ public final class Constant extends Unit {
     private final byte constantId;
 
     /** Value of constant */
-    @PassByValue private final CoreNumber value;
+    private final CoreNumber value;
 
     /** Number type of constant */
     //private CoreNumber2.Type type;
 
     /** Constants */
-    @SharedPtr public static Constant NO_MIN_TIME_LIMIT;
-    @SharedPtr public static Constant NO_MAX_TIME_LIMIT;
+    public static Constant NO_MIN_TIME_LIMIT;
+    public static Constant NO_MAX_TIME_LIMIT;
 
     /** Unit of constant */
     public final Unit unit;
@@ -66,7 +63,7 @@ public final class Constant extends Unit {
      * @param name Name of constant;
      * @param value Value of constant;
      */
-    private Constant(String name, @PassByValue CoreNumber value) {
+    private Constant(String name, CoreNumber value) {
         super(name, value.getUnit());
         unit = value.getUnit();
         if (unit instanceof Constant) {
@@ -81,7 +78,7 @@ public final class Constant extends Unit {
      * @param uid Uid of constant to retrieve
      * @return Constant
      */
-    public static @Ptr Constant getConstant(byte uid) {
+    public static Constant getConstant(byte uid) {
         return constants[uid];
     }
 

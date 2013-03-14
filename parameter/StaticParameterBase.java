@@ -27,16 +27,6 @@ import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.portdatabase.SerializationHelper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -51,12 +41,11 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Static Parameter class
  * (Generic base class without template type)
  */
-@Ptr @Friend(StaticParameterList.class)
 public class StaticParameterBase implements HasDestructor {
 
     /** Name of parameter */
@@ -66,10 +55,10 @@ public class StaticParameterBase implements HasDestructor {
     private DataTypeBase type;
 
     /** Current parameter value (in CreateModuleAction-prototypes this is null) */
-    private @Ptr GenericObject value;
+    private GenericObject value;
 
     /** Last parameter value (to detect whether value has changed) */
-    private @Ptr GenericObject lastValue;
+    private GenericObject lastValue;
 
     /** Is current value enforced (typically hard-coded)? In this case, any config file entries or command line parameters are ignored */
     private boolean enforceCurrentValue;
@@ -80,7 +69,7 @@ public class StaticParameterBase implements HasDestructor {
      * However, it is possible to attach this parameter to another (outer) parameter.
      * In this case they share the same buffer: This parameter uses useValueOf.valPointer(), too.
      */
-    private @Ptr StaticParameterBase useValueOf = this;
+    private StaticParameterBase useValueOf = this;
 
     /** List that this structure parameter is member of */
     protected StaticParameterList parentList;
@@ -89,7 +78,6 @@ public class StaticParameterBase implements HasDestructor {
     protected int listIndex;
 
     /** Is this a remote parameter? */
-    @JavaOnly
     private final boolean remote;
 
     /**
@@ -124,11 +112,9 @@ public class StaticParameterBase implements HasDestructor {
     private SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"parameters\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameters");
 
     /** Constructor for remote parameters */
-    @JavaOnly
     public StaticParameterBase() {
         remote = true;
     }
@@ -147,7 +133,7 @@ public class StaticParameterBase implements HasDestructor {
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreteModuleActionPrototype (no buffer will be allocated)
      */
-    public StaticParameterBase(String name, DataTypeBase type, boolean constructorPrototype, @CppDefault("false") boolean structureParameterProxy) {
+    public StaticParameterBase(String name, DataTypeBase type, boolean constructorPrototype, boolean structureParameterProxy) {
         this.name = name;
         this.type = type;
         this.structureParameterProxy = structureParameterProxy;
@@ -155,8 +141,6 @@ public class StaticParameterBase implements HasDestructor {
         if ((!constructorPrototype) && type.getInfo() != null) {
             createBuffer(type);
         }
-
-        //JavaOnlyBlock
         remote = false;
     }
 
@@ -189,12 +173,8 @@ public class StaticParameterBase implements HasDestructor {
 
     public void deserialize(InputStreamBuffer is) {
         if (remoteValue()) {
-
-            //JavaOnlyBlock
             name = is.readString();
             type = is.readType();
-
-            //Cpp assert(false && "not supported");
         } else {
             is.readString();
             is.readType();
@@ -272,7 +252,7 @@ public class StaticParameterBase implements HasDestructor {
                 }
 
                 StaticParameterList spl = StaticParameterList.getOrCreate(fg);
-                for (@SizeT int i = 0; i < spl.size(); i++) {
+                for (int i = 0; i < spl.size(); i++) {
                     sp = spl.get(i);
                     if (sp.getName().equals(outerParameterAttachment)) {
                         attachTo(sp);
@@ -295,7 +275,6 @@ public class StaticParameterBase implements HasDestructor {
     /**
      * @return Log description
      */
-    @JavaOnly
     public String getLogDescription() {
         return name;
     }
@@ -316,7 +295,6 @@ public class StaticParameterBase implements HasDestructor {
      *
      * @return value or ccValue, depending on data type
      */
-    @ConstMethod
     public GenericObject valPointer() {
         return getParameterWithBuffer().value;
     }
@@ -324,7 +302,7 @@ public class StaticParameterBase implements HasDestructor {
     /**
      * @param s serialized as string
      */
-    public void set(@Const @Ref String s) throws Exception {
+    public void set(String s) throws Exception {
         assert(type != null);
         DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
         TypedObject val = valPointer();
@@ -346,7 +324,6 @@ public class StaticParameterBase implements HasDestructor {
     private void createBuffer(DataTypeBase type) {
         StaticParameterBase sp = getParameterWithBuffer();
 
-        //Cpp delete sp->value;
         sp.value = type.createInstanceGeneric(null);
         assert(sp.value != null);
     }
@@ -354,16 +331,9 @@ public class StaticParameterBase implements HasDestructor {
     /**
      * @return Is this a remote parameter?
      */
-    @InCpp("return false;")
     private boolean remoteValue() {
         return remote;
     }
-
-    /*Cpp
-    const char* getLogDescription() {
-        return name.getCString();
-    }
-     */
 
     /**
      * @return Name of parameter
@@ -442,7 +412,7 @@ public class StaticParameterBase implements HasDestructor {
      * (should be overridden by subclasses)
      * @return Deep copy of parameter (without value)
      */
-    public @Managed StaticParameterBase deepCopy() {
+    public StaticParameterBase deepCopy() {
         throw new RuntimeException("Unsupported");
     }
 
@@ -450,7 +420,6 @@ public class StaticParameterBase implements HasDestructor {
      * @return Command line option to set this parameter
      * (set by finstructable group containing module with this parameter)
      */
-    @JavaOnly
     public String getCommandLineOption() {
         return commandLineOption;
     }
@@ -459,7 +428,6 @@ public class StaticParameterBase implements HasDestructor {
      * @param commandLineOption Command line option to set this parameter
      * (set by finstructable group containing module with this parameter)
      */
-    @JavaOnly
     public void setCommandLineOption(String commandLineOption) {
         this.commandLineOption = commandLineOption;
     }
@@ -468,7 +436,6 @@ public class StaticParameterBase implements HasDestructor {
      * @return Name of outer parameter if parameter is configured by static parameter of finstructable group
      * (set by finstructable group containing module with this parameter)
      */
-    @JavaOnly
     public String getOuterParameterAttachment() {
         return outerParameterAttachment;
     }
@@ -478,8 +445,7 @@ public class StaticParameterBase implements HasDestructor {
      * (set by finstructable group containing module with this parameter)
      * @param createOuter Create outer parameter if it does not exist yet?
      */
-    @JavaOnly
-    public void setOuterParameterAttachment(String outerParameterAttachment, @CppDefault("false") boolean createOuter) {
+    public void setOuterParameterAttachment(String outerParameterAttachment, boolean createOuter) {
         this.outerParameterAttachment = outerParameterAttachment;
         createOuterParameter = createOuter;
     }
@@ -495,7 +461,6 @@ public class StaticParameterBase implements HasDestructor {
     /**
      * @return Was config entry set by finstruct?
      */
-    @JavaOnly
     public boolean isConfigEntrySetByFinstruct() {
         return configEntrySetByFinstruct;
     }
@@ -505,7 +470,7 @@ public class StaticParameterBase implements HasDestructor {
      * (set by finstructable group containing module with this parameter)
      * @param finstructSet Is outer parameter attachment set by finstruct?
      */
-    public void setConfigEntry(String configEntry, @CppDefault("false") boolean finstructSet) {
+    public void setConfigEntry(String configEntry, boolean finstructSet) {
         this.configEntry = configEntry;
         configEntrySetByFinstruct = finstructSet;
     }
@@ -619,7 +584,7 @@ public class StaticParameterBase implements HasDestructor {
                 String fullConfigEntry = ConfigNode.getFullConfigEntry(parent, configEntry);
                 if (cf != null) {
                     if (cf.hasEntry(fullConfigEntry)) {
-                        @Ref XMLNode node = cf.getEntry(fullConfigEntry, false);
+                        XMLNode node = cf.getEntry(fullConfigEntry, false);
                         try {
                             value.deserialize(node);
                         } catch (Exception e) {

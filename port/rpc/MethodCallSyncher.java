@@ -24,16 +24,13 @@ package org.finroc.core.port.rpc;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.ThreadLocalCache;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Thread local class for forwarding method return values
  * back to calling thread.
@@ -41,7 +38,7 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 public class MethodCallSyncher extends LogUser {
 
     /** Maximum number of active/alive threads that perform synchronous method calls */
-    private static final @SizeT int MAX_THREADS = 127;
+    private static final int MAX_THREADS = 127;
 
     /** PreAllocated array of (initially empty) MethodCallSyncher classes */
     private static final MethodCallSyncher[] slots = new MethodCallSyncher[MAX_THREADS];
@@ -50,25 +47,23 @@ public class MethodCallSyncher extends LogUser {
     public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 300);
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public static void staticInit() {
-        //JavaOnlyBlock
-        for (@SizeT int i = 0; i < slots.length; i++) {
+        for (int i = 0; i < slots.length; i++) {
             slots[i] = new MethodCallSyncher();
         }
 
-        for (@SizeT int i = 0; i < slots.length; i++) {
+        for (int i = 0; i < slots.length; i++) {
             slots[i].index = i;
         }
     }
 
     /** Index in array */
-    private @SizeT int index;
+    private int index;
 
     /** Thread currently associated with this Syncher object - null if none */
-    private @Ptr Thread thread;
+    private Thread thread;
 
     /** Uid of associated thread; 0 if none */
     private int threadUid;
@@ -88,7 +83,7 @@ public class MethodCallSyncher extends LogUser {
     /**
      * @return Index in array
      */
-    public @SizeT int getIndex() {
+    public int getIndex() {
         return index;
     }
 
@@ -108,10 +103,10 @@ public class MethodCallSyncher extends LogUser {
      *
      * @return currently unused instance of Method Call synchronization object
      */
-    public synchronized static @Ptr MethodCallSyncher getFreeInstance(ThreadLocalCache tc) {
-        for (@SizeT int i = 0; i < slots.length; i++) {
+    public synchronized static MethodCallSyncher getFreeInstance(ThreadLocalCache tc) {
+        for (int i = 0; i < slots.length; i++) {
             if (slots[i].threadUid == 0) {
-                @Ptr MethodCallSyncher mcs = slots[i];
+                MethodCallSyncher mcs = slots[i];
                 mcs.reset();
                 mcs.thread = Thread.currentThread();
                 mcs.threadUid = tc.getThreadUid();
@@ -125,7 +120,7 @@ public class MethodCallSyncher extends LogUser {
      * @param syncherID Index of syncher objects
      * @return Syncher object
      */
-    public static @Ptr MethodCallSyncher get(int syncherID) {
+    public static MethodCallSyncher get(int syncherID) {
         if (syncherID < 0 || syncherID >= slots.length) {
             return null;
         }
@@ -155,8 +150,6 @@ public class MethodCallSyncher extends LogUser {
      * @param mc MethodCall buffer containing return value
      */
     public synchronized void returnValue(AbstractCall mc) {
-
-        // JavaOnlyBlock
         log(LogLevel.LL_DEBUG_VERBOSE_2, logDomain, "Thread " + Thread.currentThread().toString() + " returning result of method call to thread " + thread.toString());
 
         if (getThreadUid() != mc.getThreadUid()) {
@@ -164,10 +157,7 @@ public class MethodCallSyncher extends LogUser {
             return; // waiting thread has already ended
         }
         if (currentMethodCallIndex != mc.getMethodCallIndex()) {
-
-            // JavaOnlyBlock
             log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Thread " + Thread.currentThread().toString() + " cannot return result of method call to thread " + thread.toString() + ": seems to have timed out");
-
             mc.genericRecycle();
             return; // outdated method result - timeout could have elapsed
         }

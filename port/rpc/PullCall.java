@@ -21,7 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -40,7 +39,7 @@ import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 import org.finroc.core.portdatabase.SerializationHelper;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class is used for port-pull-requests/calls - locally and over the net.
  *
@@ -61,7 +60,6 @@ public class PullCall extends AbstractCall implements Task {
     private ReusableGenericObjectManager pulledBuffer;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     public PullCall() {
@@ -162,10 +160,4 @@ public class PullCall extends AbstractCall implements Task {
         this.intermediateAssign = intermediateAssign;
         this.desiredEncoding = encoding;
     }
-
-    /*Cpp
-    virtual void customDelete(bool b) {
-        Reusable::customDelete(b);
-    }
-     */
 }

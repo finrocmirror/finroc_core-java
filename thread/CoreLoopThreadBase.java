@@ -22,12 +22,10 @@
 package org.finroc.core.thread;
 
 import org.finroc.core.port.ThreadLocalCache;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.thread.LoopThread;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Base class for worker threads managed by the runtime environment
  */
@@ -36,13 +34,11 @@ public abstract class CoreLoopThreadBase extends LoopThread implements CoreThrea
     /** Thread local info */
     protected ThreadLocalCache tc;
 
-    @JavaOnly
     public ThreadLocalCache getThreadLocalInfo() {
         return tc;
     }
 
     /** Should only be called by ThreadLocalInfo class */
-    @JavaOnly
     public void setThreadLocalInfo(ThreadLocalCache tli) {
         this.tc = tli;
     }
@@ -63,7 +59,6 @@ public abstract class CoreLoopThreadBase extends LoopThread implements CoreThrea
      * Initialize reference to ThreadLocalCache
      * (Needs to be called at start of thread)
      */
-    @InCppFile
     protected void initThreadLocalCache() {
         tc = ThreadLocalCache.get();
     }

@@ -25,41 +25,33 @@ import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.rpc.RPCThread.RPCThreadContainer;
 import org.rrlib.finroc_core_utils.jc.AutoDeleter;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueue;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Thread pool for remote procedure calls.
  */
-@IncludeClass(RPCThread.class)
 public class RPCThreadPool {
 
     /** Singleton instance */
-    @Ptr private static RPCThreadPool instance = AutoDeleter.addStatic(new RPCThreadPool());
+    private static RPCThreadPool instance = AutoDeleter.addStatic(new RPCThreadPool());
 
     /** Pool of unused threads */
-    @InCpp("util::WonderQueue<RPCThread> unusedThreads;")
     private WonderQueue<RPCThread.RPCThreadContainer> unusedThreads = new WonderQueue<RPCThread.RPCThreadContainer>();
 
     /** Lock order: locked before thread list in C++ */
     public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 100);
 
-    @Init("unusedThreads()")
     private RPCThreadPool() {
     }
 
     /**
      * @return Singleton instance
      */
-    public static @Ptr RPCThreadPool getInstance() {
+    public static RPCThreadPool getInstance() {
         return instance;
     }
 
@@ -69,7 +61,7 @@ public class RPCThreadPool {
      *
      * @param container Container to enqueue
      */
-    void enqueueThread(@Ptr @CppType("RPCThread") RPCThreadContainer container) {
+    void enqueueThread(RPCThreadContainer container) {
         unusedThreads.enqueue(container);
     }
 
@@ -79,15 +71,9 @@ public class RPCThreadPool {
      * @param task Task
      */
     public synchronized void executeTask(Task task) {
-
-        @Ptr RPCThread r = null;
-
-        //JavaOnlyBlock
+        RPCThread r = null;
         RPCThread.RPCThreadContainer c = unusedThreads.dequeue();
         r = (c != null) ? c.getThread() : null;
-
-        //Cpp r = unusedThreads.dequeue();
-
         if (r == null) {
             r = new RPCThread();
             ThreadUtil.setAutoDelete(r);

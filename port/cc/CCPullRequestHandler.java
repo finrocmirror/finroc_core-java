@@ -21,15 +21,12 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Can be used to handle pull requests of - typically - output ports
  */
-@Ptr @DefaultType("void*")
 public interface CCPullRequestHandler {
 
     /**

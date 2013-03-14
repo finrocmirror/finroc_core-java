@@ -21,17 +21,13 @@
  */
 package org.finroc.core.port.stream;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Processes incoming packets from input stream directly
  */
-@Ptr @RawTypeArgs
 public interface InputPacketProcessor<T extends ChunkedBuffer> {
 
     /**
@@ -41,5 +37,5 @@ public interface InputPacketProcessor<T extends ChunkedBuffer> {
      * @param initialPacket Special/Initial packet?
      * @return (Still) enqueue packet in port queue? (despite processing it)
      */
-    public boolean processPacket(@Const @Ptr T buffer);
+    public boolean processPacket(T buffer);
 }

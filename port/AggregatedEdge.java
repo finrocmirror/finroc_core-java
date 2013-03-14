@@ -24,24 +24,19 @@ package org.finroc.core.port;
 import org.finroc.core.Annotatable;
 import org.rrlib.finroc_core_utils.jc.AtomicInt64;
 import org.rrlib.finroc_core_utils.jc.Time;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Collection of edges between ports that have the same EdgeAggregator
  * framework element parents as start and destination.
  *
  * The start EdgeAggregator owns objects of this type.
  */
-@Inline @NoCpp @Ptr
 public class AggregatedEdge extends Annotatable {
 
     /** Number of aggregated edges */
-    public @SizeT int edgeCount;
+    public int edgeCount;
 
     /** Pointer to source and destination element */
     public final EdgeAggregator source, destination;

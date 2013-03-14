@@ -26,22 +26,14 @@ import java.lang.reflect.Constructor;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Default create module action for finroc modules
  *
  * Modules need to have a constructor taking name and parent
  */
-@Inline @NoCpp @RawTypeArgs
 public class StandardCreateModuleAction<T extends FrameworkElement> implements CreateFrameworkElementAction {
 
     /** Name of module type */
@@ -51,7 +43,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
     private final String typeName;
 
     /** Module class */
-    @JavaOnly private final Constructor<T> constructor;
+    private final Constructor<T> constructor;
 
     /**
      * @param group Name of module group
@@ -60,10 +52,6 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
     public StandardCreateModuleAction(String typeName) {
         this.typeName = typeName;
         Plugins.getInstance().addModuleType(this);
-
-        //Cpp group = getBinary((void*)_M_createModuleImpl);
-
-        //JavaOnlyBlock
         constructor = null;
         this.group = null;
         assert(false) : "c++ constructor";
@@ -74,13 +62,9 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
      * @param typeName Name of module type
      * @param moduleClass Module class (only needed in Java)
      */
-    public StandardCreateModuleAction(String typeName, @Const @CppType("util::TypedClass<T>") Class<T> moduleClass) {
+    public StandardCreateModuleAction(String typeName, Class<T> moduleClass) {
         this.typeName = typeName;
         Plugins.getInstance().addModuleType(this);
-
-        //Cpp group = getBinary((void*)_M_createModuleImpl);
-
-        //JavaOnlyBlock
         try {
             constructor = moduleClass.getConstructor(FrameworkElement.class, String.class);
         } catch (Exception e) {
@@ -90,14 +74,7 @@ public class StandardCreateModuleAction<T extends FrameworkElement> implements C
         this.group = Plugins.getInstance().getContainingJarFile(constructor.getDeclaringClass());
     }
 
-    /*Cpp
-    static FrameworkElement* createModuleImpl(FrameworkElement* parent, const util::String& name) {
-        return new T(parent, name);
-    }
-     */
-
     @Override
-    @InCpp("return createModuleImpl(parent, name);")
     public FrameworkElement createModule(FrameworkElement parent, String name, ConstructorParameters params) throws Exception {
         return constructor.newInstance(parent, name);
     }

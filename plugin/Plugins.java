@@ -27,17 +27,6 @@ import java.lang.reflect.Modifier;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.finstructable.FinstructableGroup;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -46,25 +35,15 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.finroc.core.util.Files;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class is used for managing the Runtime's plugins
  */
-@CppInclude("RuntimeEnvironment.h")
-@CppPrepend( {
-    "Plugins::DLCloser::~DLCloser() {",
-    "    RuntimeEnvironment::shutdown();",
-    "    for (size_t i = 0; i < loaded.size(); i++) {",
-    "        _dlclose(loaded.get(i));",
-    "    }",
-    "}"
-})
 public class Plugins { /*implements HTTPResource*/
 
 
     /** Plugins singleton instance */
-    @JavaOnly
-    private static @SharedPtr Plugins instance;
+    private static Plugins instance;
 
     /** All Plugins that are currently available */
     private final SimpleList<Plugin> plugins = new SimpleList<Plugin>();
@@ -73,32 +52,29 @@ public class Plugins { /*implements HTTPResource*/
     private final SimpleList<CreateExternalConnectionAction> externalConnections = new SimpleList<CreateExternalConnectionAction>();
 
     /** List with actions to create modules */
-    @JavaOnly
     private final SimpleList<CreateFrameworkElementAction> moduleTypes = new SimpleList<CreateFrameworkElementAction>();
 
 //    /** Plugin manager instance */
 //    private final PluginManager pluginManager = new PluginManager();
 
     /** Plugin loader implementation */
-    @JavaOnly @SharedPtr private PluginLoader pluginLoader;
+    private PluginLoader pluginLoader;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"plugins\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("plugins");
 
     /**
      * Loads plugins
      */
     public static void staticInit() {
-        @Ptr Plugins p = getInstance();
+        Plugins p = getInstance();
         p.findAndLoadPlugins();
     }
 
     /**
      * @return Plugins singleton instance
      */
-    @InCpp( {"static Plugins instance;", "return &instance;"})
-    public static @Ptr Plugins getInstance() {
+    public static Plugins getInstance() {
         if (instance == null) {
             instance = new Plugins();
         }
@@ -108,7 +84,6 @@ public class Plugins { /*implements HTTPResource*/
     private void findAndLoadPlugins() {
         //TODO do properly
 
-        // JavaOnlyBlock
         if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
             pluginLoader = new JavaReleasePluginLoader();
         } else {
@@ -130,7 +105,7 @@ public class Plugins { /*implements HTTPResource*/
      *
      * @param p Plugin to add
      */
-    public void addPlugin(@Ptr @Managed Plugin p) {
+    public void addPlugin(Plugin p) {
         plugins.add(p);
         p.init(/*pluginManager*/);
     }
@@ -138,7 +113,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with modules for external connections
      */
-    public @Ptr SimpleList<CreateExternalConnectionAction> getExternalConnections() {
+    public SimpleList<CreateExternalConnectionAction> getExternalConnections() {
         return externalConnections;
     }
 
@@ -157,7 +132,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with plugins (do not modify!)
      */
-    public @Ptr SimpleList<Plugin> getPlugins() {
+    public SimpleList<Plugin> getPlugins() {
         return plugins;
     }
 
@@ -166,7 +141,6 @@ public class Plugins { /*implements HTTPResource*/
      *
      * @param classInPackage Class in this package
      */
-    @JavaOnly
     public static void loadAllDataTypesInPackage(Class<?> classInPackage) {
         try {
             //System.out.println("loadAllDataTypesInPackage: " + classInPackage.toString());
@@ -186,7 +160,6 @@ public class Plugins { /*implements HTTPResource*/
         }
     }
 
-    @CppType("char*") @Const
     private static String getLogDescription() {
         return "Plugins";
     }
@@ -194,7 +167,6 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return ClassLoader used for loading plugins
      */
-    @JavaOnly
     public ClassLoader getPluginClassLoader() {
         return pluginLoader.getClassLoader();
     }
@@ -202,8 +174,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with modules that can be instantiated in this runtime using the standard mechanism
      */
-    public @Ref SimpleList<CreateFrameworkElementAction> getModuleTypes() {
-        //Cpp static util::SimpleList<CreateFrameworkElementAction*> moduleTypes;
+    public SimpleList<CreateFrameworkElementAction> getModuleTypes() {
         return moduleTypes;
     }
 
@@ -218,7 +189,6 @@ public class Plugins { /*implements HTTPResource*/
         getModuleTypes().add(cma);
     }
 
-    @JavaOnly
     /**
      * @param c Class to find jar file of
      * @return Returns jar file that class is in - or class will be in, when compiled
@@ -226,17 +196,6 @@ public class Plugins { /*implements HTTPResource*/
     public String getContainingJarFile(Class<?> c) {
         return pluginLoader.getContainingJarFile(c);
     }
-
-    /*Cpp
-    // closes dlopen-ed libraries
-    class DLCloser {
-    public:
-        util::SimpleList<void*> loaded;
-
-        DLCloser() : loaded() {}
-        ~DLCloser();
-    };
-     */
 
     /**
      * Returns/loads CreateFrameworkElementAction with specified name and specified .so file.
@@ -246,41 +205,16 @@ public class Plugins { /*implements HTTPResource*/
      * @param name Module type name
      * @return CreateFrameworkElementAction - null if it could not be found
      */
-    public CreateFrameworkElementAction loadModuleType(@Const @Ref String group, @Const @Ref String name) {
-        // dynamically loaded .so files
-        //Cpp static util::SimpleList<util::String> loaded;
-        //Cpp static DLCloser dlcloser;
+    public CreateFrameworkElementAction loadModuleType(String group, String name) {
 
         // try to find module among existing modules
-        @Const @Ref SimpleList<CreateFrameworkElementAction> modules = getModuleTypes();
-        for (@SizeT int i = 0; i < modules.size(); i++) {
+        SimpleList<CreateFrameworkElementAction> modules = getModuleTypes();
+        for (int i = 0; i < modules.size(); i++) {
             CreateFrameworkElementAction cma = modules.get(i);
             if (cma.getModuleGroup().equals(group) && cma.getName().equals(name)) {
                 return cma;
             }
         }
-
-        /*Cpp
-        // hmm... we didn't find it - have we already tried to load .so?
-        bool alreadyLoaded = false;
-        for (size_t i = 0; i < loaded.size(); i++) {
-            if (loaded.get(i).equals(group)) {
-                alreadyLoaded = true;
-                break;
-            }
-        }
-
-        if (!alreadyLoaded) {
-            loaded.add(group);
-            void* handle = _dlopen(group.getCString(), _RTLD_NOW | _RTLD_GLOBAL);
-            if (handle) {
-                dlcloser.loaded.add(handle);
-                return loadModuleType(group, name);
-            } else {
-                _FINROC_LOG_MESSAGE(rrlib::logging::eLL_ERROR, logDomain, "Error from dlopen: %s", _dlerror());
-            }
-        }
-        */
 
         logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not find/load module " + name + " in " + group);
         return null;

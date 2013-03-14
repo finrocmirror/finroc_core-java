@@ -21,13 +21,6 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
@@ -40,33 +33,28 @@ import org.rrlib.finroc_core_utils.rtti.GenericObject;
  * In C++, this is a pointer that points slightly above the port data
  * That means, the class is empty and no objects of this class actually exist.
  */
-@Include("CombinedPointer.h")
-@Ptr @Superclass2( {"CombinedPointer<CCPortDataManagerTL>"}) @Inline @NoCpp
 public class CCPortDataRef {
 
     /** Port data that is referenced */
-    @JavaOnly
     private final CCPortDataManagerTL portData;
 
     /**
      * @param portData Port data that is referenced
      */
-    @JavaOnly CCPortDataRef(CCPortDataManagerTL portData) {
+    CCPortDataRef(CCPortDataManagerTL portData) {
         this.portData = portData;
     }
 
     /**
      * @return Referenced port data
      */
-    @InCpp("return getContainer()->getObject();")
-    public @Ptr GenericObject getData() {
+    public GenericObject getData() {
         return portData.getObject();
     }
 
     /**
      * @return Container of referenced data
      */
-    @InCpp("return getPointer();")
     public CCPortDataManagerTL getContainer() {
         return portData;
     }

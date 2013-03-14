@@ -21,17 +21,12 @@
  */
 package org.finroc.core.parameter;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Static Parameter.
  *
@@ -41,7 +36,6 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
  * of modules and groups.
  * They often influence the port structure of these modules and groups.
  */
-@RawTypeArgs @JavaOnly
 public class StaticParameter<T extends RRLibSerializable> extends StaticParameterBase {
 
     /**
@@ -49,7 +43,7 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @param type DataType of parameter
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      */
-    public StaticParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype) {
+    public StaticParameter(String name, DataTypeBase type, boolean constructorPrototype) {
         super(name, type, constructorPrototype);
     }
 
@@ -59,7 +53,7 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      * @param defaultValue Default value
      */
-    public StaticParameter(@Const @Ref String name, DataTypeBase type, boolean constructorPrototype, @Const @Ref String defaultValue) {
+    public StaticParameter(String name, DataTypeBase type, boolean constructorPrototype, String defaultValue) {
         super(name, type, constructorPrototype);
         String dv = defaultValue;
         if ((!constructorPrototype) && dv.length() > 0) {
@@ -79,7 +73,7 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @param type DataType of parameter
      * @param defaultValue Default value
      */
-    public StaticParameter(@Const @Ref String name, DataTypeBase type, @Const @Ref String defaultValue) {
+    public StaticParameter(String name, DataTypeBase type, String defaultValue) {
         this(name, type, false, defaultValue);
     }
 
@@ -87,7 +81,7 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @param name Name of parameter
      * @param type DataType of parameter
      */
-    public StaticParameter(@Const @Ref String name, DataTypeBase type) {
+    public StaticParameter(String name, DataTypeBase type) {
         this(name, type, "");
     }
 
@@ -95,7 +89,7 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @return Current parameter value (without lock)
      * (without additional locks value is deleted, when parameter is - which doesn't happen while a module is running)
      */
-    public @Ptr T getValue() {
+    public T getValue() {
         GenericObject go = super.valPointer();
         return go.<T>getData();
     }

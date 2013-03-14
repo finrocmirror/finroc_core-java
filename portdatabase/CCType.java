@@ -21,13 +21,11 @@
  */
 package org.finroc.core.portdatabase;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Classes inheriting from this interface are considered as "cheap copy" types.
  */
-@JavaOnly
 public interface CCType {
 }

@@ -21,17 +21,13 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.jc.container.BoundedQElementContainer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Chunk/fragment as it is used in port queues.
  */
-@Ptr
 public class PortQueueElement extends BoundedQElementContainer {
 
     @Override
@@ -43,7 +39,6 @@ public class PortQueueElement extends BoundedQElementContainer {
         super.recycle();
     }
 
-    @JavaOnly
     public String toString() {
         return "CCPortQueueElement: " + (element == null ? "null" : element.toString());
     }
@@ -56,7 +51,7 @@ public class PortQueueElement extends BoundedQElementContainer {
     }
 
     @Override
-    public void recycleContent(@VoidPtr Object content) {
+    public void recycleContent(Object content) {
         if (content != null) {
             ((PortDataReference)element).getRefCounter().releaseLock();
         }

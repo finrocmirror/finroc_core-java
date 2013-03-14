@@ -21,13 +21,11 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueueBounded;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * FIFO Queue that is used in ports.
  *
@@ -36,7 +34,6 @@ import org.finroc.core.port.ThreadLocalCache;
  *
  * Use concurrentDequeue, with threads reading from this queue concurrently.
  */
-@Inline @NoCpp
 public class CCPortQueue extends WonderQueueBounded<CCPortDataManager, CCPortQueueElement> {
 
     public CCPortQueue(int maxLength) {

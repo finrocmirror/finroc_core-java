@@ -37,12 +37,6 @@ import org.finroc.core.plugin.Plugins;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.Files;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -53,7 +47,7 @@ import org.rrlib.finroc_core_utils.xml.XMLDocument;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * The contents of FinstructableGroups can be edited using Finstruct.
  *
@@ -68,7 +62,6 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     private StaticParameterString xmlFile = new StaticParameterString("XML file", "");
 
     /** Log domain for edges */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"finstructable\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("finstructable");
 
     /** Temporary variable for save operation: List to store connected ports in */
@@ -84,11 +77,11 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     private String mainName = "";
 
     /** CreateModuleAction */
-    @SuppressWarnings("unused") @PassByValue
+    @SuppressWarnings("unused")
     private static final StandardCreateModuleAction<FinstructableGroup> CREATE_ACTION =
         new StandardCreateModuleAction<FinstructableGroup>("Finstructable Group", FinstructableGroup.class);
 
-    public FinstructableGroup(FrameworkElement parent, @Const @Ref String name) {
+    public FinstructableGroup(FrameworkElement parent, String name) {
         super(parent, name, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
         addAnnotation(new StaticParameterList(xmlFile));
     }
@@ -99,7 +92,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      *
      * @param xmlFile name of XML file (relative to finroc repository) that determines contents of this group
      */
-    public FinstructableGroup(FrameworkElement parent, @Const @Ref String name, @Const @Ref String xmlFile) {
+    public FinstructableGroup(FrameworkElement parent, String name, String xmlFile) {
         this(parent, name);
         try {
             this.xmlFile.set(xmlFile);
@@ -125,12 +118,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      *
      * @param xmlFile xml file to load
      */
-    private void loadXml(@Const @Ref String xmlFile) {
+    private void loadXml(String xmlFile) {
         synchronized (getRegistryLock()) {
             try {
                 log(LogLevel.LL_DEBUG, logDomain, "Loading XML: " + xmlFile);
-                @PassByValue XMLDocument doc = Files.getFinrocXMLDocument(xmlFile, false);
-                @Ref XMLNode root = doc.getRootNode();
+                XMLDocument doc = Files.getFinrocXMLDocument(xmlFile, false);
+                XMLNode root = doc.getRootNode();
                 linkTmp = getQualifiedName() + "/";
                 if (mainName.length() == 0 && root.hasAttribute("defaultname")) {
                     mainName = root.getStringAttribute("defaultname");
@@ -198,7 +191,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param node xml node that contains data for instantiation
      * @param parent Parent element
      */
-    private void instantiate(@Const @Ref XMLNode node, FrameworkElement parent) {
+    private void instantiate(XMLNode node, FrameworkElement parent) {
         try {
             String name = node.getStringAttribute("name");
             String group = node.getStringAttribute("group");
@@ -213,24 +206,17 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
             // read parameters
             XMLNode.ConstChildIterator childNode = node.getChildrenBegin();
-            @Const @Ptr XMLNode parameters = null;
-            @Const @Ptr XMLNode constructorParams = null;
+            XMLNode parameters = null;
+            XMLNode constructorParams = null;
             String pName = childNode.get().getName();
             if (pName.equals("constructor")) {
 
-                //JavaOnlyBlock
                 constructorParams = childNode.get();
-
-                //Cpp constructorParams = &(*childNode);
                 childNode.next();
                 pName = childNode.get().getName();
             }
             if (pName.equals("parameters")) {
-
-                //JavaOnlyBlock
                 parameters = childNode.get();
-
-                //Cpp parameters = &(*childNode);
                 childNode.next();
             }
 
@@ -273,7 +259,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param link Relative Link
      * @return Fully-qualified link
      */
-    private String qualifyLink(@Const @Ref String link) {
+    private String qualifyLink(String link) {
         if (link.startsWith("/")) {
             return link;
         }
@@ -284,7 +270,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param Relative port link
      * @return Port - or null if it couldn't be found
      */
-    private AbstractPort getChildPort(@Const @Ref String link) {
+    private AbstractPort getChildPort(String link) {
         if (link.startsWith("/")) {
             return getRuntime().getPort(link);
         }
@@ -300,8 +286,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      *
      * @param e Exception
      */
-    private void logException(@Const @Ref Exception e) {
-        @InCpp("const char* msg = e._what();")
+    private void logException(Exception e) {
         String msg = e.getMessage();
         logDomain.log(LogLevel.LL_ERROR, getLogDescription(), msg);
     }
@@ -318,9 +303,9 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 saveTo = saveToAlt;
             }
             log(LogLevel.LL_USER, logDomain, "Saving XML: " + saveTo);
-            @PassByValue XMLDocument doc = new XMLDocument();
+            XMLDocument doc = new XMLDocument();
             try {
-                @Ref final XMLNode root = doc.addRootNode("FinstructableGroup");
+                final XMLNode root = doc.addRootNode("FinstructableGroup");
 
                 // serialize default main name
                 if (mainName.length() > 0) {
@@ -330,10 +315,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 // serialize proxy parameters
                 StaticParameterList spl = getAnnotation(StaticParameterList.class);
                 if (spl != null) {
-                    for (@SizeT int i = 0; i < spl.size(); i++) {
+                    for (int i = 0; i < spl.size(); i++) {
                         StaticParameterBase sp = spl.get(i);
                         if (sp.isStaticParameterProxy()) {
-                            @Ref XMLNode proxy = root.addChildNode("staticparameter");
+                            XMLNode proxy = root.addChildNode("staticparameter");
                             proxy.setAttribute("name", sp.getName());
                         }
                     }
@@ -346,21 +331,14 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 linkTmp = getQualifiedName() + "/";
                 FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
 
-                //JavaOnlyBlock
                 saveParameterConfigEntries = false;
                 filter.traverseElementTree(this, this, root);
                 saveParameterConfigEntries = true;
                 filter.traverseElementTree(this, this, root);
 
-                //Cpp filter.traverseElementTree(this, this, &root);
-                //Cpp saveParameterConfigEntries = false;
-                //Cpp filter.traverseElementTree(this, this, &root);
-                //Cpp saveParameterConfigEntries = true;
-
                 doc.writeToFile(saveTo);
                 log(LogLevel.LL_USER, logDomain, "Saving successful");
             } catch (XML2WrapperException e) {
-                @InCpp("const char* msg = e._what();")
                 String msg = e.getMessage();
                 log(LogLevel.LL_USER, logDomain, "Saving failed: " + msg);
                 throw new Exception(msg);
@@ -392,7 +370,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe, @Ptr XMLNode root) {
+    public void treeFilterCallback(FrameworkElement fe, XMLNode root) {
         assert(fe.isPort());
         AbstractPort ap = (AbstractPort)fe;
 
@@ -406,7 +384,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 if (!isResponsibleForConfigFileConnections(ap)) {
 
                     if (outermostGroup && info.getCommandLineOption().length() > 0) {
-                        @Ref XMLNode config = root.addChildNode("parameter");
+                        XMLNode config = root.addChildNode("parameter");
                         config.setAttribute("link", getEdgeLink(ap));
                         config.setAttribute("cmdline", info.getCommandLineOption());
                     }
@@ -414,7 +392,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                     return;
                 }
 
-                @Ref XMLNode config = root.addChildNode("parameter");
+                XMLNode config = root.addChildNode("parameter");
                 config.setAttribute("link", getEdgeLink(ap));
                 info.serialize(config, true, outermostGroup);
             }
@@ -424,7 +402,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         // first pass
         ap.getConnectionPartners(connectTmp, true, false, true); // only outgoing edges => we don't get any edges double
 
-        for (@SizeT int i = 0; i < connectTmp.size(); i++) {
+        for (int i = 0; i < connectTmp.size(); i++) {
             AbstractPort ap2 = connectTmp.get(i);
 
             // save edge?
@@ -450,26 +428,26 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             }
 
             // save edge
-            @Ref XMLNode edge = root.addChildNode("edge");
+            XMLNode edge = root.addChildNode("edge");
             edge.setAttribute("src", getEdgeLink(ap));
             edge.setAttribute("dest", getEdgeLink(ap2));
         }
 
         // serialize link edges
         if (ap.getLinkEdges() != null) {
-            for (@SizeT int i = 0; i < ap.getLinkEdges().size(); i++) {
+            for (int i = 0; i < ap.getLinkEdges().size(); i++) {
                 LinkEdge le = ap.getLinkEdges().get(i);
                 if (!le.isFinstructed()) {
                     continue;
                 }
                 if (le.getSourceLink().length() > 0) {
                     // save edge
-                    @Ref XMLNode edge = root.addChildNode("edge");
+                    XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(le.getSourceLink()));
                     edge.setAttribute("dest", getEdgeLink(ap));
                 } else {
                     // save edge
-                    @Ref XMLNode edge = root.addChildNode("edge");
+                    XMLNode edge = root.addChildNode("edge");
                     edge.setAttribute("src", getEdgeLink(ap));
                     edge.setAttribute("dest", getEdgeLink(le.getTargetLink()));
                 }
@@ -481,7 +459,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param link (as from link edge)
      * @return Relative link to this port (or absolute link if it is globally unique)
      */
-    protected String getEdgeLink(@Const @Ref String targetLink) {
+    protected String getEdgeLink(String targetLink) {
         if (targetLink.startsWith(linkTmp)) {
             return targetLink.substring(linkTmp.length());
         }
@@ -515,17 +493,17 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED)) {
 
                 // serialize framework element
-                @Ref XMLNode n = node.addChildNode("element");
-                n.setAttribute("name", fe.getCName());
+                XMLNode n = node.addChildNode("element");
+                n.setAttribute("name", fe.getName());
                 CreateFrameworkElementAction cma = Plugins.getInstance().getModuleTypes().get(spl.getCreateAction());
                 n.setAttribute("group", cma.getModuleGroup());
                 n.setAttribute("type", cma.getName());
                 if (cps != null) {
-                    @Ref XMLNode pn = n.addChildNode("constructor");
+                    XMLNode pn = n.addChildNode("constructor");
                     cps.serialize(pn, true);
                 }
                 if (spl != null) {
-                    @Ref XMLNode pn = n.addChildNode("parameters");
+                    XMLNode pn = n.addChildNode("parameters");
                     spl.serialize(pn, true);
                 }
 
@@ -547,10 +525,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public static SimpleList<String> scanForCommandLineArgs(String finrocFile) {
         SimpleList<String> result = new SimpleList<String>();
         try {
-            @PassByValue XMLDocument doc = Files.getFinrocXMLDocument(finrocFile, false);
+            XMLDocument doc = Files.getFinrocXMLDocument(finrocFile, false);
             try {
                 logDomain.log(LogLevel.LL_DEBUG, "FinstructableGroup", "Scanning for command line options in " + finrocFile);
-                @Ref XMLNode root = doc.getRootNode();
+                XMLNode root = doc.getRootNode();
 
                 scanForCommandLineArgsHelper(result, root);
 
@@ -568,7 +546,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param result Result list
      * @param parent Node to scan childs of
      */
-    public static void scanForCommandLineArgsHelper(SimpleList<String> result, @Const @Ref XMLNode parent) throws XML2WrapperException {
+    public static void scanForCommandLineArgsHelper(SimpleList<String> result, XMLNode parent) throws XML2WrapperException {
         for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
             String name = node.get().getName();
             if (node.get().hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {

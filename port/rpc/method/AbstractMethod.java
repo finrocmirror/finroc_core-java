@@ -26,21 +26,13 @@ import org.finroc.core.port.rpc.InterfaceNetPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the base class for all static method objects used in
  * remote procedure calls (RPCs).
@@ -51,9 +43,6 @@ import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
  * These static instances contain all infos and provide all methods
  * for methods that server supports.
  */
-@Ptr
-@Friend(PortInterface.class)
-@Include("ParameterUtil.h")
 public abstract class AbstractMethod extends LogUser implements HasDestructor {
 
     /** Method name */
@@ -66,7 +55,6 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
     private int parameterCount = 4;
 
     /** Name for unused parameters */
-    @CppType("const char*")
     protected static final String NO_PARAM = "NO_PARAMETER";
 
     /** Handle call in extra thread by default (should be true, if call can block or needs significant time to complete) */
@@ -79,11 +67,9 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
     protected PortInterface type;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
-    public AbstractMethod(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread) {
-        @InCpp("static util::String noParam(NO_PARAM);")
+    public AbstractMethod(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, String p4Name, boolean handleInExtraThread) {
         String noParam = NO_PARAM;
 
         this.name = name;
@@ -105,7 +91,6 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
         RuntimeEnvironment.shutdown();
     }
 
-    @JavaOnly
     public boolean hasLock(Object o) {
         if (o == null) {
             return true;
@@ -118,7 +103,6 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
         }
     }
 
-    @JavaOnly
     public void cleanup(Object o) {
         if (o == null) {
             return;
@@ -131,18 +115,6 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
             ((ReusableGenericObjectManager)mgr).genericLockRelease();
         }
     }
-
-    /*Cpp
-    template <typename T>
-    bool hasLock(const T& t) {
-        return ParameterUtil<T>::hasLock(t);
-    }
-
-    template <typename T>
-    void cleanup(const T& t) {
-        ParameterUtil<T>::cleanup(t);
-    }
-    */
 
     public boolean handleInExtraThread() {
         return handleInExtraThread;
@@ -160,7 +132,7 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
      * @param handler Handler to handle object (must not be null)
      * @param retHandler Return handler (optional)
      */
-    public abstract void executeFromMethodCallObject(MethodCall call, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler);
+    public abstract void executeFromMethodCallObject(MethodCall call, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler);
 
     /**
      * (only for async non-void calls)
@@ -191,18 +163,6 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
      * @return Is this a void method?
      */
     public abstract boolean isVoidMethod();
-
-    /*Cpp
-    template <typename T>
-    struct Arg {
-        typedef T _type;
-    };
-
-    template <typename T>
-    struct Arg<PortDataPtr<T> > {
-        typedef PortDataPtr<T>& _type;
-    };
-     */
 }
 
 /**
@@ -211,7 +171,7 @@ public abstract class AbstractMethod extends LogUser implements HasDestructor {
  */
 abstract class AbstractVoidMethod extends AbstractMethod {
 
-    public AbstractVoidMethod(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread) {
+    public AbstractVoidMethod(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, String p4Name, boolean handleInExtraThread) {
         super(portInterface, name, p1Name, p2Name, p3Name, p4Name, handleInExtraThread);
     }
 
@@ -237,7 +197,7 @@ abstract class AbstractNonVoidMethod extends AbstractMethod {
     /** Default timeout for calls over the net */
     private final int defaultNetTimeout;
 
-    public AbstractNonVoidMethod(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread, int defaultNetTimeout) {
+    public AbstractNonVoidMethod(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, String p4Name, boolean handleInExtraThread, int defaultNetTimeout) {
         super(portInterface, name, p1Name, p2Name, p3Name, p4Name, handleInExtraThread);
         this.defaultNetTimeout = defaultNetTimeout;
     }

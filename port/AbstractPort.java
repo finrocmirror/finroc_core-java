@@ -25,24 +25,6 @@ import java.util.BitSet;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
-import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
@@ -63,7 +45,7 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the abstract base class for all ports (and port sets)
  *
@@ -76,16 +58,6 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
  * In many cases this (non-blocking) behaviour is intended.
  * However, to avoid that, synchronize to runtime before calling.
  */
-@IncludeClass( {SafeConcurrentlyIterableList.class, RuntimeSettings.class})
-@CppPrepend( {"AbstractPort::~AbstractPort() {",
-              "    if (asNetPort() != NULL) {",
-              "        NetPort* nt = asNetPort();",
-              "        delete nt;",
-              "    }\n",
-              "    //delete linksTo;",
-              "    delete linkEdges;",
-              "}"
-             })
 public abstract class AbstractPort extends FrameworkElement implements HasDestructor, Factory {
 
     /**
@@ -100,21 +72,11 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * List class for edges
      */
-    @AtFront @DefaultType("AbstractPort*") @Inline
-    @Superclass2("util::SafeConcurrentlyIterableList<T, RuntimeSettings::_C_EDGE_LIST_SIZE_INCREASE_FACTOR>")
     protected static class EdgeList<T> extends SafeConcurrentlyIterableList<T> {
 
-        @JavaOnly
         public EdgeList() {
             super(RuntimeSettings.EDGE_LIST_DEFAULT_SIZE, RuntimeSettings.EDGE_LIST_SIZE_INCREASE_FACTOR);
         }
-
-        /*Cpp
-        public:
-        EdgeList() :
-            util::SafeConcurrentlyIterableList<T, RuntimeSettings::_C_EDGE_LIST_SIZE_INCREASE_FACTOR>(RuntimeSettings::_C_EDGE_LIST_DEFAULT_SIZE)
-            {}
-         */
     }
 
     /** Timeout for pull operations */
@@ -134,18 +96,18 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private byte customChangedFlag;
 
     /** Type of port data */
-    protected final @Const DataTypeBase dataType;
+    protected final DataTypeBase dataType;
 
     /** Edges emerging from this port - raw lists seem the most reasonable approach here */
     @SuppressWarnings("rawtypes")
-    @Ptr private EdgeList edgesSrc;
+    private EdgeList edgesSrc;
 
     /** Edges ending at this port */
     @SuppressWarnings("rawtypes")
-    @Ptr private EdgeList edgesDest;
+    private EdgeList edgesDest;
 
     /** Contains any link edges created by this port */
-    private @Ptr SimpleList<LinkEdge> linkEdges;
+    private SimpleList<LinkEdge> linkEdges;
 
     /** Minimum network update interval. Value < 0 means default for this type */
     protected short minNetUpdateTime;
@@ -159,18 +121,15 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private short strategy = -1;
 
     /** Bit vector indicating which of the outgoing edges was finstructed */
-    @CppType("int16")
     private BitSet outgoingEdgesFinstructed = new BitSet();
 
     /** Constant for bulk and express flag */
     private static final int BULK_N_EXPRESS = PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT;
 
     /** Log domain for initial pushing */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(initialPushLog, \"initial_pushes\");")
     public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("ports");
 
     /**
@@ -190,7 +149,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param pci Port creation info
      * @return processed flags
      */
-    private static int processFlags(@Const @Ref PortCreationInfo pci) {
+    private static int processFlags(PortCreationInfo pci) {
         int flags = pci.flags;
         assert((flags & BULK_N_EXPRESS) != BULK_N_EXPRESS) : "Cannot be bulk and express port at the same time";
         assert(pci.dataType != null);
@@ -205,10 +164,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
         return flags | CoreFlags.IS_PORT;
     }
-
-    /*Cpp
-    virtual ~AbstractPort();
-     */
 
     /**
      * Print notification that port is not ready in debug mode.
@@ -251,7 +206,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
             // remove link edges
             if (linkEdges != null) {
-                for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+                for (int i = 0; i < linkEdges.size(); i++) {
                     LinkEdge le = linkEdges.get(i);
                     if ((incoming && le.getSourceLink().length() > 0) || (outgoing && le.getTargetLink().length() > 0)) {
                         linkEdges.remove(i);
@@ -262,7 +217,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             }
             assert((!incoming) || (!outgoing) || (linkEdges == null) || (linkEdges.size() == 0));
 
-            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+            ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
             if (outgoing) {
                 for (int i = 0, n = it.size(); i < n; i++) {
                     AbstractPort target = it.get(i);
@@ -286,19 +241,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         }
     }
 
-    @JavaOnly
-    public void initLists(@Ptr EdgeList <? extends AbstractPort > edgesSrc_, @Ptr EdgeList <? extends AbstractPort > edgesDest_) {
+    public void initLists(EdgeList <? extends AbstractPort > edgesSrc_, EdgeList <? extends AbstractPort > edgesDest_) {
         edgesSrc = edgesSrc_;
         edgesDest = edgesDest_;
     }
-
-    /*Cpp
-    template <typename T>
-    void initLists(EdgeList<T>* edgesSrc_, EdgeList<T>* edgesDest_) {
-        edgesSrc = reinterpret_cast<EdgeList<>*>(edgesSrc_);
-        edgesDest = reinterpret_cast<EdgeList<>*>(edgesDest_);
-    }
-     */
 
     /**
      * Can this port be connected to specified target port? (additional non-standard checks)
@@ -337,8 +283,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param to Port to connect this port to
      */
-    @JavaOnly
-    public void connectTo(@Ptr AbstractPort target) {
+    public void connectTo(AbstractPort target) {
         connectTo(target, ConnectDirection.AUTO, false);
     }
 
@@ -350,7 +295,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
      * @param finstructed Was edge created using finstruct (or loaded from XML file)? (Should never be called with true by application developer)
      */
-    public void connectTo(@Ptr AbstractPort to, ConnectDirection connectDirection, @CppDefault("false") boolean finstructed) {
+    public void connectTo(AbstractPort to, ConnectDirection connectDirection, boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted() || to.isDeleted()) {
                 log(LogLevel.LL_WARNING, edgeLog, "Ports already deleted!");
@@ -429,32 +374,23 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param finstructed Was edge created using finstruct? (Should never be called with true by application developer)
      */
     @SuppressWarnings("unchecked")
-    @Virtual protected void rawConnectToTarget(@Ptr AbstractPort target, boolean finstructed) {
+    protected void rawConnectToTarget(AbstractPort target, boolean finstructed) {
         EdgeAggregator.edgeAdded(this, target);
 
-        // JavaOnlyBlock
         int idx = edgesSrc.add(target, false);
         target.edgesDest.add(this, false);
         if (finstructed) {
             setEdgeFinstructed(idx, true);
         }
 
-        /*Cpp
-        size_t idx = edgesSrc->add(target, false);
-        target->edgesDest->add(this, false);
-        if (finstructed) {
-            setEdgeFinstructed(idx, true);
-        }
-        */
-
         publishUpdatedEdgeInfo(RuntimeListener.ADD, target);
     }
 
     @SuppressWarnings("unchecked")
-    public void disconnectFrom(@Ptr AbstractPort target) {
+    public void disconnectFrom(AbstractPort target) {
         boolean found = false;
         synchronized (getRegistryLock()) {
-            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+            ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
                 if (it.get(i) == target) {
                     removeInternal(this, target);
@@ -480,14 +416,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private static void removeInternal(AbstractPort src, AbstractPort dest) {
         EdgeAggregator.edgeRemoved(src, dest);
 
-        //JavaOnlyBlock
         dest.edgesDest.remove(src);
         src.edgesSrc.remove(dest);
-
-        /*Cpp
-        dest->edgesDest->remove(src);
-        src->edgesSrc->remove(dest);
-        */
 
         src.connectionRemoved(dest);
         dest.connectionRemoved(src);
@@ -509,8 +439,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Is port connected to specified other port?
      */
     @SuppressWarnings("unchecked")
-    public boolean isConnectedTo(@Ptr AbstractPort target) {
-        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+    public boolean isConnectedTo(AbstractPort target) {
+        ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             if (it.get(i) == target) {
                 return true;
@@ -531,7 +461,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * Sets change flag
      */
-    @Inline public void setChanged() {
+    public void setChanged() {
         changed = CHANGED;
     }
 
@@ -540,14 +470,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param changeConstant Constant to set changed flag to
      */
-    @Inline public void setChanged(byte changeConstant) {
+    public void setChanged(byte changeConstant) {
         changed = changeConstant;
     }
 
     /**
      * Sets special change flag for initial push data
      */
-    @Inline protected void setChangedInitial() {
+    protected void setChangedInitial() {
         changed = CHANGED_INITIAL;
     }
 
@@ -556,14 +486,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @return Has port changed since last reset?
      */
-    @ConstMethod public boolean hasChanged() {
+    public boolean hasChanged() {
         return changed > NO_CHANGE;
     }
 
     /**
      * @return Changed "flag" (has two different values for ordinary and initial data)
      */
-    @ConstMethod public byte getChanged() {
+    public byte getChanged() {
         return changed;
     }
 
@@ -578,18 +508,18 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     // flag queries
 
-    @ConstMethod public boolean isOutputPort() {
+    public boolean isOutputPort() {
         return getFlag(PortFlags.OUTPUT_PORT);
     }
 
-    @ConstMethod public boolean isInputPort() {
+    public boolean isInputPort() {
         return !isOutputPort();
     }
 
     /**
      * @return Type of port data
      */
-    @ConstMethod public @Const DataTypeBase getDataType() {
+    public DataTypeBase getDataType() {
         return dataType;
     }
 
@@ -599,7 +529,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param parent Parent framework element
      * @param linkName name of link
      */
-    public void link(FrameworkElement parent, @Const @Ref String linkName) {
+    public void link(FrameworkElement parent, String linkName) {
         super.link(parent, linkName);
     }
 
@@ -609,8 +539,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param linkName Link name of target port (relative to parent framework element)
      */
-    @JavaOnly
-    public void connectTo(@Const @Ref String linkName) {
+    public void connectTo(String linkName) {
         connectTo(linkName, ConnectDirection.AUTO, false);
     }
 
@@ -622,7 +551,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
      * @param finstructed Was edge created using finstruct (or loaded from XML file)? (Should never be called with true by application developer)
      */
-    public void connectTo(@Const @Ref String linkName, ConnectDirection connectDirection, @CppDefault("false") boolean finstructed) {
+    public void connectTo(String linkName, ConnectDirection connectDirection, boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
                 log(LogLevel.LL_WARNING, edgeLog, "Ports already deleted!");
@@ -631,7 +560,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             if (linkEdges == null) { // lazy initialization
                 linkEdges = new SimpleList<LinkEdge>();
             }
-            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+            for (int i = 0; i < linkEdges.size(); i++) {
                 if (linkEdges.get(i).getTargetLink().equals(linkName) || linkEdges.get(i).getSourceLink().equals(linkName)) {
                     return;
                 }
@@ -657,7 +586,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param warnIfNotAvailable Print warning message if connection cannot be established
      * @param connectDirection Direction for connection. "AUTO" should be appropriate for almost any situation. However, another direction may be enforced.
      */
-    public void connectTo(FrameworkElement partnerPortParent, @Const @Ref String partnerPortName, @CppDefault("true") boolean warnIfNotAvailable, ConnectDirection connectDirection) {
+    public void connectTo(FrameworkElement partnerPortParent, String partnerPortName, boolean warnIfNotAvailable, ConnectDirection connectDirection) {
         FrameworkElement p = partnerPortParent.getChildElement(partnerPortName, false);
         if (p != null && p.isPort()) {
             connectTo((AbstractPort)p, connectDirection, false);
@@ -705,7 +634,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @return Answer
      */
-    @Inline @ConstMethod public boolean pushStrategy() {
+    public boolean pushStrategy() {
         return getStrategy() > 0;
     }
 
@@ -723,7 +652,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         synchronized (getRegistryLock()) {
             setFlag(PortFlags.PUSH_STRATEGY_REVERSE, push);
             if (push && isReady()) { // strategy change
-                @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+                ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
                 for (int i = 0, n = it.size(); i < n; i++) {
                     AbstractPort ap = it.get(i);
                     if (ap != null && ap.isReady()) {
@@ -742,7 +671,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @return Answer
      */
-    @Inline @ConstMethod public boolean reversePushStrategy() {
+    public boolean reversePushStrategy() {
         return (flags & PortFlags.PUSH_STRATEGY_REVERSE) > 0;
     }
 
@@ -753,8 +682,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param target Target port
      * @param data Data that was sent
      */
-    @InCppFile
-    protected void updateEdgeStatistics(AbstractPort source, AbstractPort target, @Ptr GenericObject data) {
+    protected void updateEdgeStatistics(AbstractPort source, AbstractPort target, GenericObject data) {
         EdgeAggregator.updateEdgeStatistics(source, target, FinrocTypeInfo.estimateDataSize(data));
     }
 
@@ -762,7 +690,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * (slightly expensive)
      * @return Is port currently connected?
      */
-    @ConstMethod public boolean isConnected() {
+    public boolean isConnected() {
         return (!edgesSrc.isEmpty()) || (!edgesDest.isEmpty());
     }
 
@@ -773,7 +701,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param partner Port at other end of connection
      */
-    @Virtual protected void newConnection(AbstractPort partner) {}
+    protected void newConnection(AbstractPort partner) {}
 
     /**
      * Called whenever a connection to this port was removed
@@ -782,18 +710,17 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param partner Port at other end of connection
      */
-    @Virtual protected void connectionRemoved(AbstractPort partner) {}
+    protected void connectionRemoved(AbstractPort partner) {}
 
     /**
      * Notify port of (network) disconnect
      */
-    @Virtual public abstract void notifyDisconnect();
+    public abstract void notifyDisconnect();
 
     /**
      * @return Return Netport instance of this port - in case this is a net port - otherwise null
      */
-    @InCppFile
-    @Virtual public NetPort asNetPort() {
+    public NetPort asNetPort() {
         return null;
     }
 
@@ -803,14 +730,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param belongsTo Instance (usually TCPServerConnection or RemoteServer) that this port belongs to
      * @return Network port if it could be found - otherwise null
      */
-    @SuppressWarnings("unchecked") @ConstMethod
-    public NetPort findNetPort(@Ptr Object belongsTo) {
+    @SuppressWarnings("unchecked")
+    public NetPort findNetPort(Object belongsTo) {
         if (belongsTo == null) {
             return null;
         }
-        @Ptr ArrayWrapper<AbstractPort> it = isOutputPort() ? edgesSrc.getIterable() : edgesDest.getIterable();
+        ArrayWrapper<AbstractPort> it = isOutputPort() ? edgesSrc.getIterable() : edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
+            AbstractPort port = it.get(i);
             if (port != null && port.getFlag(CoreFlags.NETWORK_ELEMENT)) {
                 NetPort np = port.asNetPort();
                 if (np != null && np.getBelongsTo() == belongsTo) {
@@ -824,7 +751,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Minimum Network Update Interval (only-port specific one; -1 if there's no specific setting for port)
      */
-    @ConstMethod public short getMinNetUpdateInterval() {
+    public short getMinNetUpdateInterval() {
         return minNetUpdateTime;
     }
 
@@ -854,14 +781,13 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Does port accept reverse data?
      */
-    @ConstMethod public boolean acceptsReverseData() {
+    public boolean acceptsReverseData() {
         return getFlag(PortFlags.MAY_ACCEPT_REVERSE_DATA);
     }
 
     /**
      * @return Does port have incoming edges?
      */
-    @ConstMethod
     public boolean hasIncomingEdges() {
         return !edgesDest.isEmpty();
     }
@@ -869,7 +795,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Does port have outgoing edges?
      */
-    @ConstMethod
     public boolean hasOutgoingEdges() {
         return !edgesSrc.isEmpty();
     }
@@ -883,16 +808,16 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Did Strategy for this port change?
      */
     @SuppressWarnings("unchecked")
-    @Virtual protected boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
+    protected boolean propagateStrategy(AbstractPort pushWanter, AbstractPort newConnectionPartner) {
 
         synchronized (getRegistryLock()) {
 
             // step1: determine max queue length (strategy) for this port
             short max = (short)Math.min(getStrategyRequirement(), Short.MAX_VALUE);
-            @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
-            @Ptr ArrayWrapper<AbstractPort> itPrev = edgesDest.getIterable();
+            ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+            ArrayWrapper<AbstractPort> itPrev = edgesDest.getIterable();
             for (int i = 0, n = it.size(); i < n; i++) {
-                @Ptr AbstractPort port = it.get(i);
+                AbstractPort port = it.get(i);
                 if (port != null) {
                     max = (short)Math.max(max, port.getStrategy());
                 }
@@ -907,7 +832,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 if (!sourcePort) {
                     boolean allSourcesReversePushers = true;
                     for (int i = 0, n = itPrev.size(); i < n; i++) {
-                        @Ptr AbstractPort port = itPrev.get(i);
+                        AbstractPort port = itPrev.get(i);
                         if (port != null && port.isReady() && (!port.reversePushStrategy())) {
                             allSourcesReversePushers = false;
                             break;
@@ -930,7 +855,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             //  2) our strategy changed to push, and exactly one source
             int otherSources = 0;
             for (int i = 0, n = itPrev.size(); i < n; i++) {
-                @Ptr AbstractPort port = itPrev.get(i);
+                AbstractPort port = itPrev.get(i);
                 if (port != null && port.isReady() && port != newConnectionPartner) {
                     otherSources++;
                 }
@@ -963,9 +888,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     @SuppressWarnings("unchecked")
     private void forwardStrategy(short strategy2, AbstractPort pushWanter) {
-        @Ptr ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
+        ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
+            AbstractPort port = it.get(i);
             if (port != null && (pushWanter != null || port.getStrategy() != strategy2)) {
                 port.propagateStrategy(pushWanter, null);
             }
@@ -975,7 +900,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Strategy to use, when this port is target
      */
-    @ConstMethod
     public short getStrategy() {
         assert(strategy >= -1);
         return strategy;
@@ -985,10 +909,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Is port connected to output ports that request reverse pushes?
      */
     @SuppressWarnings("unchecked")
-    @ConstMethod public boolean isConnectedToReversePushSources() {
-        @Ptr ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
+    public boolean isConnectedToReversePushSources() {
+        ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
+            AbstractPort port = it.get(i);
             if (port != null && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
                 return true;
             }
@@ -1003,14 +927,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @return result - -1 if no port has specific setting
      */
-    @SuppressWarnings("unchecked") @ConstMethod
+    @SuppressWarnings("unchecked")
     public short getMinNetworkUpdateIntervalForSubscription() {
         short result = Short.MAX_VALUE;
         short t = 0;
 
-        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+        ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
+            AbstractPort port = it.get(i);
             if (port != null && port.getStrategy() > 0) {
                 if ((t = port.getMinNetUpdateInterval()) >= 0 && t < result) {
                     result = t;
@@ -1019,7 +943,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         }
         it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
-            @Ptr AbstractPort port = it.get(i);
+            AbstractPort port = it.get(i);
             if (port != null && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
                 if ((t = port.getMinNetUpdateInterval()) >= 0 && t < result) {
                     result = t;
@@ -1066,7 +990,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Returns minimum strategy requirement (for this port in isolation) - typically 0 for non-input-ports
      * (Called in runtime-registry synchronized context only)
      */
-    @ConstMethod protected short getStrategyRequirement() {
+    protected short getStrategyRequirement() {
         if (isInputPort() /*&& (!getFlag(PortFlags.PROXY)) && (!getFlag(PortFlags.NETWORK_ELEMENT))*/) {
             if (getFlag(PortFlags.PUSH_STRATEGY)) {
                 if (getFlag(PortFlags.USES_QUEUE)) {
@@ -1090,19 +1014,18 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param length Maximum queue length (values <= 1 mean that there is no queue)
      */
-    @Virtual protected abstract void setMaxQueueLengthImpl(int length);
+    protected abstract void setMaxQueueLengthImpl(int length);
 
     /**
      * @return Maximum queue length
      */
-    @Virtual @ConstMethod protected abstract int getMaxQueueLengthImpl();
+    protected abstract int getMaxQueueLengthImpl();
 
     /**
      * Clear queue and unlock contents
      */
-    @Virtual protected abstract void clearQueueImpl();
+    protected abstract void clearQueueImpl();
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT>
     /**
      * Does this port "want" to receive a value via push strategy?
      *
@@ -1113,9 +1036,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * Typically it does, unless it has multiple sources or no push strategy itself.
      * (Standard implementation for this)
      */
-    @ConstMethod @Inline protected boolean wantsPush(boolean reverse, byte changeConstant) {
-        @InCpp("") final boolean REVERSE = reverse;
-        @InCpp("") final byte CHANGE_CONSTANT = changeConstant;
+    protected boolean wantsPush(boolean reverse, byte changeConstant) {
+        final boolean REVERSE = reverse;
+        final byte CHANGE_CONSTANT = changeConstant;
 
         // I think and hope that the compiler is intelligent enough to optimize branches away...
         if (REVERSE) {
@@ -1135,21 +1058,21 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return Number of connections to this port (incoming and outgoing)
      */
-    @ConstMethod public int getConnectionCount() {
+    public int getConnectionCount() {
         return edgesDest.countElements() + edgesSrc.countElements();
     }
 
     /**
      * @return Number of connections to this port (incoming and outgoing)
      */
-    @ConstMethod public int getIncomingConnectionCount() {
+    public int getIncomingConnectionCount() {
         return edgesDest.countElements();
     }
 
     /**
      * @return Number of connections to this port (incoming and outgoing)
      */
-    @ConstMethod public int getOutgoingConnectionCount() {
+    public int getOutgoingConnectionCount() {
         return edgesSrc.countElements();
     }
 
@@ -1167,8 +1090,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param co Output Stream
      */
     @SuppressWarnings("unchecked")
-    public void serializeOutgoingConnections(@Ref OutputStreamBuffer co) {
-        @Ptr ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
+    public void serializeOutgoingConnections(OutputStreamBuffer co) {
+        ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
         byte count = 0;
         for (int i = 0, n = it.size(); i < n; i++) {
             if (it.get(i) != null) {
@@ -1194,9 +1117,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param finstructedEdgesOnly Consider only outgoing finstructed edges?
      */
     @SuppressWarnings("unchecked")
-    public void getConnectionPartners(@Ref SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges, @CppDefault("false") boolean finstructedEdgesOnly) {
+    public void getConnectionPartners(SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges, boolean finstructedEdgesOnly) {
         result.clear();
-        @Ptr ArrayWrapper<AbstractPort> it = null;
+        ArrayWrapper<AbstractPort> it = null;
 
         if (outgoingEdges) {
             it = edgesSrc.getIterable();
@@ -1233,9 +1156,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      *
      * @param link Qualified link of connection partner
      */
-    public void disconnectFrom(@Const @Ref String link) {
+    public void disconnectFrom(String link) {
         synchronized (getRegistryLock()) {
-            for (@SizeT int i = 0; i < linkEdges.size(); i++) {
+            for (int i = 0; i < linkEdges.size(); i++) {
                 LinkEdge le = linkEdges.get(i);
                 if (le.getSourceLink().equals(link) || le.getTargetLink().equals(link)) {
                     le.delete();
@@ -1252,7 +1175,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return List with all link edges (must not be modified)
      */
-    public @Ptr SimpleList<LinkEdge> getLinkEdges() {
+    public SimpleList<LinkEdge> getLinkEdges() {
         return linkEdges;
     }
 
@@ -1264,14 +1187,13 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public abstract void forwardData(AbstractPort other);
 
-    @InCpp("return std::shared_ptr<void>(dt.createInstance());")
     @Override
     public Object createBuffer(DataTypeBase dt) {
         return dt.createInstance();
     }
 
     @Override
-    public GenericObject createGenericObject(DataTypeBase dt, @VoidPtr Object factoryParameter) {
+    public GenericObject createGenericObject(DataTypeBase dt, Object factoryParameter) {
         if (FinrocTypeInfo.isStdType(dt) || FinrocTypeInfo.isUnknownAdaptableType(dt)) {
             return getUnusedBufferRaw(dt).getObject();
         } else if (FinrocTypeInfo.isCCType(dt)) {

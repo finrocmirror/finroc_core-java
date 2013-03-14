@@ -29,7 +29,7 @@ import org.rrlib.finroc_core_utils.jc.container.WonderQueueFastCR;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueueTL;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  */
 public class QueueTest {

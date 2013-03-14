@@ -23,17 +23,15 @@ package org.finroc.core;
 
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Edge that operates on links.
  *
  * (re)Establishes real edges when links are available.
  */
-@Ptr
 public class LinkEdge implements HasDestructor {
 
     /**

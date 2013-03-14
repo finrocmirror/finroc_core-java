@@ -27,22 +27,13 @@ import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port with upper and lower bounds for values
  */
-@Inline @NoCpp @RawTypeArgs
 public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
 
     /** Bounds of this port */
@@ -66,8 +57,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
     }
 
     protected void nonStandardAssign(ThreadLocalCache tc) {
-        @Const @Ptr CoreNumber cn = tc.data.getObject().<CoreNumber>getData();
-        @InCpp("T val = cn->value<T>();")
+        CoreNumber cn = tc.data.getObject().<CoreNumber>getData();
         double val = cn.doubleValue();
         if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
@@ -81,14 +71,14 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
                 tc.ref = value;
                 tc.data = tc.ref.getContainer();
             } else if (bounds.adjustToRange()) {
-                @Ptr CCPortDataManagerTL container = super.getUnusedBuffer(tc);
-                @Ptr CoreNumber cnc = container.getObject().<CoreNumber>getData();
+                CCPortDataManagerTL container = super.getUnusedBuffer(tc);
+                CoreNumber cnc = container.getObject().<CoreNumber>getData();
                 tc.data = container;
                 tc.ref = container.getCurrentRef();
                 cnc.setValue(bounds.toBounds(val), cn.getUnit());
             } else if (bounds.applyDefault()) {
                 tc.data = tc.getUnusedBuffer(CoreNumber.TYPE);
-                @Ptr CoreNumber cnc = tc.data.getObject().<CoreNumber>getData();
+                CoreNumber cnc = tc.data.getObject().<CoreNumber>getData();
                 tc.ref = tc.data.getCurrentRef();
                 cnc.setValue(bounds.getOutOfBoundsDefault());
                 tc.data.setRefCounter(0); // locks will be added during assign
@@ -100,7 +90,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
     /**
      * @return the bounds of this port
      */
-    @ConstMethod public Bounds<T> getBounds() {
+    public Bounds<T> getBounds() {
         return bounds;
     }
 
@@ -110,11 +100,10 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
      *
      * @param bounds2 new Bounds for this port
      */
-    public void setBounds(@Const @Ref Bounds<T> bounds2) {
+    public void setBounds(Bounds<T> bounds2) {
         bounds.set(bounds2);
         CCPortDataManager mgr = super.getInInterThreadContainer();
-        @Const @Ptr CoreNumber cn = mgr.getObject().<CoreNumber>getData();
-        @InCpp("T val = cn->value<T>();")
+        CoreNumber cn = mgr.getObject().<CoreNumber>getData();
         double val = cn.doubleValue();
         if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());

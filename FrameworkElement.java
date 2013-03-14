@@ -25,31 +25,6 @@ import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.GarbageCollector;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.Mutable;
-import org.rrlib.finroc_core_utils.jc.annotation.NoSuperclass;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Protected;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.SpinLock;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
@@ -70,7 +45,7 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Base functionality of Ports, PortSets, Modules, Groups and the Runtime.
  *
@@ -87,94 +62,75 @@ import org.finroc.core.port.ThreadLocalCache;
  * To prevent deleting of framework element while using it over a longer period of time,
  * lock it - or the complete runtime environment.
  */
-@Ptr
-@Friend( {GarbageCollector.class, FrameworkElement.ChildIterator.class, RuntimeEnvironment.class})
-@IncludeClass(SafeConcurrentlyIterableList.class)
-@CppInclude("parameter/ConstructorParameters.h")
-@HAppend( {"inline std::ostream& operator << (std::ostream& output, const FrameworkElement* lu) {",
-           "    lu->streamQualifiedName(output);",
-           "    output << \" (\" << ((void*)lu) << \")\";",
-           "    return output;",
-           "}",
-           "inline std::ostream& operator << (std::ostream& output, const FrameworkElement& lu) {",
-           "    output << (&lu);",
-           "    return output;",
-           "}"
-          })
 public class FrameworkElement extends Annotatable {
 
     /** Uid of thread that created this framework element */
-    @Const protected final long createrThreadUid;
+    protected final long createrThreadUid;
 
     // Splitting flags up might allow compiler optimizations??
 
     /** Constant Flags - see CoreFlags */
-    @Const protected final int constFlags;
+    protected final int constFlags;
 
     /** Variable Flags - see CoreFlags */
     protected int flags;
 
     /**
-     * @author max
+     * @author Max Reichardt
      *
      * Framework elements are inserted as children of other framework element using this connector class.
      * Ratio: this allows links in the tree
      *
      * Framework elements "own" links - they are deleted with framework element
      */
-    @Ptr @NoSuperclass @AtFront @Friend(FrameworkElement.class)
     public class Link implements HasDestructor {
 
         /** Name of Framework Element - in link context */
         private String name;
 
         /** Parent - Element in which this link was inserted */
-        private @Ptr FrameworkElement parent;
+        private FrameworkElement parent;
 
         /** Next link for this framework element (=> singly-linked list) */
-        private @Ptr Link next;
+        private Link next;
 
         /**
          * @return Element that this link points to
          */
-        @ConstMethod public FrameworkElement getChild() {
+        public FrameworkElement getChild() {
             return FrameworkElement.this;
         }
 
         /**
          * @return Name of Framework Element - in link context
          */
-        @ConstMethod public String getName() {
+        public String getName() {
             return name;
         }
 
         /**
          * @return Parent - Element in which this link was inserted
          */
-        @ConstMethod public @Ptr FrameworkElement getParent() {
+        public FrameworkElement getParent() {
             return parent;
         }
 
         /**
          * @return Is this a primary link?
          */
-        @ConstMethod public boolean isPrimaryLink() {
+        public boolean isPrimaryLink() {
             return this == getChild().primary;
         }
 
         @Override
         public void delete() {}
 
-        @JavaOnly
         public String toString() {
             return name;
         }
     }
 
-    //Cpp friend class Lock;
-
     /** Primary link to framework element - the place at which it actually is in FrameworkElement tree - contains name etc. */
-    @PassByValue
     private final Link primary = new Link();
 
     /** children - may contain null entries (for efficient thread-safe unsynchronized iteration) */
@@ -188,24 +144,20 @@ public class FrameworkElement extends Annotatable {
      * The secondary component is the element's unique handle in local runtime environment.
      * ("normal" elements have negative handle, while ports have positive ones)
      */
-    @Mutable
     public final MutexLockOrder objMutex;
 
     /**
      * Extra Mutex for changing flags
      */
-    @CppType("util::Mutex") @PassByValue @Mutable
     private final Object flagMutex = new Object();
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"framework_elements\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("framework_elements");
 
     /** Log domain for edges */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"edges\");")
     public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
 
-    @JavaOnly public FrameworkElement(@Ptr FrameworkElement parent, @Const @Ref String name) {
+    public FrameworkElement(FrameworkElement parent, String name) {
         this(parent, name, CoreFlags.ALLOWS_CHILDREN, -1);
     }
 
@@ -216,15 +168,12 @@ public class FrameworkElement extends Annotatable {
      * @param lockOrder_ Custom value for lock order (needs to be larger than parent's) - negative indicates unused.
      */
     @SuppressWarnings("unchecked")
-    @Init( {"children(getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0, getFlag(CoreFlags::ALLOWS_CHILDREN) ? 4 : 0)"})
-    public FrameworkElement(@Ptr @CppDefault("NULL") FrameworkElement parent_, @Const @Ref @CppDefault("\"\"") String name,
-                            @CppDefault("CoreFlags::ALLOWS_CHILDREN") int flags_, @CppDefault("-1") int lockOrder_) {
+    public FrameworkElement(FrameworkElement parent_, String name, int flags_, int lockOrder_) {
         createrThreadUid = ThreadUtil.getCurrentThreadId();
         constFlags = flags_ & CoreFlags.CONSTANT_FLAGS;
         flags = flags_ & CoreFlags.NON_CONSTANT_FLAGS;
         assert((flags_ & CoreFlags.STATUS_FLAGS) == 0);
 
-        // JavaOnlyBlock
         if (name == null) {
             name = "";
         }
@@ -233,7 +182,6 @@ public class FrameworkElement extends Annotatable {
 
         objMutex = new MutexLockOrder(getLockOrder(flags_, parent_, lockOrder_), getFlag(CoreFlags.IS_RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this));
 
-        // JavaOnlyBlock
         //treeNode = RuntimeSettings.CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS.get() ? createTreeNode() : null;
         // save memory in case of port
         children = getFlag(CoreFlags.ALLOWS_CHILDREN) ? new SafeConcurrentlyIterableList<Link>(4, 4) :
@@ -272,11 +220,11 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
-    @JavaOnly public FrameworkElement(@Const @Ref String name) {
+    public FrameworkElement(String name) {
         this(null, name);
     }
 
-    @JavaOnly public FrameworkElement() {
+    public FrameworkElement() {
         this(null, "");
     }
 
@@ -297,7 +245,6 @@ public class FrameworkElement extends Annotatable {
      *
      * @param flag Flag to set
      */
-    @SpinLock
     protected void setFlag(int flag) {
         synchronized (flagMutex) {
             assert(flag & CoreFlags.CONSTANT_FLAGS) == 0;
@@ -310,7 +257,6 @@ public class FrameworkElement extends Annotatable {
      *
      * @param flag Flag to remove
      */
-    @SpinLock
     protected void removeFlag(int flag) {
         synchronized (flagMutex) {
             assert(flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
@@ -325,7 +271,7 @@ public class FrameworkElement extends Annotatable {
      * @param flag Flag to check
      * @return Answer
      */
-    @Inline @ConstMethod public boolean getFlag(@Const int flag) {
+    public boolean getFlag(int flag) {
         if (flag <= CoreFlags.CONSTANT_FLAGS) {
             return (constFlags & flag) == flag;
         } else {
@@ -334,22 +280,9 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     * Same as getName()
-     * (except that we return a const char* in C++)
-     */
-    @Const @CppType("char*") @ConstMethod
-    public String getCName() {
-
-        //JavaOnlyBlock
-        return getName();
-
-        //Cpp return primary.name.length() == 0 ? "(anonymous)" : primary.name.getCString();
-    }
-
-    /**
      * @return Name of this framework element
      */
-    @ConstMethod public @Const String getName() {
+    public String getName() {
         if (isReady() || getFlag(CoreFlags.IS_RUNTIME)) {
             return primary.name.length() == 0 ? "(anonymous)" : primary.name;
         } else {
@@ -368,7 +301,7 @@ public class FrameworkElement extends Annotatable {
      * @param os OutputStream
      * @param i Link Number (0 is primary link/name)
      */
-    @ConstMethod public void writeName(@Ref OutputStreamBuffer os, int i) {
+    public void writeName(OutputStreamBuffer os, int i) {
         if (isReady()) {
             os.writeString(getLink(i).name);
         } else {
@@ -382,7 +315,7 @@ public class FrameworkElement extends Annotatable {
      * @param name New Port name
      * (only valid/possible before, element is initialized)
      */
-    public void setName(@Const @Ref String name) {
+    public void setName(String name) {
         assert(!getFlag(CoreFlags.IS_RUNTIME));
         synchronized (getRegistryLock()) { // synchronize, C++ strings may not be thread safe...
             assert(isConstructing());
@@ -399,7 +332,7 @@ public class FrameworkElement extends Annotatable {
     /**
      * @return Is current thread the thread that created this object?
      */
-    @ConstMethod private boolean isCreator() {
+    private boolean isCreator() {
         return ThreadUtil.getCurrentThreadId() == createrThreadUid;
     }
 
@@ -410,21 +343,21 @@ public class FrameworkElement extends Annotatable {
     /**
      * @return Is element a port?
      */
-    @Inline @ConstMethod public boolean isPort() {
+    public boolean isPort() {
         return (constFlags & CoreFlags.IS_PORT) > 0;
     }
 
     /**
      * @return Is framework element ready/fully initialized and not yet deleted?
      */
-    @Inline @ConstMethod public boolean isReady() {
+    public boolean isReady() {
         return (flags & CoreFlags.READY) > 0;
     }
 
     /**
      * @return Has framework element been deleted? - dangerous if you actually encounter this in C++...
      */
-    @Inline @ConstMethod public boolean isDeleted() {
+    public boolean isDeleted() {
         return (flags & CoreFlags.DELETED) > 0;
     }
 
@@ -448,7 +381,7 @@ public class FrameworkElement extends Annotatable {
      *
      * @param Link link to child to use
      */
-    private void addChild(@Ptr Link child) {
+    private void addChild(Link child) {
 
         if (child.parent == this) {
             return;
@@ -509,7 +442,7 @@ public class FrameworkElement extends Annotatable {
      * @param fe Specified other framework element
      * @return Answer
      */
-    @ConstMethod public boolean lockAfter(@Const FrameworkElement fe) {
+    public boolean lockAfter(FrameworkElement fe) {
         return objMutex.validAfter(fe.objMutex);
     }
 
@@ -518,8 +451,7 @@ public class FrameworkElement extends Annotatable {
      * @param onlyGloballyUniqueChildren Only return child with globally unique link?
      * @return Framework element - or null if non-existent
      */
-    @InCppFile
-    public FrameworkElement getChildElement(@Const @Ref String name, boolean onlyGloballyUniqueChildren) {
+    public FrameworkElement getChildElement(String name, boolean onlyGloballyUniqueChildren) {
         return getChildElement(name, 0, onlyGloballyUniqueChildren, RuntimeEnvironment.getInstance());
     }
 
@@ -532,7 +464,7 @@ public class FrameworkElement extends Annotatable {
      * @param Link root
      * @return Framework element - or null if non-existent
      */
-    protected FrameworkElement getChildElement(@Const @Ref String name, int nameIndex, boolean onlyGloballyUniqueChildren, FrameworkElement root) {
+    protected FrameworkElement getChildElement(String name, int nameIndex, boolean onlyGloballyUniqueChildren, FrameworkElement root) {
 
         // lock runtime (might not be absolutely necessary... ensures, however, that result is valid)
         synchronized (getRegistryLock()) {
@@ -546,9 +478,9 @@ public class FrameworkElement extends Annotatable {
             }
 
             onlyGloballyUniqueChildren &= (!getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK));
-            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
-                @Ptr Link child = iterable.get(i);
+                Link child = iterable.get(i);
                 if (child != null && name.regionMatches(nameIndex, child.name, 0, child.name.length()) && (!child.getChild().isDeleted())) {
                     if (name.length() == nameIndex + child.name.length()) {
                         if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
@@ -575,7 +507,7 @@ public class FrameworkElement extends Annotatable {
      * @param parent Parent framework element
      * @param linkName name of link
      */
-    protected void link(FrameworkElement parent, @Const @Ref String linkName) {
+    protected void link(FrameworkElement parent, String linkName) {
         assert(isCreator()) : "may only be called by creator thread";
         assert(lockAfter(parent));
 
@@ -585,7 +517,7 @@ public class FrameworkElement extends Annotatable {
                 throw new RuntimeException("Element and/or parent has been deleted. Thread exit is likely the intended behaviour.");
             }
 
-            @Managed Link l = new Link();
+            Link l = new Link();
             l.name = linkName;
             l.parent = null; // will be set in addChild
             Link lprev = getLinkInternal(getLinkCount() - 1);
@@ -596,7 +528,6 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
-    @Protected
     public void delete() {
         super.delete();
         assert(getFlag(CoreFlags.DELETED) || getFlag(CoreFlags.IS_RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
@@ -607,10 +538,10 @@ public class FrameworkElement extends Annotatable {
         }
 
         // delete links
-        @Ptr Link l = primary.next;
+        Link l = primary.next;
         while (l != null) {
             @SuppressWarnings("unused")
-            @Ptr Link tmp = l;
+            Link tmp = l;
             l = l.next;
             //Cpp delete tmp;
         }
@@ -646,7 +577,6 @@ public class FrameworkElement extends Annotatable {
      *
      * @return Returns runtime registry if this is the case - otherwise this-pointer.
      */
-    @CppType("util::MutexLockOrder") @ConstMethod @Ref
     private Object runtimeLockHelper() {
 
         if (objMutex.validAfter(getRuntime().getRegistryHelper().objMutex)) {
@@ -676,9 +606,9 @@ public class FrameworkElement extends Annotatable {
         }
 
         if (initThis || isReady()) {
-            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
-                @Ptr Link child = iterable.get(i);
+                Link child = iterable.get(i);
                 if (child != null && child.isPrimaryLink() && (!child.getChild().isDeleted())) {
                     child.getChild().initImpl();
                 }
@@ -716,9 +646,9 @@ public class FrameworkElement extends Annotatable {
 
             // publish any children?
             if (getFlag(CoreFlags.PUBLISHED)) {
-                @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+                ArrayWrapper<Link> iterable = children.getIterable();
                 for (int i = 0, n = iterable.size(); i < n; i++) {
-                    @Ptr Link child = iterable.get(i);
+                    Link child = iterable.get(i);
                     if (child != null && (!child.getChild().isDeleted()) /*&& child.isPrimaryLink()*/) {
                         child.getChild().checkPublish();
                     }
@@ -755,7 +685,7 @@ public class FrameworkElement extends Annotatable {
      * Called before children are initialized
      * (called in runtime-registry-synchronized context)
      */
-    @Virtual protected void preChildInit() {}
+    protected void preChildInit() {}
 
     /**
      * Initializes this runtime element.
@@ -765,7 +695,7 @@ public class FrameworkElement extends Annotatable {
      * Called before children are initialized
      * (called in runtime-registry-synchronized context)
      */
-    @Virtual protected void postChildInit() {}
+    protected void postChildInit() {}
 
     /**
      * Deletes element and all child elements
@@ -852,9 +782,9 @@ public class FrameworkElement extends Annotatable {
      */
     private void deleteChildren() {
 
-        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+        ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
-            @Ptr Link child = iterable.get(i);
+            Link child = iterable.get(i);
             if (child != null /*&& child.getChild().isReady()*/) {
                 child.getChild().managedDelete(child);
             }
@@ -882,14 +812,13 @@ public class FrameworkElement extends Annotatable {
      *  This is btw the place to do that.)
      *
      */
-    @Virtual protected void prepareDelete() {}
+    protected void prepareDelete() {}
 
     /**
      * (for convenience)
      * @return The one and only RuntimeEnvironment
      */
-    @InCppFile
-    @ConstMethod public RuntimeEnvironment getRuntime() {
+    public RuntimeEnvironment getRuntime() {
         //return getParent(RuntimeEnvironment.class);
         return RuntimeEnvironment.getInstance();
     }
@@ -899,9 +828,7 @@ public class FrameworkElement extends Annotatable {
      * @return Registry of the one and only RuntimeEnvironment - Structure changing operations need to be synchronized on this object!
      * (Only lock runtime for minimal periods of time!)
      */
-    @InCppFile @CppType("util::MutexLockOrder")
-    @InCpp("return RuntimeEnvironment::getInstance()->getRegistryHelper()->objMutex;")
-    @ConstMethod @Ref public RuntimeEnvironment.Registry getRegistryLock() {
+    public RuntimeEnvironment.Registry getRegistryLock() {
         //return getParent(RuntimeEnvironment.class);
         return RuntimeEnvironment.getInstance().getRegistryHelper();
     }
@@ -911,9 +838,7 @@ public class FrameworkElement extends Annotatable {
      * @return List with all thread local caches - Some cleanup methods require that this is locked
      * (Only lock runtime for minimal periods of time!)
      */
-    @InCppFile @CppType("util::MutexLockOrder")
-    @InCpp("return RuntimeEnvironment::getInstance()->getRegistryHelper()->infosLock->objMutex;")
-    @ConstMethod @Ref public SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
+    public SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
         //return getParent(RuntimeEnvironment.class);
         return RuntimeEnvironment.getInstance().getRegistryHelper().infosLock;
     }
@@ -925,7 +850,7 @@ public class FrameworkElement extends Annotatable {
      * @return Parent or null
      */
     @SuppressWarnings("unchecked")
-    @JavaOnly public <T extends FrameworkElement> T getParent(Class<T> c) {
+    public <T extends FrameworkElement> T getParent(Class<T> c) {
         synchronized (getRegistryLock()) { // not really necessary after element has been initialized
             if (isDeleted()) {
                 return null;
@@ -971,7 +896,7 @@ public class FrameworkElement extends Annotatable {
     /**
      * @return Primary parent framework element
      */
-    @ConstMethod public FrameworkElement getParent() {
+    public FrameworkElement getParent() {
         return primary.parent;
     }
 
@@ -979,7 +904,7 @@ public class FrameworkElement extends Annotatable {
      * @param linkIndex Link that is referred to (0 = primary link)
      * @return Parent of framework element using specified link
      */
-    @ConstMethod public FrameworkElement getParent(int linkIndex) {
+    public FrameworkElement getParent(int linkIndex) {
         synchronized (getRegistryLock()) { // absolutely safe this way
             if (isDeleted()) {
                 return null;
@@ -995,7 +920,7 @@ public class FrameworkElement extends Annotatable {
      * @param re Possible parent of this Runtime element
      * @return Answer
      */
-    @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re) {
+    public boolean isChildOf(FrameworkElement re) {
         return isChildOf(re, false);
     }
 
@@ -1007,12 +932,12 @@ public class FrameworkElement extends Annotatable {
      * @param ignoreDeleteFlag Perform check even if delete flag is already set on object (deprecated in C++ - except of directly calling on runtime change)
      * @return Answer
      */
-    @ConstMethod public boolean isChildOf(@Ptr FrameworkElement re, boolean ignoreDeleteFlag) {
+    public boolean isChildOf(FrameworkElement re, boolean ignoreDeleteFlag) {
         synchronized (getRegistryLock()) { // absolutely safe this way
             if ((!ignoreDeleteFlag) && isDeleted()) {
                 return false;
             }
-            for (@Const Link l = primary; l != null; l = l.next) {
+            for (Link l = primary; l != null; l = l.next) {
                 if (l.parent == re) {
                     return true;
                 } else if (l.parent == null) {
@@ -1030,21 +955,21 @@ public class FrameworkElement extends Annotatable {
     /**
      * @return true before element is officially declared as being initialized
      */
-    @ConstMethod @Inline public boolean isConstructing() {
+    public boolean isConstructing() {
         return !getFlag(CoreFlags.READY);
     }
 
     /**
      * @return true after the element has been initialized - equivalent to isReady()
      */
-    @ConstMethod @Inline public boolean isInitialized() {
+    public boolean isInitialized() {
         return isReady();
     }
 
     /**
      * @return Number of children (this is only upper bound after deletion of objects - since some entries can be null)
      */
-    @ConstMethod public @SizeT int childEntryCount() {
+    public int childEntryCount() {
         return children.size();
     }
 
@@ -1052,9 +977,9 @@ public class FrameworkElement extends Annotatable {
      * @return Number of children (includes ones that are not initialized yet)
      * (thread-safe, however, call with runtime registry lock to get exact result when other threads might concurrently add/remove children)
      */
-    @ConstMethod public @SizeT int childCount() {
+    public int childCount() {
         int count = 0;
-        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+        ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             if (iterable.get(i) != null) {
                 count++;
@@ -1067,14 +992,14 @@ public class FrameworkElement extends Annotatable {
      * @return Element's handle in local runtime environment
      * ("normal" elements have negative handle, while ports have positive ones)
      */
-    @ConstMethod @Inline public int getHandle() {
+    public int getHandle() {
         return objMutex.getSecondary();
     }
 
     /**
      * @return Order value in which element needs to be locked (higher means later/after)
      */
-    @ConstMethod @Inline public int getLockOrder() {
+    public int getLockOrder() {
         return objMutex.getPrimary();
     }
 
@@ -1082,8 +1007,8 @@ public class FrameworkElement extends Annotatable {
      * @param name Name
      * @return Returns first child with specified name - null if none exists
      */
-    @ConstMethod public FrameworkElement getChild(String name) {
-        @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+    public FrameworkElement getChild(String name) {
+        ArrayWrapper<Link> iterable = children.getIterable();
         for (int i = 0, n = iterable.size(); i < n; i++) {
             Link child = iterable.get(i);
             if (child != null && child.getChild().isReady()) {
@@ -1111,14 +1036,14 @@ public class FrameworkElement extends Annotatable {
      * (Should only be called by ChildIterator and FrameworkElementTreeFilter)
      * @return Array with child elements (careful, do not modify array!)
      */
-    @Const @ConstMethod @Ptr ArrayWrapper<Link> getChildren() {
+    ArrayWrapper<Link> getChildren() {
         return children.getIterable();
     }
 
     /**
      * @return Returns constant and non-constant flags
      */
-    @ConstMethod public int getAllFlags() {
+    public int getAllFlags() {
         return flags | constFlags;
     }
 
@@ -1126,7 +1051,7 @@ public class FrameworkElement extends Annotatable {
      * (Use StringBuilder version if efficiency or real-time is an issue)
      * @return Concatenation of parent names and this element's name
      */
-    @Inline @ConstMethod public String getQualifiedName() {
+    public String getQualifiedName() {
         StringBuilder sb = new StringBuilder();
         getQualifiedName(sb);
         return sb.toString();
@@ -1138,7 +1063,7 @@ public class FrameworkElement extends Annotatable {
      *
      * @param sb StringBuilder that will store result
      */
-    @Inline @ConstMethod public void getQualifiedName(@Ref StringBuilder sb) {
+    public void getQualifiedName(StringBuilder sb) {
         getQualifiedName(sb, primary);
     }
 
@@ -1149,7 +1074,7 @@ public class FrameworkElement extends Annotatable {
      * @param sb StringBuilder that will store result
      * @param linkIndex Index of link to start with
      */
-    @ConstMethod public void getQualifiedName(@Ref StringBuilder sb, @SizeT int linkIndex) {
+    public void getQualifiedName(StringBuilder sb, int linkIndex) {
         getQualifiedName(sb, getLink(linkIndex));
     }
 
@@ -1160,7 +1085,7 @@ public class FrameworkElement extends Annotatable {
      * @param sb StringBuilder that will store result
      * @param start Link to start with
      */
-    @ConstMethod public void getQualifiedName(@Ref StringBuilder sb, @Const Link start) {
+    public void getQualifiedName(StringBuilder sb, Link start) {
         getQualifiedName(sb, start, true);
     }
 
@@ -1168,7 +1093,7 @@ public class FrameworkElement extends Annotatable {
      * (Use StringBuilder version if efficiency or real-time is an issue)
      * @return Qualified link to this element (may be shorter than qualified name, if object has a globally unique link)
      */
-    @Inline @ConstMethod public String getQualifiedLink() {
+    public String getQualifiedLink() {
         StringBuilder sb = new StringBuilder();
         getQualifiedLink(sb);
         return sb.toString();
@@ -1181,7 +1106,7 @@ public class FrameworkElement extends Annotatable {
      * @param sb StringBuilder that will store result
      * @return Is this link globally unique?
      */
-    @Inline @ConstMethod public boolean getQualifiedLink(@Ref StringBuilder sb) {
+    public boolean getQualifiedLink(StringBuilder sb) {
         return getQualifiedLink(sb, primary);
     }
 
@@ -1193,7 +1118,7 @@ public class FrameworkElement extends Annotatable {
      * @param linkIndex Index of link to start with
      * @return Is this link globally unique?
      */
-    @ConstMethod public boolean getQualifiedLink(@Ref StringBuilder sb, @SizeT int linkIndex) {
+    public boolean getQualifiedLink(StringBuilder sb, int linkIndex) {
         return getQualifiedLink(sb, getLink(linkIndex));
     }
 
@@ -1205,7 +1130,7 @@ public class FrameworkElement extends Annotatable {
      * @param start Link to start with
      * @return Is this link globally unique?
      */
-    @ConstMethod public boolean getQualifiedLink(@Ref StringBuilder sb, @Const Link start) {
+    public boolean getQualifiedLink(StringBuilder sb, Link start) {
         return getQualifiedName(sb, start, false);
     }
 
@@ -1219,7 +1144,7 @@ public class FrameworkElement extends Annotatable {
      * @param forceFullLink Return full link from root (even if object has shorter globally unique link?)
      * @return Is this a globally unique link?
      */
-    @ConstMethod private boolean getQualifiedName(@Ref StringBuilder sb, @Const Link start, boolean forceFullLink) {
+    private boolean getQualifiedName(StringBuilder sb, Link start, boolean forceFullLink) {
         if (isReady()) {
             return getQualifiedNameImpl(sb, start, forceFullLink);
         } else {
@@ -1238,10 +1163,10 @@ public class FrameworkElement extends Annotatable {
      * @param forceFullLink Return full link from root (even if object has shorter globally unique link?)
      * @return Is this a globally unique link?
      */
-    @ConstMethod private boolean getQualifiedNameImpl(@Ref StringBuilder sb, @Const Link start, boolean forceFullLink) {
-        @SizeT int length = 0;
+    private boolean getQualifiedNameImpl(StringBuilder sb, Link start, boolean forceFullLink) {
+        int length = 0;
         boolean abortAtLinkRoot = false;
-        for (@Const Link l = start; l.parent != null && !(abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)); l = l.parent.primary) {
+        for (Link l = start; l.parent != null && !(abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)); l = l.parent.primary) {
             abortAtLinkRoot |= (!forceFullLink) && l.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK);
             if (abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) { // if unique_link element is at the same time a link root
                 break;
@@ -1266,13 +1191,13 @@ public class FrameworkElement extends Annotatable {
      * @return Link with specified index
      * (should be called in synchronized context)
      */
-    @ConstMethod public @Ptr @Const Link getLink(@SizeT int linkIndex) {
+    public Link getLink(int linkIndex) {
         synchronized (getRegistryLock()) { // absolutely safe this way
             if (isDeleted()) {
                 return null;
             }
-            @Const Link l = primary;
-            for (@SizeT int i = 0; i < linkIndex; i++) {
+            Link l = primary;
+            for (int i = 0; i < linkIndex; i++) {
                 l = l.next;
                 if (l == null) {
                     return null;
@@ -1286,9 +1211,9 @@ public class FrameworkElement extends Annotatable {
      * same as above, but non-const
      * (should be called in synchronized context)
      */
-    private @Ptr Link getLinkInternal(@SizeT int linkIndex) {
+    private Link getLinkInternal(int linkIndex) {
         Link l = primary;
-        for (@SizeT int i = 0; i < linkIndex; i++) {
+        for (int i = 0; i < linkIndex; i++) {
             l = l.next;
             if (l == null) {
                 return null;
@@ -1301,7 +1226,7 @@ public class FrameworkElement extends Annotatable {
      * @return Number of links to this port
      * (should be called in synchronized context)
      */
-    @ConstMethod public @SizeT int getLinkCount() {
+    public int getLinkCount() {
         if (isReady()) {
             return getLinkCountHelper();
         } else {
@@ -1315,12 +1240,12 @@ public class FrameworkElement extends Annotatable {
      * @return Number of links to this port
      * (should be called in synchronized context)
      */
-    @ConstMethod private @SizeT int getLinkCountHelper() {
+    private int getLinkCountHelper() {
         if (isDeleted()) {
             return 0;
         }
-        @SizeT int i = 0;
-        for (@Const Link l = primary; l != null; l = l.next) {
+        int i = 0;
+        for (Link l = primary; l != null; l = l.next) {
             i++;
         }
         return i;
@@ -1333,7 +1258,7 @@ public class FrameworkElement extends Annotatable {
      * @param l Link to continue with
      * @param abortAtLinkRoot Abort when an alternative link root is reached?
      */
-    @ConstMethod private static void getNameHelper(@Ref StringBuilder sb, @Ptr @Const Link l, boolean abortAtLinkRoot) {
+    private static void getNameHelper(StringBuilder sb, Link l, boolean abortAtLinkRoot) {
         if (l.parent == null || (abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT))) { // runtime?
             return;
         }
@@ -1350,7 +1275,6 @@ public class FrameworkElement extends Annotatable {
      *
      * (should only be called by AbstractPort class)
      */
-    @InCppFile
     protected void publishUpdatedEdgeInfo(byte changeType, AbstractPort target) {
         if (getFlag(CoreFlags.PUBLISHED)) {
             RuntimeEnvironment.getInstance().runtimeChange(changeType, this, target);
@@ -1364,7 +1288,6 @@ public class FrameworkElement extends Annotatable {
      *
      * (should only be called by FrameworkElement class)
      */
-    @InCppFile
     protected void publishUpdatedInfo(byte changeType) {
         if (changeType == RuntimeListener.ADD || getFlag(CoreFlags.PUBLISHED)) {
             RuntimeEnvironment.getInstance().runtimeChange(changeType, this, null);
@@ -1374,7 +1297,6 @@ public class FrameworkElement extends Annotatable {
     /**
      * Initializes all unitialized framework elements created by this thread
      */
-    @InCppFile
     public static void initAll() {
         RuntimeEnvironment.getInstance().init();
     }
@@ -1404,8 +1326,7 @@ public class FrameworkElement extends Annotatable {
      * @param indent Current indentation level
      * @param output Only used in C++ for streaming
      */
-    @Virtual
-    protected void printStructure(int indent, @Ref LogStream output) {
+    protected void printStructure(int indent, LogStream output) {
 
         synchronized (getRegistryLock()) {
 
@@ -1419,10 +1340,10 @@ public class FrameworkElement extends Annotatable {
                 return;
             }
 
-            output.append(getCName()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
+            output.append(getName()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
 
             // print child element info
-            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
                 Link child = iterable.get(i);
                 if (child != null) {
@@ -1439,7 +1360,7 @@ public class FrameworkElement extends Annotatable {
      * @param other Other String
      * @return Result
      */
-    @ConstMethod public boolean nameEquals(@Const @Ref String other) {
+    public boolean nameEquals(String other) {
         if (isReady()) {
             return primary.name.equals(other);
         } else {
@@ -1452,8 +1373,7 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
-    @InCpp("return *this;") @NonVirtual
-    public @ConstMethod @Const @Ref @CppType("FrameworkElement") String getLogDescription() {
+    public String getLogDescription() {
         if (getFlag(CoreFlags.IS_RUNTIME)) {
             return "Runtime";
         } else {
@@ -1461,7 +1381,6 @@ public class FrameworkElement extends Annotatable {
         }
     }
 
-    @JavaOnly
     @Override
     public int hashCode() {
         return getHandle();
@@ -1506,9 +1425,9 @@ public class FrameworkElement extends Annotatable {
             }
 
             // evaluate children's static parameters
-            @Ptr ArrayWrapper<Link> iterable = children.getIterable();
+            ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
-                @Ptr Link child = iterable.get(i);
+                Link child = iterable.get(i);
                 if (child != null && child.isPrimaryLink() && (!child.getChild().isDeleted())) {
                     child.getChild().doStaticParameterEvaluation();
                 }
@@ -1531,7 +1450,6 @@ public class FrameworkElement extends Annotatable {
      * (This is never called when thread in surrounding thread container is running.)
      * (This must only be called with lock on runtime registry.)
      */
-    @Virtual
     protected void evaluateStaticParameters() {}
 
     /**
@@ -1541,25 +1459,6 @@ public class FrameworkElement extends Annotatable {
         ThreadLocalCache.getFast().releaseAllLocks();
     }
 
-    /*Cpp
-    // for efficient streaming of fully-qualified framework element name
-    void streamQualifiedName(std::ostream& output) const {
-        if (!getFlag(CoreFlags::IS_RUNTIME)) {
-            streamQualifiedParent(output);
-        }
-        output << getCName();
-    }
-
-    void streamQualifiedParent(std::ostream& output) const {
-        const FrameworkElement* parent = getParent();
-        if (parent != NULL && (!parent->getFlag(CoreFlags::IS_RUNTIME))) {
-            parent->streamQualifiedParent(output);
-            output << parent->getCName();
-            output << "/";
-        }
-    }
-     */
-
     /**
      * Mark element as finstructed
      * (should only be called by AdminServer and CreateModuleActions)
@@ -1567,7 +1466,6 @@ public class FrameworkElement extends Annotatable {
      * @param createAction Action with which framework element was created
      * @param params Parameters that module was created with (may be null)
      */
-    @InCppFile
     public void setFinstructed(CreateFrameworkElementAction createAction, ConstructorParameters params) {
         assert(!getFlag(CoreFlags.FINSTRUCTED));
         StaticParameterList list = StaticParameterList.getOrCreate(this);
@@ -1608,29 +1506,20 @@ public class FrameworkElement extends Annotatable {
     }
 
     /**
-     * @author max
+     * @author Max Reichardt
      *
      * Used to iterate over a framework element's children.
      */
-    @PassByValue
     public static class ChildIterator {
 
         /** Array with children */
-        @JavaOnly protected ArrayWrapper<Link> array;
+        protected ArrayWrapper<Link> array;
 
         /** next position in array */
-        @JavaOnly protected int pos;
+        protected int pos;
 
         /** FrameworkElement that is currently iterated over */
-        @Const @Ptr protected FrameworkElement curParent;
-
-        /*Cpp
-        // next element to check (in array)
-        FrameworkElement::Link* const * nextElem;
-
-        // last element in array
-        FrameworkElement::Link* const * last;
-         */
+        protected FrameworkElement curParent;
 
         /** Relevant flags */
         private int flags;
@@ -1638,8 +1527,7 @@ public class FrameworkElement extends Annotatable {
         /** Expected result when ANDing with flags */
         private int result;
 
-        @Init( {"nextElem(NULL)", "last(NULL)"})
-        public ChildIterator(@Const FrameworkElement parent) {
+        public ChildIterator(FrameworkElement parent) {
             reset(parent);
         }
 
@@ -1647,7 +1535,7 @@ public class FrameworkElement extends Annotatable {
          * @param parent Framework element over whose child to iterate
          * @param onlyReadyElements Include only children that are fully initialized?
          */
-        public ChildIterator(@Const FrameworkElement parent, boolean onlyReadyElements) {
+        public ChildIterator(FrameworkElement parent, boolean onlyReadyElements) {
             reset(parent, onlyReadyElements);
         }
 
@@ -1655,8 +1543,7 @@ public class FrameworkElement extends Annotatable {
          * @param parent Framework element over whose child to iterate
          * @param flags Flags that children must have in order to be considered
          */
-        @Init( {"nextElem(NULL)", "last(NULL)"})
-        public ChildIterator(@Const FrameworkElement parent, int flags) {
+        public ChildIterator(FrameworkElement parent, int flags) {
             reset(parent, flags);
         }
 
@@ -1665,8 +1552,7 @@ public class FrameworkElement extends Annotatable {
          * @param flags Relevant flags
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          */
-        @Init( {"nextElem(NULL)", "last(NULL)"})
-        public ChildIterator(@Const FrameworkElement parent, int flags, int result) {
+        public ChildIterator(FrameworkElement parent, int flags, int result) {
             reset(parent, flags, result);
         }
 
@@ -1676,16 +1562,14 @@ public class FrameworkElement extends Annotatable {
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          * @param onlyReadyElements Include only children that are fully initialized?
          */
-        @Init( {"nextElem(NULL)", "last(NULL)"})
-        public ChildIterator(@Const FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
+        public ChildIterator(FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
             reset(parent, flags, result, onlyReadyElements);
         }
 
         /**
          * @return Next child - or null if there are no more children left
          */
-        @NonVirtual public FrameworkElement next() {
-            // JavaOnlyBlock
+        public FrameworkElement next() {
             while (pos < array.size()) {
                 Link fe = array.get(pos);
                 if (fe != null && (fe.getChild().getAllFlags() & flags) == result) {
@@ -1694,17 +1578,6 @@ public class FrameworkElement extends Annotatable {
                 }
                 pos++;
             }
-
-            /*Cpp
-            while(nextElem <= last) {
-                FrameworkElement::Link* nex = *nextElem;
-                if (nex != NULL && (nex->getChild()->getAllFlags() & flags) == result) {
-                    nextElem++;
-                    return nex->getChild();
-                }
-                nextElem++;
-            }
-             */
 
             return null;
         }
@@ -1737,7 +1610,7 @@ public class FrameworkElement extends Annotatable {
          *
          * @param parent Framework element over whose child to iterate
          */
-        public void reset(@Const FrameworkElement parent) {
+        public void reset(FrameworkElement parent) {
             reset(parent, true);
         }
 
@@ -1747,7 +1620,7 @@ public class FrameworkElement extends Annotatable {
          *
          * @param parent Framework element over whose child to iterate
          */
-        public void reset(@Const FrameworkElement parent, boolean onlyReadyElements) {
+        public void reset(FrameworkElement parent, boolean onlyReadyElements) {
             reset(parent, 0, 0, onlyReadyElements);
         }
 
@@ -1758,7 +1631,7 @@ public class FrameworkElement extends Annotatable {
          * @param parent Framework element over whose child to iterate
          * @param flags Flags that children must have in order to be considered
          */
-        public void reset(@Const FrameworkElement parent, int flags) {
+        public void reset(FrameworkElement parent, int flags) {
             reset(parent, flags, flags);
         }
 
@@ -1770,7 +1643,7 @@ public class FrameworkElement extends Annotatable {
          * @param flags Relevant flags
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          */
-        public void reset(@Const FrameworkElement parent, int flags, int result) {
+        public void reset(FrameworkElement parent, int flags, int result) {
             reset(parent, flags, result, true);
         }
 
@@ -1783,7 +1656,7 @@ public class FrameworkElement extends Annotatable {
          * @param result Result that ANDing flags with flags must bring (allows specifying that certain flags should not be considered)
          * @param includeNonReady Include children that are not fully initialized yet?
          */
-        public void reset(@Const FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
+        public void reset(FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
             assert(parent != null);
             this.flags = flags | CoreFlags.DELETED;
             this.result = result;
@@ -1793,15 +1666,8 @@ public class FrameworkElement extends Annotatable {
             }
             curParent = parent;
 
-            // JavaOnlyBlock
             array = parent.getChildren();
             pos = 0;
-
-            /*Cpp
-            const util::ArrayWrapper<FrameworkElement::Link*>* array = parent->getChildren();
-            nextElem = array->getPointer();
-            last = (nextElem + array->size()) - 1;
-             */
         }
     }
 }

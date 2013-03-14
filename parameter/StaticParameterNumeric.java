@@ -24,27 +24,21 @@ package org.finroc.core.parameter;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Numeric Static parameter.
  */
-@JavaOnly
 public class StaticParameterNumeric<T extends Number> extends StaticParameter<CoreNumber> {
 
     /** Unit of parameter */
     private Unit unit = Unit.NO_UNIT;
 
     /** Number class */
-    @JavaOnly
     private final Class<T> numClass;
 
     /** Bounds of this parameter */
@@ -80,7 +74,6 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
     }
 
     /** Helper to get this safely during static initialization */
-    @InCpp("return rrlib::serialization::DataType<Number>();")
     public static DataTypeBase getDataType() {
         return CoreNumber.TYPE;
     }
@@ -95,8 +88,8 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
     /**
      * @return CoreNumber buffer
      */
-    private @Ptr CoreNumber getBuffer() {
-        @Ptr GenericObject go = valPointer();
+    private CoreNumber getBuffer() {
+        GenericObject go = valPointer();
         return go.<CoreNumber>getData();
     }
 
@@ -104,15 +97,12 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
      * (not real-time capable in Java)
      * @return Current value
      */
-    @InCpp( {"Number* cn = getBuffer();",
-             "return cn->value<T>();"
-            })
     public T get() {
         return getBuffer().value(numClass);
     }
 
     public void set(String newValue) throws Exception {
-        @PassByValue CoreNumber cn = new CoreNumber();
+        CoreNumber cn = new CoreNumber();
         StringInputStream sis = new StringInputStream(newValue);
         cn.deserialize(sis);
         set(cn);
@@ -122,7 +112,7 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
      * @param newValue New Value
      */
     public void set(T newValue) {
-        @PassByValue CoreNumber cn = new CoreNumber(newValue);
+        CoreNumber cn = new CoreNumber(newValue);
         set(cn);
     }
 

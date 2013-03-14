@@ -24,15 +24,6 @@ package org.finroc.core.portdatabase;
 import org.finroc.core.port.MultiTypePortDataBufferPool;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.std.PortDataManager;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Prefix;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -44,43 +35,18 @@ import org.rrlib.finroc_core_utils.rtti.TypedObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Helper class:
  * Serializes binary CoreSerializables to hex string - and vice versa.
  */
-@Prefix("s")
-@IncludeClass(RRLibSerializableImpl.class)
 public class SerializationHelper {
 
-    /*Cpp
-
-    //TODO: SFINAE check whether stream operator is implemented
-    template<typename T>
-    static void serialize(rrlib::serialization::OutputStream& os, const T* const portData2, rrlib::serialization::DataTypeBase type) {
-        os << (*portData2);
-    }
-
-    //    template<typename T>
-    //    static void serialize(OutputStreamBuffer& os, const T* const portData2, DataType* type) {
-    //      throw new RuntimeException(util::tStringBuilder("Serialization not supported for type ") + typeid(T).name());
-    //    }
-
-    //TODO: SFINAE check whether stream operator is implemented
-    template<typename T>
-    inline static void deserialize(rrlib::serialization::InputStream& is, T* portData2, rrlib::serialization::DataTypeBase type) {
-        is >> (*portData2);
-    }
-
-     */
-
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"data_types\");")
     private static final LogDomain logDomain = LogDefinitions.finrocUtil.getSubDomain("data_types");
 
     /**
@@ -90,7 +56,7 @@ public class SerializationHelper {
      * @param expected Expected data type
      * @param cs Typed object
      */
-    public static String typedStringSerialize(@Const @Ref DataTypeBase expected, @Ptr TypedObject cs) {
+    public static String typedStringSerialize(DataTypeBase expected, TypedObject cs) {
         return typedStringSerialize(expected, cs, cs.getType());
     }
 
@@ -102,7 +68,7 @@ public class SerializationHelper {
      * @param cs object
      * @param csType Type of object
      */
-    public static String typedStringSerialize(@Const @Ref DataTypeBase expected, @Ptr RRLibSerializable cs, DataTypeBase csType) {
+    public static String typedStringSerialize(DataTypeBase expected, RRLibSerializable cs, DataTypeBase csType) {
         String s = Serialization.serialize(cs);
         if (expected != csType) {
             return "\\(" + csType.getName() + ")" + s;
@@ -118,7 +84,7 @@ public class SerializationHelper {
      * @param s String to deserialize from
      * @return Data type (null - if type is not available in this runtime)
      */
-    public static DataTypeBase getTypedStringDataType(@Const @Ref DataTypeBase expected, @Const @Ref String s) {
+    public static DataTypeBase getTypedStringDataType(DataTypeBase expected, String s) {
         if (s.startsWith("\\(")) {
             String st = s.substring(2, s.indexOf(")"));
             DataTypeBase dt = DataTypeBase.findType(st);
@@ -134,7 +100,7 @@ public class SerializationHelper {
      * @param cs buffer
      * @param s String to deserialize from
      */
-    public static void typedStringDeserialize(@Ptr RRLibSerializable cs, @Const @Ref String s) throws Exception {
+    public static void typedStringDeserialize(RRLibSerializable cs, String s) throws Exception {
         String s2 = s;
         if (s2.startsWith("\\(")) {
             s2 = s2.substring(s2.indexOf(")") + 1);
@@ -151,7 +117,7 @@ public class SerializationHelper {
      * @param s String to deserialize from
      * @return Typed object
      */
-    public static GenericObject typedStringDeserialize(@Const @Ref DataTypeBase expected, @Ptr MultiTypePortDataBufferPool bufferPool, @Const @Ref String s) throws Exception {
+    public static GenericObject typedStringDeserialize(DataTypeBase expected, MultiTypePortDataBufferPool bufferPool, String s) throws Exception {
         DataTypeBase type = getTypedStringDataType(expected, s);
         String s2 = s;
         if (s2.startsWith("\\(")) {
@@ -177,7 +143,6 @@ public class SerializationHelper {
      * @param result Object to copy to (a new one is created if null)
      * @return Object which was copied to
      */
-    @JavaOnly
     @SuppressWarnings( { "unchecked", "rawtypes" })
     public synchronized static <T extends RRLibSerializable> T deepCopy(T src, T result) {
         try {
@@ -212,7 +177,7 @@ public class SerializationHelper {
      * @param to Object to write (may be null)
      * @param enc Data encoding to use
      */
-    public static void writeObject(OutputStreamBuffer os, DataTypeBase portType, @Const GenericObject to, Serialization.DataEncoding enc) {
+    public static void writeObject(OutputStreamBuffer os, DataTypeBase portType, GenericObject to, Serialization.DataEncoding enc) {
         if (to == null) {
             os.writeType(null);
             return;
@@ -236,14 +201,13 @@ public class SerializationHelper {
      * @param enc Data type encoding to use
      * @return Buffer with read object (caller needs to take care of deleting it)
      */
-    public static GenericObject readObject(InputStreamBuffer is, DataTypeBase expectedType, @VoidPtr @CppDefault("NULL") Object factoryParameter, Serialization.DataEncoding enc) {
+    public static GenericObject readObject(InputStreamBuffer is, DataTypeBase expectedType, Object factoryParameter, Serialization.DataEncoding enc) {
         //readSkipOffset();
         DataTypeBase dt = is.readType();
         if (dt == null) {
             return null;
         }
 
-        //JavaOnlyBlock
         if (expectedType != null && (!dt.isConvertibleTo(expectedType))) {
             dt = expectedType; // fix to cope with mca2 legacy blackboards
         }

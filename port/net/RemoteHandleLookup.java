@@ -22,15 +22,12 @@
 package org.finroc.core.port.net;
 
 import org.finroc.core.FrameworkElement;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Lookup for remote handles
  */
-@Ptr @JavaOnly
 public interface RemoteHandleLookup {
 
     /**

@@ -22,17 +22,13 @@
 package org.finroc.core.port.net;
 
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * get notified on changes to default minimum network update times
  */
-@Ptr @Inline @NoCpp
 public interface UpdateTimeChangeListener {
 
     /**
@@ -43,7 +39,6 @@ public interface UpdateTimeChangeListener {
      */
     public void updateTimeChanged(DataTypeBase dt, short newUpdateTime);
 
-    @Ptr @Inline @NoCpp
     class Manager extends ListenerManager<DataTypeBase, Object, UpdateTimeChangeListener, Manager> {
 
         @Override

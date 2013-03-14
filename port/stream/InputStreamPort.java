@@ -28,9 +28,6 @@ import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.port.std.PublishCache;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -38,7 +35,7 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is a port that provides an input stream to it's user
  * and to the outside.
@@ -49,7 +46,6 @@ import org.rrlib.finroc_core_utils.rtti.GenericObject;
 public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
     /** Special Port class to load value when initialized */
-    @AtFront
     protected static class PortImpl<T extends ChunkedBuffer> extends PortBase {
 
         /**
@@ -64,7 +60,6 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
         private NewConnectionHandler connHandler;
 
-        @InCppFile
         public PortImpl(PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
             super(processPci(pci));
             this.user = user;
@@ -72,7 +67,7 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
         }
 
         @SuppressWarnings("unchecked")
-        @Override @InCppFile
+        @Override
         protected void nonStandardAssign(PublishCache pc) {
             if (user == null || processPacket((T)pc.curRef.getData().getData())) {
                 super.nonStandardAssign(pc); // enqueue
@@ -110,7 +105,6 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
     }
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"stream_ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     public InputStreamPort(String name, PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {

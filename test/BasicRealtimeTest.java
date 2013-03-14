@@ -27,11 +27,10 @@ import org.finroc.core.port.cc.PortNumeric;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.finroc_core_utils.jc.AtomicInt64;
 import org.rrlib.finroc_core_utils.jc.Time;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * A basic real-time test.
  *
@@ -50,8 +49,8 @@ public class BasicRealtimeTest extends Thread {
 
         RuntimeEnvironment.getInstance();
 
-        @SharedPtr BasicRealtimeTest rt = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("RT-Thread"));
-        @SharedPtr BasicRealtimeTest t = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("non-RT-Thread"));
+        BasicRealtimeTest rt = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("RT-Thread"));
+        BasicRealtimeTest t = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("non-RT-Thread"));
         ThreadUtil.makeThreadRealtime(rt);
         rt.start();
         t.start();

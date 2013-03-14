@@ -21,44 +21,32 @@
  */
 package org.finroc.core.portdatabase;
 
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.container.ReusableTL;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Reusable GenericObjectManager
  */
-@Inline @NoCpp
 public class ReusableGenericObjectManagerTL extends ReusableTL implements GenericObjectManager {
 
     /** Managed object */
-    @JavaOnly
     private GenericObject managedObject;
 
     @Override
-    @JavaOnly
     public GenericObject getObject() {
         return managedObject;
     }
 
     @Override
-    @JavaOnly
     public void setObject(GenericObject managedObject) {
         assert(this.managedObject == null);
         this.managedObject = managedObject;
         ReusableGenericObjectManager.managerLookup.put(managedObject.getData(), this);
     }
 
-    @JavaOnly
     public void delete() {
         ReusableGenericObjectManager.managerLookup.remove(getObject().getData());
         super.delete();
@@ -66,12 +54,8 @@ public class ReusableGenericObjectManagerTL extends ReusableTL implements Generi
 
     @Override
     protected void deleteThis() {
-        //Cpp this->~ReusableGenericObjectManagerTL();
-        //Cpp delete _M_getObject();
     }
 
-    @ConstMethod
-    @InCpp("return util::StringBuilder(getObject()->getType().getName()) + \" (\" + getObject()->getRawDataPtr() + \")\";")
     public String getContentString() {
         return getObject() != null && getObject().getData() != null ? (getObject().getType().getName() + ": " + getObject().getData().toString()) : "null content";
     }
@@ -83,8 +67,7 @@ public class ReusableGenericObjectManagerTL extends ReusableTL implements Generi
      * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
      * @return Manager for port data
      */
-    @JavaOnly
-    public static <T> ReusableGenericObjectManagerTL getManager(@SharedPtr @Ref T data) {
+    public static <T> ReusableGenericObjectManagerTL getManager(T data) {
         return (ReusableGenericObjectManagerTL)ReusableGenericObjectManager.managerLookup.get(data);
     }
 }

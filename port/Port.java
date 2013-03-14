@@ -36,29 +36,12 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RValueRef;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This Port class is used in applications.
  * It kind of provides the API for PortBase backend, which it wraps.
@@ -66,55 +49,24 @@ import org.rrlib.finroc_core_utils.serialization.Serialization;
  *
  * In C++ code for correct casting is generated.
  */
-@Include( {"PortTypeMap.h", "PortUtil.h", "PortQueueFragment.h"})
-@IncludeClass( {PortWrapperBase.class})
-@Inline @NoCpp @RawTypeArgs
-//@Superclass2({"PortWrapperBase<typename PortTypeMap<T>::PortBaseType>"})
-@Superclass2( {"PortParent<T>"})
-@HAppend( {
-    "extern template class Port<int>;",
-    "extern template class Port<long long int>;",
-    "extern template class Port<float>;",
-    "extern template class Port<double>;",
-    "extern template class Port<Number>;",
-    "extern template class Port<CoreString>;",
-    "extern template class Port<bool>;",
-    "extern template class Port<EnumValue>;",
-    "extern template class Port<rrlib::serialization::MemoryBuffer>;"
-})
 public class Port<T extends RRLibSerializable> extends PortWrapperBase {
 
     /** Does port have "cheap-copy" type? */
-    @JavaOnly boolean ccType;
-
-    /*Cpp
-
-    // typedefs
-    typedef PortDataPtr<T> DataPtr;
-    typedef typename PortTypeMap<T>::PortBaseType PortBaseType;
-    using PortWrapperBase<PortBaseType>::wrapped;
-     */
+    boolean ccType;
 
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
     public Port(PortCreationInfo pci) {
-
-        //JavaOnlyBlock
         ccType = FinrocTypeInfo.isCCType(pci.dataType);
         wrapped = ccType ? new CCPortBase(processPci(pci)) : new PortBase(processPci(pci));
-
-        //Cpp wrapped = new PortBaseType(processPci(pci));
     }
 
-    //Cpp template <typename Q = T>
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public Port(PortCreationInfo pci, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> bounds) {
-
-        //JavaOnlyBlock
+    public Port(PortCreationInfo pci, Bounds<T> bounds) {
         if (RuntimeSettings.useCCPorts()) {
             assert(pci.dataType == CoreNumber.TYPE);
             ccType = true;
@@ -123,8 +75,6 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
             ccType = false;
             wrapped = new PortBase(processPci(pci)); // no bounds... however, this mode is only active in GUI and finstruct where we should not need this feature
         }
-
-        //Cpp wrapped = new typename PortTypeMap<T>::BoundedPortBaseType(processPci(pci), bounds);
     }
 
     /**
@@ -132,7 +82,6 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @param parent Parent
      * @param outputPort Output port? (or rather input port)
      */
-    @InCpp("wrapped = new PortBaseType(processPci(PortCreationInfo(name, parent, outputPort ? PortFlags::OUTPUT_PORT : PortFlags::INPUT_PORT)));")
     Port(String name, FrameworkElement parent, boolean outputPort) {
         this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
     }
@@ -157,7 +106,6 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
     /**
      * @return Does port have "cheap copy" (CC) type?
      */
-    @InCpp("return typeutil::IsCCType<T>::value; // compile-time constant") @Inline
     public boolean hasCCType() {
         return ccType;
     }
@@ -169,9 +117,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * be cleared prior to using. Using this method with CC-types is not required and less
      * efficient than publishing values directly (factor 2, shouldn't matter usually).
      */
-    @SuppressWarnings("unchecked") @NonVirtual
-    @InCpp("return PortUtil<T>::getUnusedBuffer(wrapped);")
-    @Inline public @CustomPtr("tPortDataPtr") T getUnusedBuffer() {
+    @SuppressWarnings("unchecked")
+    public T getUnusedBuffer() {
         if (hasCCType()) {
             return (T)ThreadLocalCache.getFast().getUnusedBuffer(getDataType()).getObject().getData();
         } else {
@@ -186,9 +133,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * (in Java lock will need to be released manually, in C++ tPortDataPtr takes care of this)
      * (Using get with parameter T& is more efficient when using CC types - shouldn't matter usually)
      */
-    @InCpp("return PortUtil<T>::getValueWithLock(wrapped);")
     @SuppressWarnings("unchecked")
-    public @Const @CustomPtr("tPortDataPtr") T get() {
+    public T get() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getInInterThreadContainer().getObject().getData();
         } else {
@@ -204,8 +150,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @param result Buffer to (deep) copy port's current value to
      * (Using this get()-variant is more efficient when using CC types, but can be extremely costly with large data types)
      */
-    @InCpp("return PortUtil<T>::getValue(wrapped, result);") @Inline
-    public @Const void get(@Ref T result) {
+    public void get(T result) {
         if (hasCCType()) {
             ((CCPortBase)wrapped).getRawT((RRLibSerializable)result);
         } else {
@@ -215,7 +160,6 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         }
     }
 
-    @JavaOnly
     /**
      * Gets Port's current value
      * (only available with numbers and cc types)
@@ -231,9 +175,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @return current auto-locked Port data (unlock with getThreadLocalCache.releaseAllLocks())
      */
-    @InCpp("return PortUtil<T>::getAutoLocked(wrapped);")
     @SuppressWarnings("unchecked")
-    public @Const @Inline @Ptr T getAutoLocked() {
+    public T getAutoLocked() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getAutoLockedRaw().getData();
         } else {
@@ -245,9 +188,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @return Buffer with default value. Can be used to change default value
      * for port. However, this should be done before the port is used.
      */
-    @InCpp( {"rrlib::serialization::GenericObject* go = wrapped->getDefaultBufferRaw();", "return go->getData<T>();"})
     @SuppressWarnings("unchecked")
-    public @Ptr T getDefaultBuffer() {
+    public T getDefaultBuffer() {
         assert(!isReady()) : "please set default value _before_ initializing port";
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getDefaultBufferRaw().getData();
@@ -262,8 +204,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @param t new default
      */
-    @InCpp( {"assert (!this->isReady() && \"please set default value _before_ initializing port\");", "PortUtil<T>::setDefault(wrapped, t);"})
-    public void setDefault(@Const @Ref T t) {
+    public void setDefault(T t) {
         assert(!isReady()) : "please set default value _before_ initializing port";
         if (hasCCType()) {
             GenericObject go = ((CCPortBase)wrapped).getDefaultBufferRaw();
@@ -288,8 +229,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @return Pulled locked data
      */
     @SuppressWarnings("unchecked")
-    @InCpp("return PortUtil<T>::getPull(wrapped, intermediateAssign);")
-    public @Const @CustomPtr("tPortDataPtr") T getPull(boolean intermediateAssign) {
+    public T getPull(boolean intermediateAssign) {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).getPullInInterthreadContainerRaw(intermediateAssign, false).getObject().getData();
         } else {
@@ -297,20 +237,9 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         }
     }
 
-    /*Cpp
-    void addPortListener(PortListener<PortDataPtr<const T> >* listener) {
-        wrapped->addPortListenerRaw(listener);
-    }
-
-    void addPortListener(PortListener<>* listener) {
-        wrapped->addPortListenerRaw(listener);
-    }
-     */
-
     /**
      * @param listener Listener to add
      */
-    @InCpp("wrapped->addPortListenerRaw(listener);")
     public void addPortListener(PortListener<T> listener) {
         if (hasCCType()) {
             ((CCPortBase)wrapped).addPortListenerRaw(listener);
@@ -319,41 +248,9 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         }
     }
 
-    /*Cpp
-
-    // Publish Data Buffer. This data will be forwarded to any connected ports.
-    // Should only be called on output ports.
-    //
-    // \param data Data to publish. It will be deep-copied.
-    // This publish()-variant is efficient when using CC types, but can be extremely costly with large data types)
-    inline void publish(const T& data) {
-        PortUtil<T>::copyAndPublish(wrapped, data);
-    }
-
-    inline void publish(PortDataPtr<T>&& data)
-    {
-      PortUtil<T>::publish(wrapped, data);
-    }
-
-    inline void publish(PortDataPtr<T>& data)
-    {
-      PortUtil<T>::publish(wrapped, data);
-    }
-
-    inline void publish(PortDataPtr<const T>& data)
-    {
-      PortUtil<T>::publish(wrapped, data);
-    }
-
-    void removePortListener(PortListener<PortDataPtr<const T> >* listener) {
-        wrapped->removePortListenerRaw(listener);
-    }
-     */
-
     /**
      * @param listener Listener to add
      */
-    @InCpp("wrapped->removePortListenerRaw(listener);")
     public void removePortListener(PortListener<T> listener) {
         if (hasCCType()) {
             ((CCPortBase)wrapped).removePortListenerRaw(listener);
@@ -367,8 +264,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @param fragment Fragment to store all dequeued values in
      */
-    @InCpp("fragment.dequeueFromPort(wrapped);")
-    public void dequeueAll(@Ref PortQueueFragment<T> fragment) {
+    public void dequeueAll(PortQueueFragment<T> fragment) {
         fragment.cc = hasCCType();
         if (hasCCType()) {
             ((CCPortBase)wrapped).dequeueAllRaw(fragment.wrappedCC);
@@ -387,9 +283,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @return Dequeued first/oldest element in queue
      */
-    @InCpp("return PortUtil<T>::dequeueSingle(wrapped);")
     @SuppressWarnings("unchecked")
-    public @Const @CustomPtr("tPortDataPtr") T dequeueSingle() {
+    public T dequeueSingle() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).dequeueSingleUnsafeRaw().getObject().getData();
         } else {
@@ -408,8 +303,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * (Using this dequeueSingle()-variant is more efficient when using CC types, but can be extremely costly with large data types)
      * @return true if element was dequeued - false if queue was empty
      */
-    @InCpp("return PortUtil<T>::dequeueSingle(wrapped, result);")
-    public boolean dequeueSingle(@Ref T result) {
+    public boolean dequeueSingle(T result) {
         if (hasCCType()) {
             CCPortDataManager mgr = ((CCPortBase)wrapped).dequeueSingleUnsafeRaw();
             if (mgr != null) {
@@ -439,9 +333,8 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @return Dequeued first/oldest element in queue
      */
-    @InCpp("return PortUtil<T>::dequeueSingleAutoLocked(wrapped);")
     @SuppressWarnings("unchecked")
-    @Const public @Ptr T dequeueSingleAutoLocked() {
+    public T dequeueSingleAutoLocked() {
         if (hasCCType()) {
             return (T)((CCPortBase)wrapped).dequeueSingleAutoLockedRaw().getData();
         } else {
@@ -449,51 +342,14 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         }
     }
 
-//    /**
-//     * @param pullRequestHandler Object that handles pull requests - null if there is none (typical case)
-//     */
-//    public void setPullRequestHandler(PullRequestHandler pullRequestHandler) {
-//        wrapped.setPullRequestHandler(pullRequestHandler);
-//    }
-
-//    /**
-//     * Does port (still) have this value?
-//     * (calling this is only safe, when pd is locked)
-//     *
-//     * @param pd Port value
-//     * @return Answer
-//     */
-//    @InCpp("return getHelper(PortUtil<T>::publish(wrapped));")
-//    @ConstMethod public boolean valueIs(@Const @Ptr T pd) {
-//        if (hasCCType()) {
-//            return ((CCPortBase)wrapped).valueIs(pd);
-//        } else {
-//            return ((PortBase)wrapped).valueIs(pd);
-//        }
-//    }
-//
-//    /*Cpp
-//    boolean valueIs(std::shared_ptr<const T>& pd) const {
-//        return valueIs(pd._get());
-//    }
-//
-//    boolean valueIs(const T& pd) const {
-//        return value
-//    }
-//     */
-
-    //Cpp template <typename Q = T>
     /**
      * @return Bounds as they are currently set
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    @InCpp("return PortUtil<T>::getBounds(wrapped);")
-    @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type")
-    @Const @ConstMethod public Bounds<T> getBounds() {
+    public Bounds<T> getBounds() {
         return ((CCPortBoundedNumeric)wrapped).getBounds();
     }
 
-    //Cpp template <typename Q = T>
     /**
      * Set new bounds
      * (This is not thread-safe and must only be done in "pause mode")
@@ -501,8 +357,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @param b New Bounds
      */
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    @InCpp("PortUtil<T>::setBounds(wrapped, b);")
-    public void setBounds(@Const @Ref @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") Bounds<T> b) {
+    public void setBounds(Bounds<T> b) {
         ((CCPortBoundedNumeric)wrapped).setBounds(b);
     }
 
@@ -513,8 +368,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @param data Data buffer acquired from a port using getUnusedBuffer (or locked data received from another port)
      */
-    @InCpp("PortUtil<T>::publish(wrapped, data);")
-    @Inline public void publish(@RValueRef @CustomPtr("tPortDataPtr") @Const @Ref T data) {
+    public void publish(T data) {
         if (hasCCType()) {
             CCPortDataManagerTL mgr = (CCPortDataManagerTL)CCPortDataManagerTL.getManager(data);
             if (mgr == null) {
@@ -534,9 +388,5 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
                 throw new RuntimeException("You should acquire buffers to publish large data with getUnusedBuffer()");
             }
         }
-
-//        /*Cpp
-//        assert((!data->IsUnused()) || data.is_unique() && "It is not permitted to hold another pointer to data that is yet to be published");
-//         */
     }
 }

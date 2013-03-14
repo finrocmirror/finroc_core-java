@@ -31,19 +31,12 @@ import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortGroup;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Group Interface Port Vector
  */
-@IncludeClass(ConstructorCreateModuleAction.class)
-//@Include("plugin/FunctionCreateModuleAction.h")
 public class GroupInterface extends PortGroup {
 
     /** Classifies data in this interface */
@@ -56,13 +49,11 @@ public class GroupInterface extends PortGroup {
     private StaticParameter<PortCreationList> ports = new StaticParameter<PortCreationList>("Ports", PortCreationList.TYPE);
 
     /** CreateModuleAction */
-    @SuppressWarnings("unused") @PassByValue
     private static final StandardCreateModuleAction<GroupInterface> CREATE_ACTION =
         new StandardCreateModuleAction<GroupInterface>("Default Interface", GroupInterface.class);
 
     /** CreateModuleAction */
-    @CppType("ConstructorCreateModuleAction<GroupInterface, GroupInterface::DataClassification, GroupInterface::PortDirection, bool, bool>")
-    @SuppressWarnings("unused") @PassByValue
+    @SuppressWarnings("unused")
     private static final ConstructorCreateModuleAction COMPLEX_CREATE_ACTION =
         new ConstructorCreateModuleAction("Interface", GroupInterface.class, "Data classification, Port direction, Shared?, Unique Links");
 
@@ -72,7 +63,7 @@ public class GroupInterface extends PortGroup {
      * @param name Interface name
      * @param parent Parent element
      */
-    public GroupInterface(FrameworkElement parent, @Const @Ref String name) {
+    public GroupInterface(FrameworkElement parent, String name) {
         super(parent, name, EdgeAggregator.IS_INTERFACE, 0);
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
@@ -89,7 +80,7 @@ public class GroupInterface extends PortGroup {
      * @param uniqueLink Do ports habe globally unique link
      * @return flags for these parameters
      */
-    public GroupInterface(FrameworkElement parent, @Const @Ref String name, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
+    public GroupInterface(FrameworkElement parent, String name, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
         super(parent, name, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);

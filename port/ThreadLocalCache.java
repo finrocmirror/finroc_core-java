@@ -43,23 +43,7 @@ import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.thread.CoreThread;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.AutoDeleter;
 import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
-import org.rrlib.finroc_core_utils.jc.GarbageCollector;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
@@ -74,7 +58,7 @@ import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Various (cached) information that exists for every thread.
  * This class should reside on a thread's stack and is passed
@@ -84,16 +68,6 @@ import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
  *
  * Obviously, this class is somewhat critical for overall performance.
  */
-@Friend(RuntimeEnvironment.class)
-@CppPrepend( {/*"std::shared_ptr<SimpleList<ThreadLocalCache*>* ThreadLocalCache::infos;",*/
-    "// This 'lock' ensures that Thread info is deallocated after last ThreadLocalCache",
-    "util::ThreadInfoLock threadInfoLock = util::Thread::getThreadInfoLock();",
-    "// This 'lock' ensures that static AutoDeleter instance is deallocated after last ThreadLocalCache",
-    "std::shared_ptr<util::AutoDeleter> auto_deleter_lock(util::AutoDeleter::_M_getStaticInstance());",
-    "util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> ThreadLocalCache::info;"
-})
-@Ptr
-@IncludeClass( {GarbageCollector.class, MethodCall.class, PullCall.class, AutoDeleter.class})
 public class ThreadLocalCache extends LogUser {
 
     // maybe TODO: reuse old ThreadLocalInfo objects for other threads - well - would cause a lot of "Verschnitt"
@@ -125,34 +99,29 @@ public class ThreadLocalCache extends LogUser {
     public final ReusablesPool<CCPortQueueElement> ccpqFragments = new ReusablesPool<CCPortQueueElement>();
 
     /** Thread Local buffer that can be used temporarily from anywhere for dequeue operations */
-    @JavaOnly
-    public final @Ptr PortQueueFragmentRaw tempFragment = new PortQueueFragmentRaw();
+    public final PortQueueFragmentRaw tempFragment = new PortQueueFragmentRaw();
 
     /** Thread Local buffer that can be used temporarily from anywhere for dequeue operations */
-    @JavaOnly
-    public final @Ptr CCQueueFragmentRaw tempCCFragment = new CCQueueFragmentRaw();
+    public final CCQueueFragmentRaw tempCCFragment = new CCQueueFragmentRaw();
 
     /** CoreInput for Input packet processor */
-    @PassByValue public final InputStreamBuffer inputPacketProcessor = new InputStreamBuffer();
+    public final InputStreamBuffer inputPacketProcessor = new InputStreamBuffer();
 
     /** Object to gain fast access to the thread local information */
-    @InCpp("static util::FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache, util::GarbageCollector::Functor> info;")
     private static final FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache> info =
         new FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache>();
 
     /** List with all ThreadLocalInfo objects... necessary for cleaning up... is deleted with last thread */
-    @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
-    private static /*final*/ @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infos;
+    private static SimpleListWithMutex<WeakReference<ThreadLocalCache>> infos;
 
     /** Lock to above - for every cache */
-    @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
-    private final @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
+    private final SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
 
     /** object to help synchronize method calls - lazily initialized */
-    private @Ptr MethodCallSyncher methodSyncher;
+    private MethodCallSyncher methodSyncher;
 
     /** Uid of thread - unique and constant for runtime of program */
-    @Const private final int threadUid;
+    private final int threadUid;
 
     /** Object to retrieve uids from */
     private static AtomicInt threadUidCounter = new AtomicInt(1);
@@ -167,10 +136,9 @@ public class ThreadLocalCache extends LogUser {
     public final long threadId;
 
     /** Port Register - we need to have this for clean thread cleanup */
-    @Const @SharedPtr public final CoreRegister<AbstractPort> portRegister;
+    public final CoreRegister<AbstractPort> portRegister;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"thread_local_cache\");")
     protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_local_cache");
 
     private ThreadLocalCache(/*@SizeT int index*/) {
@@ -182,15 +150,14 @@ public class ThreadLocalCache extends LogUser {
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
     }
 
-    @InCppFile
-    public @Ptr MethodCallSyncher getMethodSyncher() {
+    public MethodCallSyncher getMethodSyncher() {
         if (methodSyncher == null) {
             methodSyncher = MethodCallSyncher.getFreeInstance(this);
         }
         return methodSyncher;
     }
 
-    @JavaOnly protected void finalize() {
+    protected void finalize() {
         finalDelete();
     }
 
@@ -207,7 +174,7 @@ public class ThreadLocalCache extends LogUser {
         }
 
         /** Delete local port data buffer pools */
-        for (@SizeT int i = 0; i < ccTypePools.length; i++) {
+        for (int i = 0; i < ccTypePools.length; i++) {
             if (ccTypePools[i] != null) {
                 ccTypePools[i].controlledDelete();
             }
@@ -220,7 +187,7 @@ public class ThreadLocalCache extends LogUser {
 
         /** Transfer ownership of remaining port data to ports */
         synchronized (infos) { // big lock - to make sure no ports are deleted at the same time which would result in a mess (note that CCPortBase desctructor has synchronized operation on infos)
-            for (@SizeT int i = 0; i < lastWrittenToPort.length; i++) {
+            for (int i = 0; i < lastWrittenToPort.length; i++) {
                 if (lastWrittenToPort[i] != null) {
 
                     // this is safe, because we locked runtime (even the case if managedDelete has already been called - because destructor needs runtime lock and unregisters)
@@ -230,35 +197,16 @@ public class ThreadLocalCache extends LogUser {
         }
     }
 
-    /*Cpp
-    virtual ~ThreadLocalCache() {
-        {
-            util::Lock l(infos);
-            ThreadLocalCache* tmp = this; // to cleanly remove const modifier
-            infos->removeElem(tmp);
-        }
-
-        finalDelete();
-    }
-     */
-
-
-    public static @SharedPtr @CppType("util::SimpleListWithMutex<ThreadLocalCache*>") SimpleListWithMutex<WeakReference<ThreadLocalCache>> staticInit() {
-        //JavaOnlyBlock
+    public static SimpleListWithMutex<WeakReference<ThreadLocalCache>> staticInit() {
         infos = new SimpleListWithMutex<WeakReference<ThreadLocalCache>>(LockOrderLevels.INNER_MOST - 100);
-
-        //Cpp infos._reset(new util::SimpleListWithMutex<ThreadLocalCache*>(LockOrderLevels::INNER_MOST - 100));
-
         return infos;
     }
 
     /**
      * @return Thread local information
      */
-    @Inline
     public static ThreadLocalCache get() {
 
-        // JavaOnlyBlock
         Thread t;
         boolean b = ((t = Thread.currentThread()) instanceof CoreThread);
         if (b) {
@@ -272,14 +220,7 @@ public class ThreadLocalCache extends LogUser {
         if (tli == null) {
             synchronized (infos) {
                 tli = new ThreadLocalCache(/*infos.size()/*Thread.currentThread()*/);
-
-                // JavaOnlyBlock
                 infos.add(new WeakReference<ThreadLocalCache>(tli));
-
-                /*Cpp
-                infos->add(tli);
-                 */
-
                 info.set(tli);
             }
         }
@@ -293,10 +234,7 @@ public class ThreadLocalCache extends LogUser {
      *
      * @return Thread local information
      */
-    @Inline
     public static ThreadLocalCache getFast() {
-
-        // JavaOnlyBlock
         Thread t;
         boolean b = ((t = Thread.currentThread()) instanceof CoreThread);
         if (b) {
@@ -326,11 +264,7 @@ public class ThreadLocalCache extends LogUser {
         assert(portIndex >= 0 && portIndex <= CoreRegister.MAX_ELEMENTS);
         synchronized (infos) {
             for (int i = 0, n = infos.size(); i < n; i++) {
-
-                @InCpp("ThreadLocalCache* tli = infos->get(i);")
-                final @Ptr ThreadLocalCache tli = infos.get(i).get();
-
-                //JavaOnlyBlock
+                final ThreadLocalCache tli = infos.get(i).get();
                 if (tli == null) {
                     infos.remove(i);
                     i--;
@@ -353,16 +287,14 @@ public class ThreadLocalCache extends LogUser {
         return getCCPool(ccTypeIndex).getUnusedBuffer();
     }
 
-    public CCPortDataManagerTL getUnusedBuffer(@Const @Ref DataTypeBase dataType) {
+    public CCPortDataManagerTL getUnusedBuffer(DataTypeBase dataType) {
         return getCCPool(dataType).getUnusedBuffer();
     }
 
-    @Inline
-    private CCPortDataBufferPool getCCPool(@Const @Ref DataTypeBase dataType) {
+    private CCPortDataBufferPool getCCPool(DataTypeBase dataType) {
         return getCCPool(FinrocTypeInfo.get(dataType).getCCIndex());
     }
 
-    @Inline
     private CCPortDataBufferPool getCCPool(short ccTypeIndex) {
         assert(ccTypeIndex >= 0);
         CCPortDataBufferPool pool = ccTypePools[ccTypeIndex];
@@ -372,14 +304,12 @@ public class ThreadLocalCache extends LogUser {
         return pool;
     }
 
-    @InCppFile
-    private CCPortDataBufferPool createCCPool(@Const @Ref DataTypeBase dataType, short uid) {
+    private CCPortDataBufferPool createCCPool(DataTypeBase dataType, short uid) {
         CCPortDataBufferPool pool = new CCPortDataBufferPool(dataType, 10); // create 10 buffers by default
         ccTypePools[uid] = pool;
         return pool;
     }
 
-    @Inline
     public PortQueueElement getUnusedPortQueueFragment() {
         PortQueueElement pf = pqFragments.getUnused();
         if (pf == null) {
@@ -389,7 +319,6 @@ public class ThreadLocalCache extends LogUser {
         return pf;
     }
 
-    @Inline
     public CCPortQueueElement getUnusedCCPortQueueFragment() {
         CCPortQueueElement pf = ccpqFragments.getUnused();
         if (pf == null) {
@@ -402,7 +331,6 @@ public class ThreadLocalCache extends LogUser {
         return pf;
     }
 
-    @Inline
     public MethodCall getUnusedMethodCall() {
         MethodCall pf = methodCalls.getUnused();
         if (pf == null) {
@@ -412,20 +340,18 @@ public class ThreadLocalCache extends LogUser {
         return pf;
     }
 
-    @InCppFile
     private MethodCall createMethodCall() {
         MethodCall result = new MethodCall();
         methodCalls.attach(result, false);
         return result;
     }
 
-    public CCPortDataManager getUnusedInterThreadBuffer(@Const @Ref DataTypeBase dataType) {
+    public CCPortDataManager getUnusedInterThreadBuffer(DataTypeBase dataType) {
         CCPortDataManager buf = getCCPool(dataType).getUnusedInterThreadBuffer();
         //System.out.println("Getting unused interthread buffer: " + buf.hashCode());
         return buf;
     }
 
-    @Inline
     public PullCall getUnusedPullCall() {
         PullCall pf = pullCalls.getUnused();
         if (pf == null) {
@@ -436,7 +362,6 @@ public class ThreadLocalCache extends LogUser {
         return pf;
     }
 
-    @InCppFile
     private PullCall createPullCall() {
         PullCall result = new PullCall();
         pullCalls.attach(result, false);
@@ -450,7 +375,7 @@ public class ThreadLocalCache extends LogUser {
      * @param obj Object
      */
     public void addAutoLock(GenericObject obj) {
-        @Ptr GenericObjectManager mgr = obj.getManager();
+        GenericObjectManager mgr = obj.getManager();
         if (FinrocTypeInfo.isCCType(obj.getType())) {
             if (mgr instanceof CCPortDataManager) {
                 addAutoLock((CCPortDataManager)mgr);
@@ -500,22 +425,21 @@ public class ThreadLocalCache extends LogUser {
      * Releases locks on objects that have been auto-locked and possibly recycle them
      */
     public void releaseAllLocks() {
-        for (@SizeT int i = 0, n = autoLocks.size(); i < n; i++) {
+        for (int i = 0, n = autoLocks.size(); i < n; i++) {
             autoLocks.get(i).getCurReference().getRefCounter().releaseLock();
         }
         autoLocks.clear();
-        for (@SizeT int i = 0, n = ccAutoLocks.size(); i < n; i++) {
+        for (int i = 0, n = ccAutoLocks.size(); i < n; i++) {
             ccAutoLocks.get(i).releaseLock();
         }
         ccAutoLocks.clear();
-        for (@SizeT int i = 0, n = ccInterAutoLocks.size(); i < n; i++) {
+        for (int i = 0, n = ccInterAutoLocks.size(); i < n; i++) {
             ccInterAutoLocks.get(i).recycle2();
         }
         ccInterAutoLocks.clear();
     }
 
     // Check queue for whether they contain duplicate elements
-    @JavaOnly
     public void checkQueuesForDuplicates() {
         //ccpqFragments.checkForD
     }
@@ -525,7 +449,6 @@ public class ThreadLocalCache extends LogUser {
      *
      * (should only be called by CCPortDataBufferPool)
      */
-    @CppType("util::SimpleListWithMutex<ThreadLocalCache*>") @SharedPtr
     public SimpleListWithMutex<WeakReference<ThreadLocalCache>> getInfosLock() {
         return infosLock;
     }

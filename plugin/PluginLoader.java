@@ -21,15 +21,13 @@
  */
 package org.finroc.core.plugin;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * A class that loads the plugins it can find.
  */
-@JavaOnly
 public interface PluginLoader {
 
     /**
@@ -40,10 +38,8 @@ public interface PluginLoader {
     /**
      * @return Plugin class loader
      */
-    @JavaOnly
     public ClassLoader getClassLoader();
 
-    @JavaOnly
     /**
      * @param c Class to find jar file of
      * @return Returns jar file that class is in - or class will be in, when compiled

@@ -22,21 +22,15 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreBoolean;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Boolean Static parameter.
  */
-@Inline @NoCpp @JavaOnly
 public class StaticParameterBool extends StaticParameter<CoreBoolean> {
 
-    @JavaOnly
     public StaticParameterBool(String name) {
         this(name, false, false);
     }
@@ -49,7 +43,6 @@ public class StaticParameterBool extends StaticParameter<CoreBoolean> {
     }
 
     /** Helper to get this safely during static initialization */
-    @InCpp("return rrlib::serialization::DataType<Boolean>();")
     public static DataTypeBase getDataType() {
         return CoreBoolean.TYPE;
     }

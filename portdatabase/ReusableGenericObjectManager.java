@@ -23,48 +23,35 @@ package org.finroc.core.portdatabase;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Reusable GenericObjectManager
  */
-@Inline @NoCpp
 public abstract class ReusableGenericObjectManager extends Reusable implements GenericObjectManager {
 
     /** Managed object */
-    @JavaOnly
     private GenericObject managedObject;
 
     /** Lookup in Java to get manager from managed object */
-    @JavaOnly
     static final ConcurrentHashMap<Object, GenericObjectManager> managerLookup = new ConcurrentHashMap<Object, GenericObjectManager>();
 
     @Override
-    @JavaOnly
     public GenericObject getObject() {
         return managedObject;
     }
 
     @Override
-    @JavaOnly
     public void setObject(GenericObject managedObject) {
         assert(this.managedObject == null);
         this.managedObject = managedObject;
         managerLookup.put(managedObject.getData(), this);
     }
 
-    @JavaOnly
     public void delete() {
         managerLookup.remove(getObject().getData());
         super.delete();
@@ -72,12 +59,8 @@ public abstract class ReusableGenericObjectManager extends Reusable implements G
 
     @Override
     protected void deleteThis() {
-        //Cpp this->~ReusableGenericObjectManager();
-        //Cpp delete _M_getObject();
     }
 
-    @ConstMethod
-    @InCpp("return util::StringBuilder(getObject()->getType().getName()) + \" (\" + getObject()->getRawDataPtr() + \")\";")
     public String getContentString() {
         return getObject() != null && getObject().getData() != null ? (getObject().getType().getName() + ": " + getObject().getData().toString()) : "null content";
     }
@@ -89,8 +72,7 @@ public abstract class ReusableGenericObjectManager extends Reusable implements G
      * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
      * @return Manager for port data
      */
-    @JavaOnly
-    public static <T> GenericObjectManager getManager(@SharedPtr @Ref T data) {
+    public static <T> GenericObjectManager getManager(T data) {
         return managerLookup.get(data);
     }
 
@@ -102,6 +84,5 @@ public abstract class ReusableGenericObjectManager extends Reusable implements G
     /**
      * @return Does generic object have a lock?
      */
-    @JavaOnly
     public abstract boolean genericHasLock();
 }

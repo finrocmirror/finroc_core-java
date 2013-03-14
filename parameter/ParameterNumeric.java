@@ -30,136 +30,83 @@ import org.finroc.core.port.PortListener;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataManagerTL;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoOuterClass;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Parameter template class for numeric types
  */
-@IncludeClass(Parameter.class)
-@PassByValue @Superclass2("ParameterBase<T>")
-@HAppend( {
-    "extern template class ParameterNumeric<int>;",
-    "extern template class ParameterNumeric<long long int>;",
-    "extern template class ParameterNumeric<float>;",
-    "extern template class ParameterNumeric<double>;"
-})
 public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
-
-    //Cpp using PortWrapperBase<CCPortBase>::logDomain;
 
     /**
      * Caches numeric value of parameter port (optimization)
      */
-    @AtFront @Superclass2("PortListener<T>") @NoOuterClass
     class NumberCache implements PortListener<CoreNumber> {
 
         /** Cached current value (we will much more often read than it will be changed) */
         public volatile T currentValue;
 
-        @Init("currentValue(0)")
         public NumberCache() {
         }
 
         @SuppressWarnings("unchecked")
-        @Override @JavaOnly
+        @Override
         public void portChanged(AbstractPort origin, CoreNumber value) {
             Unit u = ((CCPortBase)wrapped).getUnit();
             if (u != value.getUnit()) {
                 double val = value.getUnit().convertTo(value.doubleValue(), u);
-
-                //JavaOnlyBlock
                 currentValue = (T)new Double(val);
-
-                //Cpp currentValue = (T)val;
             } else {
-
-                //JavaOnlyBlock
                 currentValue = (T)value;
-
-                //Cpp currentValue = value->value<T>();
             }
         }
-
-        /*Cpp
-        virtual void portChanged(AbstractPort* origin, const T& value) {
-            currentValue = value;
-        }
-         */
     }
 
     /** Number cache instance used for this parameter */
-    @SharedPtr public NumberCache cache = new NumberCache();
+    public NumberCache cache = new NumberCache();
 
-    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref String configEntry) {
+    public ParameterNumeric(String name, FrameworkElement parent, String configEntry) {
         super(name, parent, configEntry, CoreNumber.TYPE);
         this.addPortListener(cache);
     }
 
-    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Unit u, @Const @Ref String configEntry) {
+    public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Unit u, String configEntry) {
         super(name, parent, getDefaultValue(defaultValue), u, configEntry, CoreNumber.TYPE);
         cache.currentValue = defaultValue;
         this.addPortListener(cache);
     }
 
-    @JavaOnly
-    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b) {
+    public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds<T> b) {
         this(name, parent, defaultValue, b, Unit.NO_UNIT, "");
     }
 
-    @JavaOnly
-    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, Bounds<T> b, Unit u) {
+    public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds<T> b, Unit u) {
         this(name, parent, defaultValue, b, u, "");
     }
 
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
-    public ParameterNumeric(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("Bounds<T>") Bounds b, Unit u, @Const @Ref String configEntry) {
+    public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds b, Unit u, String configEntry) {
         super(name, parent, getDefaultValue(defaultValue), b, u, configEntry, CoreNumber.TYPE);
-        @InCpp("T d = defaultValue;")
         double d = defaultValue.doubleValue();
         if (b.inBounds(d)) {
-
-            //JavaOnlyBlock
             setDefault(new CoreNumber(defaultValue, u));
-
-            //Cpp this->setDefault(defaultValue);
         } else {
             logDomain.log(LogLevel.LL_DEBUG_WARNING, getLogDescription(), "Default value is out of bounds");
-
-            //JavaOnlyBlock
             setDefault(new CoreNumber(b.toBounds(d), u));
-
-            //Cpp this->setDefault(defaultValue);
         }
         cache.currentValue = defaultValue;
         this.addPortListener(cache);
     }
 
-    @InCpp("return defaultValue;")
-    private static @CppType("T") CoreNumber getDefaultValue(@CppType("T") Number defaultValue) {
+    private static CoreNumber getDefaultValue(Number defaultValue) {
         return new CoreNumber(defaultValue);
     }
 
     /**
      * @return Current parameter value
      */
-    @ConstMethod
     public T getValue() {
         return cache.currentValue;
     }

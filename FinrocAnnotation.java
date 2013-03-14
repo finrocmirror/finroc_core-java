@@ -22,36 +22,26 @@
 package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.TypedObjectImpl;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Base class for all finroc element annotations.
  *
  * If annotation should be available over the net (e.g. in finstruct),
  * the serialization methods need to be overridden.
  */
-@Friend( {FrameworkElement.class, Annotatable.class})
-@Include( {"rrlib/serialization/TypedObject.h", "rrlib/serialization/StlContainerSuitable.h"})
-@Superclass2( {"rrlib::serialization::TypedObject", "rrlib::serialization::StlUnsuitable", "rrlib::serialization::NoSharedPtrListType"})
 public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */
     FinrocAnnotation nextAnnotation;
 
     /** Object that is annotated - null if annotation is not attached to an object yet */
-    @Ptr Annotatable annotated;
+    Annotatable annotated;
 
     /**
      * Add another annotation to framework element
@@ -88,7 +78,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
     /**
      * @return Object that is annotated - null if annotation is not attached to an object yet
      */
-    public @Ptr Annotatable getAnnotated() {
+    public Annotatable getAnnotated() {
         return annotated;
     }
 
@@ -106,13 +96,13 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
      * Called when annotated object is initialized
      * (supposed to be overridden)
      */
-    @Virtual protected void annotatedObjectInitialized() {}
+    protected void annotatedObjectInitialized() {}
 
     /**
      * Called when annotated object is about to be deleted
      * (supposed to be overridden)
      */
-    @Virtual protected void annotatedObjectToBeDeleted() {}
+    protected void annotatedObjectToBeDeleted() {}
 
     /**
      * Searches for parent with annotation of specified type
@@ -121,7 +111,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
      * @param type Data Type
      * @return Annotation of first parent that has one - or null
      */
-    protected static FinrocAnnotation findParentWithAnnotation(FrameworkElement fe, @Const @Ref DataTypeBase type) {
+    protected static FinrocAnnotation findParentWithAnnotation(FrameworkElement fe, DataTypeBase type) {
         FinrocAnnotation ann = fe.getAnnotation(type);
         if (ann != null) {
             return ann;

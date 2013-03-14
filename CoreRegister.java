@@ -23,13 +23,10 @@ package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.IntArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is a very efficient lookup table.
  * It manages handles for Framework elements.
@@ -43,7 +40,6 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
  *
  * Current format of handle is <1 bit sign><15 bit uid at index><16 bit index>
  */
-@DefaultType("finroc::util::Object*")
 public class CoreRegister<T> {
 
     /** Maximum number of elements */
@@ -62,7 +58,7 @@ public class CoreRegister<T> {
     public final static int UID_SHIFT = RuntimeSettings.getMaxCoreRegisterIndexBits();
 
     /** Sign of handles... either 0 or 0x80000000 */
-    @Const private final int sign;
+    private final int sign;
 
     /** Element handle that is used next */
     private int currentElementIndex = 0;
@@ -93,7 +89,7 @@ public class CoreRegister<T> {
      * @param elem Element to add
      * @return Handle of element. This handle can be used to retrieve it later.
      */
-    synchronized int add(@Const T elem) {
+    synchronized int add(T elem) {
 
         if (elemCount >= MAX_ELEMENTS) {
             throw new RuntimeException("Register full");
@@ -155,7 +151,7 @@ public class CoreRegister<T> {
      * @param index Raw Index of element
      * @return Element
      */
-    @ConstMethod public T getByRawIndex(int index) {
+    public T getByRawIndex(int index) {
         return elements.get(index);
     }
 

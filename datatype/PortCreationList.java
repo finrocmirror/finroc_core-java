@@ -30,21 +30,6 @@ import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.rpc.InterfacePort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Struct;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -58,16 +43,12 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * List of ports to create.
  * Is only meant to be used in StaticParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
-@Include( {"rrlib/serialization/Serializable.h", "rrlib/serialization/StlContainerSuitable.h"})
-@Superclass2( {"rrlib::serialization::Serializable", "rrlib::serialization::StlUnsuitable"})
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::PortCreationList>;"})
 public class PortCreationList extends RRLibSerializableImpl {
 
     /** Relevant flags for comparison */
@@ -77,13 +58,11 @@ public class PortCreationList extends RRLibSerializableImpl {
     public final static DataTypeBase TYPE = new DataType<PortCreationList>(PortCreationList.class);
 
     /** Log domain for edges */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_creation_list\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_creation_list");
 
     /**
      * Entry in list
      */
-    @Struct @PassByValue @AtFront
     public static class Entry {
 
         /** Port name */
@@ -95,7 +74,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         /** Output port? */
         public boolean outputPort;
 
-        public Entry(@Const @Ref String name, @Const @Ref String type, boolean outputPort) {
+        public Entry(String name, String type, boolean outputPort) {
             this.name = name;
             StringInputStream sis = new StringInputStream(type);
             this.type.deserialize(sis);
@@ -141,20 +120,20 @@ public class PortCreationList extends RRLibSerializableImpl {
             int size = list.size();
             os.writeInt(size);
             for (int i = 0; i < size; i++) {
-                @Const @Ref Entry e = list.get(i);
+                Entry e = list.get(i);
                 os.writeString(e.name);
                 os.writeString(e.type.toString());
                 os.writeBoolean(e.outputPort);
             }
         } else {
             synchronized (ioVector) {
-                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int size = ports.size();
                 os.writeInt(size);
                 for (int i = 0; i < size; i++) {
                     AbstractPort p = ports.get(i);
-                    os.writeString(p.getCName());
+                    os.writeString(p.getName());
                     os.writeString(p.getDataType().getName());
                     os.writeBoolean(p.isOutputPort());
                 }
@@ -168,7 +147,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param elem Framework Element
      * @param result List containing result
      */
-    private static void getPorts(@Const FrameworkElement elem, @Ref SimpleList<AbstractPort> result) {
+    private static void getPorts(FrameworkElement elem, SimpleList<AbstractPort> result) {
         result.clear();
         FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(elem, false);
         AbstractPort ap = null;
@@ -181,18 +160,18 @@ public class PortCreationList extends RRLibSerializableImpl {
     public void deserialize(InputStreamBuffer is) {
         if (ioVector == null) {
             showOutputPortSelection = is.readBoolean();
-            @SizeT int size = is.readInt();
+            int size = is.readInt();
             list.clear();
-            for (@SizeT int i = 0; i < size; i++) {
+            for (int i = 0; i < size; i++) {
                 list.add(new Entry(is.readString(), is.readString(), is.readBoolean()));
             }
         } else {
             synchronized (ioVector) {
                 showOutputPortSelection = is.readBoolean();
-                @SizeT int size = is.readInt();
-                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                int size = is.readInt();
+                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
                 getPorts(ioVector, ports);
-                for (@SizeT int i = 0; i < size; i++) {
+                for (int i = 0; i < size; i++) {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
                     String name = is.readString();
                     String dtName = is.readString();
@@ -203,7 +182,7 @@ public class PortCreationList extends RRLibSerializableImpl {
                     boolean output = is.readBoolean();
                     checkPort(ap, ioVector, flags, name, dt, output, null);
                 }
-                for (@SizeT int i = size; i < ports.size(); i++) {
+                for (int i = size; i < ports.size(); i++) {
                     ports.get(i).managedDelete();
                 }
             }
@@ -221,7 +200,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param output output port
      * @param prototype Port prototype (only interesting for listener)
      */
-    private void checkPort(@Managed AbstractPort ap, FrameworkElement ioVector, int flags, @Const @Ref String name, DataTypeBase dt, boolean output, AbstractPort prototype) {
+    private void checkPort(AbstractPort ap, FrameworkElement ioVector, int flags, String name, DataTypeBase dt, boolean output, AbstractPort prototype) {
         if (ap != null && ap.nameEquals(name) && ap.getDataType() == dt && (ap.getAllFlags() & RELEVANT_FLAGS) == (flags & RELEVANT_FLAGS)) {
             if ((!showOutputPortSelection) || (output == ap.isOutputPort())) {
                 return;
@@ -264,17 +243,17 @@ public class PortCreationList extends RRLibSerializableImpl {
      */
     public void applyChanges(FrameworkElement ioVector, int flags) {
         synchronized (ioVector) {
-            @PassByValue SimpleList<AbstractPort> ports1 = new SimpleList<AbstractPort>();
+            SimpleList<AbstractPort> ports1 = new SimpleList<AbstractPort>();
             getPorts(this.ioVector, ports1);
-            @PassByValue SimpleList<AbstractPort> ports2 = new SimpleList<AbstractPort>();
+            SimpleList<AbstractPort> ports2 = new SimpleList<AbstractPort>();
             getPorts(ioVector, ports2);
 
-            for (@SizeT int i = 0; i < ports1.size(); i++) {
+            for (int i = 0; i < ports1.size(); i++) {
                 AbstractPort ap1 = ports1.get(i);
                 AbstractPort ap2 = i < ports2.size() ? ports2.get(i) : null;
                 checkPort(ap2, ioVector, flags, ap1.getName(), ap1.getDataType(), ap1.isOutputPort(), ap1);
             }
-            for (@SizeT int i = ports1.size(); i < ports2.size(); i++) {
+            for (int i = ports1.size(); i < ports2.size(); i++) {
                 ports2.get(i).managedDelete();
             }
         }
@@ -286,21 +265,21 @@ public class PortCreationList extends RRLibSerializableImpl {
         if (ioVector == null) {
             int size = list.size();
             for (int i = 0; i < size; i++) {
-                @Ref XMLNode child = node.addChildNode("port");
-                @Const @Ref Entry e = list.get(i);
+                XMLNode child = node.addChildNode("port");
+                Entry e = list.get(i);
                 child.setAttribute("name", e.name);
                 child.setAttribute("type", e.type.toString());
                 child.setAttribute("output", e.outputPort);
             }
         } else {
             synchronized (ioVector) {
-                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int size = ports.size();
                 for (int i = 0; i < size; i++) {
                     AbstractPort p = ports.get(i);
-                    @Ref XMLNode child = node.addChildNode("port");
-                    child.setAttribute("name", p.getCName());
+                    XMLNode child = node.addChildNode("port");
+                    child.setAttribute("name", p.getName());
                     child.setAttribute("type", p.getDataType().getName());
                     if (showOutputPortSelection) {
                         child.setAttribute("output", p.isOutputPort());
@@ -322,9 +301,9 @@ public class PortCreationList extends RRLibSerializableImpl {
         } else {
             assert(ioVector != null) : "Only available on local systems";
             synchronized (ioVector) {
-                @PassByValue SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
                 getPorts(ioVector, ports);
-                @SizeT int i = 0;
+                int i = 0;
                 for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
                     String portName = port.get().getName();
@@ -354,7 +333,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param dt Data type
      * @param output Output port? (possibly irrelevant)
      */
-    public void add(@Const @Ref String name, DataTypeBase dt, boolean output) {
+    public void add(String name, DataTypeBase dt, boolean output) {
         synchronized (ioVector) {
             checkPort(null, ioVector, flags, name, dt, output, null);
         }
@@ -363,7 +342,7 @@ public class PortCreationList extends RRLibSerializableImpl {
     /**
      * @return (Local) change listener
      */
-    @ConstMethod public Listener getListener() {
+    public Listener getListener() {
         return listener;
     }
 
@@ -377,7 +356,7 @@ public class PortCreationList extends RRLibSerializableImpl {
     /**
      * @return size of list
      */
-    @ConstMethod public int getSize() {
+    public int getSize() {
         return ioVector == null ? list.size() : ioVector.childCount();
     }
 
@@ -387,7 +366,6 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param index Index
      * @return List entry
      */
-    @JavaOnly
     public Entry getEntry(int index) {
         return list.get(index);
     }
@@ -398,7 +376,6 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param index Index
      * @return List entry
      */
-    @JavaOnly
     public Entry addElement() {
         Entry e = new Entry("Port" + list.size(), CoreNumber.TYPE.getName(), false);
         list.add(e);
@@ -410,7 +387,6 @@ public class PortCreationList extends RRLibSerializableImpl {
      *
      * @param index Index of List entry to remove
      */
-    @JavaOnly
     public void removeElement(int index) {
         list.remove(index);
     }
@@ -418,7 +394,6 @@ public class PortCreationList extends RRLibSerializableImpl {
     /**
      * Callback interface for changes to ports
      */
-    @Ptr @AtFront
     public interface Listener {
 
         /**

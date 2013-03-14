@@ -24,20 +24,13 @@ package org.finroc.core.plugin;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Classes that implement this interface provide a generic method for
  * creating modules.
  */
-@Ptr
-@Include("<dlfcn.h>")
 public interface CreateFrameworkElementAction {
 
     /**
@@ -48,30 +41,20 @@ public interface CreateFrameworkElementAction {
      * @param params Parameters
      * @return Created Module (or Group)
      */
-    @ConstMethod public FrameworkElement createModule(FrameworkElement parent, String name, @CppDefault("NULL") ConstructorParameters params) throws Exception;
+    public FrameworkElement createModule(FrameworkElement parent, String name, ConstructorParameters params) throws Exception;
 
     /**
      * @return Returns types of parameters that the create method requires
      */
-    @ConstMethod @Const @Ptr public StaticParameterList getParameterTypes();
+    public StaticParameterList getParameterTypes();
 
     /**
      * @return Returns name of group to which this create module action belongs
      */
-    @ConstMethod public String getModuleGroup();
+    public String getModuleGroup();
 
     /**
      * @return Name of module type to be created
      */
-    @ConstMethod public String getName();
-
-    /*Cpp
-    // returns .so file in which address provided as argument is found by dladdr
-    util::String getBinary(void* addr) {
-        _Dl_info info;
-        _dladdr(addr, &info);
-        util::String tmp(info.dli_fname);
-        return tmp.substring(tmp.lastIndexOf("/") + 1);
-    }
-     */
+    public String getName();
 }

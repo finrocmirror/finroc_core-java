@@ -26,7 +26,7 @@ import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Tests concurrent operation of ChunkedBuffer
  */

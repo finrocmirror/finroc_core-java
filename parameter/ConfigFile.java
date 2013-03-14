@@ -28,17 +28,6 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.rrlib.finroc_core_utils.jc.Files;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -53,12 +42,10 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
 import org.xml.sax.InputSource;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Configuration File. Is a tree of nodes with values as leafs
  */
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ConfigFile>;"})
 public class ConfigFile extends FinrocAnnotation implements FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Data Type */
@@ -80,7 +67,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     private static final String XML_LEAF_NAME = "value";
 
     /** Log domain */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(edgeLog, \"parameter\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
 
     /** Temp buffer - only used in synchronized context */
@@ -120,7 +106,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param file File name of configuration file (loaded if it exists already)
      * @param remoteFile Remote file - should be true (is only used to distinguish from standard constructor)
      */
-    @JavaOnly
     public ConfigFile(String filename, boolean remoteFile) throws Exception {
         this.filename = filename;
         wrapped = null;
@@ -220,7 +205,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param entry Entry
      * @return Answer
      */
-    public boolean hasEntry(@Const @Ref String entry) {
+    public boolean hasEntry(String entry) {
         try {
             getEntry(entry, false);
             return true;
@@ -238,18 +223,16 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param create (Re)create entry node?
      * @return XMLNode representing entry
      */
-    public @Ref XMLNode getEntry(@Const @Ref String entry, @CppDefault("false") boolean create) {
+    public XMLNode getEntry(String entry, boolean create) {
         SimpleList<String> nodes = new SimpleList<String>();
         nodes.addAll(entry.split(SEPARATOR));
-        @SizeT int idx = (nodes.size() > 0 && nodes.get(0).length() == 0) ? 1 : 0; // if entry starts with '/', skip first empty string
-        @InCpp("rrlib::xml2::XMLNode::iterator current = &wrapped.getRootNode();")
-        @Ptr XMLNode current = wrapped.getRootNode();
-        @InCpp("rrlib::xml2::XMLNode::iterator parent = current;")
-        @Ptr XMLNode parent = current;
+        int idx = (nodes.size() > 0 && nodes.get(0).length() == 0) ? 1 : 0; // if entry starts with '/', skip first empty string
+        XMLNode current = wrapped.getRootNode();
+        XMLNode parent = current;
         boolean created = false;
         while (idx < nodes.size()) {
             boolean found = false;
-            for (@CppType("rrlib::xml2::XMLNode::iterator") XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
+            for (XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
                 if (XML_BRANCH_NAME.equals(child.get().getName()) || XML_LEAF_NAME.equals(child.get().getName())) {
                     try {
                         if (nodes.get(idx).equals(child.get().getStringAttribute("name"))) {
@@ -295,7 +278,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param entry the entry in the config file to be searched
      * @return string value of entry if present, empty string otherwise
      */
-    public String getStringEntry(@Const @Ref String entry) {
+    public String getStringEntry(String entry) {
         if (this.hasEntry(entry)) {
             try {
                 return getEntry(entry, false).getTextContent();
@@ -310,7 +293,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     /**
      * @return Root node of config file
      */
-    @JavaOnly
     public XMLNode getRootNode() {
         return wrapped.getRootNode();
     }
@@ -318,7 +300,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     /**
      * @return Filename of current config file
      */
-    @ConstMethod
     public String getFilename() {
         return filename;
     }
@@ -329,15 +310,11 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         os.writeString(getFilename());
 
         try {
-
-            //JavaOnlyBlock
             if (wrapped == null) {
                 os.writeString("");
             } else {
                 os.writeString(wrapped.getXMLDump(true));
             }
-
-            //Cpp os.writeString(wrapped.getRootNode().getXMLDump());
         } catch (XML2WrapperException e) {
             logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
         } catch (Exception e) {
@@ -374,11 +351,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             }
 
             try {
-
-                //JavaOnlyBlock
                 wrapped = new XMLDocument(new InputSource(new StringReader(content)), false);
-
-                //Cpp wrapped = rrlib::xml2::XMLDocument(content.getCString(), content.length() + 1);
             } catch (Exception e) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
             }
@@ -390,7 +363,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      *
      * @return Is config file active (does it "exist")?
      */
-    @ConstMethod
     public boolean isActive() {
         return active;
     }
@@ -401,7 +373,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @param filename new filename (if it differs, this will clear contents of xml document)
      * @param active Is this config file active?
      */
-    @JavaOnly
     public void setRemoteStatus(String filename, boolean active) {
         this.active = active;
         if (filename.equals(this.filename)) {

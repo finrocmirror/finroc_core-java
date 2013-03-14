@@ -24,31 +24,22 @@ package org.finroc.core.thread;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Annotation for framework elements that can be started and paused (via finstruct)
  */
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::ExecutionControl>;"})
 public class ExecutionControl extends FinrocAnnotation {
 
     /** Data Type */
     public static DataTypeBase TYPE = new DataType<ExecutionControl>(ExecutionControl.class);
 
     /** Wrapped StartAndPausable */
-    public final @Ptr StartAndPausable implementation;
+    public final StartAndPausable implementation;
 
     public ExecutionControl(StartAndPausable implementation) {
         this.implementation = implementation;
@@ -98,9 +89,9 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param fe Framework element that is root of subtree to search for execution controls
      */
     public static void startAll(FrameworkElement fe) {
-        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
         findAll(ecs, fe);
-        for (@SizeT int i = 0; i < ecs.size(); i++) {
+        for (int i = 0; i < ecs.size(); i++) {
             if (!ecs.get(i).isRunning()) {
                 ecs.get(i).start();
             }
@@ -113,9 +104,9 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param fe Framework element that is root of subtree to search for execution controls
      */
     public static void pauseAll(FrameworkElement fe) {
-        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
         findAll(ecs, fe);
-        for (@SizeT int i = 0; i < ecs.size(); i++) {
+        for (int i = 0; i < ecs.size(); i++) {
             if (ecs.get(i).isRunning()) {
                 ecs.get(i).pause();
             }
@@ -128,15 +119,14 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param result Result buffer for list of execution controls (controls are added to list)
      * @param elementHandle Framework element that is root of subtree to search for execution controls
      */
-    public static void findAll(@Ref SimpleList<ExecutionControl> result, FrameworkElement fe) {
+    public static void findAll(SimpleList<ExecutionControl> result, FrameworkElement fe) {
         if (fe != null && (fe.isReady())) {
-            @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+            FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
             filter.traverseElementTree(fe, new FindCallback(), result);
         }
     }
 
     /** Helper class for findAllBelow */
-    @AtFront @PassByValue
     static class FindCallback implements FrameworkElementTreeFilter.Callback<SimpleList<ExecutionControl>> {
 
         @Override

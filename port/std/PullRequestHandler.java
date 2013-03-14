@@ -21,15 +21,11 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Can be used to handle pull requests of - typically - output ports
  */
-@Ptr
 public interface PullRequestHandler {
 
     /**
@@ -40,6 +36,6 @@ public interface PullRequestHandler {
      * @param intermediateAssign Assign pulled value to ports in between?
      * @return PortData to answer request with (with one additional lock) - or null if pull should be handled by port (now)
      */
-    public @Const PortDataManager pullRequest(PortBase origin, byte addLocks, boolean intermediateAssign);
+    public PortDataManager pullRequest(PortBase origin, byte addLocks, boolean intermediateAssign);
 
 }

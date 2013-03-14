@@ -21,48 +21,38 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SkipArgs;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 
 /** Base class for server implementation of interface */
-@Inline @NoCpp
 public class InterfaceServerPort extends InterfacePort {
 
     /** Handler that will handle method calls */
-    private @Ptr AbstractMethodCallHandler handler = null;
+    private AbstractMethodCallHandler handler = null;
 
-    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+    public InterfaceServerPort(String name, FrameworkElement parent, DataTypeBase type) {
         super(name, parent, type, Type.Server);
     }
 
-    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, @CppDefault("0") int customFlags) {
+    public InterfaceServerPort(String name, FrameworkElement parent, DataTypeBase type, AbstractMethodCallHandler ch, int customFlags) {
         super(name, parent, type, Type.Server, customFlags);
         setCallHandler(ch);
     }
 
-    public InterfaceServerPort(String name, FrameworkElement parent, @Const @Ref DataTypeBase type, @Ptr AbstractMethodCallHandler ch, int customFlags, int lockLevel) {
+    public InterfaceServerPort(String name, FrameworkElement parent, DataTypeBase type, AbstractMethodCallHandler ch, int customFlags, int lockLevel) {
         super(name, parent, type, Type.Server, customFlags, lockLevel);
         setCallHandler(ch);
     }
 
-    protected void setCallHandler(@Ptr AbstractMethodCallHandler handler) {
+    protected void setCallHandler(AbstractMethodCallHandler handler) {
         this.handler = handler;
     }
 
     /**
      * @return Handler that will handle method calls
      */
-    public @Ptr AbstractMethodCallHandler getHandler() {
+    public AbstractMethodCallHandler getHandler() {
         return handler;
     }
 
@@ -73,9 +63,7 @@ public class InterfaceServerPort extends InterfacePort {
      * @param dt Data type of object to get buffer of
      * @return Unused buffer of type
      */
-    @SkipArgs("1")
-    @InCpp("return getBufferForCall<T>(dt);")
-    public @CustomPtr("tPortDataPtr") <T> T getBufferForReturn(@CppDefault("NULL") @Const @Ref DataTypeBase dt) {
+    public <T> T getBufferForReturn(DataTypeBase dt) {
         return getBufferForCall(dt);
     }
 

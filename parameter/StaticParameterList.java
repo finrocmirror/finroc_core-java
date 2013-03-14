@@ -26,14 +26,6 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataType;
@@ -42,19 +34,16 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * List of static parameters
  */
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::StaticParameterList>;"})
 public class StaticParameterList extends FinrocAnnotation implements HasDestructor {
 
     /** Data Type */
     public final static DataType<StaticParameterList> TYPE = new DataType<StaticParameterList>(StaticParameterList.class);
 
     /** List of parameters */
-    @PassByValue
     private SimpleList<StaticParameterBase> parameters = new SimpleList<StaticParameterBase>();
 
     /**
@@ -64,13 +53,11 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     private int createAction = -1;
 
     /** Empty parameter list */
-    @PassByValue
     public static final StaticParameterList EMPTY = new StaticParameterList();
 
     public StaticParameterList() {}
 
-    @JavaOnly
-    public StaticParameterList(@Ptr StaticParameterBase... params) {
+    public StaticParameterList(StaticParameterBase... params) {
         for (StaticParameterBase param : params) {
             add(param);
         }
@@ -92,7 +79,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     public void serialize(OutputStreamBuffer os) {
         os.writeInt(createAction);
         os.writeInt(parameters.size());
-        for (@SizeT int i = 0; i < parameters.size(); i++) {
+        for (int i = 0; i < parameters.size(); i++) {
             parameters.get(i).serialize(os);
         }
     }
@@ -105,7 +92,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
             createAction = is.readInt();
             clear();
             int newSize = is.readInt();
-            for (@SizeT int i = 0; i < newSize; i++) {
+            for (int i = 0; i < newSize; i++) {
                 StaticParameterBase param = new StaticParameterBase();
                 param.deserialize(is);
                 add(param);
@@ -118,7 +105,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
                 throw new RuntimeException("Invalid action id or parameter number");
             }
             FrameworkElement ann = (FrameworkElement)getAnnotated();
-            for (@SizeT int i = 0; i < parameters.size(); i++) {
+            for (int i = 0; i < parameters.size(); i++) {
                 StaticParameterBase param = parameters.get(i);
                 param.deserialize(is);
             }
@@ -129,7 +116,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     /**
      * @return size of list
      */
-    @ConstMethod @SizeT public int size() {
+    public int size() {
         return parameters.size();
     }
 
@@ -137,7 +124,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
      * @param i Index
      * @return Parameter with specified index
      */
-    @ConstMethod public @Ptr StaticParameterBase get(int i) {
+    public StaticParameterBase get(int i) {
         return parameters.get(i);
     }
 
@@ -147,11 +134,11 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
      *
      * @return Cloned list
      */
-    @ConstMethod public ConstructorParameters instantiate() {
+    public ConstructorParameters instantiate() {
         ConstructorParameters cp = new ConstructorParameters();
         StaticParameterList c = cp;
         c.createAction = createAction;
-        for (@SizeT int i = 0; i < parameters.size(); i++) {
+        for (int i = 0; i < parameters.size(); i++) {
             StaticParameterBase p = parameters.get(i);
             c.add(p.deepCopy());
         }
@@ -174,7 +161,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     /**
      * @return Index of CreateModuleAction that was used to create framework element
      */
-    @ConstMethod public int getCreateAction() {
+    public int getCreateAction() {
         return createAction;
     }
 
@@ -208,8 +195,8 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
 
     // currently only used in FinstructableGroup
     public void serialize(XMLNode node, boolean finstructContext) throws Exception {
-        for (@SizeT int i = 0; i < size(); i++) {
-            @Ref XMLNode child = node.addChildNode("parameter");
+        for (int i = 0; i < size(); i++) {
+            XMLNode child = node.addChildNode("parameter");
             StaticParameterBase param = get(i);
             child.setAttribute("name", param.getName());
             param.serialize(child, finstructContext);
@@ -223,7 +210,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
 
     // currently only used in FinstructableGroup
     public void deserialize(XMLNode node, boolean finstructContext) throws Exception {
-        @SizeT int numberOfChildren = node.childCount();
+        int numberOfChildren = node.childCount();
         if (numberOfChildren != size()) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
         }

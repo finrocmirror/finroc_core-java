@@ -22,16 +22,11 @@
 package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Abstract base class for classes that can be annotated with
  * an arbitrary number of FinrocAnnotations.
@@ -49,7 +44,7 @@ public class Annotatable extends LogUser implements HasDestructor {
      *
      * @param ann Annotation
      */
-    public synchronized void addAnnotation(@Managed FinrocAnnotation ann) {
+    public synchronized void addAnnotation(FinrocAnnotation ann) {
         if (ann.getType() == null) {
             ann.initDataType();
             assert(ann.getType() != null) : "Initializing data type failed";
@@ -63,21 +58,13 @@ public class Annotatable extends LogUser implements HasDestructor {
         }
     }
 
-    /*Cpp
-    //! Convenience method for below
-    template <typename A>
-    A* getAnnotation() {
-        return static_cast<A*>(getAnnotation(rrlib::serialization::DataType<A>()));
-    }
-     */
-
     /**
      * Get annotation of specified type
      *
      * @param type Data type of annotation we're looking for
      * @return Annotation. Null if framework element has no annotation of this type.
      */
-    public FinrocAnnotation getAnnotation(@Const @Ref DataTypeBase dt) {
+    public FinrocAnnotation getAnnotation(DataTypeBase dt) {
         FinrocAnnotation ann = firstAnnotation;
         while (ann != null) {
             if (ann.getType() == dt) {
@@ -94,7 +81,6 @@ public class Annotatable extends LogUser implements HasDestructor {
      * @param c Data type of annotation we're looking for
      */
     @SuppressWarnings("unchecked")
-    @JavaOnly
     public <C extends FinrocAnnotation> C getAnnotation(Class<C> c) {
         FinrocAnnotation ann = firstAnnotation;
         while (ann != null) {
@@ -113,7 +99,7 @@ public class Annotatable extends LogUser implements HasDestructor {
         // delete annotations
         FinrocAnnotation a = firstAnnotation;
         while (a != null) {
-            @Ptr FinrocAnnotation tmp = a;
+            FinrocAnnotation tmp = a;
             a = a.nextAnnotation;
             tmp.delete();
         }

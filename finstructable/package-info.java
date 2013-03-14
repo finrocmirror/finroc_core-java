@@ -20,14 +20,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-@Namespace("finroc::core")
-@CppLocation("core/finstructable")
 
 /**
  * This package contains framework elements that can be created via finstruct.
  */
 package org.finroc.core.finstructable;
-
-import org.rrlib.finroc_core_utils.jc.annotation.CppLocation;
-import org.rrlib.finroc_core_utils.jc.annotation.Namespace;
-

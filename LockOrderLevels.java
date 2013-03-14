@@ -22,7 +22,7 @@
 package org.finroc.core;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Lock order level constants for different types of classes
  */

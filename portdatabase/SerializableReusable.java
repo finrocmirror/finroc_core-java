@@ -21,13 +21,6 @@
  */
 package org.finroc.core.portdatabase;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
@@ -36,11 +29,10 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
 import org.rrlib.finroc_core_utils.xml.XMLNode;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the base class for some classes that are both Serializable and Reusable
  */
-@NoCpp
 public abstract class SerializableReusable extends Reusable implements RRLibSerializable {
 
     /**
@@ -48,7 +40,7 @@ public abstract class SerializableReusable extends Reusable implements RRLibSeri
      *
      * (may be overridden by subclasses to perform custom cleanup)
      */
-    @Virtual public void genericRecycle() {
+    public void genericRecycle() {
         //responsibleThread = -1;
         super.recycle();
     }
@@ -58,8 +50,8 @@ public abstract class SerializableReusable extends Reusable implements RRLibSeri
      *
      * @param os String output stream
      */
-    @Override @InCppFile @Virtual @ConstMethod @JavaOnly
-    public void serialize(@Ref StringOutputStream os) {
+    @Override
+    public void serialize(StringOutputStream os) {
         Serialization.serializeToHexString(this, os);
     }
 
@@ -72,8 +64,8 @@ public abstract class SerializableReusable extends Reusable implements RRLibSeri
      *
      * @param s String to deserialize from
      */
-    @Override @InCppFile @Virtual @JavaOnly
-    public void deserialize(@Ref StringInputStream s) throws Exception {
+    @Override
+    public void deserialize(StringInputStream s) throws Exception {
         Serialization.deserializeFromHexString(this, s);
     }
 
@@ -82,8 +74,8 @@ public abstract class SerializableReusable extends Reusable implements RRLibSeri
      *
      * @param node Empty XML node (name shouldn't be changed)
      */
-    @Override @InCppFile @Virtual @ConstMethod @JavaOnly
-    public void serialize(@Ref XMLNode node) throws Exception {
+    @Override
+    public void serialize(XMLNode node) throws Exception {
         node.setContent(Serialization.serialize(this));
     }
 
@@ -92,8 +84,8 @@ public abstract class SerializableReusable extends Reusable implements RRLibSeri
      *
      * @param node Node to deserialize from
      */
-    @Override @InCppFile @Virtual @JavaOnly
-    public void deserialize(@Const @Ref XMLNode node) throws Exception {
+    @Override
+    public void deserialize(XMLNode node) throws Exception {
         StringInputStream is = new StringInputStream(node.getTextContent());
         deserialize(is);
     }

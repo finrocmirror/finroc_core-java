@@ -22,67 +22,48 @@
 package org.finroc.core.port.cc;
 
 import org.finroc.core.portdatabase.ReusableGenericObjectManagerTL;
-import org.rrlib.finroc_core_utils.jc.annotation.Attribute;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Manager for thread-local "cheap-copy" port data.
  * Contains diverse management information such as reuse
  * queue pointers - possibly time stamp.
  */
-@Ptr
-@Attribute("((aligned(8)))")
-@Friend( {CCPortBase.class})
-@Include("CombinedPointer.h")
 public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
 
     /** Number of reference to port data */
-    @InCpp("const static size_t NUMBER_OF_REFERENCES = 8;")
-    public final static @SizeT int NUMBER_OF_REFERENCES = 4;
+    public final static int NUMBER_OF_REFERENCES = 4;
 
     /** Mask for selection of current reference */
-    public final static @SizeT int REF_INDEX_MASK = NUMBER_OF_REFERENCES - 1;
+    public final static int REF_INDEX_MASK = NUMBER_OF_REFERENCES - 1;
 
     /** time stamp of data */
     //private long timestamp;
 
     /** Different reference to port data (because of reuse problem - see portratio) */
-    @JavaOnly private final CCPortDataRef[] refs = new CCPortDataRef[NUMBER_OF_REFERENCES];
+    private final CCPortDataRef[] refs = new CCPortDataRef[NUMBER_OF_REFERENCES];
 
     /** Reuse counter */
-    private @SizeT int reuseCounter;
+    private int reuseCounter;
 
     /** Reference counter for owner - typically equal to number of ports data is assigned to */
     protected int refCounter;
 
     /** ID of thread that owns this PortDataContainer */
-    @Const private final long ownerThread;
+    private final long ownerThread;
 
     /**
      * @return the ownerThread Thread ID of owner
      */
-    @ConstMethod public long getOwnerThread() {
+    public long getOwnerThread() {
         return ownerThread;
     }
 
     public CCPortDataManagerTL() {
 
-        //JavaOnlyBlock
         for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
             refs[i] = new CCPortDataRef(this);
         }
@@ -95,13 +76,6 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
 //        portData = new GenericObjectInstance<T>(type, object);
 //        ownerThread = ThreadUtil.getCurrentThreadId();
 //    }
-
-    /*Cpp
-    virtual ~CCPortDataManagerTL() {
-        //finroc::util::System::out.println(finroc::util::StringBuilder("Deleting container ") + this);
-    }
-     */
-
 //    /** Assign other data to this container */
 //    public void assign(@Const CCPortData other) {
 //        portData.assign(other);
@@ -120,8 +94,7 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
      *  If classes contain pointers, this only guarantees that classes identified as equal really are.
      *  This is typically sufficient for "cheap copy" types though.)
      */
-    @InCpp("return _memcmp(getObject()->getRawDataPtr(), other, getObject()->getType().getSize()) == 0;")
-    @ConstMethod public boolean contentEquals(@Const @VoidPtr Object other) {
+    public boolean contentEquals(Object other) {
         return getObject().getData().equals(other);
     }
 
@@ -150,7 +123,7 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
      *
      * @param count Number of read locks to release
      */
-    @Inline public void releaseLocks(int count) {
+    public void releaseLocks(int count) {
         assert refCounter >= count : "More locks released than acquired";
         assert ownerThread == ThreadUtil.getCurrentThreadId() : "may only be called by owner thread";
         refCounter -= count;
@@ -173,9 +146,8 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
      * (Needs to be called with lock on ThreadLocalCache::infos)
      * Removes read lock
      */
-    @InCppFile
-    public void nonOwnerLockRelease(@Ptr CCPortDataBufferPool owner) {
-        @Ptr Object owner2 = this.owner;
+    public void nonOwnerLockRelease(CCPortDataBufferPool owner) {
+        Object owner2 = this.owner;
         if (ownerThread == ThreadUtil.getCurrentThreadId()) {
             releaseLock();
         } else if (owner2 != null) {
@@ -205,7 +177,6 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
     /**
      * @return Current reference to use
      */
-    @InCpp("return CombinedPointerOps::create<CCPortDataRef>(this, reuseCounter & REF_INDEX_MASK);")
     public CCPortDataRef getCurrentRef() {
         return refs[reuseCounter & REF_INDEX_MASK];
     }
@@ -238,20 +209,13 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
         return ThreadUtil.getCurrentThreadId() == ownerThread;
     }
 
-    /*Cpp
-    inline void handlePointerRelease() {
-      releaseLock();
-    }
-     */
-
     /**
      * Create object of specified type managed by CCPortDataManagerTL
      *
      * @param dataType Data type
      * @return Manager
      */
-    @InCpp("return static_cast<CCPortDataManagerTL*>(dataType.createInstanceGeneric<CCPortDataManagerTL>()->getManager());")
-    public static CCPortDataManagerTL create(@Const @Ref DataTypeBase dataType) {
+    public static CCPortDataManagerTL create(DataTypeBase dataType) {
         return (CCPortDataManagerTL)(dataType.createInstanceGeneric(new CCPortDataManagerTL())).getManager();
     }
 
@@ -262,19 +226,4 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
         setRefCounter(1);
         releaseLock();
     }
-
-//    /*Cpp
-//    void setData(const T& data) {
-//        setData(&data);
-//    }
-//     */
-//
-//    /**
-//     * Assign new value to container
-//     *
-//     * @param data new value
-//     */
-//    public void setData(@Const @Ptr T data) {
-//        portData.assign((CCPortData)data);
-//    }
 }

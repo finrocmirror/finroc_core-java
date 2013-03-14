@@ -22,11 +22,6 @@
 package org.finroc.core.test;
 
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
@@ -38,7 +33,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Test for ports with bounded queues
  */
@@ -47,7 +42,7 @@ public class RealPortQueueTest extends Thread {
     // Number of iterations
     public static int CYCLES = 10000000;
 
-    public static @Managed @SharedPtr PortNumeric<Integer> output;
+    public static PortNumeric<Integer> output;
 
     static volatile int PUBLISH_LIMIT;
 
@@ -76,7 +71,6 @@ public class RealPortQueueTest extends Thread {
         System.out.println(time);
 
         System.out.println("Reading contents of queue (single dq)...");
-        @InCpp("int cn = 0;")
         CoreNumber cn = new CoreNumber();
         while ((input.dequeueSingle(cn))) {
             printNum(cn);
@@ -98,7 +92,6 @@ public class RealPortQueueTest extends Thread {
         }
 
         System.out.println("Read contents of queue in fragment...");
-        @CppType("PortQueueFragment<int>")
         PortQueueFragment<CoreNumber> frag = new PortQueueFragment<CoreNumber>();
         input.dequeueAll(frag);
         while (frag.dequeue(cn)) {
@@ -139,9 +132,8 @@ public class RealPortQueueTest extends Thread {
         ThreadLocalCache.getFast().releaseAllLocks();
 
         // start writer threads
-        @SharedPtr RealPortQueueTest thread1 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(true));
-        @SharedPtr RealPortQueueTest thread2 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(false));
-        //Cpp printf("Created threads %p and %p\n", thread1._get(), thread2._get());
+        RealPortQueueTest thread1 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(true));
+        RealPortQueueTest thread2 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(false));
         thread1.start();
         thread2.start();
 
@@ -155,7 +147,6 @@ public class RealPortQueueTest extends Thread {
         int e = CYCLES - 1;
         start = System.currentTimeMillis();
         PUBLISH_LIMIT = CYCLES;
-        @InCpp("int cc = 0;")
         CoreNumber cc = new CoreNumber();
         while (true) {
 
@@ -165,7 +156,6 @@ public class RealPortQueueTest extends Thread {
 
             // Dequeue from bounded queue
             if (input.dequeueSingle(cc)) {
-                @InCpp("int val = cc;")
                 int val = cc.intValue();
                 if (val >= 0) {
                     assert(val > lastPosLimited);
@@ -178,7 +168,6 @@ public class RealPortQueueTest extends Thread {
 
             // Dequeue from unlimited queue (single dq)
             if (unlimitedInput.dequeueSingle(cc)) {
-                @InCpp("int val = cc;")
                 int val = cc.intValue();
                 if (val >= 0) {
                     assert(val == lastPosUnlimited + 1);
@@ -198,7 +187,6 @@ public class RealPortQueueTest extends Thread {
             //System.out.println("Iteratorion");
             unlimitedInput2.dequeueAll(frag);
             while (frag.dequeue(cc)) {
-                @InCpp("int val = cc;")
                 int val = cc.intValue();
                 if (val >= 0) {
                     assert(val == lastPosUnlimitedF + 1);
@@ -219,8 +207,7 @@ public class RealPortQueueTest extends Thread {
         finished.set(1);
     }
 
-    @InCpp("std::cout << cn << std::endl;")
-    private static void printNum(@PassByValue @CppType("int") CoreNumber cn) {
+    private static void printNum(CoreNumber cn) {
         System.out.println(cn.doubleValue());
     }
 
@@ -241,7 +228,6 @@ public class RealPortQueueTest extends Thread {
             output.publish(positiveCount ? i : -i);
         }
 
-        // JavaOnlyBlock
         while (finished.get() == 0);
         // check reuse queue
         ThreadLocalCache.getFast().checkQueuesForDuplicates();

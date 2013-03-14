@@ -20,15 +20,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-@Namespace("finroc::core")
-@CppLocation("core/port/rpc/method")
-
 /**
  * These classes contain templated method classes to define interfaces
  * in the RPC mechanism
  */
 package org.finroc.core.port.rpc.method;
-
-import org.rrlib.finroc_core_utils.jc.annotation.CppLocation;
-import org.rrlib.finroc_core_utils.jc.annotation.Namespace;
-

@@ -22,18 +22,13 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreString;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * String StaticParameter class for convenience
  */
-@Inline @NoCpp @JavaOnly
 public class StaticParameterString extends StaticParameter<CoreString> {
 
     public StaticParameterString(String name, String defaultValue, boolean constructorPrototype) {
@@ -49,7 +44,6 @@ public class StaticParameterString extends StaticParameter<CoreString> {
     }
 
     /** Helper to get this safely during static initialization */
-    @InCpp("return rrlib::serialization::DataType<CoreString>();")
     public static DataTypeBase getDataType() {
         return CoreString.TYPE;
     }

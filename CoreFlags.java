@@ -22,7 +22,7 @@
 package org.finroc.core;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class contains flags which are relevant for
  * framework elements.

@@ -22,32 +22,18 @@
 package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Filters framework elements by their flags and their qualified names.
  *
  * Can be used to efficiently traverse trees of framework elements.
  */
-@PassByValue
 public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
 
     /** Framework element's flags that are relevant */
@@ -57,7 +43,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     private int flagResult;
 
     /** Qualified names of framework elements need to start with one of these in order to be published */
-    private final @SharedPtr SimpleList<String> paths = new SimpleList<String>();
+    private final SimpleList<String> paths = new SimpleList<String>();
 
     /** Send tags of each framework element? (TODO: maybe we'll need a generic mechanism for annotations one day) */
     private boolean sendTags;
@@ -79,7 +65,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param flagResult Result that needs to be achieved when ANDing element's flags with relevant flags (see ChildIterator)
      * @param paths Qualified names of framework elements need to start with one of these (comma-separated list of strings)
      */
-    public FrameworkElementTreeFilter(int relevantFlags, int flagResult, @Const @Ref String paths) {
+    public FrameworkElementTreeFilter(int relevantFlags, int flagResult, String paths) {
         this.relevantFlags = relevantFlags;
         this.flagResult = flagResult;
         if (paths.length() > 0) {
@@ -99,15 +85,14 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     }
 
     /** Constant for empty string - to allow this-constructor in c++ */
-    @InCpp("static util::String EMPTY; return EMPTY;") @InCppFile
-    @Const @Ref private static final String getEmptyString() {
+    private static final String getEmptyString() {
         return "";
     }
 
     /**
      * @return Is this a filter that only lets ports through?
      */
-    @ConstMethod public boolean isPortOnlyFilter() {
+    public boolean isPortOnlyFilter() {
         return (relevantFlags & flagResult & CoreFlags.IS_PORT) > 0;
     }
 
@@ -115,7 +100,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @return Is this a filter that accepts all framework elements?
      * (e.g. the finstruct one is)
      */
-    @ConstMethod public boolean isAcceptAllFilter() {
+    public boolean isAcceptAllFilter() {
         return (relevantFlags & (~CoreFlags.STATUS_FLAGS)) == 0;
     }
 
@@ -131,8 +116,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param tmp Temporary, currently unused string buffer
      * @return Is framework element accepted by filter?
      */
-    @JavaOnly
-    @ConstMethod public boolean accept(FrameworkElement element, @Ref StringBuilder tmp) {
+    public boolean accept(FrameworkElement element, StringBuilder tmp) {
         return accept(element, tmp, 0);
     }
 
@@ -143,7 +127,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param ignoreFlags These flags are ignored when checking flags
      * @return Is framework element accepted by filter?
      */
-    @ConstMethod public boolean accept(FrameworkElement element, @Ref StringBuilder tmp, int ignoreFlags) {
+    public boolean accept(FrameworkElement element, StringBuilder tmp, int ignoreFlags) {
         if (element == null) {
             return false;
         }
@@ -153,19 +137,11 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
                 return true;
             }
             boolean found = (paths.size() == 0);
-            for (@SizeT int i = 0, n = paths.size(); i < n && (!found); i++) {
+            for (int i = 0, n = paths.size(); i < n && (!found); i++) {
                 element.getQualifiedName(tmp);
-
-                //JavaOnlyBlock
                 if (tmp.toString().startsWith(paths.get(i))) {
                     return true;
                 }
-
-                /*Cpp
-                if (tmp.startsWith(paths->get(i))) {
-                    return true;
-                }
-                 */
             }
         }
         return false;
@@ -204,9 +180,8 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param callback Callback class instance (needs to have method 'TreeFilterCallback(tFrameworkElement* fe, P customParam)')
      * @param customParam Custom parameter
      */
-    @Inline @RawTypeArgs
-    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @Const @Ref P customParam) {
-        @PassByValue StringBuilder sb = new StringBuilder();
+    public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, T callback, P customParam) {
+        StringBuilder sb = new StringBuilder();
         traverseElementTree(root, callback, customParam, sb);
     }
 
@@ -220,12 +195,11 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @param customParam Custom parameter
      * @param tmp Temporary StringBuilder buffer
      */
-    @Inline @RawTypeArgs
-    @ConstMethod public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, @Ptr T callback, @Const @Ref  P customParam, @Ref StringBuilder tmp) {
+    public <T extends Callback<P>, P> void traverseElementTree(FrameworkElement root, T callback, P customParam, StringBuilder tmp) {
         if (accept(root, tmp)) {
             callback.treeFilterCallback(root, customParam);
         }
-        @Const @Ptr ArrayWrapper<FrameworkElement.Link> children = root.getChildren();
+        ArrayWrapper<FrameworkElement.Link> children = root.getChildren();
         for (int i = 0, n = children.size(); i < n; i++) {
             FrameworkElement.Link link = children.get(i);
             if (link != null && link.getChild() != null && link.isPrimaryLink()) {
@@ -237,9 +211,8 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     /**
      * Classes that use FrameworkElementTreeFilter for traversing trees, should implement this interface.
      *
-     * @author max
+     * @author Max Reichardt
      */
-    @JavaOnly
     public interface Callback<P> {
 
         /**
@@ -249,8 +222,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
          * @param fe Framework element that is currently being visited
          * @param customParam Custom parameter
          */
-        @NonVirtual
-        public void treeFilterCallback(FrameworkElement fe, @Const @Ref P customParam);
+        public void treeFilterCallback(FrameworkElement fe, P customParam);
     }
 
 }

@@ -23,15 +23,9 @@ package org.finroc.core.port.net;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.DefaultType;
-import org.rrlib.finroc_core_utils.jc.annotation.Elems;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Used to store data of another runtime environment's core register.
  *
@@ -39,7 +33,6 @@ import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
  *
  * Allow threads to iterate concurrently, while another one makes modifications.
  */
-@DefaultType("finroc::util::Object*")
 public class RemoteCoreRegister<T> implements HasDestructor {
 
     /**
@@ -55,8 +48,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
     public final static int LEVEL_ONE_SHIFT = 8;
 
     /** Two-dimensional array [LEVEL_ONE_BLOCK][LEVEL_TWO_BLOCK] */
-    @Elems( {Ptr.class, PassByValue.class})
-    @PassByValue public final ArrayWrapper<ArrayWrapper<T>> elements = new ArrayWrapper<ArrayWrapper<T>>(LEVEL_ONE_BLOCK_SIZE);
+    public final ArrayWrapper<ArrayWrapper<T>> elements = new ArrayWrapper<ArrayWrapper<T>>(LEVEL_ONE_BLOCK_SIZE);
 
     /** Returns iterator for register */
     public Iterator getIterator() {
@@ -70,7 +62,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
     public T get(int handle) {
         int lv1Block = (handle & LEVEL_ONE_MASK) >> LEVEL_ONE_SHIFT;
         int lv2Block = handle & LEVEL_TWO_MASK;
-        @Ptr ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
+        ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
         if (curLvl2Block != null) {
             return curLvl2Block.get(lv2Block);
         }
@@ -81,10 +73,10 @@ public class RemoteCoreRegister<T> implements HasDestructor {
      * @param index handle
      * @param elem Framework to put to that position
      */
-    public synchronized void put(int handle, @Const T elem) {
+    public synchronized void put(int handle, T elem) {
         int lv1Block = (handle & LEVEL_ONE_MASK) >> LEVEL_ONE_SHIFT;
         int lv2Block = handle & LEVEL_TWO_MASK;
-        @Ptr ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
+        ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
         if (curLvl2Block == null) {
             curLvl2Block = new ArrayWrapper<T>(LEVEL_TWO_BLOCK_SIZE);
             setLvl2Element(lv1Block, curLvl2Block);
@@ -100,7 +92,7 @@ public class RemoteCoreRegister<T> implements HasDestructor {
     public synchronized void remove(int handle) {
         int lv1Block = (handle & LEVEL_ONE_MASK) >> LEVEL_ONE_SHIFT;
         int lv2Block = handle & LEVEL_TWO_MASK;
-        @Ptr ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
+        ArrayWrapper<T> curLvl2Block = getLvl2Element(lv1Block);
         assert(curLvl2Block != null) : "Trying to remove non-existing element";
         assert(curLvl2Block.get(lv2Block) != null) : "Trying to remove non-existing element";
         curLvl2Block.set(lv2Block, null);
@@ -109,28 +101,25 @@ public class RemoteCoreRegister<T> implements HasDestructor {
     /**
      * Wrapper for simpler java/c++ conversion
      */
-    @InCpp("return elements.get(index);")
-    private @Ptr ArrayWrapper<T> getLvl2Element(int index) {
+    private ArrayWrapper<T> getLvl2Element(int index) {
         return elements.get(index);
     }
 
     /**
      * Wrapper for simpler java/c++ conversion
      */
-    @InCpp("elements.set(index, elem);")
-    private void setLvl2Element(int index, @Ptr ArrayWrapper<T> elem) {
+    private void setLvl2Element(int index, ArrayWrapper<T> elem) {
         elements.set(index, elem);
     }
 
 
-    @PassByValue
     public class Iterator {
 
         /** Current level one and level two index */
         private int lvl1Idx = -1, lvl2Idx = LEVEL_TWO_BLOCK_SIZE;
 
         /** Current level 2 block */
-        @Ptr ArrayWrapper<T> curLvl2Block = null;
+        ArrayWrapper<T> curLvl2Block = null;
 
         public void reset() {
             curLvl2Block = null;
@@ -163,9 +152,5 @@ public class RemoteCoreRegister<T> implements HasDestructor {
 
     @Override
     public void delete() {
-        for (int i = 0; i < LEVEL_ONE_BLOCK_SIZE; i++) {
-            //Cpp delete elements[i];
-            //Cpp elements[i] = NULL;
-        }
     }
 }

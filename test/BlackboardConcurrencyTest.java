@@ -21,7 +21,6 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.finroc.core.FrameworkElement;
 import org.finroc.plugins.blackboard.BlackboardClient;
 import org.finroc.plugins.blackboard.BlackboardManager;
@@ -31,11 +30,10 @@ import org.rrlib.finroc_core_utils.serialization.PortDataList;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Tests concurrent access to blackboards
  */
-@JavaOnly
 public class BlackboardConcurrencyTest extends Thread {
 
     int id = -1;

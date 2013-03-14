@@ -26,24 +26,16 @@ import org.finroc.core.RuntimeEnvironment;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Mutable;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.jc.net.IPSocketAddress;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the abstract base class for "peer trackers".
  * Peer trackers look for other systems on the network that can be connected to.
  */
-@Ptr
 public abstract class AbstractPeerTracker extends LogUser implements HasDestructor {
 
     /** callIDs */
@@ -53,14 +45,13 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
     protected TrackerListenerManager listeners = new TrackerListenerManager();
 
     /** Peer tracker instances that are used - can be multiple */
-    @SharedPtr private static SimpleListWithMutex<AbstractPeerTracker> instances = new SimpleListWithMutex<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
+    private static SimpleListWithMutex<AbstractPeerTracker> instances = new SimpleListWithMutex<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
 
     /** Mutex for tracker */
-    @Mutable
     public final MutexLockOrder objMutex;
 
     /** "Lock" to above - for safe deinitialization */
-    @SharedPtr private SimpleListWithMutex<AbstractPeerTracker> instancesLock = instances;
+    private SimpleListWithMutex<AbstractPeerTracker> instancesLock = instances;
 
     /**
      * @param lockOrder Lock order of tracker
@@ -104,7 +95,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      * @param isa Node's network address
      * @param name Node's name
      */
-    protected void notifyDiscovered(@Ptr IPSocketAddress isa, String name) {
+    protected void notifyDiscovered(IPSocketAddress isa, String name) {
         listeners.notify(isa, name, DISCOVERED);
     }
 
@@ -114,14 +105,13 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      * @param isa Node's network address
      * @param name Node's name
      */
-    protected void notifyRemoved(@Ptr IPSocketAddress isa, String name) {
+    protected void notifyRemoved(IPSocketAddress isa, String name) {
         listeners.notify(null, name, REMOVED);
     }
 
     /**
      * Listens to discovery and removal of TCP nodes
      */
-    @Ptr
     public interface Listener {
 
         /**
@@ -130,7 +120,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
          * @param isa Node's network address
          * @param name Node's name
          */
-        public void nodeDiscovered(@Const @Ref IPSocketAddress isa, @Const @Ref String name);
+        public void nodeDiscovered(IPSocketAddress isa, String name);
 
         /**
          * Called when TCP node has been stopped/deleted
@@ -141,7 +131,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
          *
          * (Called with runtime and Peer Tracker lock)
          */
-        public @Ptr Object nodeRemoved(@Const @Ref IPSocketAddress isa, @Const @Ref String name);
+        public Object nodeRemoved(IPSocketAddress isa, String name);
 
         /**
          * Called when TCP node has been deleted - and object for post-processing has been returned in method above
@@ -150,10 +140,9 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
          *
          * (Called without/after runtime and Peer Tracker lock)
          */
-        public void nodeRemovedPostLockProcess(@Ptr Object obj);
+        public void nodeRemovedPostLockProcess(Object obj);
     }
 
-    @AtFront
     public static class TrackerListenerManager extends ListenerManager<IPSocketAddress, String, Listener, TrackerListenerManager> {
 
         @Override
@@ -184,7 +173,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      */
     public void registerServer(String networkName, String name, int port) {
         synchronized (instances) {
-            for (@SizeT int i = 0; i < instances.size(); i++) {
+            for (int i = 0; i < instances.size(); i++) {
                 instances.get(i).registerServerImpl(networkName, name, port);
             }
         }
@@ -207,7 +196,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      */
     public void unregisterServer(String networkName, String name) {
         synchronized (instances) {
-            for (@SizeT int i = 0; i < instances.size(); i++) {
+            for (int i = 0; i < instances.size(); i++) {
                 instances.get(i).unregisterServerImpl(networkName, name);
             }
         }

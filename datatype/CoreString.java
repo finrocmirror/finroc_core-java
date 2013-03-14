@@ -23,12 +23,6 @@ package org.finroc.core.datatype;
 
 import java.io.Serializable;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -43,8 +37,6 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
  * Simple string (buffer) type to use in ports
  * Has 128 bytes initially.
  */
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::CoreString>;"})
 public class CoreString extends RRLibSerializableImpl implements Serializable {
 
     /** UID */
@@ -54,7 +46,6 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
     public final static DataTypeBase TYPE = new DataType<CoreString>(CoreString.class, "String", false);
 
     /** String buffer */
-    @PassByValue
     private final StringBuilder buffer;
 
     public CoreString() {
@@ -64,7 +55,7 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
     /**
      * @return String buffer
      */
-    public @Ref StringBuilder getBuffer() {
+    public StringBuilder getBuffer() {
         return buffer;
     }
 
@@ -75,19 +66,17 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
     /**
      * @param s String to set buffer to
      */
-    public void set(@Const @Ref String s) {
+    public void set(String s) {
         buffer.delete(0, buffer.length());
         buffer.append(s);
     }
 
     @Override
-    @InCpp("os << buffer;")
     public void serialize(OutputStreamBuffer os) {
         os.writeString(buffer);
     }
 
     @Override
-    @InCpp("is >> buffer;")
     public void deserialize(InputStreamBuffer is) {
         is.readString(buffer);
     }
@@ -107,7 +96,7 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
      *
      * @param sb StringBuilder that will contain result
      */
-    public void get(@Ref StringBuilder sb) {
+    public void get(StringBuilder sb) {
         sb.delete(0, sb.length());
         sb.append(buffer);
     }

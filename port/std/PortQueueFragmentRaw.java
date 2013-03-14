@@ -21,18 +21,15 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
 import org.rrlib.finroc_core_utils.jc.container.QueueFragment;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Fragment for dequeueing bunch of values
  */
-@Inline @NoCpp
 public class PortQueueFragmentRaw extends QueueFragment<PortDataReference, PortQueueElement> {
 
     /**

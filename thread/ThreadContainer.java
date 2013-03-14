@@ -28,14 +28,11 @@ import org.finroc.core.parameter.StaticParameterBool;
 import org.finroc.core.parameter.StaticParameterNumeric;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Contains thread that executes OrderedPeriodicTasks of all children.
  * Execution in performed in the order of the graph.
@@ -52,7 +49,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
     private final StaticParameterBool warnOnCycleTimeExceed = new StaticParameterBool("Warn on cycle time exceed", true);
 
     /** CreateModuleAction */
-    @SuppressWarnings("unused") @PassByValue
+    @SuppressWarnings("unused")
     private static final StandardCreateModuleAction<ThreadContainer> CREATE_ACTION =
         new StandardCreateModuleAction<ThreadContainer>("ThreadContainer", ThreadContainer.class);
 
@@ -63,7 +60,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
      * @param name Name
      * @param parent parent
      */
-    public ThreadContainer(FrameworkElement parent, @Const @Ref String name) {
+    public ThreadContainer(FrameworkElement parent, String name) {
         super(parent, name);
         StaticParameterList.getOrCreate(this).add(rtThread);
         StaticParameterList.getOrCreate(this).add(cycleTime);

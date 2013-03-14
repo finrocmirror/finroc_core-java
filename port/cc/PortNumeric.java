@@ -21,13 +21,6 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.CppDelegate;
-import org.rrlib.finroc_core_utils.jc.annotation.CppName;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PostProcess;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
@@ -38,7 +31,7 @@ import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port containing numbers.
  *
@@ -46,7 +39,6 @@ import org.finroc.core.port.ThreadLocalCache;
  * In Java several implementation details (runtime performance, CoreNumber as actual data type)
  * make introducing a separate class favorable.
  */
-@Inline @NoCpp @JavaOnly @CppDelegate(Port.class) @CppName("Port")
 public class PortNumeric<T extends Number> extends Port<CoreNumber> {
 
     /**
@@ -87,15 +79,15 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
      *
      * @param d New Value
      */
-    @Inline public void publish(double d) {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+    public void publish(double d) {
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
         if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isDouble(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        @Ptr CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -106,15 +98,15 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
      *
      * @param d New Value
      */
-    @Inline public void publish(long d) {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+    public void publish(long d) {
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
         if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isLong(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        @Ptr CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -125,15 +117,15 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
      *
      * @param d New Value
      */
-    @Inline public void publish(float d) {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+    public void publish(float d) {
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
         if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isFloat(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        @Ptr CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -144,58 +136,24 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
      *
      * @param d New Value
      */
-    @Inline public void publish(int d) {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+    public void publish(int d) {
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
         if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isInt(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        @Ptr CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
 
-    /*Cpp
-
-    // Set/Change port value.
-    // (usually only called on output ports)
-    //
-    // \param d New Value
-    inline void publish(T v) {
-        CCPortDataRef value = wrapped->value;
-        if (value.getContainer()->isOwn
-    }
-
-
-
-    inline T getRaw() {
-        if (pushStrategy()) {
-            for(;;) {
-                CCPortDataRef* val = wrapped->value;
-                Number* cn = (Number*)(val->getData());
-                T d = cn->value<T>();
-                if (val == wrapped->value) {
-                    return d;
-                }
-            }
-        } else {
-            CCPortDataContainer<Number>* dc = (CCPortDataContainer<Number>*)wrapped->pullValueRaw();
-            T result = dc->getData()->value<T>();
-            dc->releaseLock();
-            return result;
-        }
-    }
-
-     */
-
     /**
      * Get double value of port ignoring unit
      */
-    @PostProcess("org.finroc.j2c.NumericPort")
     public double getDoubleRaw() {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = wrapped.value;
@@ -215,9 +173,8 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     /**
      * Get int value of port ignoring unit
      */
-    @PostProcess("org.finroc.j2c.NumericPort")
     public int getIntRaw() {
-        @Ptr CCPortBase wrapped = (CCPortBase)super.wrapped;
+        CCPortBase wrapped = (CCPortBase)super.wrapped;
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = wrapped.value;

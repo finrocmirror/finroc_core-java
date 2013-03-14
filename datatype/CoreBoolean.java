@@ -22,16 +22,6 @@
 package org.finroc.core.datatype;
 
 import org.finroc.core.portdatabase.CCType;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
-import org.rrlib.finroc_core_utils.jc.annotation.CppName;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.rtti.Copyable;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -44,14 +34,10 @@ import org.rrlib.finroc_core_utils.serialization.StringInputStream;
 import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * boolean type
  */
-@JavaOnly
-@CppName("Boolean") @CppFilename("Boolean") @Superclass( {RRLibSerializable.class, CCType.class})
-@PostInclude("rrlib/serialization/DataType.h")
-@HAppend( {"extern template class ::rrlib::serialization::DataType<finroc::core::Boolean>;"})
 public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType, NumericRepresentation {
 
     /** Data Type */
@@ -61,7 +47,7 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     private boolean value;
 
     /** Instances for True and false */
-    @Const @PassByValue public static final CoreBoolean TRUE = new CoreBoolean(true), FALSE = new CoreBoolean(false);
+    public static final CoreBoolean TRUE = new CoreBoolean(true), FALSE = new CoreBoolean(false);
 
     public CoreBoolean() {
     }
@@ -92,24 +78,14 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
         value = s.toLowerCase().equals("true") || s.equals("1");
     }
 
-    public static @Const CoreBoolean getInstance(boolean value) {
+    public static CoreBoolean getInstance(boolean value) {
         return value ? TRUE : FALSE;
     }
-
-    /*Cpp
-    const bool* getPointer() const {
-        return &value;
-    }
-
-    bool* getPointer() {
-        return &value;
-    }
-     */
 
     /**
      * @return Current value
      */
-    @ConstMethod public boolean get() {
+    public boolean get() {
         return value;
     }
 
@@ -121,7 +97,7 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     }
 
     @Override
-    public void copyFrom(@Const @Ref CoreBoolean source) {
+    public void copyFrom(CoreBoolean source) {
         value = source.value;
     }
 

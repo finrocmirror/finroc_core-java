@@ -21,14 +21,13 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.plugins.tcp.TCP;
 import org.finroc.plugins.tcp.TCPPeer;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Creates client and some ports for testing
  */
@@ -39,7 +38,7 @@ public class RealClientTest extends NetworkTestSuite {
     }
 
     public static void main(String[] args) {
-        @PassByValue RealClientTest rct = new RealClientTest(args.length == 1 ? Integer.parseInt(args[0]) : -1);
+        RealClientTest rct = new RealClientTest(args.length == 1 ? Integer.parseInt(args[0]) : -1);
         rct.main();
     }
 

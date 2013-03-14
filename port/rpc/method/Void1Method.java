@@ -30,29 +30,15 @@ import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.RPCThreadPool;
-import org.rrlib.finroc_core_utils.jc.annotation.AutoVariants;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.NoMatching;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Void method with 1 parameters.
  */
 public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractVoidMethod {
-
-    /*Cpp
-    //1
-    typedef typename Arg<_P1>::type P1Arg;
-     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -60,7 +46,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
      * @param p1Name Name of parameter 1
      * @param handleInExtraThread Handle call in extra thread by default (should be true if call can block or can consume a significant amount of time)
      */
-    public Void1Method(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, boolean handleInExtraThread) {
+    public Void1Method(PortInterface portInterface, String name, String p1Name, boolean handleInExtraThread) {
         super(portInterface, name, p1Name, NO_PARAM, NO_PARAM, NO_PARAM, handleInExtraThread);
     }
 
@@ -73,7 +59,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @CppDefault("false") boolean forceSameThread) throws MethodCallException {
+    public void call(InterfaceClientPort port, P1 p1, boolean forceSameThread) throws MethodCallException {
         //1
         assert(hasLock(p1));
         InterfacePort ip = port.getServer();
@@ -84,8 +70,7 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
             mc.setMethod(this, port.getDataType());
             ((InterfaceNetPort)ip).sendAsyncCall(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @InCpp("_HANDLER handler = static_cast<_HANDLER>((static_cast<InterfaceServerPort*>(ip))->getHandler());")
-            @Ptr HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
+            HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
             if (handler == null) {
                 //1
                 cleanup(p1);
@@ -109,29 +94,21 @@ public class Void1Method<HANDLER extends Void1Handler<P1>, P1> extends AbstractV
 
     @SuppressWarnings("unchecked")
     @Override
-    public void executeFromMethodCallObject(MethodCall call, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
+    public void executeFromMethodCallObject(MethodCall call, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         assert(retHandler == null);
-        @InCpp("_HANDLER h2 = static_cast<_HANDLER>(handler);")
         HANDLER h2 = (HANDLER)handler;
         executeFromMethodCallObject(call, h2);
     }
 
-    public void executeFromMethodCallObject(MethodCall call, @Const HANDLER handler) {
+    public void executeFromMethodCallObject(MethodCall call, HANDLER handler) {
         assert(call != null && handler != null);
-        @InCpp("_HANDLER handler2 = handler;")
-        @Ptr HANDLER handler2 = handler;
+        HANDLER handler2 = handler;
 
         //1
         P1 p1;
 
-        //JavaOnlyBlock
         //1
         p1 = call.<P1>getParam(0);
-
-        /*Cpp
-        //1
-        call->getParam(0, p1);
-         */
 
         try {
             handler2.handleVoidCall(this, p1);

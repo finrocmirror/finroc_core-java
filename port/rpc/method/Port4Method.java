@@ -29,38 +29,13 @@ import org.finroc.core.port.rpc.InterfaceServerPort;
 import org.finroc.core.port.rpc.MethodCall;
 import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.rpc.RPCThreadPool;
-import org.rrlib.finroc_core_utils.jc.annotation.AutoVariants;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoMatching;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 
-@AutoVariants( {
-    "Port4Method; 4 p;Method4Handler;P1, P2, P3, P4;, p1, p2, p3, p4;, >;p1Name, p2Name, p3Name, p4Name",
-    "Port3Method; 3 p;Method3Handler;P1, P2, P3;, p1, p2, p3; ;p1Name, p2Name, p3Name, NO_PARAM;//4;//n;, @PassByValue @NoMatching @CppType(\"P4Arg\") P4;p4;, @Const @Ref String p4N;e",
-    "Port2Method; 2 p;Method2Handler;P1, P2;, p1, p2; ;p1Name, p2Name, NO_PARAM, NO_PARAM;//3;//n;, @PassByValue @NoMatching @CppType(\"P3Arg\") P3;p4;, @Const @Ref String p3N;p4Name",
-    "Port1Method; 1 p;Method1Handler;P1;, p1; ;p1Name, NO_PARAM, NO_PARAM, NO_PARAM;//2;//n;, @PassByValue @NoMatching @CppType(\"P2Arg\") P2;p4;, @Const @Ref String p2N;p4Name",
-    "Port0Method; 0 p;Method0Handler; ; ;>;NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM;//1;//n;, @PassByValue @NoMatching @CppType(\"P1Arg\") P1;p4;, @Const @Ref String p1N;p4Name"
-})
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Non-void method with 4 parameters.
  */
 public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P1, P2, P3, P4> extends AbstractNonVoidMethod {
-
-    /*Cpp
-    //1
-    typedef typename Arg<_P1>::type P1Arg; //2
-    typedef typename Arg<_P2>::type P2Arg; //3
-    typedef typename Arg<_P3>::type P3Arg; //4
-    typedef typename Arg<_P4>::type P4Arg; //n
-     */
 
     /**
      * @param portInterface PortInterface that method belongs to
@@ -72,7 +47,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @param handleInExtraThread Handle call in extra thread by default (only relevant for async calls; should be true if call (including return handler) can block or can consume a significant amount of time)
      * @param defaultNetTimeout Default timeout for calls over the net (should be higher than any timeout for call to avoid that returning calls get lost)
      */
-    public Port4Method(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread, @CppDefault("DEFAULT_NET_TIMEOUT") int defaultNetTimeout) {
+    public Port4Method(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, String p4Name, boolean handleInExtraThread, int defaultNetTimeout) {
         super(portInterface, name, p1Name, p2Name, p3Name, p4Name, handleInExtraThread, defaultNetTimeout);
     }
 
@@ -86,8 +61,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @param handleInExtraThread Handle call in extra thread by default (only relevant for async calls; should be true if call (including return handler) can block or can consume a significant amount of time)
      * @param defaultNetTimeout Default timeout for calls over the net (should be higher than any timeout for call to avoid that returning calls get lost)
      */
-    @JavaOnly
-    public Port4Method(@Ref PortInterface portInterface, @Const @Ref String name, @Const @Ref String p1Name, @Const @Ref String p2Name, @Const @Ref String p3Name, @Const @Ref String p4Name, boolean handleInExtraThread) {
+    public Port4Method(PortInterface portInterface, String name, String p1Name, String p2Name, String p3Name, String p4Name, boolean handleInExtraThread) {
         super(portInterface, name, p1Name, p2Name, p3Name, p4Name, handleInExtraThread, DEFAULT_NET_TIMEOUT);
     }
 
@@ -107,7 +81,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @param forceSameThread Force that method call is performed by this thread on local machine (even if method call default is something else)
      */
     @SuppressWarnings("unchecked")
-    public void callAsync(InterfaceClientPort port, @Ptr AsyncReturnHandler<R> handler, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @PassByValue @NoMatching @CppType("P4Arg") P4 p4, @CppDefault("-1") int netTimeout, @CppDefault("false") boolean forceSameThread) {
+    public void callAsync(InterfaceClientPort port, AsyncReturnHandler<R> handler, P1 p1, P2 p2, P3 p3, P4 p4, int netTimeout, boolean forceSameThread) {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3
@@ -126,8 +100,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
             mc.prepareSyncRemoteExecution(this, port.getDataType(), handler, (InterfaceNetPort)ip, netTimeout > 0 ? netTimeout : getDefaultNetTimeout()); // always do this in extra thread
             RPCThreadPool.getInstance().executeTask(mc);
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @InCpp("_HANDLER mhandler = static_cast<_HANDLER>((static_cast<InterfaceServerPort*>(ip))->getHandler());")
-            @Ptr HANDLER mhandler = (HANDLER)((InterfaceServerPort)ip).getHandler();
+            HANDLER mhandler = (HANDLER)((InterfaceServerPort)ip).getHandler();
             if (mhandler == null) {
                 //1
                 cleanup(p1); //2
@@ -180,7 +153,7 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @return return value of method
      */
     @SuppressWarnings("unchecked")
-    public R call(InterfaceClientPort port, @PassByValue @NoMatching @CppType("P1Arg") P1 p1, @PassByValue @NoMatching @CppType("P2Arg") P2 p2, @PassByValue @NoMatching @CppType("P3Arg") P3 p3, @PassByValue @NoMatching @CppType("P4Arg") P4 p4, @CppDefault("-1") int netTimeout) throws MethodCallException {
+    public R call(InterfaceClientPort port, P1 p1, P2 p2, P3 p3, P4 p4, int netTimeout) throws MethodCallException {
         //1
         assert(hasLock(p1)); //2
         assert(hasLock(p2)); //3
@@ -205,30 +178,19 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
             }
             if (mc.hasException()) {
                 byte type = 0;
-
-                //JavaOnlyBlock
                 type = mc.<Byte>getParam(0);
-
-                //Cpp mc->getParam(0, type);
-
                 mc.recycle();
                 throw new MethodCallException(type);
             } else {
                 R ret;
-
-                //JavaOnlyBlock
                 ret = mc.<R>getParam(0);
-
-                //Cpp mc->getParam(0, ret);
-
                 mc.recycle();
                 assert(hasLock(ret));
                 return ret;
             }
 
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @InCpp("_HANDLER handler = static_cast<_HANDLER>((static_cast<InterfaceServerPort*>(ip))->getHandler());")
-            @Ptr HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
+            HANDLER handler = (HANDLER)((InterfaceServerPort)ip).getHandler();
             if (handler == null) {
                 //1
                 cleanup(p1); //2
@@ -254,10 +216,9 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
 
     @SuppressWarnings("unchecked")
     @Override
-    public void executeFromMethodCallObject(MethodCall call, @Ptr AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
-        @InCpp("_HANDLER h2 = static_cast<_HANDLER>(handler);")
+    public void executeFromMethodCallObject(MethodCall call, AbstractMethodCallHandler handler, AbstractAsyncReturnHandler retHandler) {
         HANDLER h2 = (HANDLER)handler;
-        @Ptr AsyncReturnHandler<R> rh2 = (AsyncReturnHandler<R>)retHandler;
+        AsyncReturnHandler<R> rh2 = (AsyncReturnHandler<R>)retHandler;
         executeFromMethodCallObject(call, h2, rh2, false);
     }
 
@@ -272,10 +233,9 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
      * @param retHandler Return Handler (not null - when receiver is in local runtime)
      * @param dummy Dummy parameter - to ensure that generic executeFromMethodCallObject-method will always call this
      */
-    public void executeFromMethodCallObject(MethodCall call, @Const HANDLER handler, AsyncReturnHandler<R> retHandler, boolean dummy) {
+    public void executeFromMethodCallObject(MethodCall call, HANDLER handler, AsyncReturnHandler<R> retHandler, boolean dummy) {
         assert(call != null && handler != null);
-        @InCpp("_HANDLER handler2 = handler;")
-        @Ptr HANDLER handler2 = handler;
+        HANDLER handler2 = handler;
 
         //1
         P1 p1; //2
@@ -284,22 +244,12 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
         P4 p4;
         //n
 
-        //JavaOnlyBlock
         //1
         p1 = call.<P1>getParam(0); //2
         p2 = call.<P2>getParam(1); //3
         p3 = call.<P3>getParam(2); //4
         p4 = call.<P4>getParam(3);
         //n
-
-        /*Cpp
-        //1
-        call->getParam(0, p1); //2
-        call->getParam(1, p2); //3
-        call->getParam(2, p3); //4
-        call->getParam(3, p4);
-        //n
-         */
 
         try {
             R ret = handler2.handleCall(this, p1, p2, p3, p4);
@@ -336,23 +286,12 @@ public class Port4Method<HANDLER extends Method4Handler<R, P1, P2, P3, P4>, R, P
         }
         if (mc.hasException()) {
             byte type = 0;
-
-            //JavaOnlyBlock
             type = mc.<Byte>getParam(0);
-
-            //Cpp mc->getParam(0, type);
-
             mc.recycle();
-
             rHandler.handleMethodCallException(this, new MethodCallException(type));
         } else {
             R ret;
-
-            //JavaOnlyBlock
             ret = mc.<R>getParam(0);
-
-            //Cpp mc->getParam(0, ret);
-
             mc.recycle();
             assert(hasLock(ret));
             rHandler.handleReturn(this, ret);

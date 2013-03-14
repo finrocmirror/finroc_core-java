@@ -22,7 +22,7 @@
 package org.finroc.core.test;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Test assertions
  */

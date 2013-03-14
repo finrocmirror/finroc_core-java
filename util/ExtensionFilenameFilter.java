@@ -24,16 +24,12 @@ package org.finroc.core.util;
 import java.io.File;
 import java.io.FilenameFilter;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-
-
 /**
  * FilenameFilter custom file Extensions.
  *
  * @author Max Reichardt
  *
  */
-@JavaOnly
 public class ExtensionFilenameFilter /* extends FileFilter */ implements java.io.FileFilter, FilenameFilter {
 
     /**

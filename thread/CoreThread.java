@@ -21,15 +21,13 @@
  */
 package org.finroc.core.thread;
 
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Core Thread  - for faster thread-local variable lookup - mainly in Java
  */
-@JavaOnly
 public interface CoreThread {
 
     /** Returns thread local info - must nor be null! */

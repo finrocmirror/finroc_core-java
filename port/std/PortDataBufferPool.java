@@ -21,18 +21,12 @@
  */
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPoolCR;
 import org.rrlib.finroc_core_utils.log.LogStream;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Buffer pool for specific port and thread.
  * In order to be real-time-capable, enough buffers need to be initially allocated... otherwise the application
@@ -41,13 +35,7 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
 
     /** Data Type of buffers in pool */
-    public final @Const DataTypeBase dataType;
-
-    /*Cpp
-
-    // destructor is intentionally protected: call controlledDelete() instead
-    virtual ~PortDataBufferPool() {}
-     */
+    public final DataTypeBase dataType;
 
     /**
      * only for derived MultiTypeDataBufferPool
@@ -59,7 +47,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
     /**
      * @param dataType Type of buffers in pool
      */
-    public PortDataBufferPool(@Const @Ref DataTypeBase dataType, int initialSize) {
+    public PortDataBufferPool(DataTypeBase dataType, int initialSize) {
         this.dataType = dataType;
         for (int i = 0; i < initialSize; i++) {
             //enqueue(createBuffer());
@@ -74,8 +62,8 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
      *
      * @return Returns unused buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final @Ptr PortDataManager getUnusedBuffer() {
-        @Ptr PortDataManager pc = getUnused();
+    public final PortDataManager getUnusedBuffer() {
+        PortDataManager pc = getUnused();
         if (pc != null) {
             pc.setUnused(true);
             return pc;
@@ -86,8 +74,8 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
     /**
      * @return Create new buffer/instance of port data and add to pool
      */
-    private @Ptr PortDataManager createBuffer() {
-        @Ptr PortDataManager pdm = createBufferRaw();
+    private PortDataManager createBuffer() {
+        PortDataManager pdm = createBufferRaw();
         attach(pdm, false);
         return pdm;
     }
@@ -95,7 +83,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
     /**
      * @return Create new buffer/instance of port data
      */
-    @Inline private @Ptr @Managed PortDataManager createBufferRaw() {
+    private PortDataManager createBufferRaw() {
         return PortDataManager.create(dataType);
     }
 
@@ -105,7 +93,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
      * @param indent Indentation
      * @param output
      */
-    @ConstMethod public void printStructure(int indent, @Ref LogStream output) {
+    public void printStructure(int indent, LogStream output) {
         for (int i = 0; i < indent; i++) {
             output.append(" ");
         }
@@ -116,7 +104,7 @@ public class PortDataBufferPool extends ReusablesPoolCR<PortDataManager> {
     /**
      * Helper for above
      */
-    @ConstMethod private void printElement(int indent, @Const PortDataManager pdm, @Ref LogStream output) {
+    private void printElement(int indent, PortDataManager pdm, LogStream output) {
         if (pdm == null) {
             return;
         }

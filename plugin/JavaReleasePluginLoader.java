@@ -33,20 +33,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.log.LogStream;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Loads plugins when code is compiled and packed in jar files.
  */
-@JavaOnly
 public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
 
     /** Class loader for plugins */
@@ -139,11 +135,10 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
     }
 
     /**
-     * @author max
+     * @author Max Reichardt
      *
      * This class loader is used to load plugins.
      */
-    @JavaOnly
     static public class PluginClassLoader extends URLClassLoader {
 
         /**
@@ -170,7 +165,6 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
             super.addURL(url);
         }
 
-        @CppType("char*") @Const
         private static String getLogDescription() {
             return "PluginClassLoader";
         }

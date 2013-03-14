@@ -21,11 +21,8 @@
  */
 package org.finroc.core.plugin;
 
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Class to create Module using empty standard constructor
  */
@@ -37,10 +34,10 @@ public interface CreateExternalConnectionAction extends CreateFrameworkElementAc
     /**
      * @return Created Action
      */
-    @ConstMethod public @Managed ExternalConnection createExternalConnection() throws Exception;
+    public ExternalConnection createExternalConnection() throws Exception;
 
     /**
      * @return Connection properties/capabilities (see flags above)
      */
-    @ConstMethod public int getFlags();
+    public int getFlags();
 }

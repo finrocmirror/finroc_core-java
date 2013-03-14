@@ -21,13 +21,12 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.rpc.method.AbstractMethod;
 import org.finroc.core.port.rpc.method.AbstractMethodCallHandler;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Interface ports that will forward calls over the net
  */
@@ -81,7 +80,7 @@ public abstract class InterfaceNetPort extends InterfacePort {
                 RPCThreadPool.getInstance().executeTask(mc);
             }
         } else if (ip != null && ip.getType() == InterfacePort.Type.Server) {
-            @Ptr AbstractMethodCallHandler mhandler = (AbstractMethodCallHandler)((InterfaceServerPort)ip).getHandler();
+            AbstractMethodCallHandler mhandler = (AbstractMethodCallHandler)((InterfaceServerPort)ip).getHandler();
             if (mhandler == null) {
                 if (m.isVoidMethod()) {
                     mc.recycle();
@@ -132,7 +131,7 @@ public abstract class InterfaceNetPort extends InterfacePort {
      * @param mc Method call
      * @param mhandler Server/Handler handling call
      */
-    public void executeCallFromNetwork(MethodCall mc, @Ptr AbstractMethodCallHandler mhandler) {
+    public void executeCallFromNetwork(MethodCall mc, AbstractMethodCallHandler mhandler) {
         mc.getMethod().executeFromMethodCallObject(mc, mhandler, null);
         if (!mc.getMethod().isVoidMethod()) {
             sendSyncCallReturn(mc);

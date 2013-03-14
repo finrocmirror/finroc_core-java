@@ -26,12 +26,10 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PublishCache;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port whose data buffer is fixed.
  * This can be useful for complex data that is updated via transactions.
@@ -41,13 +39,11 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 public class SingletonPort<T extends RRLibSerializable> extends Port<T> {
 
     /** Special Port class to load value when initialized */
-    @AtFront
     private static class PortImpl<T> extends PortBase {
 
         /** Singleton value */
         private final T singletonValue;
 
-        @InCppFile
         public PortImpl(PortCreationInfo pci, T singleton) {
             super(pci);
             this.singletonValue = singleton;

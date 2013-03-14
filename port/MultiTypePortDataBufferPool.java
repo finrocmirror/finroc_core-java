@@ -25,16 +25,12 @@ import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.std.PortDataBufferPool;
 import org.finroc.core.port.std.PortDataManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.SpinLock;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogStream;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Buffer pool for specific port and thread.
  * Special version that supports buffers of multiple types.
@@ -52,10 +48,10 @@ public class MultiTypePortDataBufferPool {
      * @param dataType DataType of returned buffer.
      * @return Returns unused buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final PortDataManager getUnusedBuffer(DataTypeBase dataType) {
+    public final PortDataManager getUnusedBuffer(DataTypeBase dataType) {
 
         // search for correct pool
-        for (@SizeT int i = 0, n = pools.size(); i < n; i++) {
+        for (int i = 0, n = pools.size(); i < n; i++) {
             PortDataBufferPool pbp = pools.get(i);
             if (pbp.dataType == dataType) {
                 return pbp.getUnusedBuffer();
@@ -69,11 +65,10 @@ public class MultiTypePortDataBufferPool {
      * @param dataType DataType of buffer to create
      * @return Returns unused buffer of possibly newly created pool
      */
-    @SpinLock
     private synchronized final PortDataManager possiblyCreatePool(DataTypeBase dataType) {
 
         // search for correct pool
-        for (@SizeT int i = 0, n = pools.size(); i < n; i++) {
+        for (int i = 0, n = pools.size(); i < n; i++) {
             PortDataBufferPool pbp = pools.get(i);
             if (pbp.dataType == dataType) {
                 return pbp.getUnusedBuffer();
@@ -91,26 +86,13 @@ public class MultiTypePortDataBufferPool {
      *
      * @param indent Current indentation
      */
-    public void printStructure(int indent, @Ref LogStream output) {
+    public void printStructure(int indent, LogStream output) {
         for (int i = 0; i < indent; i++) {
             output.append(" ");
         }
         output.appendln("MultiTypePortDataBufferPool:");
-        for (@SizeT int i = 0, n = pools.size(); i < n; i++) {
+        for (int i = 0, n = pools.size(); i < n; i++) {
             pools.get(i).printStructure(indent + 2, output);
         }
     }
-
-
-    /*Cpp
-
-    virtual ~MultiTypePortDataBufferPool() {
-        // now there shouldn't be the hazard that a new pool is/will be created
-        for (size_t i = 0, n = pools.size(); i < n; i++) {
-            pools.get(i)->controlledDelete();
-        }
-        pools.clear();
-    }
-
-     */
 }

@@ -21,16 +21,6 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogDomain;
@@ -55,29 +45,26 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  *
  */
-@PassByValue @Inline @NoCpp
 public class NetworkTestSuite extends LogUser {
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"test\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("test");
 
-    @AtFront @Inline @NoCpp
     public static class TestStdPort extends Port<MemoryBuffer> {
 
-        @PassByValue OutputStreamBuffer os = new OutputStreamBuffer();
-        @PassByValue InputStreamBuffer is = new InputStreamBuffer();
+        OutputStreamBuffer os = new OutputStreamBuffer();
+        InputStreamBuffer is = new InputStreamBuffer();
 
         public TestStdPort(PortCreationInfo pci) {
             super(pci);
         }
 
         public void publish(int i) {
-            @CustomPtr("tPortDataPtr") MemoryBuffer mb = getUnusedBuffer();
+            MemoryBuffer mb = getUnusedBuffer();
             os.reset(mb);
             os.writeInt(i);
             os.close();
@@ -85,7 +72,7 @@ public class NetworkTestSuite extends LogUser {
         }
 
         public int getIntRaw() {
-            @Const MemoryBuffer mb = getAutoLocked();
+            MemoryBuffer mb = getAutoLocked();
             is.reset(mb);
             int result = -1;
             if (is.moreDataAvailable()) {
@@ -104,11 +91,11 @@ public class NetworkTestSuite extends LogUser {
     public static final short PUBLISH_FREQ = 200, RECV_FREQ = 1000;
     public final int stopCycle;
 
-    public @Managed @SharedPtr PortNumeric<Integer> ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
-    public @Managed @SharedPtr PortNumeric<Integer> ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
-    public @Managed @SharedPtr TestStdPort stdPushOut, stdPullPushOut, stdRevPushOut, stdRevPushOutLocal, stdQOut;
-    public @Managed @SharedPtr TestStdPort stdPushIn, stdPullPushIn, stdRevPushIn, stdQIn;
-    public @Managed @SharedPtr BlackboardClient<MemoryBuffer> bbClient, localBbClient;
+    public PortNumeric<Integer> ccPushOut, ccPullPushOut, ccRevPushOut, ccRevPushOutLocal, ccQOut;
+    public PortNumeric<Integer> ccPushIn, ccPullPushIn, ccRevPushIn, ccQIn;
+    public TestStdPort stdPushOut, stdPullPushOut, stdRevPushOut, stdRevPushOutLocal, stdQOut;
+    public TestStdPort stdPushIn, stdPullPushIn, stdRevPushIn, stdQIn;
+    public BlackboardClient<MemoryBuffer> bbClient, localBbClient;
     public BlackboardServer<MemoryBuffer> bbServer;
     public SingleBufferedBlackboardServer<MemoryBuffer> sbbServer;
 
@@ -187,8 +174,8 @@ public class NetworkTestSuite extends LogUser {
 
         // write new values to ports and read input ports
         int i = 0;
-        @PassByValue InputStreamBuffer is = new InputStreamBuffer();
-        @PassByValue OutputStreamBuffer os = new OutputStreamBuffer();
+        InputStreamBuffer is = new InputStreamBuffer();
+        OutputStreamBuffer os = new OutputStreamBuffer();
 
         while (true) {
             i++;
@@ -254,7 +241,7 @@ public class NetworkTestSuite extends LogUser {
                     if (ccQIn.hasChanged()) {
                         ccQIn.resetChanged();
                         System.out.print("ccPushIn received: ");
-                        @Const @Ptr CoreNumber cn = null;
+                        CoreNumber cn = null;
                         while ((cn = ccQIn.dequeueSingleAutoLocked()) != null) {
                             System.out.print(" " + cn.intValue());
                         }
@@ -327,7 +314,7 @@ public class NetworkTestSuite extends LogUser {
                     if (stdQIn.hasChanged()) {
                         stdQIn.resetChanged();
                         System.out.print("stdPushIn received: ");
-                        @Const MemoryBuffer cn = null;
+                        MemoryBuffer cn = null;
                         while ((cn = stdQIn.dequeueSingleAutoLocked()) != null) {
                             is.reset(cn);
                             int result = -1;

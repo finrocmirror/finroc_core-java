@@ -1,3 +1,24 @@
+/**
+ * You received this file as part of an advanced experimental
+ * robotics framework prototype ('finroc')
+ *
+ * Copyright (C) 2010 Max Reichardt,
+ *   Robotics Research Lab, University of Kaiserslautern
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 package org.finroc.core.thread;
 
 import org.finroc.core.CoreFlags;
@@ -9,19 +30,12 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.AggregatedEdge;
 import org.finroc.core.port.EdgeAggregator;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
 /** ThreadContainer thread class */
-@SharedPtr
 public class ThreadContainerThread extends CoreLoopThreadBase implements RuntimeListener, FrameworkElementTreeFilter.Callback<Boolean> {
 
     /** Thread container that thread belongs to */
@@ -46,13 +60,12 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     private SimpleList<PeriodicFrameworkElementTask> traceBack = new SimpleList<PeriodicFrameworkElementTask>();
 
     /** tree filter to search for tasks */
-    @PassByValue private final FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+    private final FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
 
     /** temp buffer */
-    @PassByValue private final StringBuilder tmp = new StringBuilder();
+    private final StringBuilder tmp = new StringBuilder();
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"thread_container\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_container");
 
     public ThreadContainerThread(ThreadContainer threadContainer, long defaultCycleTime, boolean warnOnCycleTimeExceed) {
@@ -61,7 +74,6 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
         this.setName("ThreadContainer " + threadContainer.getName());
     }
 
-    @InCppFile
     public void run() {
         this.threadContainer.getRuntime().addListener(this);
         super.run();
@@ -77,15 +89,11 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                 tasks.clear();
                 nonSensorTasks.clear();
                 schedule.clear();
-
-                //JavaOnlyBlock
                 filter.traverseElementTree(this.threadContainer, this, null, tmp);
-
-                //Cpp filter.traverseElementTree(this->threadContainer, this, false, tmp);
                 tasks.addAll(nonSensorTasks);
 
                 // create task graph
-                for (@SizeT int i = 0; i < tasks.size(); i++) {
+                for (int i = 0; i < tasks.size(); i++) {
                     PeriodicFrameworkElementTask task = tasks.get(i);
 
                     // trace outgoing connections
@@ -97,7 +105,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
 
                     // do we have task without previous tasks?
                     boolean found = false;
-                    for (@SizeT int i = 0; i < tasks.size(); i++) {
+                    for (int i = 0; i < tasks.size(); i++) {
                         PeriodicFrameworkElementTask task = tasks.get(i);
                         if (task.previousTasks.size() == 0) {
                             schedule.add(task);
@@ -105,7 +113,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             found = true;
 
                             // delete from next tasks' previous task list
-                            for (@SizeT int j = 0; j < task.nextTasks.size(); j++) {
+                            for (int j = 0; j < task.nextTasks.size(); j++) {
                                 PeriodicFrameworkElementTask next = task.nextTasks.get(j);
                                 next.previousTasks.removeElem(task);
                             }
@@ -123,7 +131,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                     traceBack.add(current);
                     while (true) {
                         boolean end = true;
-                        for (@SizeT int i = 0; i < current.previousTasks.size(); i++) {
+                        for (int i = 0; i < current.previousTasks.size(); i++) {
                             PeriodicFrameworkElementTask prev = current.previousTasks.get(i);
                             if (!traceBack.contains(prev)) {
                                 end = false;
@@ -138,7 +146,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             tasks.removeElem(current);
 
                             // delete from next tasks' previous task list
-                            for (@SizeT int j = 0; j < current.nextTasks.size(); j++) {
+                            for (int j = 0; j < current.nextTasks.size(); j++) {
                                 PeriodicFrameworkElementTask next = current.nextTasks.get(j);
                                 next.previousTasks.removeElem(current);
                             }
@@ -150,7 +158,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
         }
 
         // execute tasks
-        for (@SizeT int i = 0; i < schedule.size(); i++) {
+        for (int i = 0; i < schedule.size(); i++) {
             schedule.get(i).task.executeTask();
         }
     }
@@ -184,8 +192,8 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
         // add to trace stack
         trace.add(outgoing);
 
-        @Ptr ArrayWrapper<AggregatedEdge> outEdges = outgoing.getEmergingEdges();
-        for (@SizeT int i = 0; i < outEdges.size(); i++) {
+        ArrayWrapper<AggregatedEdge> outEdges = outgoing.getEmergingEdges();
+        for (int i = 0; i < outEdges.size(); i++) {
             EdgeAggregator dest = outEdges.get(i).destination;
             if (!trace.contains(dest)) {
 
@@ -214,7 +222,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             traceOutgoing(task, ea);
                         }
                     }
-                    @PassByValue FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(parent, CoreFlags.READY | CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
+                    FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(parent, CoreFlags.READY | CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
                     FrameworkElement otherIf = null;
                     while ((otherIf = ci.next()) != null) {
                         EdgeAggregator ea = (EdgeAggregator)otherIf;
@@ -239,14 +247,14 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
         return fe.getFlag(CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
     }
 
-    @Override @InCppFile
+    @Override
     public void runtimeChange(byte changeType, FrameworkElement element) {
         if (element.isChildOf(this.threadContainer, true)) {
             reschedule = true;
         }
     }
 
-    @Override @InCppFile
+    @Override
     public void runtimeEdgeChange(byte changeType, AbstractPort source, AbstractPort target) {
         if (source.isChildOf(this.threadContainer) && target.isChildOf(this.threadContainer)) {
             reschedule = true;

@@ -26,16 +26,10 @@ import org.finroc.core.port.EdgeAggregator;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortGroup;
 import org.finroc.core.thread.PeriodicFrameworkElementTask;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Standard Module.
  * Equivalent to tModule class in MCA2.
@@ -43,10 +37,9 @@ import org.rrlib.finroc_core_utils.jc.thread.Task;
 public class Module extends FrameworkElement implements Task {
 
     /** Task for periodic Sense()-call */
-    @AtFront @PassByValue
     private class SenseTask implements Task {
 
-        @Override @InCppFile
+        @Override
         public void executeTask() {
             Sense();
         }
@@ -71,7 +64,7 @@ public class Module extends FrameworkElement implements Task {
      * @param name Module name
      * @param parent Parent of module
      */
-    public Module(FrameworkElement parent, @Const @Ref String name) {
+    public Module(FrameworkElement parent, String name) {
         super(parent, name);
         sensorInput.addAnnotation(new PeriodicFrameworkElementTask(sensorInput, sensorOutput, senseTask));
         controllerInput.addAnnotation(new PeriodicFrameworkElementTask(controllerInput, controllerOutput, this));
@@ -85,14 +78,12 @@ public class Module extends FrameworkElement implements Task {
     /**
      * Sense method
      */
-    @Virtual
     protected void Sense() {
     }
 
     /**
      * Control method
      */
-    @Virtual
     protected void Control() {
     }
 }

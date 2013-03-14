@@ -25,18 +25,6 @@ import java.io.File;
 import java.nio.ByteOrder;
 
 import org.rrlib.finroc_core_utils.jc.AutoDeleter;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.ForwardDecl;
-import org.rrlib.finroc_core_utils.jc.annotation.HPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Managed;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass2;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -52,7 +40,7 @@ import org.finroc.core.port.net.UpdateTimeChangeListener;
 import org.finroc.core.util.Files;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Contains global settings of runtime environment.
  *
@@ -60,11 +48,6 @@ import org.finroc.core.util.Files;
  *
  * staticInit() should be called after runtime and data types have been initialized.
  */
-@HPrepend("template <typename T> \n class Parameter;")
-@ForwardDecl(ParameterNumeric.class)
-@CppInclude( {"parameter/Parameter.h"})
-@Superclass2( {"FrameworkElement", "PortListener<int>"})
-@IncludeClass( {FrameworkElement.class, PortListener.class})
 public class RuntimeSettings extends FrameworkElement implements PortListener<CoreNumber> {
 
     /** Singleton Instance */
@@ -75,23 +58,19 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * be used in both. This flag indicates, whether the Java modules are
      * used together with a C++ core.
      */
-    @JavaOnly
     public static final boolean CPP_CORE = false;
 
     /** Display warning, if loop times of CoreLoopThreads are exceeded? */
-    @CppType("Parameter<bool>")
-    @Managed @Ptr public static ParameterBool WARN_ON_CYCLE_TIME_EXCEED;
+    public static ParameterBool WARN_ON_CYCLE_TIME_EXCEED;
 
     /** Default cycle time of CoreLoopThreads in ms*/
-    @CppType("Parameter<long long int>")
-    @Managed @Ptr public static ParameterNumeric<Long> DEFAULT_CYCLE_TIME;
+    public static ParameterNumeric<Long> DEFAULT_CYCLE_TIME;
 
     /** Default number of event threads */
     //public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
 
     /** Default minimum network update time (ms) */
-    @CppType("Parameter<int>")
-    @Managed @Ptr public static ParameterNumeric<Integer> DEFAULT_MINIMUM_NETWORK_UPDATE_TIME;
+    public static ParameterNumeric<Integer> DEFAULT_MINIMUM_NETWORK_UPDATE_TIME;
 
     public static final int EDGE_LIST_DEFAULT_SIZE = 0;
     public static final int EDGE_LIST_SIZE_INCREASE_FACTOR = 2;
@@ -100,18 +79,17 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     public final static boolean ANDROID_PLATFORM = System.getProperty("java.vm.vendor").equals("The Android Project");
 
     /** Absolute Root Directory of Runtime (location of finroc_core.jar) */
-    @JavaOnly private final static File rootDir = new File(Files.getRootDir(RuntimeSettings.class)); //new File(new File(Files.getRootDir(RuntimeSettings.class)).getParentFile().getAbsolutePath());
+    private final static File rootDir = new File(Files.getRootDir(RuntimeSettings.class)); //new File(new File(Files.getRootDir(RuntimeSettings.class)).getParentFile().getAbsolutePath());
 
     /** Is runtime executed as .class files (usually in Debug mode) or in .jar file */
-    @JavaOnly private final static Boolean debugging = ANDROID_PLATFORM ? false : !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
+    private final static Boolean debugging = ANDROID_PLATFORM ? false : !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
     // new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin") || new File(Files.getRootDir(RuntimeSettings.class) + "/org/finroc/core/RuntimeSettings.java").exists();
 
     /** Loop time for buffer tracker (in ms) */
     //public static final IntSetting BUFFER_TRACKER_LOOP_TIME = inst.add("BUFFER_TRACKER_LOOP_TIME", 140, true);
 
     /** Cycle time for stream thread */
-    @CppType("Parameter<int>")
-    @Managed @Ptr public static ParameterNumeric<Integer> STREAM_THREAD_CYCLE_TIME;
+    public static ParameterNumeric<Integer> STREAM_THREAD_CYCLE_TIME;
 
     /** > 0 if Runtime is instantiated in Java Applet - contains bit size of server CPU */
     //public static final IntSetting runningInApplet = inst.add("RUNNING_IN_APPLET", 0, false);
@@ -120,12 +98,11 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * Period in ms after which garbage collector will delete objects... any threads
      * still working on objects while creating deletion task should be finished by then
      */
-    @CppType("Parameter<int>")
-    @Managed @Ptr public static ParameterNumeric<Integer> GARBAGE_COLLECTOR_SAFETY_PERIOD;
+    public static ParameterNumeric<Integer> GARBAGE_COLLECTOR_SAFETY_PERIOD;
 
     /** ByteOrder of host that runtime is running on */
     //@JavaOnly public static ByteOrder byteOrder = processByteOrderString(ConfigFile.getInstance().getString("BYTE_ORDER", "native"));
-    @JavaOnly public static ByteOrder byteOrder = ByteOrder.nativeOrder();
+    public static ByteOrder byteOrder = ByteOrder.nativeOrder();
 
     /** Collect edge statistics ? */
     public static final boolean COLLECT_EDGE_STATISTICS = false;
@@ -149,17 +126,15 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     private static boolean duplicateQualifiedNamesAllowed;
 
     /** List with listeners for update times */
-    @PassByValue
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"settings\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("settings");
 
     /**
      * @return Absolute Root Directory of Runtime (location of finroc_core.jar)
      */
-    @JavaOnly public static File getRootDir() {
+    public static File getRootDir() {
         //logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Root dir is " + rootDir);
         return rootDir;
     }
@@ -168,7 +143,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * @param s String from config file
      * @return Byte Order
      */
-    @JavaOnly private static ByteOrder processByteOrderString(String s) {
+    private static ByteOrder processByteOrderString(String s) {
         String x = s.toLowerCase().trim();
         if (x.contains("little")) {
             return ByteOrder.LITTLE_ENDIAN;
@@ -182,7 +157,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /**
      * @return Returns whether runtime is executed as .class files (usually in Debug mode) or in .jar file
      */
-    @JavaOnly public synchronized static boolean isDebugging() {
+    public synchronized static boolean isDebugging() {
         return debugging;
     }
 
@@ -204,7 +179,6 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     }
 
     /** Completes initialization */
-    @InCppFile
     static void staticInit() {
         //inst.sharedPorts = new SharedPorts(inst.portRoot);
         //inst.init(RuntimeEnvironment.getInstance());
@@ -235,7 +209,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
         updateTimeListener.remove(listener);
     }
 
-    @Override @JavaOnly
+    @Override
     public void portChanged(AbstractPort origin, CoreNumber value) {
         updateTimeListener.notify(null, null, (short)value.intValue());
     }
@@ -260,7 +234,6 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /**
      * @return Is application running in applet?
      */
-    @JavaOnly
     public static boolean isRunningInApplet() {
         return false;
     }

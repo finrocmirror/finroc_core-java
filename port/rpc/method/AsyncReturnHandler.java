@@ -21,13 +21,10 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.finroc.core.port.rpc.MethodCallException;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Handles return value from method call
  */
@@ -39,7 +36,7 @@ public interface AsyncReturnHandler<R> extends AbstractAsyncReturnHandler {
      * @param method Method that was called
      * @param r Return value from method
      */
-    public void handleReturn(@Const @Ptr AbstractMethod method, @Const @Ref R r);
+    public void handleReturn(AbstractMethod method, R r);
 
     /**
      * Called on client when an asynchronous method call fails with an Exception
@@ -47,5 +44,5 @@ public interface AsyncReturnHandler<R> extends AbstractAsyncReturnHandler {
      * @param method Method that was called and failed
      * @param mce Exception that was thrown
      */
-    public void handleMethodCallException(@Const @Ptr AbstractMethod method, @Const @Ref MethodCallException mce);
+    public void handleMethodCallException(AbstractMethod method, MethodCallException mce);
 }

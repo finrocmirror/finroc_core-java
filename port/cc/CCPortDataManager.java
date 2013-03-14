@@ -22,24 +22,16 @@
 package org.finroc.core.port.cc;
 
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.VoidPtr;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Manager for "cheap copy" data.
  * GenericObject managed by this class can be shared among different threads.
  * Manager is also very simple - no lock counting.
  * It is mainly used for queueing CCPortData.
  */
-@Inline @NoCpp
 public class CCPortDataManager extends ReusableGenericObjectManager {
 
 //    /** Assign other data to this container */
@@ -61,8 +53,7 @@ public class CCPortDataManager extends ReusableGenericObjectManager {
      *  This is typically sufficient for "cheap copy" types though.)
      */
 
-    @InCpp("return _memcmp(getObject()->getRawDataPtr(), other, getObject()->getType().getSize()) == 0;")
-    @ConstMethod public boolean contentEquals(@Const @VoidPtr Object other) {
+    public boolean contentEquals(Object other) {
         return getObject().getData().equals(other);
     }
 
@@ -88,36 +79,14 @@ public class CCPortDataManager extends ReusableGenericObjectManager {
         return true;
     }
 
-    /*Cpp
-    inline void handlePointerRelease() {
-      recycle2();
-    }
-     */
-
     /**
      * Create object of specified type managed by CCPortDataManager
      *
      * @param dataType Data type
      * @return Manager
      */
-    @InCpp("return static_cast<CCPortDataManager*>(dataType.createInstanceGeneric<CCPortDataManager>()->getManager());")
-    public static CCPortDataManager create(@Const @Ref DataTypeBase dataType) {
+    public static CCPortDataManager create(DataTypeBase dataType) {
         return (CCPortDataManager)(dataType.createInstanceGeneric(new CCPortDataManager())).getManager();
     }
-
-//    /*Cpp
-//    void setData(const T& data) {
-//        setData(&data);
-//    }
-//     */
-//
-//    /**
-//     * Assign new value to container
-//     *
-//     * @param data new value
-//     */
-//    public void setData(@Const @Ptr T data) {
-//        portData.assign((CCPortData)data);
-//    }
 
 }

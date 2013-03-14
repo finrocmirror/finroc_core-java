@@ -25,23 +25,15 @@ import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port queue fragment.
  * Can be used to dequeue all values in port queue at once.
  */
-@Inline @NoCpp @JavaOnly
 public class PortQueueFragment<T extends RRLibSerializable> {
 
     /** Wrapped fragments - depending on port type */
@@ -55,7 +47,7 @@ public class PortQueueFragment<T extends RRLibSerializable> {
      *
      * @return Next element in QueueFragment
      */
-    public @Const @CustomPtr("tPortDataPtr") T dequeue() {
+    public T dequeue() {
         if (cc) {
             return wrappedCC.dequeueUnsafe().getObject().getData();
         } else {
@@ -69,7 +61,7 @@ public class PortQueueFragment<T extends RRLibSerializable> {
      *
      * @return Next element in QueueFragment
      */
-    public @Const @Ptr T dequeueAutoLocked() {
+    public T dequeueAutoLocked() {
         if (cc) {
             return wrappedCC.dequeueAutoLocked().getData();
         } else {
@@ -84,7 +76,7 @@ public class PortQueueFragment<T extends RRLibSerializable> {
      * (Using this dequeueSingle()-variant is more efficient when using CC types, but can be extremely costly with large data types)
      * @return true if element was dequeued - false if queue was empty
      */
-    public boolean dequeue(@Ref T result) {
+    public boolean dequeue(T result) {
         if (cc) {
             CCPortDataManager mgr = wrappedCC.dequeueUnsafe();
             if (mgr != null) {

@@ -22,14 +22,12 @@
 package org.finroc.core.port.stream;
 
 import org.finroc.core.port.AbstractPort;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Called when a port is connected
  */
-@Ptr
 public interface NewConnectionHandler {
 
     /**

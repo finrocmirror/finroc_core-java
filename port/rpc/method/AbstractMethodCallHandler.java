@@ -22,7 +22,7 @@
 package org.finroc.core.port.rpc.method;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Abstract parent for all call handler interfaces
  *

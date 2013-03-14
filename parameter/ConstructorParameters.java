@@ -24,7 +24,7 @@ package org.finroc.core.parameter;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Parameters used to instantiate a module
  * Are stored separately from Static parameters.

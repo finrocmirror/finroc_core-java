@@ -26,24 +26,12 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort.ConnectDirection;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SkipArgs;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port classes are not directly used by an application developer.
  * Rather a wrapped class based on this class is used.
@@ -52,14 +40,12 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  * - Only parts of the API meant to be used by the application developer are exposed.
  * - Connect() methods can be hidden/reimplemented (via name hiding). This can be used to enforce that only certain connections can be created at compile time.
  */
-@Inline @NoCpp @PassByValue @RawTypeArgs
 public class PortWrapperBase implements HasDestructor {
 
     /** Wrapped port */
-    @Ptr protected AbstractPort wrapped;
+    protected AbstractPort wrapped;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"ports\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("ports");
 
     @Override
@@ -70,7 +56,7 @@ public class PortWrapperBase implements HasDestructor {
     /**
      * @return Wrapped port. For rare case that someone really needs to access ports.
      */
-    public @Ptr AbstractPort getWrapped() {
+    public AbstractPort getWrapped() {
         return wrapped;
     }
 
@@ -78,15 +64,14 @@ public class PortWrapperBase implements HasDestructor {
      * Same as getName()
      * (except that we return a const char* in C++)
      */
-    @Const @CppType("char*") @ConstMethod
     public String getCName() {
-        return wrapped.getCName();
+        return wrapped.getName();
     }
 
     /**
      * @return Name of this framework element
      */
-    @ConstMethod public @Const String getName() {
+    public String getName() {
         return wrapped.getName();
     }
 
@@ -102,14 +87,14 @@ public class PortWrapperBase implements HasDestructor {
     /**
      * @return Is framework element ready/fully initialized and not yet deleted?
      */
-    @ConstMethod public boolean isReady() {
+    public boolean isReady() {
         return wrapped.isReady();
     }
 
     /**
      * @return Has port been deleted? (you should not encounter this)
      */
-    @ConstMethod public boolean isDeleted() {
+    public boolean isDeleted() {
         return wrapped.isDeleted();
     }
 
@@ -118,7 +103,7 @@ public class PortWrapperBase implements HasDestructor {
      *
      * @return Has port changed since last changed-flag-reset?
      */
-    @ConstMethod public boolean hasChanged() {
+    public boolean hasChanged() {
         return wrapped.hasChanged();
     }
 
@@ -134,14 +119,14 @@ public class PortWrapperBase implements HasDestructor {
     /**
      * @return Type of port data
      */
-    @ConstMethod public @Const DataTypeBase getDataType() {
+    public DataTypeBase getDataType() {
         return wrapped.getDataType();
     }
 
     /**
      * @return Additional type info for port data
      */
-    @ConstMethod public FinrocTypeInfo getDataTypeInfo() {
+    public FinrocTypeInfo getDataTypeInfo() {
         return FinrocTypeInfo.get(wrapped.getDataType());
     }
 
@@ -159,7 +144,7 @@ public class PortWrapperBase implements HasDestructor {
      *
      * @return Answer
      */
-    @ConstMethod public boolean pushStrategy() {
+    public boolean pushStrategy() {
         return wrapped.pushStrategy();
     }
 
@@ -177,7 +162,7 @@ public class PortWrapperBase implements HasDestructor {
      *
      * @return Answer
      */
-    @ConstMethod public boolean reversePushStrategy() {
+    public boolean reversePushStrategy() {
         return wrapped.reversePushStrategy();
     }
 
@@ -185,7 +170,7 @@ public class PortWrapperBase implements HasDestructor {
      * (slightly expensive)
      * @return Is port currently connected?
      */
-    @ConstMethod public boolean isConnected() {
+    public boolean isConnected() {
         return wrapped.isConnected();
     }
 
@@ -196,7 +181,7 @@ public class PortWrapperBase implements HasDestructor {
      * @param other Other String
      * @return Result
      */
-    @ConstMethod public boolean nameEquals(@Const @Ref String other) {
+    public boolean nameEquals(String other) {
         return wrapped.nameEquals(other);
     }
 
@@ -204,7 +189,7 @@ public class PortWrapperBase implements HasDestructor {
      * @return
      * @see org.finroc.core.FrameworkElement#getLogDescription()
      */
-    @ConstMethod public String getLogDescription() {
+    public String getLogDescription() {
         return wrapped.getLogDescription();
     }
 
@@ -233,7 +218,7 @@ public class PortWrapperBase implements HasDestructor {
      *
      * @param to Port to connect this port to
      */
-    public void connectTo(@Const @Ref PortWrapperBase to) {
+    public void connectTo(PortWrapperBase to) {
         wrapped.connectTo(to.wrapped);
     }
 
@@ -271,14 +256,6 @@ public class PortWrapperBase implements HasDestructor {
         wrapped.init();
     }
 
-    /*Cpp
-    // using this operator, it can be checked conveniently in PortListener's portChanged()
-    // whether origin port is the same port as this object wraps
-    bool operator ==(const AbstractPort* p) const {
-        return wrapped == p;
-    }
-     */
-
     /**
      * @return Number of connections to this port (incoming and outgoing)
      */
@@ -309,8 +286,7 @@ public class PortWrapperBase implements HasDestructor {
      * @return Annotation. Null if port has no annotation of this type.
      */
     @SuppressWarnings("unchecked")
-    @SkipArgs("1")
-    public <A extends FinrocAnnotation> A getAnnotation(@CppDefault("rrlib::serialization::DataType<A>()") DataTypeBase dt) {
+    public <A extends FinrocAnnotation> A getAnnotation(DataTypeBase dt) {
         return (A)wrapped.getAnnotation(dt);
     }
 

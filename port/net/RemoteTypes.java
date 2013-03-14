@@ -25,14 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
@@ -48,11 +40,10 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.UnknownType;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class aggregates information about types used in remote runtime environments.
  */
-@CppInclude("parameter/Parameter.h")
 public class RemoteTypes extends LogUser implements TypeEncoder {
 
     /** Selected C++ rrlib_rtti type traits */
@@ -62,11 +53,9 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     public static final int IS_ENUM = 1 << 3;
 
     /** Log domain for edges */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"remote_types\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("remote_types");
 
     /** Entry in remote type register */
-    @AtFront @PassByValue @Friend(RemoteTypes.class)
     static class Entry {
 
         /** local data type that represents the same time - null if there is no such type in local runtime environment */
@@ -113,7 +102,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      *
      * @param ci Input Stream Buffer to read from
      */
-    private void deserialize(@Ref InputStreamBuffer ci) {
+    private void deserialize(InputStreamBuffer ci) {
         LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
         if (types.size() == 0) {
             assert(!initialized()) : "Already initialized";
@@ -126,11 +115,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
         while (next != -1) {
             short time = ci.readShort();
 
-            //JavaOnlyBlock
             FinrocTypeInfo.Type type = FinrocTypeInfo.Type.values()[ci.readByte()];
-
-            //Cpp ci.readByte();
-
             String name = ci.readString();
             short checkedTypes = DataTypeBase.getTypeCount();
             DataTypeBase local = DataTypeBase.findType(name);
@@ -151,17 +136,10 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
                 }
             }
 
-            //JavaOnlyBlock
             e.name = name;
             if (local == null) {
                 local = new UnknownType(name, type, enumConstants != null ? enumConstants.toArray() : null, traits);
             }
-
-            /*Cpp
-            if (local == NULL) {
-                e.name = name;
-            }
-             */
 
             types.add(e, true);
             if (local != null) {
@@ -180,7 +158,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      *
      * @param co Output Stream to write information to
      */
-    private void serializeLocalDataTypes(@Ref OutputStreamBuffer co) {
+    private void serializeLocalDataTypes(OutputStreamBuffer co) {
         if (localTypesSent == 0) {
             int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getValue();
             co.writeShort((short)t);
@@ -242,7 +220,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      * @param dataType Local Data Type
      * @return Remote default minimum network update interval for this type
      */
-    public short getTime(@Const @Ref DataTypeBase dataType) {
+    public short getTime(DataTypeBase dataType) {
         assert(initialized()) : "Not initialized";
         while ((short)updateTimes.size() <= dataType.getUid()) {
             updateTimes.add((short) - 1, true);
@@ -253,7 +231,6 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     /**
      * @return List with remote data type names
      */
-    @JavaOnly
     public List<String> getRemoteTypeNames() {
         ArrayList<String> result = new ArrayList<String>();
         ArrayWrapper<Entry> iterable = types.getIterable();
@@ -281,7 +258,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             throw new RuntimeException("Corrupt type information from received from connection partner");
         }
 
-        @Ref Entry e = types.getIterable().get(uid);
+        Entry e = types.getIterable().get(uid);
         if (e.localDataType == null && e.typesChecked < DataTypeBase.getTypeCount()) {
             // we have more types locally... maybe we can resolve missing types now
             e.typesChecked = DataTypeBase.getTypeCount();

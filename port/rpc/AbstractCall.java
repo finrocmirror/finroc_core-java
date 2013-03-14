@@ -21,14 +21,6 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -36,14 +28,11 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.finroc.core.portdatabase.SerializableReusable;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the base abstract class for (possibly synchronous) calls
  * (such as pull calls and method calls)
  */
-@IncludeClass( {MethodCallException.class })
-@Include("ParameterUtil.h")
-@Friend( {MethodCallSyncher.class, SynchMethodCallLogic.class})
 public abstract class AbstractCall extends SerializableReusable {
 
     /** Method Syncher index of calling method - in case this is a synchronous method call - otherwise -1 - valid only on calling system */
@@ -67,13 +56,12 @@ public abstract class AbstractCall extends SerializableReusable {
     private int remotePortHandle = -1;
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"rpc\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc");
 
     /**
      * @return Destination port handle - only used while call is enqueued in network queue
      */
-    @ConstMethod public int getRemotePortHandle() {
+    public int getRemotePortHandle() {
         return remotePortHandle;
     }
 
@@ -87,7 +75,7 @@ public abstract class AbstractCall extends SerializableReusable {
     /**
      * @return Local port handle - only used while call is enqueued in network queue
      */
-    @ConstMethod public int getLocalPortHandle() {
+    public int getLocalPortHandle() {
         return localPortHandle;
     }
 
@@ -118,7 +106,7 @@ public abstract class AbstractCall extends SerializableReusable {
         deserializeImpl(is);
     }
 
-    public void deserializeImpl(@Ref InputStreamBuffer is) {
+    public void deserializeImpl(InputStreamBuffer is) {
         status = is.readEnum(Status.class);
         exceptionType = is.readEnum(MethodCallException.Type.class);
         syncherID = is.readByte();
@@ -129,7 +117,7 @@ public abstract class AbstractCall extends SerializableReusable {
     /**
      * @return Method Syncher index of calling method
      */
-    @ConstMethod protected int getSyncherID() {
+    protected int getSyncherID() {
         return syncherID;
     }
 
@@ -141,7 +129,7 @@ public abstract class AbstractCall extends SerializableReusable {
         this.syncherID = (byte)syncherID;
     }
 
-    @ConstMethod protected short getMethodCallIndex() {
+    protected short getMethodCallIndex() {
         return methodCallIndex;
     }
 
@@ -149,7 +137,7 @@ public abstract class AbstractCall extends SerializableReusable {
         this.methodCallIndex = methodCallIndex;
     }
 
-    @ConstMethod public Status getStatus() {
+    public Status getStatus() {
         return status;
     }
 
@@ -157,11 +145,11 @@ public abstract class AbstractCall extends SerializableReusable {
         this.status = status;
     }
 
-    @ConstMethod public int getThreadUid() {
+    public int getThreadUid() {
         return threadUid;
     }
 
-    @ConstMethod public @Const @Ref String getStatusString() {
+    public String getStatusString() {
         return status.toString();
     }
 
@@ -171,7 +159,7 @@ public abstract class AbstractCall extends SerializableReusable {
      *
      * @param mcs MethodSyncher object to use
      */
-    public void setupSynchCall(@Ptr MethodCallSyncher mcs) {
+    public void setupSynchCall(MethodCallSyncher mcs) {
         status = Status.SYNCH_CALL;
         threadUid = mcs.getThreadUid();
         setSyncherID(mcs.getIndex());
@@ -203,14 +191,14 @@ public abstract class AbstractCall extends SerializableReusable {
     /**
      * @return Is call (already) returning?
      */
-    @ConstMethod public boolean isReturning(boolean includeException) {
+    public boolean isReturning(boolean includeException) {
         return status == Status.ASYNCH_RETURN || status == Status.SYNCH_RETURN || (includeException && status == Status.EXCEPTION);
     }
 
     /**
      * @return Does call cause a connection exception
      */
-    @ConstMethod public boolean hasException() {
+    public boolean hasException() {
         return status == Status.EXCEPTION;
     }
 

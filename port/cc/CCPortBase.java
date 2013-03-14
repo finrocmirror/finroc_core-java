@@ -22,20 +22,6 @@
 package org.finroc.core.port.cc;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.InitInBody;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
-import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
@@ -46,7 +32,6 @@ import org.finroc.core.CoreRegister;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.AbstractPort;
-import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortListener;
@@ -55,7 +40,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is the abstract base class for buffer ports.
  *
@@ -63,9 +48,6 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
  * concerning calling threads (that they are called only once at the same time)
  * This has to be done by all public methods.
  */
-@IncludeClass(SafeConcurrentlyIterableList.class)
-@Friend( {Port.class })// @ForwardDecl(RuntimeSettings.class) @CppInclude("RuntimeSettings.h")
-@CppInclude("CCQueueFragmentRaw.h")
 public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** Edges emerging from this port */
@@ -90,7 +72,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Data that is currently owned - used to belong to a terminated thread
      */
-    protected @Ptr CCPortDataManagerTL ownedData;
+    protected CCPortDataManagerTL ownedData;
 
     /**
      * Is data assigned to port in standard way? Otherwise - for instance, when using queues -
@@ -98,7 +80,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * Hopefully compiler will optimize this, since it's final/const
      */
-    @Const protected final boolean standardAssign;
+    protected final boolean standardAssign;
 
     /**
      * Optimization - if this is not null that means:
@@ -110,10 +92,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Port Index - derived from handle - for speed reasons
      */
-    @Const final protected int portIndex;
+    final protected int portIndex;
 
     /** Queue for ports with incoming value queue */
-    final protected @Ptr CCPortQueue queue;
+    final protected CCPortQueue queue;
 
     /** Listens to port value changes - may be null */
     protected PortListenerManager portListener = new PortListenerManager();
@@ -122,13 +104,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     protected CCPullRequestHandler pullRequestHandler;
 
     /** Unit of port (currently only used for numeric ports) */
-    protected final @Ptr Unit unit;
+    protected final Unit unit;
 
     /**
      * @param pci PortCreationInformation
      */
-    //@Init("queue(getFlag(PortFlags::HAS_QUEUE) ? new finroc::util::WonderQueue<CCInterThreadContainer<> >() : NULL)")
-    @InitInBody("value")
     public CCPortBase(PortCreationInfo pci) {
         super(pci);
         assert(FinrocTypeInfo.isCCType(pci.dataType));
@@ -161,8 +141,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     }
 
     // helper for direct member initialization in C++
-    @InCpp("return static_cast<CCPortDataManager*>(dt.createInstanceGeneric<CCPortDataManager>()->getManager());")
-    private static @Ptr CCPortDataManager createDefaultValue(@Const @Ref DataTypeBase dt) {
+    private static CCPortDataManager createDefaultValue(DataTypeBase dt) {
         return (CCPortDataManager)(dt.createInstanceGeneric(new CCPortDataManager())).getManager();
     }
 
@@ -214,7 +193,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param pdr ThreadLocalCache with tc.data set
      */
-    @Inline public void assign(ThreadLocalCache tc) {
+    public void assign(ThreadLocalCache tc) {
         if (!standardAssign) {
             nonStandardAssign(tc);
         }
@@ -235,8 +214,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param tc ThreadLocalCache with tc.data set
      */
-    @InCppFile
-    @Virtual protected void nonStandardAssign(ThreadLocalCache tc) {
+    protected void nonStandardAssign(ThreadLocalCache tc) {
         if (getFlag(PortFlags.USES_QUEUE)) {
             assert(getFlag(PortFlags.HAS_QUEUE));
 
@@ -253,7 +231,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache
      * @return Unused buffer for writing
      */
-    @Inline protected @Ptr CCPortDataManagerTL getUnusedBuffer(ThreadLocalCache tc) {
+    protected CCPortDataManagerTL getUnusedBuffer(ThreadLocalCache tc) {
         return tc.getUnusedBuffer(ccTypeIndex);
     }
 
@@ -263,11 +241,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache
      * @param data Data to publish
      */
-    @Inline public void publish(ThreadLocalCache tc, CCPortDataManagerTL data) {
-        //JavaOnlyBlock
+    public void publish(ThreadLocalCache tc, CCPortDataManagerTL data) {
         publishImpl(tc, data, false, CHANGED, false);
-
-        //Cpp publishImpl<false, CHANGED, false>(tc, data);
     }
 
     /**
@@ -278,25 +253,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param reverse Value received in reverse direction?
      * @param changedConstant changedConstant to use
      */
-    @Inline protected void publish(ThreadLocalCache tc, CCPortDataManagerTL data, boolean reverse, byte changedConstant) {
-        //JavaOnlyBlock
+    protected void publish(ThreadLocalCache tc, CCPortDataManagerTL data, boolean reverse, byte changedConstant) {
         publishImpl(tc, data, reverse, changedConstant, false);
-
-        /*Cpp
-        if (!reverse) {
-            if (changedConstant == CHANGED) {
-                publishImpl<false, CHANGED, false>(tc, data);
-            } else {
-                publishImpl<false, CHANGED_INITIAL, false>(tc, data);
-            }
-        } else {
-            if (changedConstant == CHANGED) {
-                publishImpl<true, CHANGED, false>(tc, data);
-            } else {
-                publishImpl<true, CHANGED_INITIAL, false>(tc, data);
-            }
-        }
-        */
     }
 
     /**
@@ -312,15 +270,10 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
             return "Buffer has wrong type";
         }
         ThreadLocalCache tc = ThreadLocalCache.get();
-
-        //JavaOnlyBlock
         publishImpl(tc, buffer, false, CHANGED, true);
-
-        //Cpp publishImpl<false, CHANGED, true>(tc, buffer);
         return "";
     }
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT, bool _cINFORM_LISTENERS>
     /**
      * Publish data
      *
@@ -330,7 +283,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param changedConstant changedConstant to use
      * @param browserPublish Inform this port's listeners on change and also publish in reverse direction? (only set from BrowserPublish())
      */
-    @Inline private void publishImpl(ThreadLocalCache tc, CCPortDataManagerTL data, final boolean reverse, final byte changedConstant, final boolean browserPublish) {
+    private void publishImpl(ThreadLocalCache tc, CCPortDataManagerTL data, final boolean reverse, final byte changedConstant, final boolean browserPublish) {
         assert data.getObject().getType() != null : "Port data type not initialized";
         if (!(isInitialized() || browserPublish)) {
             printNotReadyMessage("Ignoring publishing request.");
@@ -341,7 +294,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
             return;
         }
 
-        @Ptr ArrayWrapper<CCPortBase> dests = reverse ? edgesDest.getIterable() : edgesSrc.getIterable();
+        ArrayWrapper<CCPortBase> dests = reverse ? edgesDest.getIterable() : edgesSrc.getIterable();
 
         // assign
         tc.data = data;
@@ -355,15 +308,11 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         }
 
         // later optimization (?) - unroll loops for common short cases
-        for (@SizeT int i = 0; i < dests.size(); i++) {
+        for (int i = 0; i < dests.size(); i++) {
             CCPortBase dest = dests.get(i);
-            @InCpp("bool push = (dest != NULL) && dest->wantsPush<REVERSE, CHANGE_CONSTANT>(REVERSE, CHANGE_CONSTANT);")
             boolean push = (dest != null) && dest.wantsPush(reverse, changedConstant);
             if (push) {
-                //JavaOnlyBlock
                 dest.receive(tc, this, reverse, changedConstant);
-
-                //Cpp dest->receive<REVERSE, CHANGE_CONSTANT>(tc, this, REVERSE, CHANGE_CONSTANT);
             }
         }
 
@@ -372,7 +321,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
             dests = edgesDest.getIterable();
             for (int i = 0, n = dests.size(); i < n; i++) {
-                @Ptr CCPortBase dest = dests.get(i);
+                CCPortBase dest = dests.get(i);
                 boolean push = (dest != null) && dest.wantsPush(true, changedConstant);
                 if (push) {
                     dest.receive(tc, this, true, changedConstant);
@@ -381,7 +330,6 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         }
     }
 
-    //Cpp template <bool _cREVERSE, int8 _cCHANGE_CONSTANT>
     /**
      * Receive data from another port
      *
@@ -390,9 +338,9 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param reverse Value received in reverse direction?
      * @param changedConstant changedConstant to use
      */
-    @Inline protected void receive(ThreadLocalCache tc, CCPortBase origin, boolean reverse, byte changedConstant) {
-        @InCpp("") final boolean REVERSE = reverse;
-        @InCpp("") final byte CHANGE_CONSTANT = changedConstant;
+    protected void receive(ThreadLocalCache tc, CCPortBase origin, boolean reverse, byte changedConstant) {
+        final boolean REVERSE = reverse;
+        final byte CHANGE_CONSTANT = changedConstant;
 
         // Backup tc references (in case it is modified - e.g. in BoundedNumberPort)
         CCPortDataManagerTL oldData = tc.data;
@@ -405,30 +353,22 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
         if (!REVERSE) {
             // forward
-            @Ptr ArrayWrapper<CCPortBase> dests = edgesSrc.getIterable();
+            ArrayWrapper<CCPortBase> dests = edgesSrc.getIterable();
             for (int i = 0, n = dests.size(); i < n; i++) {
-                @Ptr CCPortBase dest = dests.get(i);
-                @InCpp("bool push = (dest != NULL) && dest->wantsPush<false, CHANGE_CONSTANT>(false, CHANGE_CONSTANT);")
+                CCPortBase dest = dests.get(i);
                 boolean push = (dest != null) && dest.wantsPush(false, CHANGE_CONSTANT);
                 if (push) {
-                    //JavaOnlyBlock
                     dest.receive(tc, this, false, CHANGE_CONSTANT);
-
-                    //Cpp dest->receive<false, CHANGE_CONSTANT>(tc, this, false, CHANGE_CONSTANT);
                 }
             }
 
             // reverse
             dests = edgesDest.getIterable();
             for (int i = 0, n = dests.size(); i < n; i++) {
-                @Ptr CCPortBase dest = dests.get(i);
-                @InCpp("bool push = (dest != NULL) && dest->wantsPush<true, CHANGE_CONSTANT>(true, CHANGE_CONSTANT);")
+                CCPortBase dest = dests.get(i);
                 boolean push = (dest != null) && dest.wantsPush(true, CHANGE_CONSTANT);
                 if (push && dest != origin) {
-                    //JavaOnlyBlock
                     dest.receive(tc, this, true, CHANGE_CONSTANT);
-
-                    //Cpp dest->receive<true, CHANGE_CONSTANT>(tc, this, true, CHANGE_CONSTANT);
                 }
             }
         }
@@ -443,15 +383,12 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param tc Initialized ThreadLocalCache
      */
-    @Inline
     private void updateStatistics(ThreadLocalCache tc, CCPortBase source, CCPortBase target) {
         if (RuntimeSettings.COLLECT_EDGE_STATISTICS) { // const, so method can be optimized away completely
             updateEdgeStatistics(source, target, tc.data.getObject());
         }
     }
 
-    @Inline
-    @InCpp("portListener.notify(this, tc->data);")
     private void notifyListeners(ThreadLocalCache tc) {
         portListener.notify(this, tc.data.getObject().getData());
     }
@@ -476,7 +413,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @return Current data with auto-lock (can only be unlocked with ThreadLocalCache auto-unlock)
      */
-    @Inline @Const public GenericObject getAutoLockedRaw() {
+    public GenericObject getAutoLockedRaw() {
         ThreadLocalCache tc = ThreadLocalCache.get();
 
         if (pushStrategy()) {
@@ -558,8 +495,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer to copy current data to
      */
-    @Inline
-    public <T extends RRLibSerializable> void getRawT(@Ref T buffer) {
+    public <T extends RRLibSerializable> void getRawT(T buffer) {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = value;
@@ -662,8 +598,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param first Call on first/originating port?
      * @return Locked port data
      */
-    private void pullValueRawImpl(@Ptr ThreadLocalCache tc, boolean intermediateAssign, boolean first) {
-        @Ptr ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
+    private void pullValueRawImpl(ThreadLocalCache tc, boolean intermediateAssign, boolean first) {
+        ArrayWrapper<CCPortBase> sources = edgesDest.getIterable();
         if ((!first) && pullRequestHandler != null) { // for network port pulling it's good if pullRequestHandler is not called on first port - and there aren't any scenarios where this would make sense
             CCPortDataManagerTL resBuf = tc.getUnusedBuffer(dataType);
             if (pullRequestHandler.pullRequest(this, resBuf, intermediateAssign)) {
@@ -678,7 +614,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         }
 
         // continue with next-best connected source port
-        for (@SizeT int i = 0, n = sources.size(); i < n; i++) {
+        for (int i = 0, n = sources.size(); i < n; i++) {
             CCPortBase pb = sources.get(i);
             if (pb != null) {
                 pb.pullValueRawImpl(tc, intermediateAssign, false);
@@ -716,14 +652,14 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * @param listener Listener to add
      */
-    public void addPortListenerRaw(@CppType("PortListenerRaw") PortListener<?> listener) {
+    public void addPortListenerRaw(PortListener<?> listener) {
         portListener.add(listener);
     }
 
     /**
      * @param listener Listener to add
      */
-    public void removePortListenerRaw(@CppType("PortListenerRaw") PortListener<?> listener) {
+    public void removePortListenerRaw(PortListener<?> listener) {
         portListener.remove(listener);
     }
 
@@ -737,7 +673,6 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @return Dequeued first/oldest element in queue
      */
-    @InCppFile
     public CCPortDataManager dequeueSingleUnsafeRaw() {
         assert(queue != null);
         return queue.dequeue();
@@ -753,7 +688,6 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @return Dequeued first/oldest element in queue
      */
-    @Inline
     public GenericObject dequeueSingleAutoLockedRaw() {
         CCPortDataManager result = dequeueSingleUnsafeRaw();
         if (result == null) {
@@ -768,8 +702,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param fragment Fragment to store all dequeued values in
      */
-    @InCppFile
-    public void dequeueAllRaw(@Ref CCQueueFragmentRaw fragment) {
+    public void dequeueAllRaw(CCQueueFragmentRaw fragment) {
         queue.dequeueAll(fragment);
     }
 
@@ -779,18 +712,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         tc.data = getLockedUnsafeInContainer();
         tc.ref = tc.data.getCurrentRef();
         CCPortBase t = (CCPortBase)target;
-
-        //JavaOnlyBlock
         t.receive(tc, this, reverse, CHANGED_INITIAL);
-
-        /*Cpp
-        if (reverse) {
-            t->receive<true, CHANGED_INITIAL>(tc, this, true, CHANGED_INITIAL);
-        } else {
-            t->receive<false, CHANGED_INITIAL>(tc, this, false, CHANGED_INITIAL);
-        }
-        */
-
         tc.data.releaseLock();
     }
 
@@ -834,7 +756,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Buffer with default value. Can be used to change default value
      * for port. However, this should be done before the port is used.
      */
-    public @Ptr GenericObject getDefaultBufferRaw() {
+    public GenericObject getDefaultBufferRaw() {
         assert(!isReady()) : "please set default value _before_ initializing port";
         return defaultValue.getObject();
     }

@@ -21,17 +21,6 @@
  */
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.Protected;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPoolTL;
@@ -42,19 +31,17 @@ import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Buffer pool for specific ("cheap-copy") port data type and thread.
  * In order to be real-time-capable, enough buffers need to be initially allocated.
  * Otherwise the application becomes real-time-capable later - after enough buffers
  * have been allocated.
  */
-@CppInclude( { "ThreadLocalCache.h"})
-@IncludeClass(CCPortDataManager.class)
 public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL > {
 
     /** Data Type of buffers in pool */
-    public final @Const DataTypeBase dataType;
+    public final DataTypeBase dataType;
 
     //Cpp std::shared_ptr<util::Object> threadLocalCacheInfos;
 
@@ -62,19 +49,17 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
     private WonderQueue<CCPortQueueElement> returnedBuffers = new WonderQueue<CCPortQueueElement>();
 
     /** Pool with "inter-thread" buffers */
-    private @Ptr ReusablesPool < CCPortDataManager > interThreads = new ReusablesPool < CCPortDataManager > ();
+    private ReusablesPool < CCPortDataManager > interThreads = new ReusablesPool < CCPortDataManager > ();
 
     /**
      * @param dataType Type of buffers in pool
      */
-    @Init("threadLocalCacheInfos(ThreadLocalCache::get()->getInfosLock())")
-    public CCPortDataBufferPool(@Const @Ref DataTypeBase dataType, int initialSize) {
+    public CCPortDataBufferPool(DataTypeBase dataType, int initialSize) {
         this.dataType = dataType;
         for (int i = 0; i < initialSize; i++) {
             //enqueue(createBuffer());
             attach(CCPortDataManagerTL.create(dataType), true);
         }
-        //Cpp assert(threadLocalCacheInfos._get() != NULL);
     }
 
     /**
@@ -84,8 +69,8 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
      *
      * @return Returns unused buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final @Ptr CCPortDataManagerTL getUnusedBuffer() {
-        @Ptr CCPortDataManagerTL pc = getUnused();
+    public final CCPortDataManagerTL getUnusedBuffer() {
+        CCPortDataManagerTL pc = getUnused();
         if (pc != null) {
             return pc;
         }
@@ -95,8 +80,8 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
     /**
      * @return Returns unused "inter-thread" buffer. If there are no buffers that can be reused, a new buffer is allocated.
      */
-    @Inline public final @Ptr CCPortDataManager getUnusedInterThreadBuffer() {
-        @Ptr CCPortDataManager pc = interThreads.getUnused();
+    public final CCPortDataManager getUnusedInterThreadBuffer() {
+        CCPortDataManager pc = interThreads.getUnused();
         if (pc != null) {
             return pc;
         }
@@ -106,8 +91,8 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
     /**
      * @return Create new buffer/instance of port data and add to pool
      */
-    private @Ptr CCPortDataManager createInterThreadBuffer() {
-        @Ptr CCPortDataManager pc = CCPortDataManager.create(dataType);
+    private CCPortDataManager createInterThreadBuffer() {
+        CCPortDataManager pc = CCPortDataManager.create(dataType);
         interThreads.attach(pc, false);
         return pc;
     }
@@ -115,10 +100,10 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
     /**
      * @return Create new buffer/instance of port data and add to pool
      */
-    private @Ptr CCPortDataManagerTL createBuffer() {
+    private CCPortDataManagerTL createBuffer() {
 
         // try to reclaim any returned buffers, before new one is created - not so deterministic, but usually doesn't occur and memory allocation is anyway
-        @Ptr CCPortDataManagerTL pc;
+        CCPortDataManagerTL pc;
         boolean found = false;
         while (true) {
             CCPortQueueElement pqe = returnedBuffers.dequeue();
@@ -138,7 +123,7 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
         }
 
         // okay... create new buffer
-        @Ptr CCPortDataManagerTL pdm = CCPortDataManagerTL.create(dataType);
+        CCPortDataManagerTL pdm = CCPortDataManagerTL.create(dataType);
         attach(pdm, false);
         return pdm;
     }
@@ -155,27 +140,15 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
         returnedBuffers.enqueue(pqe);
     }
 
-    /*Cpp
-    virtual void customDelete(bool calledFromGc) {
-        if (calledFromGc) {
-            SafeDestructible::customDelete(calledFromGc);
-        } else {
-            controlledDelete();
-        }
-    }
-     */
-
     /* (non-Javadoc)
      * @see jc.container.ReusablesPoolTL#controlledDelete()
      */
-    @Override @InCppFile
+    @Override
     public void controlledDelete() {
         interThreads.controlledDelete();
         super.controlledDelete();
     }
 
-
-    @Protected
     public void delete() {
         // delete any returned buffers
         CCPortQueueElement pqe = returnedBuffers.dequeue();
@@ -197,8 +170,6 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
      *
      * @return Lock
      */
-    @InCppFile
-    @CppType("util::MutexLockOrder") @Ref @InCpp("return static_cast<util::SimpleListWithMutex<ThreadLocalCache*>*>(threadLocalCacheInfos._get())->objMutex;")
     private SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
         return RuntimeEnvironment.getInstance().getThreadLocalCacheInfosLock();
     }

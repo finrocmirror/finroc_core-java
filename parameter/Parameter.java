@@ -27,78 +27,49 @@ import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.PortFlags;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppFilename;
-import org.rrlib.finroc_core_utils.jc.annotation.CppName;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NoCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Parameter template class for standard types
  */
-@Inline @NoCpp @PassByValue @RawTypeArgs
-@HAppend( {
-    "extern template class ParameterBase<int>;",
-    "extern template class ParameterBase<long long int>;",
-    "extern template class ParameterBase<float>;",
-    "extern template class ParameterBase<double>;",
-    "extern template class ParameterBase<Number>;",
-    "extern template class ParameterBase<CoreString>;",
-    "extern template class ParameterBase<bool>;",
-    "extern template class ParameterBase<EnumValue>;",
-    "extern template class ParameterBase<rrlib::serialization::MemoryBuffer>;"
-})
-@CppName("ParameterBase") @CppFilename("ParameterBase")
 public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
-    public Parameter(@Const @Ref String name, FrameworkElement parent, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+    public Parameter(String name, FrameworkElement parent, String configEntry, DataTypeBase dt) {
         super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT));
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
     }
 
-    public Parameter(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, @Ptr Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+    public Parameter(String name, FrameworkElement parent, T defaultValue, Unit u, String configEntry, DataTypeBase dt) {
         super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT, u));
         setDefault(defaultValue);
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
     }
 
-    @JavaOnly
-    public Parameter(@Const @Ref String name, FrameworkElement parent, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+    public Parameter(String name, FrameworkElement parent, DataTypeBase dt) {
         this(name, parent, "", dt);
     }
 
     //Cpp template <typename Q = T>
-    public Parameter(@Const @Ref String name, FrameworkElement parent, @Const @Ref T defaultValue, @CppType("boost::enable_if_c<PortTypeMap<Q>::boundable, tBounds<T> >::type") @Const @Ref Bounds<T> b, @CppDefault("NULL") Unit u, @CppDefault("\"\"") @Const @Ref String configEntry, @Const @Ref @CppDefault("NULL") DataTypeBase dt) {
+    public Parameter(String name, FrameworkElement parent, T defaultValue, Bounds<T> b, Unit u, String configEntry, DataTypeBase dt) {
         super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
         setDefault(defaultValue);
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
     }
 
-    @InCpp("return dt != NULL ? dt : rrlib::serialization::DataType<T>();")
-    private static DataTypeBase getType(@Const @Ref DataTypeBase dt) {
+    private static DataTypeBase getType(DataTypeBase dt) {
         return dt;
     }
 
     /**
      * @param configEntry New Place in Configuration tree, this parameter is configured from (nodes are separated with dots)
      */
-    public void setConfigEntry(@Const @Ref String configEntry) {
+    public void setConfigEntry(String configEntry) {
         if (configEntry.length() > 0) {
             ParameterInfo info = (ParameterInfo)wrapped.getAnnotation(ParameterInfo.TYPE);
             info.setConfigEntry(configEntry);

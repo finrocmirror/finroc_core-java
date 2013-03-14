@@ -27,12 +27,9 @@ import org.finroc.core.parameter.StaticParameter;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.PortGroup;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Simple group for creating hierarchy
  */
@@ -42,11 +39,11 @@ public class Group extends PortGroup {
     private StaticParameter<PortCreationList> ports = new StaticParameter<PortCreationList>("Ports", PortCreationList.TYPE);
 
     /** CreateModuleAction */
-    @SuppressWarnings("unused") @PassByValue
+    @SuppressWarnings("unused")
     private static final StandardCreateModuleAction<Group> CREATE_ACTION =
         new StandardCreateModuleAction<Group>("Group", Group.class);
 
-    public Group(FrameworkElement parent, @Const @Ref String name) {
+    public Group(FrameworkElement parent, String name) {
         super(parent, name, 0, 0);
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);

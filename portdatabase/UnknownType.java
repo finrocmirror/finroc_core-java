@@ -27,10 +27,6 @@ import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.XML;
 import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.Factory;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
@@ -42,12 +38,11 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * RPC interface data type.
  * (Should only be created once per data type with name and methods constructor!)
  */
-@JavaOnly
 public class UnknownType extends DataTypeBase {
 
     /** Type traits of remote type */
@@ -168,10 +163,8 @@ public class UnknownType extends DataTypeBase {
         }
 
         @Override
-        public void deepCopy(Object src, Object dest, @Ptr Factory f) {
-            @Const @Ptr @InCpp("const T* s = static_cast<const T*>(src);")
+        public void deepCopy(Object src, Object dest, Factory f) {
             RRLibSerializable s = (RRLibSerializable)src;
-            @Ptr @InCpp("T* d = static_cast<T*>(dest);")
             RRLibSerializable d = (RRLibSerializable)dest;
             Serialization.deepCopy(s, d, f);
         }

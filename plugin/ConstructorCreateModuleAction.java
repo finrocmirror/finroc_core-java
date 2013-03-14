@@ -35,62 +35,34 @@ import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameter;
 import org.finroc.core.parameter.StaticParameterBase;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Mutable;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.PostInclude;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Abstract base class for ConstructorCreateModuleAction
  */
-@Include("ParamType.h")
-@PostInclude("ConstructorCreateModuleActionImpl.h")
-@IncludeClass(ConstructorParameters.class)
 abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12> implements CreateFrameworkElementAction {
-
-    /*Cpp
-    typedef ParamType<_P1> _SP1; typedef typename _SP1::t _SPT1;
-    typedef ParamType<_P2> _SP2; typedef typename _SP2::t _SPT2;
-    typedef ParamType<_P3> _SP3; typedef typename _SP3::t _SPT3;
-    typedef ParamType<_P4> _SP4; typedef typename _SP4::t _SPT4;
-    typedef ParamType<_P5> _SP5; typedef typename _SP5::t _SPT5;
-    typedef ParamType<_P6> _SP6; typedef typename _SP6::t _SPT6;
-    typedef ParamType<_P7> _SP7; typedef typename _SP7::t _SPT7;
-    typedef ParamType<_P8> _SP8; typedef typename _SP8::t _SPT8;
-    typedef ParamType<_P9> _SP9; typedef typename _SP9::t _SPT9;
-    typedef ParamType<_P10> _SP10; typedef typename _SP10::t _SPT10;
-    typedef ParamType<_P11> _SP11; typedef typename _SP11::t _SPT11;
-    typedef ParamType<_P12> _SP12; typedef typename _SP12::t _SPT12;
-     */
 
     /**
      * Parameters
      */
-    public @CppType("_SPT1") StaticParameterBase p1;
-    public @CppType("_SPT2") StaticParameterBase p2;
-    public @CppType("_SPT3") StaticParameterBase p3;
-    public @CppType("_SPT4") StaticParameterBase p4;
-    public @CppType("_SPT5") StaticParameterBase p5;
-    public @CppType("_SPT6") StaticParameterBase p6;
-    public @CppType("_SPT7") StaticParameterBase p7;
-    public @CppType("_SPT8") StaticParameterBase p8;
-    public @CppType("_SPT9") StaticParameterBase p9;
-    public @CppType("_SPT10") StaticParameterBase p10;
-    public @CppType("_SPT11") StaticParameterBase p11;
-    public @CppType("_SPT12") StaticParameterBase p12;
+    public StaticParameterBase p1;
+    public StaticParameterBase p2;
+    public StaticParameterBase p3;
+    public StaticParameterBase p4;
+    public StaticParameterBase p5;
+    public StaticParameterBase p6;
+    public StaticParameterBase p7;
+    public StaticParameterBase p8;
+    public StaticParameterBase p9;
+    public StaticParameterBase p10;
+    public StaticParameterBase p11;
+    public StaticParameterBase p12;
 
     /**
      * StaticParameterList
      */
-    @PassByValue @Mutable
     protected StaticParameterList spl = new StaticParameterList();
 
     /** Name and group of module */
@@ -100,39 +72,12 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
     public ConstructorCreateModuleActionBase(String typeName, String paramNames) {
         this.name = typeName;
         Plugins.getInstance().addModuleType(this);
-
-        /*Cpp
-        static const util::String PARAMETER = "Parameter ";
-        std::vector<util::String> namesTemp = paramNames.split(",");
-        util::SimpleList<util::String> names;
-        for (size_t i = 0; i < namesTemp._size(); i++) {
-            names.add(namesTemp[i]);
-        }
-        while(names.size() < 12) {
-            names.add(PARAMETER + names.size());
-        }
-
-        p1 = _SP1::create(names.get(0));
-        p2 = _SP2::create(names.get(1));
-        p3 = _SP3::create(names.get(2));
-        p4 = _SP4::create(names.get(3));
-        p5 = _SP5::create(names.get(4));
-        p6 = _SP6::create(names.get(5));
-        p7 = _SP7::create(names.get(6));
-        p8 = _SP8::create(names.get(7));
-        p9 = _SP9::create(names.get(8));
-        p10 = _SP10::create(names.get(9));
-        p11 = _SP11::create(names.get(10));
-        p12 = _SP12::create(names.get(11));
-
-        checkStaticParameterList();
-         */
     }
 
     /**
      * builds parameter list, if it's not built already
      */
-    @ConstMethod private void checkStaticParameterList() {
+    private void checkStaticParameterList() {
         if (spl.size() > 0 || p1 == null) {
             return;
         }
@@ -150,36 +95,16 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
         add(p12);
     }
 
-    /*Cpp
-    void add(Empty* param) const {}
-     */
-
     /**
      * Adds parameter to parameter list
      *
      * @param param
      */
-    @Inline @ConstMethod
     private void add(StaticParameterBase param) {
         if (param != null) {
             spl.add(param);
         }
     }
-
-    /*Cpp
-    _P1 getP1(ConstructorParameters* p) const { return _SP1::get(p->get(0)); }
-    _P2 getP2(ConstructorParameters* p) const { return _SP2::get(p->get(1)); }
-    _P3 getP3(ConstructorParameters* p) const { return _SP3::get(p->get(2)); }
-    _P4 getP4(ConstructorParameters* p) const { return _SP4::get(p->get(3)); }
-    _P5 getP5(ConstructorParameters* p) const { return _SP5::get(p->get(4)); }
-    _P6 getP6(ConstructorParameters* p) const { return _SP6::get(p->get(5)); }
-    _P7 getP7(ConstructorParameters* p) const { return _SP7::get(p->get(6)); }
-    _P8 getP8(ConstructorParameters* p) const { return _SP8::get(p->get(7)); }
-    _P9 getP9(ConstructorParameters* p) const { return _SP9::get(p->get(8)); }
-    _P10 getP10(ConstructorParameters* p) const { return _SP10::get(p->get(9)); }
-    _P11 getP11(ConstructorParameters* p) const { return _SP11::get(p->get(10)); }
-    _P12 getP12(ConstructorParameters* p) const { return _SP12::get(p->get(11)); }
-     */
 
     @Override
     public StaticParameterList getParameterTypes() {
@@ -200,12 +125,11 @@ abstract class ConstructorCreateModuleActionBase <P1, P2, P3, P4, P5, P6, P7, P8
 }
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * CreateModuleAction for modules that need parameters for constructor
  */
 @SuppressWarnings("rawtypes")
-@JavaOnly
 public class ConstructorCreateModuleAction extends ConstructorCreateModuleActionBase {
 
     /** wrapped constructor */

@@ -27,7 +27,7 @@ import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Using this annotation, a common parent config file node for all a module's/group's
  * parameter config entries can be stored.

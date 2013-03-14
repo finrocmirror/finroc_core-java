@@ -22,7 +22,7 @@
 package org.finroc.core.thread;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Interface for objects whose execution can be started and stopped
  */

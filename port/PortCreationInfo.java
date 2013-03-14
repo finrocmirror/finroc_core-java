@@ -21,31 +21,25 @@
  */
 package org.finroc.core.port;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.Unit;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class contains various information for the creation of ports.
  * If ports require parameters in their constructor, they should take an
  * instance of this class.
  * This way, only one constructor is needed per Port class.
  */
-@PassByValue
 public class PortCreationInfo {
 
     /** number of send buffers */
     public int sendBufferSize = -1, altSendBufferSize = -1;
 
     /** SI Unit of port. NULL for no unit = provides raw numbers */
-    public @Ptr Unit unit = Unit.NO_UNIT;
+    public Unit unit = Unit.NO_UNIT;
 
     /** Input Queue size; value <= 0 means flexible size */
     public int /*initialQueueSize = 10,*/ maxQueueSize = 16;
@@ -60,7 +54,7 @@ public class PortCreationInfo {
     public DataTypeBase dataType = null;
 
     /** Parent of port */
-    public @Ptr FrameworkElement parent;
+    public FrameworkElement parent;
 
     /**
      * Only relevant for Port sets: Does Port set manage ports?
@@ -83,32 +77,31 @@ public class PortCreationInfo {
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String name, int flags) {
+    public PortCreationInfo(String name, int flags) {
         this.name = name;
         this.flags = flags;
     }
 
-    @JavaOnly
-    public PortCreationInfo(@Const @Ref String name, Class<?> dataType, int flags) {
+    public PortCreationInfo(String name, Class<?> dataType, int flags) {
         this.name = name;
         this.dataType = DataTypeBase.findType(dataType);
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String name, @Const @Ref DataTypeBase dataType, int flags) {
+    public PortCreationInfo(String name, DataTypeBase dataType, int flags) {
         this.name = name;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags) {
+    public PortCreationInfo(String name, FrameworkElement parent, DataTypeBase dataType, int flags) {
         this.name = name;
         this.parent = parent;
         this.dataType = dataType;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType, int flags, Unit u) {
+    public PortCreationInfo(String name, FrameworkElement parent, DataTypeBase dataType, int flags, Unit u) {
         this.name = name;
         this.parent = parent;
         this.dataType = dataType;
@@ -116,31 +109,31 @@ public class PortCreationInfo {
         this.unit = u;
     }
 
-    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, @Const @Ref DataTypeBase dataType) {
+    public PortCreationInfo(String name, FrameworkElement parent, DataTypeBase dataType) {
         this.name = name;
         this.parent = parent;
         this.dataType = dataType;
     }
 
-    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, int flags) {
+    public PortCreationInfo(String name, FrameworkElement parent, int flags) {
         this.name = name;
         this.parent = parent;
         this.flags = flags;
     }
 
-    public PortCreationInfo(@Const @Ref String name, FrameworkElement parent, int flags, Unit unit) {
+    public PortCreationInfo(String name, FrameworkElement parent, int flags, Unit unit) {
         this.name = name;
         this.parent = parent;
         this.flags = flags;
         this.unit = unit;
     }
 
-    public PortCreationInfo(@Const @Ref DataTypeBase dataType, int flags) {
+    public PortCreationInfo(DataTypeBase dataType, int flags) {
         this.flags = flags;
         this.dataType = dataType;
     }
 
-    public PortCreationInfo(@Const @Ref DataTypeBase dataType, int flags, boolean managesPorts) {
+    public PortCreationInfo(DataTypeBase dataType, int flags, boolean managesPorts) {
         this.flags = flags;
         this.dataType = dataType;
         this.managesPorts = managesPorts;
@@ -158,7 +151,7 @@ public class PortCreationInfo {
 
     public PortCreationInfo() {}
 
-    public PortCreationInfo(@Const @Ref String name) {
+    public PortCreationInfo(String name) {
         this.name = name;
     }
 
@@ -166,7 +159,7 @@ public class PortCreationInfo {
         this.parent = parent;
     }
 
-    public PortCreationInfo(FrameworkElement parent, @Const @Ref DataTypeBase dt) {
+    public PortCreationInfo(FrameworkElement parent, DataTypeBase dt) {
         this.parent = parent;
         this.dataType = dt;
     }
@@ -177,7 +170,7 @@ public class PortCreationInfo {
         this.maxQueueSize = qSize;
     }
 
-    public PortCreationInfo(String name, @Const @Ref DataTypeBase dataType, int flags, int qSize) {
+    public PortCreationInfo(String name, DataTypeBase dataType, int flags, int qSize) {
         this.name = name;
         this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
         this.dataType = dataType;
@@ -185,7 +178,6 @@ public class PortCreationInfo {
     }
 
     /* Copy Constructor */
-    @JavaOnly
     public PortCreationInfo(PortCreationInfo p) {
         altSendBufferSize = p.altSendBufferSize;
         dataType = p.dataType;
@@ -232,7 +224,7 @@ public class PortCreationInfo {
         return pci2;
     }
 
-    public PortCreationInfo derive(String newName, FrameworkElement parent, @Const @Ref DataTypeBase type) {
+    public PortCreationInfo derive(String newName, FrameworkElement parent, DataTypeBase type) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
         pci2.name = newName;
         pci2.parent = parent;
@@ -240,7 +232,7 @@ public class PortCreationInfo {
         return pci2;
     }
 
-    public PortCreationInfo derive(@Const @Ref DataTypeBase type) {
+    public PortCreationInfo derive(DataTypeBase type) {
         PortCreationInfo pci2 = new PortCreationInfo(this);
         pci2.dataType = type;
         return pci2;

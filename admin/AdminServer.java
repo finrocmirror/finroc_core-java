@@ -67,18 +67,6 @@ import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.RPCInterfaceType;
 import org.finroc.core.thread.ExecutionControl;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Struct;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -88,22 +76,19 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Administration interface server port
  */
-@Superclass( {InterfaceServerPort.class, AbstractMethodCallHandler.class})
 public class AdminServer extends InterfaceServerPort implements FrameworkElementTreeFilter.Callback<AdminServer.CallbackParameters>, Void2Handler<Integer, Integer>, Void4Handler < Integer, CoreString, Integer, MemoryBuffer >,
     Method3Handler < CoreString, Integer, MemoryBuffer, Integer > , Method0Handler<MemoryBuffer>, Void1Handler<Integer>,
     Method2Handler< MemoryBuffer, Integer, CoreString>, Method1Handler<Integer, Integer>, Method4Handler < CoreString, Integer, CoreString, Integer, MemoryBuffer > {
 
     /** Struct for callback parameters for GET_PARAMETER_INFO method */
-    @Struct @AtFront
     static class CallbackParameters {
-        @Ptr OutputStreamBuffer co;
-        @Ptr ConfigFile cf;
+        OutputStreamBuffer co;
+        ConfigFile cf;
 
-        @Inline
         public CallbackParameters(ConfigFile cf2, OutputStreamBuffer co2) {
             this.cf = cf2;
             this.co = co2;
@@ -111,70 +96,70 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     }
 
     /** Admin interface */
-    @PassByValue public static PortInterface METHODS = new PortInterface("Admin Interface", true);
+    public static PortInterface METHODS = new PortInterface("Admin Interface", true);
 
     /** Connect */
-    @PassByValue public static Void2Method<AdminServer, Integer, Integer> CONNECT =
+    public static Void2Method<AdminServer, Integer, Integer> CONNECT =
         new Void2Method<AdminServer, Integer, Integer>(METHODS, "Connect", "source port handle", "destination port handle", false);
 
     /** Disconnect */
-    @PassByValue public static Void2Method<AdminServer, Integer, Integer> DISCONNECT =
+    public static Void2Method<AdminServer, Integer, Integer> DISCONNECT =
         new Void2Method<AdminServer, Integer, Integer>(METHODS, "Disconnect", "source port handle", "destination port handle", false);
 
     /** Disconnect All */
-    @PassByValue public static Void2Method<AdminServer, Integer, Integer> DISCONNECT_ALL =
+    public static Void2Method<AdminServer, Integer, Integer> DISCONNECT_ALL =
         new Void2Method<AdminServer, Integer, Integer>(METHODS, "DisconnectAll", "source port handle", "dummy", false);
 
     /** Set a port's value */
-    @PassByValue public static Port3Method < AdminServer, CoreString, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
+    public static Port3Method < AdminServer, CoreString, Integer, MemoryBuffer, Integer > SET_PORT_VALUE =
         new Port3Method < AdminServer, CoreString, Integer, MemoryBuffer, Integer > (METHODS, "SetPortValue", "port handle", "data", "dummy", false);
 
     /** Get module types */
-    @PassByValue public static Port0Method < AdminServer, MemoryBuffer > GET_CREATE_MODULE_ACTIONS =
+    public static Port0Method < AdminServer, MemoryBuffer > GET_CREATE_MODULE_ACTIONS =
         new Port0Method < AdminServer, MemoryBuffer > (METHODS, "GetCreateModuleActions", false);
 
     /** Create a module */
-    @PassByValue public static Port4Method < AdminServer, CoreString, Integer, CoreString, Integer, MemoryBuffer > CREATE_MODULE =
+    public static Port4Method < AdminServer, CoreString, Integer, CoreString, Integer, MemoryBuffer > CREATE_MODULE =
         new Port4Method < AdminServer, CoreString, Integer, CoreString, Integer, MemoryBuffer > (METHODS, "CreateModule", "create action index", "module name", "parent handle", "module creation parameters", false);
 
     /** Save finstructable group */
-    @PassByValue public static Void1Method<AdminServer, Integer> SAVE_FINSTRUCTABLE_GROUP =
+    public static Void1Method<AdminServer, Integer> SAVE_FINSTRUCTABLE_GROUP =
         new Void1Method<AdminServer, Integer>(METHODS, "Save Finstructable Group", "finstructable handle", false);
 
     /** Get annotation */
-    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_ANNOTATION =
+    public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_ANNOTATION =
         new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "Get Annotation", "handle", "annotation type", false);
 
     /** Set annotation */
-    @PassByValue public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > SET_ANNOTATION =
+    public static Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer > SET_ANNOTATION =
         new Void4Method < AdminServer, Integer, CoreString, Integer, MemoryBuffer >(METHODS, "Set Annotation", "handle", "dummy", "dummy", "annotation", false);
 
     /** Delete element */
-    @PassByValue public static Void1Method<AdminServer, Integer> DELETE_ELEMENT =
+    public static Void1Method<AdminServer, Integer> DELETE_ELEMENT =
         new Void1Method<AdminServer, Integer>(METHODS, "Delete Framework element", "handle", false);
 
     /** Start/Resume application execution */
-    @PassByValue public static Void1Method<AdminServer, Integer> START_EXECUTION =
+    public static Void1Method<AdminServer, Integer> START_EXECUTION =
         new Void1Method<AdminServer, Integer>(METHODS, "Start execution", "Framework element handle", false);
 
     /** Stop/Pause application execution */
-    @PassByValue public static Void1Method<AdminServer, Integer> PAUSE_EXECUTION =
+    public static Void1Method<AdminServer, Integer> PAUSE_EXECUTION =
         new Void1Method<AdminServer, Integer>(METHODS, "Pause execution", "Framework element handle", false);
 
     /** Is framework element with specified handle currently executing? */
-    @PassByValue public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
+    public static Port1Method<AdminServer, Integer, Integer> IS_RUNNING =
         new Port1Method<AdminServer, Integer, Integer>(METHODS, "Is Framework element running", "handle", false);
 
     /** Get parameter info for specified framework element: ConfigFile, children with config file, info on all parameters with same config file  */
-    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_PARAMETER_INFO =
+    public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> GET_PARAMETER_INFO =
         new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS, "GetParameterInfo", "handle", "dummy", false);
 
     /** Get module libraries (.so files) */
-    @PassByValue public static Port0Method < AdminServer, MemoryBuffer > GET_MODULE_LIBRARIES =
+    public static Port0Method < AdminServer, MemoryBuffer > GET_MODULE_LIBRARIES =
         new Port0Method < AdminServer, MemoryBuffer > (METHODS, "GetModuleLibraries", false);
 
     /** Load module library (.so file). Returns updated module list (same as GET_CREATE_MODULE_ACTIONS) */
-    @PassByValue public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> LOAD_MODULE_LIBRARY =
+    public static Port2Method<AdminServer, MemoryBuffer, Integer, CoreString> LOAD_MODULE_LIBRARY =
         new Port2Method<AdminServer, MemoryBuffer, Integer, CoreString>(METHODS,  "LoadModuleLibrary", "dummy", "library name", false);
 
     /** Data Type of method calls to this port */
@@ -257,8 +242,8 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         }
     }
 
-    @Override @NonVirtual
-    public CoreString handleCall(AbstractMethod method, Integer portHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer buf, Integer asString) throws MethodCallException {
+    @Override
+    public CoreString handleCall(AbstractMethod method, Integer portHandle, MemoryBuffer buf, Integer asString) throws MethodCallException {
         assert(method == SET_PORT_VALUE);
         CoreString result = this.getBufferForReturn(CoreString.TYPE);
         result.set("");
@@ -267,8 +252,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
             synchronized (port) {
                 if (port.isReady()) {
                     try {
-                        @InCpp("rrlib::serialization::InputStream ci(buf._get(), rrlib::serialization::InputStream::eNames);")
-                        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(buf, InputStreamBuffer.TypeEncoding.Names);
+                        InputStreamBuffer ci = new InputStreamBuffer(buf, InputStreamBuffer.TypeEncoding.Names);
                         Serialization.DataEncoding enc = ci.readEnum(Serialization.DataEncoding.class);
                         DataTypeBase dt = ci.readType();
                         if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
@@ -303,20 +287,19 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         return result;
     }
 
-    @Override @NonVirtual
-    public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
+    @Override
+    public MemoryBuffer handleCall(AbstractMethod method) throws MethodCallException {
         assert(method == GET_CREATE_MODULE_ACTIONS || method == LOAD_MODULE_LIBRARY || method == GET_MODULE_LIBRARIES);
 
-        @CustomPtr("tPortDataPtr") MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-        @InCpp("rrlib::serialization::OutputStream co(mb._get(), rrlib::serialization::OutputStream::eNames);")
-        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+        MemoryBuffer mb = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+        OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
 
         if (method == GET_MODULE_LIBRARIES) {
             log(LogLevel.LL_WARNING, logDomain, "GET_MODULE_LIBRARIES only available in C++, currently");
         } else {
-            @Const @Ref SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
-            for (@SizeT int i = 0; i < moduleTypes.size(); i++) {
-                @Const @Ref CreateFrameworkElementAction cma = moduleTypes.get(i);
+            SimpleList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
+            for (int i = 0; i < moduleTypes.size(); i++) {
+                CreateFrameworkElementAction cma = moduleTypes.get(i);
                 co.writeString(cma.getName());
                 co.writeString(cma.getModuleGroup());
                 if (cma.getParameterTypes() != null) {
@@ -331,8 +314,8 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         return mb;
     }
 
-    @Override @NonVirtual
-    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, @CustomPtr("tPortDataPtr") CoreString name, Integer parentHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer paramsBuffer) throws MethodCallException {
+    @Override
+    public void handleVoidCall(AbstractMethod method, Integer cmaIndex, CoreString name, Integer parentHandle, MemoryBuffer paramsBuffer) throws MethodCallException {
         assert(method == SET_ANNOTATION);
 
         //JavaOnlyBlock
@@ -343,8 +326,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         if (elem == null || (!elem.isReady())) {
             logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");
         } else {
-            @InCpp("rrlib::serialization::InputStream ci(paramsBuffer._get(), rrlib::serialization::InputStream::eNames);")
-            @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer, InputStreamBuffer.TypeEncoding.Names);
+            InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer, InputStreamBuffer.TypeEncoding.Names);
             DataTypeBase dt = ci.readType();
             if (dt == null) {
                 logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Data type not available. Cancelling setting of annotation.");
@@ -385,19 +367,19 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         }
 
         if (method == START_EXECUTION || method == PAUSE_EXECUTION) {
-            @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+            SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
             getExecutionControls(ecs, handle);
             if (ecs.size() == 0) {
                 logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Start/Pause command has not effect");
             }
             if (method == START_EXECUTION) {
-                for (@SizeT int i = 0; i < ecs.size(); i++) {
+                for (int i = 0; i < ecs.size(); i++) {
                     if (!ecs.get(i).isRunning()) {
                         ecs.get(i).start();
                     }
                 }
             } else if (method == PAUSE_EXECUTION) {
-                for (@SizeT int i = 0; i < ecs.size(); i++) {
+                for (int i = 0; i < ecs.size(); i++) {
                     if (ecs.get(i).isRunning()) {
                         ecs.get(i).pause();
                     }
@@ -420,8 +402,8 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
         }
     }
 
-    @Override @NonVirtual
-    public @CustomPtr("tPortDataPtr") MemoryBuffer handleCall(AbstractMethod method, Integer handle, @CustomPtr("tPortDataPtr") CoreString type) throws MethodCallException {
+    @Override
+    public MemoryBuffer handleCall(AbstractMethod method, Integer handle, CoreString type) throws MethodCallException {
         if (method == GET_ANNOTATION) {
             FrameworkElement fe = getRuntime().getElement(handle);
             FinrocAnnotation result = null;
@@ -442,9 +424,8 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
                 //Cpp return PortDataPtr<rrlib::serialization::MemoryBuffer>();
             } else {
-                @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-                @InCpp("rrlib::serialization::OutputStream co(buf._get(), rrlib::serialization::OutputStream::eNames);")
-                @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
+                MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+                OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
                 co.writeType(result.getType());
                 result.serialize(co);
                 co.close();
@@ -470,17 +451,16 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
             }
 
             ConfigFile cf = ConfigFile.find(fe);
-            @CustomPtr("tPortDataPtr") MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
-            @InCpp("rrlib::serialization::OutputStream co(buf._get(), rrlib::serialization::OutputStream::eNames);")
-            @PassByValue OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
+            MemoryBuffer buf = this.<MemoryBuffer>getBufferForReturn(MemoryBuffer.TYPE);
+            OutputStreamBuffer co = new OutputStreamBuffer(buf, OutputStreamBuffer.TypeEncoding.Names);
             if (cf == null) {
                 co.writeBoolean(false);
             } else {
                 co.writeBoolean(true);
-                @PassByValue CallbackParameters params = new CallbackParameters(cf, co);
+                CallbackParameters params = new CallbackParameters(cf, co);
                 co.writeInt(((FrameworkElement)cf.getAnnotated()).getHandle());
                 cf.serialize(co);
-                @PassByValue FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
+                FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
                 filter.traverseElementTree(fe, this, params);
             }
             co.close();
@@ -491,12 +471,12 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     @Override
     public Integer handleCall(AbstractMethod method, Integer handle) throws MethodCallException {
         assert(method == IS_RUNNING);
-        @PassByValue SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
         getExecutionControls(ecs, handle);
 
         boolean stopped = false;
         boolean running = false;
-        for (@SizeT int i = 0; i < ecs.size(); i++) {
+        for (int i = 0; i < ecs.size(); i++) {
             stopped |= (!ecs.get(i).isRunning());
             running |= ecs.get(i).isRunning();
         }
@@ -518,7 +498,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
      * @param result Result buffer for list of execution controls
      * @param elementHandle Handle of element
      */
-    private void getExecutionControls(@Ref SimpleList<ExecutionControl> result, int elementHandle) {
+    private void getExecutionControls(SimpleList<ExecutionControl> result, int elementHandle) {
         FrameworkElement fe = getRuntime().getElement(elementHandle);
         ExecutionControl.findAll(result, fe);
         if (result.size() == 0) {
@@ -530,7 +510,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     }
 
     @Override
-    public void treeFilterCallback(FrameworkElement fe, @Const @Ref CallbackParameters customParam) {
+    public void treeFilterCallback(FrameworkElement fe, CallbackParameters customParam) {
         ConfigFile cf = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);
         if (cf != null) {
             customParam.co.writeByte(1);
@@ -548,7 +528,7 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
     }
 
     @Override
-    public CoreString handleCall(AbstractMethod method, Integer cmaIndex, @CustomPtr("tPortDataPtr") CoreString name, Integer parentHandle, @Const @CustomPtr("tPortDataPtr") MemoryBuffer paramsBuffer) throws MethodCallException {
+    public CoreString handleCall(AbstractMethod method, Integer cmaIndex, CoreString name, Integer parentHandle, MemoryBuffer paramsBuffer) throws MethodCallException {
         assert(method == CREATE_MODULE);
         ConstructorParameters params = null;
         CoreString result = this.getBufferForReturn(CoreString.TYPE);
@@ -569,9 +549,8 @@ public class AdminServer extends InterfaceServerPort implements FrameworkElement
 
                     if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
                         params = cma.getParameterTypes().instantiate();
-                        @InCpp("rrlib::serialization::InputStream ci(paramsBuffer._get());")
-                        @PassByValue InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer);
-                        for (@SizeT int i = 0; i < params.size(); i++) {
+                        InputStreamBuffer ci = new InputStreamBuffer(paramsBuffer);
+                        for (int i = 0; i < params.size(); i++) {
                             StaticParameterBase param = params.get(i);
                             try {
                                 param.deserializeValue(ci);

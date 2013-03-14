@@ -20,16 +20,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-@Namespace("finroc::core")
-@CppLocation("core/port/cc")
-
 /**
  * These classes implement the port concept for
  * "cheap copyable" port data. Such port data is small and has
  * constant size. This allows various optimizations.
  */
 package org.finroc.core.port.cc;
-
-import org.rrlib.finroc_core_utils.jc.annotation.CppLocation;
-import org.rrlib.finroc_core_utils.jc.annotation.Namespace;
 

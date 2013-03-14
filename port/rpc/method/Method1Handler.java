@@ -22,14 +22,7 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.finroc.core.port.rpc.MethodCallException;
-
-@Superclass( {})
 
 public interface Method1Handler<R, P1> extends AbstractMethodCallHandler {
 
@@ -40,6 +33,5 @@ public interface Method1Handler<R, P1> extends AbstractMethodCallHandler {
      * @param p1 Parameter 1 (with one lock - that server is now responsible of) Parameter 4 (with one lock - that server is now responsible of)
      * @return Return value of method (with one lock for further handling)
      */
-    @NonVirtual
-    public abstract R handleCall(@Const @Ptr AbstractMethod method, @AtFront P1 p1) throws MethodCallException;
+    public abstract R handleCall(AbstractMethod method, P1 p1) throws MethodCallException;
 }

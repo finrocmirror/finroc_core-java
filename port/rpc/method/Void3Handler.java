@@ -22,14 +22,7 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.finroc.core.port.rpc.MethodCallException;
-
-@Superclass( {})
 
 public interface Void3Handler<P1, P2, P3> extends AbstractMethodCallHandler {
 
@@ -42,6 +35,5 @@ public interface Void3Handler<P1, P2, P3> extends AbstractMethodCallHandler {
      * @param p3 Parameter 3 (with one lock - that server is now responsible of)
      * @return Return value of method (with one lock for further handling)
      */
-    @NonVirtual
-    public abstract void handleVoidCall(@Const @Ptr AbstractMethod method, @AtFront P1 p1, @AtFront P2 p2, @AtFront P3 p3) throws MethodCallException;
+    public abstract void handleVoidCall(AbstractMethod method, P1 p1, P2 p2, P3 p3) throws MethodCallException;
 }

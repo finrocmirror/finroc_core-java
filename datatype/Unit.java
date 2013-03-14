@@ -21,35 +21,23 @@
  */
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppInclude;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Utility class for SI units and constants.
  *
  * Class should initialize cleanly in C++.
  * Can be initialized separately from rest of framework.
  */
-@Ptr
-@CppInclude("Number.h")
 public class Unit {
 
     /** Factor regarding base unit */
     private final double factor;
 
     /** Group of units that unit is in */
-    @Const @Ref private final SimpleList<Unit> group;
+    private final SimpleList<Unit> group;
 
     /** Unit description */
     private final String description;
@@ -64,7 +52,7 @@ public class Unit {
     private final byte uid;
 
     /** factors for conversion to other units in group */
-    @SharedPtr private double[] factors;
+    private double[] factors;
 
     /** Is this class a constant? */
     private final boolean isAConstant;
@@ -79,7 +67,7 @@ public class Unit {
      * @param description Unit description
      * @param factor Factor regarding base unit
      */
-    private Unit(@Ref SimpleList<Unit> group, String description, double factor) {
+    private Unit(SimpleList<Unit> group, String description, double factor) {
         this.group = group;
         this.description = description;
         this.factor = factor;
@@ -113,7 +101,7 @@ public class Unit {
      * @param u other Unit
      * @return True if it is convertible.
      */
-    @ConstMethod public boolean convertibleTo(Unit u) {
+    public boolean convertibleTo(Unit u) {
         return group.contains(u);
     }
 
@@ -123,7 +111,7 @@ public class Unit {
      * @param u other Unit
      * @return Factor
      */
-    @ConstMethod public double getConversionFactor(Unit u) {
+    public double getConversionFactor(Unit u) {
         if (convertibleTo(u)) {
             return factor / u.factor;
         }
@@ -137,7 +125,7 @@ public class Unit {
      * @param u other Unit
      * @return Factor
      */
-    @ConstMethod public double getConversionFactorUnchecked(Unit u) {
+    public double getConversionFactorUnchecked(Unit u) {
         return factors[u.index];
     }
 
@@ -149,7 +137,7 @@ public class Unit {
      * @param u Other Unit
      * @return Result
      */
-    @ConstMethod public double convertTo(double value, Unit toUnit) {
+    public double convertTo(double value, Unit toUnit) {
         if (this == Unit.NO_UNIT || toUnit == Unit.NO_UNIT) {
             return value;
         }
@@ -162,53 +150,53 @@ public class Unit {
 
     /** No Unit - has Uid 0 */
     private static final SimpleList<Unit> unknown = new SimpleList<Unit>();
-    @PassByValue public static final Unit NO_UNIT = new Unit(unknown, "", 1);
+    public static final Unit NO_UNIT = new Unit(unknown, "", 1);
 
     /** Length Units */
     private static final SimpleList<Unit> length = new SimpleList<Unit>();
-    @PassByValue public static final Unit nm = new Unit(length, "nm", 0.000000001);
-    @PassByValue public static final Unit um = new Unit(length, "um", 0.000001);
-    @PassByValue public static final Unit mm = new Unit(length, "mm", 0.001);
-    @PassByValue public static final Unit cm = new Unit(length, "cm", 0.01);
-    @PassByValue public static final Unit dm = new Unit(length, "dm", 0.1);
-    @PassByValue public static final Unit m = new Unit(length, "m", 1);
-    @PassByValue public static final Unit km = new Unit(length, "km", 1000);
+    public static final Unit nm = new Unit(length, "nm", 0.000000001);
+    public static final Unit um = new Unit(length, "um", 0.000001);
+    public static final Unit mm = new Unit(length, "mm", 0.001);
+    public static final Unit cm = new Unit(length, "cm", 0.01);
+    public static final Unit dm = new Unit(length, "dm", 0.1);
+    public static final Unit m = new Unit(length, "m", 1);
+    public static final Unit km = new Unit(length, "km", 1000);
 
     /** Speed Units */
     private static final SimpleList<Unit> speed = new SimpleList<Unit>();
-    @PassByValue public static final Unit km_h = new Unit(speed, "km/h", 3.6);
-    @PassByValue public static final Unit m_s = new Unit(speed, "m/s", 1);
+    public static final Unit km_h = new Unit(speed, "km/h", 3.6);
+    public static final Unit m_s = new Unit(speed, "m/s", 1);
 
     /** Weight Units */
     private static final SimpleList<Unit> weight = new SimpleList<Unit>();
-    @PassByValue public static final Unit mg = new Unit(weight, "mg", 0.001);
-    @PassByValue public static final Unit g = new Unit(weight, "g", 1);
-    @PassByValue public static final Unit kg = new Unit(weight, "kg", 1000);
-    @PassByValue public static final Unit t = new Unit(weight, "t", 1000000);
-    @PassByValue public static final Unit mt = new Unit(weight, "mt", 1000000000000d);
+    public static final Unit mg = new Unit(weight, "mg", 0.001);
+    public static final Unit g = new Unit(weight, "g", 1);
+    public static final Unit kg = new Unit(weight, "kg", 1000);
+    public static final Unit t = new Unit(weight, "t", 1000000);
+    public static final Unit mt = new Unit(weight, "mt", 1000000000000d);
 
     /** Time Units */
     private static final SimpleList<Unit> time = new SimpleList<Unit>();
-    @PassByValue public static final Unit ns = new Unit(time, "ns", 0.000000001);
-    @PassByValue public static final Unit us = new Unit(time, "us", 0.000001);
-    @PassByValue public static final Unit ms = new Unit(time, "ms", 0.001);
-    @PassByValue public static final Unit s = new Unit(time, "s", 1);
-    @PassByValue public static final Unit min = new Unit(time, "min", 60);
-    @PassByValue public static final Unit h = new Unit(time, "h", 3600);
-    @PassByValue public static final Unit day = new Unit(time, "day", 86400);
+    public static final Unit ns = new Unit(time, "ns", 0.000000001);
+    public static final Unit us = new Unit(time, "us", 0.000001);
+    public static final Unit ms = new Unit(time, "ms", 0.001);
+    public static final Unit s = new Unit(time, "s", 1);
+    public static final Unit min = new Unit(time, "min", 60);
+    public static final Unit h = new Unit(time, "h", 3600);
+    public static final Unit day = new Unit(time, "day", 86400);
 
     /** Angular Units */
     private static final SimpleList<Unit> angle = new SimpleList<Unit>();
-    @PassByValue public static final Unit deg = new Unit(angle, "deg", 0.017453292);
-    @PassByValue public static final Unit rad = new Unit(angle, "rad", 1);
+    public static final Unit deg = new Unit(angle, "deg", 0.017453292);
+    public static final Unit rad = new Unit(angle, "rad", 1);
 
     /** Frequency */
     private static final SimpleList<Unit> frequency = new SimpleList<Unit>();
-    @PassByValue public static final Unit Hz = new Unit(frequency, "Hz", 1);
+    public static final Unit Hz = new Unit(frequency, "Hz", 1);
 
     /** Screen Units */
     private static final SimpleList<Unit> screen = new SimpleList<Unit>();
-    @PassByValue public static final Unit Pixel = new Unit(screen, "Pixel", 1);
+    public static final Unit Pixel = new Unit(screen, "Pixel", 1);
 
 
     /** table for looking up a Unit using its Uid */
@@ -234,11 +222,11 @@ public class Unit {
      *
      * @param units Group of Units
      */
-    private static void calculateFactors(@Ref SimpleList<Unit> units) {
-        for (@SizeT int j = 0; j < units.size(); j++) {
-            @Ptr Unit unit = units.get(j);
+    private static void calculateFactors(SimpleList<Unit> units) {
+        for (int j = 0; j < units.size(); j++) {
+            Unit unit = units.get(j);
             unit.factors = new double[units.size()];
-            for (@SizeT int i = 0; i < units.size(); i++) {
+            for (int i = 0; i < units.size(); i++) {
                 unit.factors[i] = unit.getConversionFactor(units.get(i));
             }
         }
@@ -247,7 +235,7 @@ public class Unit {
     /**
      * @return Unit's uid
      */
-    @ConstMethod public byte getUid() {
+    public byte getUid() {
         return uid;
     }
 
@@ -255,7 +243,7 @@ public class Unit {
      * @param uid Unit's uid
      * @return Unit with this Uid
      */
-    public static @Ptr Unit getUnit(byte uid) {
+    public static Unit getUnit(byte uid) {
         //return uidLookupTable[uid];
         return uidLookupTableTemp.get(uid);
     }
@@ -263,21 +251,19 @@ public class Unit {
     /**
      * @return Is this class a constant ?
      */
-    @ConstMethod public boolean isConstant() {
+    public boolean isConstant() {
         return isAConstant;
     }
 
     /**
      * @return Value of constant - Double.NaN for normal units
      */
-    @InCppFile
-    @ConstMethod @Const @Ref public CoreNumber getValue() {
+    public CoreNumber getValue() {
         //Cpp static Number defaultValue(util::Double::_cNaN);
         return defaultValue;
     }
 
     /** Default value for units */
-    @JavaOnly @PassByValue
     private final static CoreNumber defaultValue = new CoreNumber(Double.NaN);
 
     /**
@@ -285,7 +271,7 @@ public class Unit {
      * @return Unit - NO_UNIT if unit name could not be found
      */
     public static Unit getUnit(String unitString) {
-        for (@SizeT int i = 0; i < uidLookupTableTemp.size(); i++) {
+        for (int i = 0; i < uidLookupTableTemp.size(); i++) {
             Unit u = uidLookupTableTemp.get(i);
             if (u.description.equals(unitString)) {
                 return u;

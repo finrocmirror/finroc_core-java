@@ -26,21 +26,6 @@ import java.lang.ref.WeakReference;
 import org.rrlib.finroc_core_utils.jc.GarbageCollector;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.Time;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.CppType;
-import org.rrlib.finroc_core_utils.jc.annotation.CppUnused;
-import org.rrlib.finroc_core_utils.jc.annotation.ForwardDecl;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.Mutable;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
 import org.rrlib.finroc_core_utils.jc.container.BoundedQElementContainer;
 import org.rrlib.finroc_core_utils.jc.container.ConcurrentMap;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
@@ -60,23 +45,10 @@ import org.finroc.core.portdatabase.DataTypeUtil;
 import org.finroc.core.thread.ExecutionControl;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This is an application's main central class (root object). It contains groups and modules.
  */
-/*@HPrepend({"class DeleteLastFunctor {",
-           "public:",
-           "    void operator()(finroc::util::Object* t);",
-           "};"})*/
-@CppPrepend( {/*"void DeleteLastFunctor::operator()(finroc::util::Object* t) {",
-             "    RuntimeEnvironment::deleteLast(t);",
-             "}","",*/
-                 "RuntimeEnvironment::StaticDeleter::~StaticDeleter() {",
-                 "    RuntimeEnvironment::shutdown();",
-                 "}"
-             })
-@ForwardDecl( {ThreadLocalCache.class})
-@Friend(LinkEdge.class)
 public class RuntimeEnvironment extends FrameworkElement implements FrameworkElementTreeFilter.Callback<Boolean> { /*implements Runtime*/
 
     /**
@@ -84,11 +56,10 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * They are moved to extra class in order to be separately lockable
      * (necessary for systematic dead-lock avoidance)
      */
-    @AtFront @PassByValue @Friend(RuntimeEnvironment.class)
     public class Registry {
 
         /** Global register of all ports. Allows accessing ports with simple handle. */
-        @SharedPtr private final CoreRegister<AbstractPort> ports = new CoreRegister<AbstractPort>(true);
+        private final CoreRegister<AbstractPort> ports = new CoreRegister<AbstractPort>(true);
 
         /** Global register of all framework elements (except of ports) */
         private final CoreRegister<FrameworkElement> elements = new CoreRegister<FrameworkElement>(false);
@@ -104,14 +75,12 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         private StringBuilder tempBuffer = new StringBuilder();
 
         /** Lock to thread local cache list */
-        @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
-        @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
+        SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
 
         /** Alternative roots for links (usually remote runtime environments mapped into this one) */
         private SimpleList<FrameworkElement> alternativeLinkRoots = new SimpleList<FrameworkElement>();
 
         /** Mutex */
-        @Mutable
         public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.RUNTIME_REGISTER);
     }
 
@@ -119,10 +88,10 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     private final Registry registry = new Registry();
 
     /** Singleton instance of Runtime environment - shared pointer so that is cleanly deleted at shutdown */
-    private static @SharedPtr RuntimeEnvironment instance;
+    private static RuntimeEnvironment instance;
 
     /** Raw pointer to above - that also exists during destruction */
-    private static @Ptr RuntimeEnvironment instanceRawPtr = null;
+    private static RuntimeEnvironment instanceRawPtr = null;
 
     /** Framework element that contains all framework elements that have no parent specified */
     FrameworkElement unrelated = null;
@@ -153,8 +122,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         Constant.staticInit(); // needs to be done after unit
         Time.getInstance(); // (possibly) init timing thread
         GarbageCollector.createAndStartInstance();
-        @CppType("util::SimpleListWithMutex<ThreadLocalCache*>")
-        @SharedPtr SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
+        SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
         MethodCallSyncher.staticInit(); // dito
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
@@ -169,7 +137,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         // add uninitialized child
         instance.unrelated = new FrameworkElement(instance, "Unrelated");
         @SuppressWarnings("unused")
-        @CppUnused
         AdminServer as = new AdminServer();
 
         // init thread-local-cache for main thread */
@@ -236,7 +203,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      */
     public void startExecution() {
         synchronized (registry) {
-            @PassByValue FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
+            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
             fet.traverseElementTree(this, this, true);
         }
     }
@@ -246,7 +213,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      */
     public void stopExecution() {
         synchronized (registry) {
-            @PassByValue FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
+            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter();
             fet.traverseElementTree(this, this, false);
         }
     }
@@ -266,7 +233,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     }
 
 
-    @JavaOnly public static void main(String[] args) {
+    public static void main(String[] args) {
         getInstance();
     }
 
@@ -334,12 +301,12 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param linkName (relative) Fully qualified name of port
      * @return Port with this name - or null if it does not exist
      */
-    public AbstractPort getPort(@Const @Ref String linkName) {
+    public AbstractPort getPort(String linkName) {
         synchronized (registry) {
 
             FrameworkElement fe = getChildElement(linkName, false);
             if (fe == null) {
-                for (@SizeT int i = 0; i < registry.alternativeLinkRoots.size(); i++) {
+                for (int i = 0; i < registry.alternativeLinkRoots.size(); i++) {
                     FrameworkElement altRoot = registry.alternativeLinkRoots.get(i);
                     fe = altRoot.getChildElement(linkName, 0, true, altRoot);
                     if (fe != null && !fe.isDeleted()) {
@@ -361,7 +328,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param link link that edge is interested in
      * @param edge Edge to add
      */
-    protected void addLinkEdge(@Const @Ref String link, LinkEdge edge) {
+    protected void addLinkEdge(String link, LinkEdge edge) {
         edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding link edge connecting to " + link);
         synchronized (registry) {
             LinkEdge interested = registry.linkEdges.get(link);
@@ -390,7 +357,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param link link that edge is interested in
      * @param edge Edge to add
      */
-    protected void removeLinkEdge(@Const @Ref String link, LinkEdge edge) {
+    protected void removeLinkEdge(String link, LinkEdge edge) {
         synchronized (registry) {
             LinkEdge current = registry.linkEdges.get(link);
             if (current == edge) {
@@ -489,7 +456,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
 
                 if (changeType == RuntimeListener.ADD && element.isPort()) { // check links
                     AbstractPort ap = (AbstractPort)element;
-                    for (@SizeT int i = 0; i < ap.getLinkCount(); i++) {
+                    for (int i = 0; i < ap.getLinkCount(); i++) {
                         ap.getQualifiedLink(registry.tempBuffer, i);
                         String s = registry.tempBuffer.toString();
                         edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_2, getLogDescription(), "Checking link " + s + " with respect to link edges");
@@ -512,7 +479,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      *
      * @return Is runtime environment currently shutting down?
      */
-    @InCpp("return util::Thread::stoppingThreads();")
     public static boolean shuttingDown() {
         return instance != null && instance.isDeleted();
     }
@@ -544,7 +510,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * (Should only be called by ThreadLocalCache class - needed for clean cleanup - port register needs to exists longer than runtime environment)
      * @return Port register
      */
-    @SharedPtr @Const public CoreRegister<AbstractPort> getPorts() {
+    public CoreRegister<AbstractPort> getPorts() {
         return registry.ports;
     }
 
@@ -560,16 +526,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     /**
      * @return Lock order of registry
      */
-    @Const @Ptr Registry getRegistryHelper() {
+    Registry getRegistryHelper() {
         return registry;
     }
-
-    /*Cpp
-
-    //! Can be placed in classes in order to ensure that RuntimeEnvironment will be deleted before its static members
-    class StaticDeleter {
-    public:
-        ~StaticDeleter();
-    };
-    */
 }

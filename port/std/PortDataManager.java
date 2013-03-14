@@ -23,37 +23,15 @@ package org.finroc.core.port.std;
 
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.annotation.AtFront;
-import org.rrlib.finroc_core_utils.jc.annotation.Attribute;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.ConstMethod;
-import org.rrlib.finroc_core_utils.jc.annotation.CppDefault;
-import org.rrlib.finroc_core_utils.jc.annotation.CppPrepend;
-import org.rrlib.finroc_core_utils.jc.annotation.Friend;
-import org.rrlib.finroc_core_utils.jc.annotation.HAppend;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.InCppFile;
-import org.rrlib.finroc_core_utils.jc.annotation.Include;
-import org.rrlib.finroc_core_utils.jc.annotation.Init;
-import org.rrlib.finroc_core_utils.jc.annotation.Inline;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.NonVirtual;
-import org.rrlib.finroc_core_utils.jc.annotation.OrgWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.SharedPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.SizeT;
-import org.rrlib.finroc_core_utils.jc.annotation.Superclass;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
 
-import org.finroc.core.port.Port;
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * This class is used for managing a single port data object (or "buffer").
  *
@@ -65,38 +43,22 @@ import org.finroc.core.portdatabase.ReusableGenericObjectManager;
  * shall be used in a port.
  * This way, it does not need to copied.
  */
-@Include( {"CombinedPointer.h"})
-@Attribute("((aligned(8)))")
-@Friend( {PortBase.class, Port.class, PortDataReference.class, DataTypeBase.class})
-@CppPrepend( {"PortDataManager PortDataManager::PROTOTYPE;",
-              "size_t PortDataManager::REF_COUNTERS_OFFSET = ((char*)&(PortDataManager::PROTOTYPE.refCounters[0])) - ((char*)&(PortDataManager::PROTOTYPE));",
-              "rrlib::logging::LogDomainSharedPointer initDomainDummy = PortDataManager::_V_logDomain();", ""
-             })
 public class PortDataManager extends ReusableGenericObjectManager implements HasDestructor {
 
     /** Number of reference to port data (same as in PortDataImpl) */
-    public final static @SizeT int NUMBER_OF_REFERENCES = 4;
+    public final static int NUMBER_OF_REFERENCES = 4;
 
     /** Mask for selection of current reference */
-    public final static @SizeT int REF_INDEX_MASK = NUMBER_OF_REFERENCES - 1;
+    public final static int REF_INDEX_MASK = NUMBER_OF_REFERENCES - 1;
 
     /** Reference counters in this manager - 8 bytes in C++ (due to mean tricks) ... probably > 60 bytes in Java */
-    @InCpp("RefCounter refCounters[4] __attribute__ ((_aligned(8)));")
     private RefCounter[] refCounters = new RefCounter[NUMBER_OF_REFERENCES];
 
     /** Value relevant for publishing thread only - is this still a unused buffer? */
     private boolean unused = true;
 
-    /*Cpp
-    // Reference counter offset in class (offsetof-makro doesn't work here :-/ )
-    static size_t REF_COUNTERS_OFFSET;
-
-    // PortDataManager prototype to obtain above offset
-    static PortDataManager PROTOTYPE;
-     */
-
     /** PortDataManager that this manager is derived from - null if not derived */
-    private @Ptr PortDataManager derivedFrom;
+    private PortDataManager derivedFrom;
 
     /** incremented every time buffer is reused */
     protected volatile int reuseCounter = 0;
@@ -105,10 +67,9 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     public int lockID = 0;
 
     /** Different reference to port data (because of reuse problem - see portratio) */
-    @JavaOnly private final PortDataReference[] refs = new PortDataReference[NUMBER_OF_REFERENCES];
+    private final PortDataReference[] refs = new PortDataReference[NUMBER_OF_REFERENCES];
 
     /** Log domain for this class */
-    @InCpp("_RRLIB_LOG_CREATE_NAMED_DOMAIN(logDomain, \"port_data\");")
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
 
     /**
@@ -116,11 +77,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      *
      * @param dt Data Type of managed data
      */
-    @Init( {"refCounters()"})
     protected PortDataManager() {
-        //Cpp assert((((size_t)this) & 0x7) == 0); // make sure requested alignment was honoured
-
-        // JavaOnlyBlock
         for (int i = 0; i < NUMBER_OF_REFERENCES; i++) {
             refCounters[i] = new RefCounter(this);
         }
@@ -177,13 +134,11 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * Create PortDataReference.
      * Overridable for PortDataDelegate in Java.
      */
-    @JavaOnly protected PortDataReference createPortDataRef(PortDataManager.RefCounter refCounter) {
+    protected PortDataReference createPortDataRef(PortDataManager.RefCounter refCounter) {
         return new PortDataReference(this, refCounter);
     }
 
-    @Inline //@HAppend( {})
-    @InCpp( {"return CombinedPointerOps::create<PortDataReference>(this, reuseCounter & 0x3);" })
-    @NonVirtual @ConstMethod public PortDataReference getCurReference() {
+    public PortDataReference getCurReference() {
         return refs[reuseCounter & REF_INDEX_MASK];
     }
 
@@ -194,8 +149,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
      * @return Manager for port data - or null if it does not exist
      */
-    @JavaOnly
-    public static <T> PortDataManager getManager(@SharedPtr @Ref T data, @CppDefault("false") boolean resetActiveFlag) {
+    public static <T> PortDataManager getManager(T data, boolean resetActiveFlag) {
         GenericObjectManager gom = ReusableGenericObjectManager.getManager(data);
         if (gom instanceof PortDataManager) {
             return (PortDataManager)gom;
@@ -210,8 +164,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @param resetActiveFlag Reset active flag (set when unused buffers are handed to user)
      * @return Manager for port data
      */
-    @JavaOnly
-    public static <T> PortDataManager getManager(@SharedPtr @Ref T data) {
+    public static <T> PortDataManager getManager(T data) {
         return getManager(data, false);
     }
 
@@ -221,8 +174,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @param index Index
      * @return reference counter
      */
-    @InCpp("return &(refCounters[index]);")
-    @OrgWrapper @ConstMethod protected @Const RefCounter getRefCounter(@SizeT int index) {
+    protected RefCounter getRefCounter(int index) {
         assert(index < NUMBER_OF_REFERENCES);
         return refCounters[index];
     }
@@ -231,7 +183,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @return Returns current reference counter
      * Method is only safe while data is locked!!
      */
-    @OrgWrapper @ConstMethod public @Const RefCounter getCurrentRefCounter() {
+    public RefCounter getCurrentRefCounter() {
         return getRefCounter(reuseCounter & REF_INDEX_MASK);
     }
 
@@ -245,16 +197,9 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     /**
      * @return Is this (still) a unused buffer?
      */
-    @ConstMethod public boolean isUnused() {
+    public boolean isUnused() {
         return unused;
     }
-
-    /*Cpp
-    inline void handlePointerRelease() {
-      assert((!isUnused()) && ("Unused buffers retrieved from ports must be published"));
-      releaseLock();
-    }
-     */
 
     /** Is port data currently locked (convenience method)? */
     public boolean isLocked() {
@@ -262,7 +207,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     }
 
     /**
-     * @author max
+     * @author Max Reichardt
      *
      * This is a special atomic, thread-safe, non-blocking reference counter.
      *
@@ -271,27 +216,16 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * In C++ this is a pseudo-class. The 'this'-pointer points to port of the refCounters
      * variable.
      */
-    @Ptr @Superclass( {}) @Inline @AtFront
     public static class RefCounter extends AtomicInt {
 
         /** UID */
         private static final long serialVersionUID = -2089004067275013847L;
 
-        @InCpp("std::atomic<short> wrapped; // one less than actual number of references. So -1 when actually no locks.")
         private PortDataManager manager;
 
-        @JavaOnly public RefCounter(/*int i,*/ PortDataManager manager) {
+        public RefCounter(/*int i,*/ PortDataManager manager) {
             this.manager = manager;
         }
-
-        /*Cpp
-        RefCounter() { wrapped = -1; }
-
-        // returns number of locks
-        inline short get() const {
-            return wrapped;
-        }
-         */
 
         /**
          * Try to add reference/read locks
@@ -302,7 +236,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
         public boolean tryLocks(byte count) {
             assert(!getManager().unused);
 
-            // JavaOnlyBlock
             for (;;) {
                 int current = get();
                 if (current <= 0) {
@@ -312,11 +245,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
                     return true;
                 }
             }
-
-            /*Cpp
-            std::atomic_fetch_add((std::atomic<int8_t>*)this, count); // mean trick... won't make negative value positive *g* - CPU should not like this, but it's reasonably fast actually
-            return wrapped >= 0;
-             */
         }
 
         /**
@@ -334,7 +262,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
          * @param count Number of locks to add
          * @return Was locking successful? (zero was not already reached)
          */
-        @InCpp("wrapped += count;")
         public void addLocks(byte count) {
             assert(!getManager().unused);
             this.addAndGet(count);
@@ -354,31 +281,17 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
          *
          * @param count Number of locks to release
          */
-        @HAppend( {}) @Inline
         public void releaseLocks(byte count) {
             assert(!getManager().unused);
-
-            // JavaOnlyBlock
             int newVal = addAndGet(-count);
             assert(newVal >= 0) : "too many locks released";
             if (newVal == 0) {
                 getManager().dangerousDirectRecycle();
                 //getManager().reuseCounter++;
             }
-
-            /*Cpp
-            short newVal = wrapped.fetch_add(-count) - count;
-            if (newVal < 0) {
-                getManager()->dangerousDirectRecycle();
-                //getManager()->reuseCounter++;
-            }
-             */
         }
 
         /** Get pointer to manager */
-        @HAppend( {}) @Inline
-        //@InCpp("return (PortDataManager*)((((size_t)this) & CombinedPointer<>::POINTER_MASK) - offsetof(PortDataManager, refCounters)); // memory layout allows doing this - shrinks class to <=33% ")
-        @InCpp("return (PortDataManager*)((((size_t)this) & CombinedPointerOps::POINTER_MASK) - REF_COUNTERS_OFFSET); // memory layout allows doing this - shrinks class to <=33% ")
         private PortDataManager getManager() {
             return manager;
         }
@@ -398,11 +311,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
         public void setLocks(byte count) {
             assert(getManager().unused);
             getManager().unused = false;
-
-            // JavaOnlyBlock
             set(count);
-
-            //Cpp wrapped = count - 1;
         }
 
         /**
@@ -437,16 +346,14 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
          *
          * @return answer
          */
-        //@InCpp("return wrapped >= 0;")
-        @ConstMethod public boolean isLocked() {
+        public boolean isLocked() {
             return getLocks() > 0;
         }
 
         /**
          * @return Number of locks
          */
-        @InCpp("return (wrapped + 1);")
-        @ConstMethod public int getLocks() {
+        public int getLocks() {
             return get();
         }
     }
@@ -464,7 +371,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * Recycle manager and port data...
      * (This method is not intended to be used by framework users. Use only, if you know exactly what you're doing.)
      */
-    @InCppFile
     public void dangerousDirectRecycle() {
         if (derivedFrom != null) {
             derivedFrom.getCurrentRefCounter().releaseLock();
@@ -499,11 +405,11 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      *
      * @return Next element in buffer pool
      */
-    @ConstMethod public @Const PortDataManager getNextInBufferPool() {
+    public PortDataManager getNextInBufferPool() {
         return (PortDataManager)nextInBufferPool;
     }
 
-    @InCppFile
+    @Override
     public String toString() {
         return "PortDataManager for " + getContentString() + " (Locks: " + getCurrentRefCounter().getLocks() + ")";
     }
@@ -511,7 +417,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     /**
      * @return Type of managed object
      */
-    @ConstMethod public DataTypeBase getType() {
+    public DataTypeBase getType() {
         return getObject().getType();
     }
 
@@ -531,8 +437,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * @param dataType Data type
      * @return Manager
      */
-    @InCpp("return static_cast<PortDataManager*>(dataType.createInstanceGeneric<PortDataManager>()->getManager());")
-    public static PortDataManager create(@Const @Ref DataTypeBase dataType) {
+    public static PortDataManager create(DataTypeBase dataType) {
         return (PortDataManager)(dataType.createInstanceGeneric(new PortDataManager())).getManager();
     }
 

@@ -21,16 +21,13 @@
  */
 package org.finroc.core.port.rpc;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.RawTypeArgs;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Abstract interface for anything that can be called and handles/updates
  * an AbstractCall object
  */
-@Ptr @RawTypeArgs
 public interface Callable<T extends AbstractCall> {
 
     /**
@@ -38,5 +35,5 @@ public interface Callable<T extends AbstractCall> {
      *
      * @param call Call-object that contains call data and will possibly be updated/modified
      */
-    public void invokeCall(@Ptr T call);
+    public void invokeCall(T call);
 }

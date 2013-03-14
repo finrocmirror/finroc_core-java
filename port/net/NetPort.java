@@ -51,16 +51,6 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.SerializationHelper;
 import org.finroc.core.portdatabase.UnknownType;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.InCpp;
-import org.rrlib.finroc_core_utils.jc.annotation.IncludeClass;
-import org.rrlib.finroc_core_utils.jc.annotation.InitInBody;
-import org.rrlib.finroc_core_utils.jc.annotation.JavaOnly;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
-import org.rrlib.finroc_core_utils.jc.annotation.Virtual;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -68,27 +58,25 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Port that is used for networking.
  * Uniform wrapper class for Std, CC, and Interface ports.
  */
 @SuppressWarnings("rawtypes")
-@Ptr
-@IncludeClass(PullCall.class)
 public abstract class NetPort extends LogUser implements PortListener {
 
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
 
     /** TCPServerConnection or RemoteServer instance that this port belongs to */
-    protected final @Ptr Object belongsTo;
+    protected final Object belongsTo;
 
     /** Last time the value was updated (used to make sure that minimum update interval is kept) */
     public long lastUpdate = Long.MIN_VALUE;
 
     /** Wrapped port */
-    private final @Ptr AbstractPort wrapped;
+    private final AbstractPort wrapped;
 
     /** Handle of Remote port */
     protected int remoteHandle;
@@ -99,8 +87,7 @@ public abstract class NetPort extends LogUser implements PortListener {
     /** Data type to use when writing data to the network */
     private Serialization.DataEncoding encoding = Serialization.DataEncoding.BINARY;
 
-    @InitInBody("wrapped")
-    public NetPort(PortCreationInfo pci, @Ptr Object belongsTo) {
+    public NetPort(PortCreationInfo pci, Object belongsTo) {
         // keep most these flags
         int f = pci.flags & (PortFlags.ACCEPTS_DATA | PortFlags.EMITS_DATA | PortFlags.MAY_ACCEPT_REVERSE_DATA | PortFlags.IS_OUTPUT_PORT |
                              PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT | PortFlags.NON_STANDARD_ASSIGN /*| PortFlags.IS_CC_PORT | PortFlags.IS_INTERFACE_PORT*/ |
@@ -123,7 +110,6 @@ public abstract class NetPort extends LogUser implements PortListener {
         pci.flags = f;
         this.belongsTo = belongsTo;
 
-        //JavaOnlyBlock
         if (isUnknownType()) {
             if (ut.isAdaptable()) {
                 encoding = ut.determineEncoding();
@@ -177,7 +163,6 @@ public abstract class NetPort extends LogUser implements PortListener {
         flags &= ~(keepFlags);
         flags |= curFlags;
 
-        //JavaOnlyBlock
         if (isUnknownType() && (!isUnknownAdaptableType())) {
             ((UnknownTypedNetPort)wrapped).updateFlags(flags);
             return;
@@ -209,7 +194,7 @@ public abstract class NetPort extends LogUser implements PortListener {
     /**
      * @return TCPServerConnection or RemoteServer instance that this port belongs to
      */
-    public @Ptr Object getBelongsTo() {
+    public Object getBelongsTo() {
         return belongsTo;
     }
 
@@ -242,7 +227,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      *
      * Called before children are initialized
      */
-    @Virtual protected void preChildInit() {}
+    protected void preChildInit() {}
 
     /**
      * Initializes this runtime element.
@@ -251,7 +236,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      *
      * Called before children are initialized
      */
-    @Virtual protected void postChildInit() {}
+    protected void postChildInit() {}
 
     /**
      * Prepares element for deletion.
@@ -260,27 +245,27 @@ public abstract class NetPort extends LogUser implements PortListener {
      * a few seconds (to ensure no other thread is working on this object
      * any more).
      */
-    @Virtual protected void prepareDelete() {}
+    protected void prepareDelete() {}
 
     /**
      * Notify port of disconnect
      */
-    @Virtual protected void notifyDisconnect() {}
+    protected void notifyDisconnect() {}
 
     /**
      * Called whenever current value of port has changed
      */
-    @Virtual protected void portChanged() {}
+    protected void portChanged() {}
 
     /**
      * Called whenever connection was established
      */
-    @Virtual protected void newConnection() {}
+    protected void newConnection() {}
 
     /**
      * Called whenever connection was removed
      */
-    @Virtual protected void connectionRemoved() {}
+    protected void connectionRemoved() {}
 
     /**
      * Decode incoming data from stream
@@ -289,7 +274,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      * @param timestamp Time stamp
      * @param changedFlag Type of change
      */
-    public void receiveDataFromStream(@Ref InputStreamBuffer ci, long timestamp, byte changedFlag) {
+    public void receiveDataFromStream(InputStreamBuffer ci, long timestamp, byte changedFlag) {
         assert(getPort().isReady());
         Serialization.DataEncoding enc = ci.readEnum(Serialization.DataEncoding.class);
         if (isStdType() || isTransactionType() || isUnknownAdaptableType()) {
@@ -315,7 +300,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      * @param co Stream
      * @param startTime Time stamp
      */
-    public void writeDataToNetwork(@Ref OutputStreamBuffer co, long startTime) {
+    public void writeDataToNetwork(OutputStreamBuffer co, long startTime) {
 
         boolean useQ = wrapped.getFlag(PortFlags.USES_QUEUE);
         boolean first = true;
@@ -327,10 +312,9 @@ public abstract class NetPort extends LogUser implements PortListener {
                 SerializationHelper.writeObject(co, getDataType(), pd.getObject(), encoding);
                 pd.releaseLock();
             } else {
-                @InCpp("PortQueueFragmentRaw fragment;")
-                @PassByValue PortQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempFragment;
+                PortQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempFragment;
                 pb.dequeueAllRaw(fragment);
-                @Const PortDataReference pd = null;
+                PortDataReference pd = null;
                 while ((pd = (PortDataReference)fragment.dequeue()) != null) {
                     if (!first) {
                         co.writeBoolean(true);
@@ -347,8 +331,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 SerializationHelper.writeObject(co, getDataType(), ccitc.getObject(), encoding);
                 ccitc.recycle2();
             } else {
-                @InCpp("CCQueueFragmentRaw fragment;")
-                @PassByValue CCQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempCCFragment;
+                CCQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempCCFragment;
                 pb.dequeueAllRaw(fragment);
                 CCPortDataManager pd = null;
                 while ((pd = fragment.dequeueUnsafe()) != null) {
@@ -496,9 +479,9 @@ public abstract class NetPort extends LogUser implements PortListener {
             if (reverse) {
 
                 // do we have other reverse push listeners? - in this case, there won't be coming anything new from the network => immediately push
-                @Ptr ArrayWrapper<CCPortBase> it = edgesDest.getIterable();
+                ArrayWrapper<CCPortBase> it = edgesDest.getIterable();
                 for (int i = 0, n = it.size(); i < n; i++) {
-                    @Ptr AbstractPort port = it.get(i);
+                    AbstractPort port = it.get(i);
                     if (port != null && port != target && port.isReady() && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
                         super.initialPushTo(target, reverse);
                         return;
@@ -614,7 +597,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                     pc.recycle();
                     return pd;
                 } else {
-                    @CustomPtr("tPortDataPtr") GenericObject o = pc.getPulledBuffer();
+                    GenericObject o = pc.getPulledBuffer();
                     PortDataManager pd = (PortDataManager)o.getManager();
                     assert(pd.isLocked());
                     pd.getCurrentRefCounter().addLocks((byte)(addLocks));
@@ -642,9 +625,9 @@ public abstract class NetPort extends LogUser implements PortListener {
             if (reverse) {
 
                 // do we have other reverse push listeners? - in this case, there won't be coming anything new from the network => immediately push
-                @Ptr ArrayWrapper<PortBase> it = edgesDest.getIterable();
+                ArrayWrapper<PortBase> it = edgesDest.getIterable();
                 for (int i = 0, n = it.size(); i < n; i++) {
-                    @Ptr AbstractPort port = it.get(i);
+                    AbstractPort port = it.get(i);
                     if (port != null && port != target && port.isReady() && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
                         super.initialPushTo(target, reverse);
                         return;
@@ -739,7 +722,6 @@ public abstract class NetPort extends LogUser implements PortListener {
      * Artificial construct for finstruct.
      * This way, ports with unknown types can be displayed and connected.
      */
-    @JavaOnly
     public class UnknownTypedNetPort extends AbstractPort {
 
         /** Edges emerging from this port */
@@ -815,7 +797,7 @@ public abstract class NetPort extends LogUser implements PortListener {
 
     }
 
-    @Override @JavaOnly
+    @Override
     public void portChanged(AbstractPort origin, Object value) {
         portChanged();
     }
@@ -863,7 +845,6 @@ public abstract class NetPort extends LogUser implements PortListener {
     /**
      * @return Targets of remote edges
      */
-    @JavaOnly
     public abstract List<AbstractPort> getRemoteEdgeDestinations();
 
     /**

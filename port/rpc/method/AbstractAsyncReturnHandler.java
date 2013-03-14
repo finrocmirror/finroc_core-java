@@ -21,15 +21,12 @@
  */
 package org.finroc.core.port.rpc.method;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Ptr;
-
 /**
- * @author max
+ * @author Max Reichardt
  *
  * Common base interface for all AsyncReturnHandlers
  * (can be cast to AsyncReturnHandler<R>)
  */
-@Ptr
 public interface AbstractAsyncReturnHandler {
 
 }

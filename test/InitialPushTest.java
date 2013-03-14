@@ -21,10 +21,6 @@
  */
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.annotation.Const;
-import org.rrlib.finroc_core_utils.jc.annotation.CustomPtr;
-import org.rrlib.finroc_core_utils.jc.annotation.PassByValue;
-import org.rrlib.finroc_core_utils.jc.annotation.Ref;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.plugins.blackboard.BlackboardBuffer;
@@ -37,7 +33,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
 /**
- * @author max
+ * @author Max Reichardt
  *
  */
 public class InitialPushTest {
@@ -59,8 +55,8 @@ public class InitialPushTest {
 
         // fill output ports with something
         nOut.publish(23);
-        @CustomPtr("tPortDataPtr") BlackboardBuffer bb = out.getUnusedBuffer();
-        @PassByValue OutputStreamBuffer co = new OutputStreamBuffer();
+        BlackboardBuffer bb = out.getUnusedBuffer();
+        OutputStreamBuffer co = new OutputStreamBuffer();
         co.reset(bb);
         co.writeInt(23);
         co.close();
@@ -74,7 +70,7 @@ public class InitialPushTest {
         // print output
         System.out.println("NumIn (exp 23): " + nIn.getDoubleRaw());
         System.out.println("NumRevOut (exp 23): " + nRevOut.getDoubleRaw());
-        @Const BlackboardBuffer bb2 = in.getAutoLocked();
+        BlackboardBuffer bb2 = in.getAutoLocked();
         System.out.println("StdIn (exp 23): " + bb2.getBuffer().getInt(0));
         ThreadLocalCache.getFast().releaseAllLocks();
 
@@ -163,7 +159,7 @@ public class InitialPushTest {
         print(o3, 44);
     }
 
-    private static void print(@Ref PortNumeric<Integer> o2, int i) {
+    private static void print(PortNumeric<Integer> o2, int i) {
         System.out.println("Port " + o2.getName() + ": " + o2.getIntRaw() + " (expected: " + i + ")");
     }
 
