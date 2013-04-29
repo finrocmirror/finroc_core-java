@@ -22,6 +22,7 @@
 package org.finroc.core.thread;
 
 import org.finroc.core.FinrocAnnotation;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.EdgeAggregator;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
@@ -77,6 +78,6 @@ public class PeriodicFrameworkElementTask extends FinrocAnnotation {
      * @return Is this a sensor task?
      */
     public boolean isSenseTask() {
-        return outgoing.getFlag(EdgeAggregator.SENSOR_DATA) || incoming.getFlag(EdgeAggregator.SENSOR_DATA);
+        return outgoing.getFlag(FrameworkElementFlags.SENSOR_DATA) || incoming.getFlag(FrameworkElementFlags.SENSOR_DATA);
     }
 }

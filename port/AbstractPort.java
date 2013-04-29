@@ -21,6 +21,7 @@
  */
 package org.finroc.core.port;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
@@ -34,7 +35,6 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.Factory;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
 import org.finroc.core.LockOrderLevels;
@@ -123,9 +123,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /** Bit vector indicating which of the outgoing edges was finstructed */
     private BitSet outgoingEdgesFinstructed = new BitSet();
 
-    /** Constant for bulk and express flag */
-    private static final int BULK_N_EXPRESS = PortFlags.IS_BULK_PORT | PortFlags.IS_EXPRESS_PORT;
-
     /** Log domain for initial pushing */
     public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
 
@@ -151,18 +148,17 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     private static int processFlags(PortCreationInfo pci) {
         int flags = pci.flags;
-        assert((flags & BULK_N_EXPRESS) != BULK_N_EXPRESS) : "Cannot be bulk and express port at the same time";
         assert(pci.dataType != null);
-        if ((flags & BULK_N_EXPRESS) == 0) {
+        if ((flags & Flag.EXPRESS_PORT) == 0) {
 
             // no priority flags set... typical case... get them from type
-            flags |= FinrocTypeInfo.isCCType(pci.dataType) ? PortFlags.IS_EXPRESS_PORT : PortFlags.IS_BULK_PORT;
+            flags |= FinrocTypeInfo.isCCType(pci.dataType) ? Flag.EXPRESS_PORT : 0;
         }
-        if ((flags & PortFlags.PUSH_STRATEGY_REVERSE) != 0) {
-            flags |= PortFlags.MAY_ACCEPT_REVERSE_DATA;
-        }
+//        if ((flags & Flag.PUSH_STRATEGY_REVERSE) != 0) {
+//            flags |= Flag.MAY_ACCEPT_REVERSE_DATA;
+//        }
 
-        return flags | CoreFlags.IS_PORT;
+        return flags | Flag.PORT;
     }
 
     /**
@@ -255,14 +251,14 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Answer
      */
     public boolean mayConnectTo(AbstractPort target, boolean warnIfImpossible) {
-        if (!getFlag(PortFlags.EMITS_DATA)) {
+        if (!getFlag(Flag.EMITS_DATA)) {
             if (warnIfImpossible) {
                 log(LogLevel.LL_WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because this (source) port does not emit data.");
             }
             return false;
         }
 
-        if (!target.getFlag(PortFlags.ACCEPTS_DATA)) {
+        if (!target.getFlag(Flag.ACCEPTS_DATA)) {
             if (warnIfImpossible) {
                 log(LogLevel.LL_WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because it does not accept data.");
             }
@@ -332,8 +328,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             if (source.mayConnectTo(target, true)) {
                 source.rawConnectToTarget(target, finstructed);
                 target.propagateStrategy(null, source);
-                source.newConnection(target);
-                target.newConnection(source);
+                source.connectionAdded(target, true);
+                target.connectionAdded(source, false);
                 log(LogLevel.LL_DEBUG_VERBOSE_1, edgeLog, "Creating Edge from " + source.getQualifiedName() + " to " + target.getQualifiedName());
 
                 // check whether we need an initial reverse push
@@ -419,8 +415,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         dest.edgesDest.remove(src);
         src.edgesSrc.remove(dest);
 
-        src.connectionRemoved(dest);
-        dest.connectionRemoved(src);
+        dest.connectionRemoved(src, false);
+        src.connectionRemoved(dest, true);
 
         if (!src.isConnected()) {
             src.strategy = -1;
@@ -509,7 +505,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     // flag queries
 
     public boolean isOutputPort() {
-        return getFlag(PortFlags.OUTPUT_PORT);
+        return getFlag(Flag.IS_OUTPUT_PORT);
     }
 
     public boolean isInputPort() {
@@ -621,10 +617,10 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public void setPushStrategy(boolean push) {
         synchronized (getRegistryLock()) {
-            if (push == getFlag(PortFlags.PUSH_STRATEGY)) {
+            if (push == getFlag(Flag.PUSH_STRATEGY)) {
                 return;
             }
-            setFlag(PortFlags.PUSH_STRATEGY, push);
+            setFlag(Flag.PUSH_STRATEGY, push);
             propagateStrategy(null, null);
         }
     }
@@ -645,12 +641,12 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     @SuppressWarnings("unchecked")
     public void setReversePushStrategy(boolean push) {
-        if (!acceptsReverseData() || push == getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
+        if (push == getFlag(Flag.PUSH_STRATEGY_REVERSE)) {
             return;
         }
 
         synchronized (getRegistryLock()) {
-            setFlag(PortFlags.PUSH_STRATEGY_REVERSE, push);
+            setFlag(Flag.PUSH_STRATEGY_REVERSE, push);
             if (push && isReady()) { // strategy change
                 ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
                 for (int i = 0, n = it.size(); i < n; i++) {
@@ -672,7 +668,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Answer
      */
     public boolean reversePushStrategy() {
-        return (flags & PortFlags.PUSH_STRATEGY_REVERSE) > 0;
+        return (flags & Flag.PUSH_STRATEGY_REVERSE) != 0;
     }
 
     /**
@@ -700,8 +696,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * (called with runtime-registry lock)
      *
      * @param partner Port at other end of connection
+     * @param partnerIsDestination Is partner port destination port? (otherwise it's the source port)
      */
-    protected void newConnection(AbstractPort partner) {}
+    protected void connectionAdded(AbstractPort partner, boolean partnerIsDestination) {}
 
     /**
      * Called whenever a connection to this port was removed
@@ -709,8 +706,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * (called with runtime-registry lock)
      *
      * @param partner Port at other end of connection
+     * @param partnerIsDestination Is partner port destination port? (otherwise it's the source port)
      */
-    protected void connectionRemoved(AbstractPort partner) {}
+    protected void connectionRemoved(AbstractPort partner, boolean partnerIsDestination) {}
 
     /**
      * Notify port of (network) disconnect
@@ -738,7 +736,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         ArrayWrapper<AbstractPort> it = isOutputPort() ? edgesSrc.getIterable() : edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             AbstractPort port = it.get(i);
-            if (port != null && port.getFlag(CoreFlags.NETWORK_ELEMENT)) {
+            if (port != null && port.getFlag(Flag.NETWORK_ELEMENT)) {
                 NetPort np = port.asNetPort();
                 if (np != null && np.getBelongsTo() == belongsTo) {
                     return np;
@@ -776,13 +774,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         /*if (isShared() && (portSpecific || minNetUpdateTime <= 0)) {
             RuntimeEnvironment.getInstance().getSettings().getSharedPorts().commitUpdateTimeChange(getIndex(), getMinNetUpdateInterval());
         }*/
-    }
-
-    /**
-     * @return Does port accept reverse data?
-     */
-    public boolean acceptsReverseData() {
-        return getFlag(PortFlags.MAY_ACCEPT_REVERSE_DATA);
     }
 
     /**
@@ -841,7 +832,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                     sourcePort = allSourcesReversePushers;
                 }
                 if (sourcePort) {
-                    if (isReady() && pushWanter.isReady() && (!getFlag(PortFlags.NO_INITIAL_PUSHING)) && (!pushWanter.getFlag(PortFlags.NO_INITIAL_PUSHING))) {
+                    if (isReady() && pushWanter.isReady() && (!getFlag(Flag.NO_INITIAL_PUSHING)) && (!pushWanter.getFlag(Flag.NO_INITIAL_PUSHING))) {
                         initialPushLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
                         initialPushTo(pushWanter, false);
                     }
@@ -913,7 +904,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         ArrayWrapper<AbstractPort> it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             AbstractPort port = it.get(i);
-            if (port != null && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
+            if (port != null && port.getFlag(Flag.PUSH_STRATEGY_REVERSE)) {
                 return true;
             }
         }
@@ -944,7 +935,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         it = edgesDest.getIterable();
         for (int i = 0, n = it.size(); i < n; i++) {
             AbstractPort port = it.get(i);
-            if (port != null && port.getFlag(PortFlags.PUSH_STRATEGY_REVERSE)) {
+            if (port != null && port.getFlag(Flag.PUSH_STRATEGY_REVERSE)) {
                 if ((t = port.getMinNetUpdateInterval()) >= 0 && t < result) {
                     result = t;
                 }
@@ -970,17 +961,17 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param length Maximum queue length (values <= 1 mean that there is no queue)
      */
     public void setMaxQueueLength(int queueLength) {
-        if (!getFlag(PortFlags.HAS_QUEUE)) {
+        if (!getFlag(Flag.HAS_QUEUE)) {
             logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "warning: tried to set queue length on port without queue - ignoring");
             return;
         }
         synchronized (getRegistryLock()) {
             if (queueLength <= 1) {
-                removeFlag(PortFlags.USES_QUEUE);
+                removeFlag(Flag.USES_QUEUE);
                 clearQueueImpl();
             } else if (queueLength != getMaxQueueLengthImpl()) {
                 setMaxQueueLengthImpl(queueLength);
-                setFlag(PortFlags.USES_QUEUE); // publishes change
+                setFlag(Flag.USES_QUEUE); // publishes change
             }
             propagateStrategy(null, null);
         }
@@ -992,8 +983,8 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     protected short getStrategyRequirement() {
         if (isInputPort() /*&& (!getFlag(PortFlags.PROXY)) && (!getFlag(PortFlags.NETWORK_ELEMENT))*/) {
-            if (getFlag(PortFlags.PUSH_STRATEGY)) {
-                if (getFlag(PortFlags.USES_QUEUE)) {
+            if (getFlag(Flag.PUSH_STRATEGY)) {
+                if (getFlag(Flag.USES_QUEUE)) {
                     int qlen = getMaxQueueLengthImpl();
                     return (short)(qlen > 0 ? qlen : Short.MAX_VALUE);
                 } else {
@@ -1043,9 +1034,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         // I think and hope that the compiler is intelligent enough to optimize branches away...
         if (REVERSE) {
             if (CHANGE_CONSTANT == CHANGED_INITIAL) {
-                return (flags & PortFlags.PUSH_STRATEGY_REVERSE) > 0 && edgesSrc.countElements() <= 1;
+                return (flags & Flag.PUSH_STRATEGY_REVERSE) != 0 && edgesSrc.countElements() <= 1;
             } else {
-                return (flags & PortFlags.PUSH_STRATEGY_REVERSE) > 0;
+                return (flags & Flag.PUSH_STRATEGY_REVERSE) != 0;
             }
         } else if (CHANGE_CONSTANT == CHANGED_INITIAL) {
             // We don't want initial pushes to ports with multiple inputs
@@ -1117,7 +1108,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param finstructedEdgesOnly Consider only outgoing finstructed edges?
      */
     @SuppressWarnings("unchecked")
-    public void getConnectionPartners(SimpleList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges, boolean finstructedEdgesOnly) {
+    public void getConnectionPartners(ArrayList<AbstractPort> result, boolean outgoingEdges, boolean incomingEdges, boolean finstructedEdgesOnly) {
         result.clear();
         ArrayWrapper<AbstractPort> it = null;
 
@@ -1148,7 +1139,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @return Is this port volatile (meaning that it's not always there and connections to it should preferably be links)?
      */
     public boolean isVolatile() {
-        return getFlag(PortFlags.IS_VOLATILE);
+        return getFlag(Flag.VOLATILE);
     }
 
     /**
@@ -1252,11 +1243,11 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     protected ConnectDirection inferConnectDirection(AbstractPort other) {
         // If one port is no proxy port (only emits or accepts data), direction is clear
-        if (!getFlag(PortFlags.PROXY)) {
-            return getFlag(PortFlags.EMITS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
+        if (!getFlag(Flag.PROXY)) {
+            return getFlag(Flag.EMITS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
         }
-        if (!other.getFlag(PortFlags.PROXY)) {
-            return other.getFlag(PortFlags.ACCEPTS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
+        if (!other.getFlag(Flag.PROXY)) {
+            return other.getFlag(Flag.ACCEPTS_DATA) ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
         }
 
         // Temporary variable to store result: Return tConnectDirection::TO_TARGET?
@@ -1270,12 +1261,12 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         EdgeAggregator thisAggregator = EdgeAggregator.getAggregator(this);
         EdgeAggregator otherAggregator = EdgeAggregator.getAggregator(other);
         boolean portsHaveSameParent = thisAggregator != null && otherAggregator != null &&
-                                      ((thisAggregator == otherAggregator) || (thisAggregator.getParent() == otherAggregator.getParent() && thisAggregator.getFlag(EdgeAggregator.IS_INTERFACE) && otherAggregator.getFlag(EdgeAggregator.IS_INTERFACE)));
+                                      ((thisAggregator == otherAggregator) || (thisAggregator.getParent() == otherAggregator.getParent() && thisAggregator.getFlag(Flag.INTERFACE) && otherAggregator.getFlag(Flag.INTERFACE)));
 
         // Ports of network interfaces typically determine connection direction
-        if (this.getFlag(CoreFlags.NETWORK_ELEMENT)) {
+        if (this.getFlag(Flag.NETWORK_ELEMENT)) {
             returnToTarget = thisOutputProxy;
-        } else if (other.getFlag(CoreFlags.NETWORK_ELEMENT)) {
+        } else if (other.getFlag(Flag.NETWORK_ELEMENT)) {
             returnToTarget = !otherOutputProxy;
         } else if (thisOutputProxy != otherOutputProxy) {
             // If we have an output and an input port, typically, the output port is connected to the input port

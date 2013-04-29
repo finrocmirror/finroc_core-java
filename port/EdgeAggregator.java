@@ -21,7 +21,6 @@
  */
 package org.finroc.core.port;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
@@ -39,24 +38,15 @@ import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
  */
 public class EdgeAggregator extends FrameworkElement {
 
-    /** Is this edge aggregator an interface of its parent (one of possibly many) */
-    public static final int IS_INTERFACE = CoreFlags.FIRST_CUSTOM_CONST_FLAG;
-
-    /** Hint for displaying in finstruct: Is this sensor data only? */
-    public static final int SENSOR_DATA = CoreFlags.FIRST_CUSTOM_CONST_FLAG << 1;
-
-    /** Hint for displaying in finstruct: Is this controller data only? */
-    public static final int CONTROLLER_DATA = CoreFlags.FIRST_CUSTOM_CONST_FLAG << 2;
-
     /** All flags introduced by edge aggregator class */
-    public static final int ALL_EDGE_AGGREGATOR_FLAGS = IS_INTERFACE | SENSOR_DATA | CONTROLLER_DATA;
+    public static final int ALL_EDGE_AGGREGATOR_FLAGS = Flag.INTERFACE | Flag.SENSOR_DATA | Flag.CONTROLLER_DATA;
 
     /** List of emerging aggregated edges */
     private SafeConcurrentlyIterableList<AggregatedEdge> emergingEdges = new SafeConcurrentlyIterableList<AggregatedEdge>(0, 5);
 
     /** see FrameworkElement for parameter description */
     public EdgeAggregator(FrameworkElement parent_, String name, int flags_) {
-        super(parent_, name, flags_ | CoreFlags.ALLOWS_CHILDREN | CoreFlags.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
+        super(parent_, name, flags_ | Flag.EDGE_AGGREGATOR, parent_ == null ? LockOrderLevels.LEAF_GROUP : -1);
     }
 
     /**
@@ -98,7 +88,7 @@ public class EdgeAggregator extends FrameworkElement {
     public static EdgeAggregator getAggregator(AbstractPort source) {
         FrameworkElement current = source.getParent();
         while (current != null) {
-            if (current.getFlag(CoreFlags.EDGE_AGGREGATOR) && (!current.getFlag(CoreFlags.NETWORK_ELEMENT))) {
+            if (current.getFlag(Flag.EDGE_AGGREGATOR) && (!current.getFlag(Flag.NETWORK_ELEMENT))) {
                 return (EdgeAggregator)current;
             }
             current = current.getParent();

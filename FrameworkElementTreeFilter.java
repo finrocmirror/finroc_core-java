@@ -49,7 +49,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     private boolean sendTags;
 
     public FrameworkElementTreeFilter() {
-        this(CoreFlags.STATUS_FLAGS, CoreFlags.READY | CoreFlags.PUBLISHED, getEmptyString());
+        this(FrameworkElementFlags.STATUS_FLAGS, FrameworkElementFlags.READY | FrameworkElementFlags.PUBLISHED, getEmptyString());
     }
 
     /**
@@ -93,7 +93,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * @return Is this a filter that only lets ports through?
      */
     public boolean isPortOnlyFilter() {
-        return (relevantFlags & flagResult & CoreFlags.IS_PORT) > 0;
+        return (relevantFlags & flagResult & FrameworkElementFlags.PORT) > 0;
     }
 
     /**
@@ -101,7 +101,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
      * (e.g. the finstruct one is)
      */
     public boolean isAcceptAllFilter() {
-        return (relevantFlags & (~CoreFlags.STATUS_FLAGS)) == 0;
+        return (relevantFlags & (~FrameworkElementFlags.STATUS_FLAGS)) == 0;
     }
 
     /**

@@ -23,6 +23,7 @@ package org.finroc.core.portdatabase;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.finroc.core.datatype.Timestamp;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
@@ -37,12 +38,22 @@ public abstract class ReusableGenericObjectManager extends Reusable implements G
     /** Managed object */
     private GenericObject managedObject;
 
+    /** Timestamp of attached data */
+    public final Timestamp timestamp = new Timestamp();
+
     /** Lookup in Java to get manager from managed object */
     static final ConcurrentHashMap<Object, GenericObjectManager> managerLookup = new ConcurrentHashMap<Object, GenericObjectManager>();
 
     @Override
     public GenericObject getObject() {
         return managedObject;
+    }
+
+    /**
+     * @return Timestamp of attached data
+     */
+    public Timestamp getTimestamp() {
+        return timestamp;
     }
 
     @Override

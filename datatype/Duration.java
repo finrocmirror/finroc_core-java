@@ -203,4 +203,26 @@ public class Duration extends CoreNumber {
     public String toString() {
         return Serialization.serialize(this);
     }
+
+    /**
+     * @param ms Timestamp in milliseconds (as obtained from System.currentTimeMillis())
+     */
+    public void set(long ms) {
+        setValue(ms * 1000000, Unit.ns);
+    }
+
+    /**
+     * @param ms Timestamp in milliseconds (as obtained from System.currentTimeMillis())
+     * @param nanos Addtional nanoseconds
+     */
+    public void set(long ms, int nanos) {
+        setValue(ms * 1000000 + nanos, Unit.ns);
+    }
+
+    /**
+     * @return Timestamp in milliseconds since 1.1.1970 (same time format as System.currentTimeMillis())
+     */
+    public long getInMs() {
+        return longValue() / 1000000;
+    }
 }

@@ -23,9 +23,9 @@ package org.finroc.core.parameter;
 
 import java.io.StringReader;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.rrlib.finroc_core_utils.jc.Files;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
@@ -120,7 +120,8 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         FrameworkElement ann = (FrameworkElement)getAnnotated();
         assert(ann != null);
         synchronized (ann.getRegistryLock()) { // nothing should change while we're doing this
-            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
+            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(FrameworkElementFlags.STATUS_FLAGS | FrameworkElementFlags.PORT,
+                    FrameworkElementFlags.READY | FrameworkElementFlags.PUBLISHED | FrameworkElementFlags.PORT);
             fet.traverseElementTree(ann, this, false, tempBuffer);
         }
 
@@ -172,7 +173,8 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     public void loadParameterValues(FrameworkElement fe) {
         assert(fe != null);
         synchronized (fe.getRegistryLock()) { // nothing should change while we're doing this
-            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
+            FrameworkElementTreeFilter fet = new FrameworkElementTreeFilter(FrameworkElementFlags.STATUS_FLAGS | FrameworkElementFlags.PORT,
+                    FrameworkElementFlags.READY | FrameworkElementFlags.PUBLISHED | FrameworkElementFlags.PORT);
             fet.traverseElementTree(fe, this, true, tempBuffer);
         }
     }

@@ -23,7 +23,7 @@ package org.finroc.core.port;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.rpc.InterfacePort;
+import org.finroc.core.port.rpc.ProxyPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -153,7 +153,7 @@ public class PortGroup extends EdgeAggregator {
         } else if (FinrocTypeInfo.isCCType(type)) {
             ap = new CCPortBase(new PortCreationInfo(name, this, type, defaultPortFlags | extraFlags));
         } else if (FinrocTypeInfo.isMethodType(type)) {
-            ap = new InterfacePort(name, this, type, InterfacePort.Type.Routing, (defaultPortFlags | extraFlags) & PortFlags.IS_OUTPUT_PORT);
+            ap = new ProxyPort(new PortCreationInfo(name, this, type, (defaultPortFlags | extraFlags) & Flag.IS_OUTPUT_PORT)).getWrapped();
         } else {
             log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + type.getName());
         }

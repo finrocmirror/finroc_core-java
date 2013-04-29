@@ -21,6 +21,8 @@
  */
 package org.finroc.core.port.net;
 
+import java.net.InetSocketAddress;
+
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
@@ -28,7 +30,6 @@ import org.rrlib.finroc_core_utils.jc.ListenerManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.jc.net.IPSocketAddress;
 
 /**
  * @author Max Reichardt
@@ -95,7 +96,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      * @param isa Node's network address
      * @param name Node's name
      */
-    protected void notifyDiscovered(IPSocketAddress isa, String name) {
+    protected void notifyDiscovered(InetSocketAddress isa, String name) {
         listeners.notify(isa, name, DISCOVERED);
     }
 
@@ -105,7 +106,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
      * @param isa Node's network address
      * @param name Node's name
      */
-    protected void notifyRemoved(IPSocketAddress isa, String name) {
+    protected void notifyRemoved(InetSocketAddress isa, String name) {
         listeners.notify(null, name, REMOVED);
     }
 
@@ -120,7 +121,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
          * @param isa Node's network address
          * @param name Node's name
          */
-        public void nodeDiscovered(IPSocketAddress isa, String name);
+        public void nodeDiscovered(InetSocketAddress isa, String name);
 
         /**
          * Called when TCP node has been stopped/deleted
@@ -131,7 +132,7 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
          *
          * (Called with runtime and Peer Tracker lock)
          */
-        public Object nodeRemoved(IPSocketAddress isa, String name);
+        public Object nodeRemoved(InetSocketAddress isa, String name);
 
         /**
          * Called when TCP node has been deleted - and object for post-processing has been returned in method above
@@ -143,10 +144,10 @@ public abstract class AbstractPeerTracker extends LogUser implements HasDestruct
         public void nodeRemovedPostLockProcess(Object obj);
     }
 
-    public static class TrackerListenerManager extends ListenerManager<IPSocketAddress, String, Listener, TrackerListenerManager> {
+    public static class TrackerListenerManager extends ListenerManager<InetSocketAddress, String, Listener, TrackerListenerManager> {
 
         @Override
-        public void singleNotify(Listener listener, IPSocketAddress origin, String parameter, int callId) {
+        public void singleNotify(Listener listener, InetSocketAddress origin, String parameter, int callId) {
             if (callId == AbstractPeerTracker.DISCOVERED) {
                 listener.nodeDiscovered(origin, parameter);
             } else {

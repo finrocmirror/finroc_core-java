@@ -22,12 +22,12 @@
 package org.finroc.core.port.cc;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 
 /**
@@ -51,11 +51,11 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     }
 
     public PortNumeric(String name, boolean outputPort) {
-        this(new PortCreationInfo(name, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+        this(new PortCreationInfo(name, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT));
     }
 
     public PortNumeric(String name, FrameworkElement parent, boolean outputPort) {
-        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+        this(new PortCreationInfo(name, parent, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT));
     }
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
@@ -65,12 +65,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
     public PortNumeric(String name, boolean outputPort, Bounds<T> b) {
-        this(new PortCreationInfo(name, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
+        this(new PortCreationInfo(name, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT), (Bounds)b);
     }
 
     @SuppressWarnings( { "unchecked", "rawtypes" })
     public PortNumeric(String name, FrameworkElement parent, boolean outputPort, Bounds<T> b) {
-        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT), (Bounds)b);
+        this(new PortCreationInfo(name, parent, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT), (Bounds)b);
     }
 
     /**

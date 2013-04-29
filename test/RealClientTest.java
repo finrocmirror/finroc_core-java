@@ -23,8 +23,8 @@ package org.finroc.core.test;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.plugins.tcp.TCP;
-import org.finroc.plugins.tcp.TCPPeer;
+import org.finroc.core.datatype.FrameworkElementInfo;
+import org.finroc.plugins.tcp.Peer;
 
 /**
  * @author Max Reichardt
@@ -85,7 +85,7 @@ public class RealClientTest extends NetworkTestSuite {
         }
 
         // create Client
-        TCPPeer client = new TCPPeer(TCP.DEFAULT_CONNECTION_NAME, TCPPeer.GUI_FILTER);
+        Peer client = new Peer("RealClientTest", Peer.DEFAULT_CONNECTION_NAME, FrameworkElementInfo.StructureExchange.COMPLETE_STRUCTURE, true);
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();
         try {

@@ -21,10 +21,11 @@
  */
 package org.finroc.core.thread;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 
@@ -89,7 +90,7 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param fe Framework element that is root of subtree to search for execution controls
      */
     public static void startAll(FrameworkElement fe) {
-        SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        ArrayList<ExecutionControl> ecs = new ArrayList<ExecutionControl>();
         findAll(ecs, fe);
         for (int i = 0; i < ecs.size(); i++) {
             if (!ecs.get(i).isRunning()) {
@@ -104,7 +105,7 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param fe Framework element that is root of subtree to search for execution controls
      */
     public static void pauseAll(FrameworkElement fe) {
-        SimpleList<ExecutionControl> ecs = new SimpleList<ExecutionControl>();
+        ArrayList<ExecutionControl> ecs = new ArrayList<ExecutionControl>();
         findAll(ecs, fe);
         for (int i = 0; i < ecs.size(); i++) {
             if (ecs.get(i).isRunning()) {
@@ -119,7 +120,7 @@ public class ExecutionControl extends FinrocAnnotation {
      * @param result Result buffer for list of execution controls (controls are added to list)
      * @param elementHandle Framework element that is root of subtree to search for execution controls
      */
-    public static void findAll(SimpleList<ExecutionControl> result, FrameworkElement fe) {
+    public static void findAll(ArrayList<ExecutionControl> result, FrameworkElement fe) {
         if (fe != null && (fe.isReady())) {
             FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
             filter.traverseElementTree(fe, new FindCallback(), result);
@@ -127,10 +128,10 @@ public class ExecutionControl extends FinrocAnnotation {
     }
 
     /** Helper class for findAllBelow */
-    static class FindCallback implements FrameworkElementTreeFilter.Callback<SimpleList<ExecutionControl>> {
+    static class FindCallback implements FrameworkElementTreeFilter.Callback<ArrayList<ExecutionControl>> {
 
         @Override
-        public void treeFilterCallback(FrameworkElement fe, SimpleList<ExecutionControl> customParam) {
+        public void treeFilterCallback(FrameworkElement fe, ArrayList<ExecutionControl> customParam) {
             ExecutionControl ec = (ExecutionControl)fe.getAnnotation(ExecutionControl.TYPE);
             if (ec != null) {
                 customParam.add(ec);

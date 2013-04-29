@@ -55,6 +55,7 @@ public class CCPortDataManagerTL extends ReusableGenericObjectManagerTL {
     /** ID of thread that owns this PortDataContainer */
     private final long ownerThread;
 
+
     /**
      * @return the ownerThread Thread ID of owner
      */

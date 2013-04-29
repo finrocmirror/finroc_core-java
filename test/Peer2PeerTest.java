@@ -21,12 +21,11 @@
  */
 package org.finroc.core.test;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.plugins.tcp.TCPPeer;
+import org.finroc.plugins.tcp.Peer;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
@@ -48,10 +47,10 @@ public class Peer2PeerTest {
 
         // Create two ports
         FrameworkElement linkTest = new FrameworkElement(null, "linkTest");
-        PortNumeric<Integer> output = new PortNumeric<Integer>(new PortCreationInfo("testOut", PortFlags.SHARED_OUTPUT_PORT));
+        PortNumeric<Integer> output = new PortNumeric<Integer>(new PortCreationInfo("testOut", FrameworkElementFlags.SHARED_OUTPUT_PORT));
         output.getWrapped().link(linkTest, "linkTestPort");
-        PortNumeric<Integer> output2 = new PortNumeric<Integer>(new PortCreationInfo("testOutGlobal", PortFlags.SHARED_OUTPUT_PORT | CoreFlags.GLOBALLY_UNIQUE_LINK));
-        PortNumeric<Integer> input = new PortNumeric<Integer>(new PortCreationInfo("testIn", PortFlags.INPUT_PORT));
+        PortNumeric<Integer> output2 = new PortNumeric<Integer>(new PortCreationInfo("testOutGlobal", FrameworkElementFlags.SHARED_OUTPUT_PORT | FrameworkElementFlags.GLOBALLY_UNIQUE_LINK));
+        PortNumeric<Integer> input = new PortNumeric<Integer>(new PortCreationInfo("testIn", FrameworkElementFlags.INPUT_PORT));
         input.connectTo("/TCP/localhost:4444/Unrelated/testOut");
         input.connectTo("/Unrelated/testOutGlobal");
 
@@ -60,7 +59,7 @@ public class Peer2PeerTest {
         if (args.length > 0) {
             addr = args[0];
         }
-        TCPPeer peer = new TCPPeer(addr, "", TCPPeer.Mode.FULL, 4444, TCPPeer.DEFAULT_FILTER, false);
+        Peer peer = new Peer("Peer2PeerTest", addr, 4444, true, true, null);
         FrameworkElement.initAll();
         output.publish(4);
         output2.publish(5);

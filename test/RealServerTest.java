@@ -23,7 +23,7 @@ package org.finroc.core.test;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.plugins.tcp.TCPServer;
+import org.finroc.plugins.tcp.Peer;
 
 /**
  * @author Max Reichardt
@@ -44,7 +44,7 @@ public class RealServerTest extends NetworkTestSuite {
     public void main() {
 
         // create Server
-        TCPServer server = new TCPServer(4444, true, null);
+        Peer server = new Peer("RealServerTest", 4444, true, null);
         server.getName(); // dummy instruction... avoids warning
         FrameworkElement.initAll();
         RuntimeEnvironment.getInstance().printStructure();

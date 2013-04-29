@@ -22,11 +22,11 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 
@@ -38,13 +38,13 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
     public Parameter(String name, FrameworkElement parent, String configEntry, DataTypeBase dt) {
-        super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT));
+        super(new PortCreationInfo(name, parent, getType(dt), FrameworkElementFlags.INPUT_PORT));
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
     }
 
     public Parameter(String name, FrameworkElement parent, T defaultValue, Unit u, String configEntry, DataTypeBase dt) {
-        super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT, u));
+        super(new PortCreationInfo(name, parent, getType(dt), FrameworkElementFlags.INPUT_PORT, u));
         setDefault(defaultValue);
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);
@@ -56,7 +56,7 @@ public class Parameter<T extends RRLibSerializable> extends Port<T> {
 
     //Cpp template <typename Q = T>
     public Parameter(String name, FrameworkElement parent, T defaultValue, Bounds<T> b, Unit u, String configEntry, DataTypeBase dt) {
-        super(new PortCreationInfo(name, parent, getType(dt), PortFlags.INPUT_PORT, u), b);
+        super(new PortCreationInfo(name, parent, getType(dt), FrameworkElementFlags.INPUT_PORT, u), b);
         setDefault(defaultValue);
         wrapped.addAnnotation(new ParameterInfo());
         setConfigEntry(configEntry);

@@ -34,9 +34,6 @@ import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.cc.CCPortDataRef;
 import org.finroc.core.port.cc.CCPortQueueElement;
 import org.finroc.core.port.cc.CCQueueFragmentRaw;
-import org.finroc.core.port.rpc.MethodCall;
-import org.finroc.core.port.rpc.MethodCallSyncher;
-import org.finroc.core.port.rpc.PullCall;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortQueueElement;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
@@ -86,12 +83,6 @@ public class ThreadLocalCache extends LogUser {
     /** Thread-local pools of buffers for every "cheap-copy" port data type */
     public final CCPortDataBufferPool[] ccTypePools = new CCPortDataBufferPool[FinrocTypeInfo.MAX_CCTYPES];
 
-    /** Reusable objects representing a method call */
-    public final ReusablesPool<MethodCall> methodCalls = new ReusablesPool<MethodCall>();
-
-    /** Reusable objects representing a pull call */
-    public final ReusablesPool<PullCall> pullCalls = new ReusablesPool<PullCall>();
-
     /** Queue fragment chunks that are reused */
     public final ReusablesPool<PortQueueElement> pqFragments = new ReusablesPool<PortQueueElement>();
 
@@ -116,9 +107,6 @@ public class ThreadLocalCache extends LogUser {
 
     /** Lock to above - for every cache */
     private final SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
-
-    /** object to help synchronize method calls - lazily initialized */
-    private MethodCallSyncher methodSyncher;
 
     /** Uid of thread - unique and constant for runtime of program */
     private final int threadUid;
@@ -150,13 +138,6 @@ public class ThreadLocalCache extends LogUser {
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
     }
 
-    public MethodCallSyncher getMethodSyncher() {
-        if (methodSyncher == null) {
-            methodSyncher = MethodCallSyncher.getFreeInstance(this);
-        }
-        return methodSyncher;
-    }
-
     protected void finalize() {
         finalDelete();
     }
@@ -168,11 +149,6 @@ public class ThreadLocalCache extends LogUser {
 
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting ThreadLocalCache");
 
-        /** Return MethodCallSyncher to pool */
-        if (methodSyncher != null && (!RuntimeEnvironment.shuttingDown())) {
-            methodSyncher.release();
-        }
-
         /** Delete local port data buffer pools */
         for (int i = 0; i < ccTypePools.length; i++) {
             if (ccTypePools[i] != null) {
@@ -180,9 +156,7 @@ public class ThreadLocalCache extends LogUser {
             }
         }
 
-        methodCalls.controlledDelete();
         pqFragments.controlledDelete();
-        pullCalls.controlledDelete();
         ccpqFragments.controlledDelete();
 
         /** Transfer ownership of remaining port data to ports */
@@ -331,41 +305,10 @@ public class ThreadLocalCache extends LogUser {
         return pf;
     }
 
-    public MethodCall getUnusedMethodCall() {
-        MethodCall pf = methodCalls.getUnused();
-        if (pf == null) {
-            pf = createMethodCall();
-        }
-        //pf.responsibleThread = ThreadUtil.getCurrentThreadId();
-        return pf;
-    }
-
-    private MethodCall createMethodCall() {
-        MethodCall result = new MethodCall();
-        methodCalls.attach(result, false);
-        return result;
-    }
-
     public CCPortDataManager getUnusedInterThreadBuffer(DataTypeBase dataType) {
         CCPortDataManager buf = getCCPool(dataType).getUnusedInterThreadBuffer();
         //System.out.println("Getting unused interthread buffer: " + buf.hashCode());
         return buf;
-    }
-
-    public PullCall getUnusedPullCall() {
-        PullCall pf = pullCalls.getUnused();
-        if (pf == null) {
-            pf = createPullCall();
-        }
-        //pf.responsibleThread = ThreadUtil.getCurrentThreadId();
-        //System.out.println("Dequeueing pull call: " + pf.toString());
-        return pf;
-    }
-
-    private PullCall createPullCall() {
-        PullCall result = new PullCall();
-        pullCalls.attach(result, false);
-        return result;
     }
 
     /**

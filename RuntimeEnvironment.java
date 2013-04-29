@@ -39,7 +39,6 @@ import org.finroc.core.datatype.Unit;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.AbstractPort;
-import org.finroc.core.port.rpc.MethodCallSyncher;
 import org.finroc.core.port.stream.StreamCommitThread;
 import org.finroc.core.portdatabase.DataTypeUtil;
 import org.finroc.core.thread.ExecutionControl;
@@ -99,6 +98,9 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     /** Timestamp when runtime environment was created */
     private final long creationTime;
 
+    /** Name of program/process (setting it is optional) */
+    private String programName;
+
     /** Is RuntimeEnvironment currently active (and needs to be deleted?) */
     @SuppressWarnings("unused")
     private static boolean active = false;
@@ -106,6 +108,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     /** Mutex for static methods */
     @SuppressWarnings("unused")
     private static final MutexLockOrder staticClassMutex = new MutexLockOrder(LockOrderLevels.FIRST);
+
 
     /**
      * Initializes the runtime environment. Needs to be called before any
@@ -123,7 +126,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         Time.getInstance(); // (possibly) init timing thread
         GarbageCollector.createAndStartInstance();
         SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
-        MethodCallSyncher.staticInit(); // dito
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
         DataTypeUtil.initCCTypes();
@@ -154,7 +156,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         Plugins.staticInit();
         //deleteLast(RuntimeSettings.getInstance());
 
-        instance.setFlag(CoreFlags.READY);
+        instance.setFlag(Flag.READY);
 
         return instance;
     }
@@ -190,7 +192,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     }
 
     private RuntimeEnvironment() {
-        super(null, "Runtime", CoreFlags.ALLOWS_CHILDREN | CoreFlags.IS_RUNTIME, LockOrderLevels.RUNTIME_ROOT);
+        super(null, "Runtime", Flag.RUNTIME, LockOrderLevels.RUNTIME_ROOT);
         assert instance == null;
         instance = this;
         instanceRawPtr = this;
@@ -446,7 +448,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         synchronized (registry) {
             if (!shuttingDown()) {
 
-                if (element.getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) {
+                if (element.getFlag(Flag.ALTERNATIVE_LINK_ROOT)) {
                     if (changeType == RuntimeListener.ADD) {
                         registry.alternativeLinkRoots.add(element);
                     } else if (changeType == RuntimeListener.REMOVE) {
@@ -528,5 +530,19 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      */
     Registry getRegistryHelper() {
         return registry;
+    }
+
+    /**
+     * @return Name of program/process (setting it is optional)
+     */
+    public String getProgramName() {
+        return programName;
+    }
+
+    /**
+     * @param programName Name of program/process
+     */
+    public void setProgramName(String programName) {
+        this.programName = programName;
     }
 }

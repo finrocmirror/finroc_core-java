@@ -31,7 +31,6 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.MultiTypePortDataBufferPool;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortListener;
 import org.finroc.core.port.PortListenerManager;
 import org.finroc.core.port.ThreadLocalCache;
@@ -118,11 +117,11 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         value.set(defaultValue.getCurReference());
 
         // standard assign?
-        standardAssign = !getFlag(PortFlags.NON_STANDARD_ASSIGN) && (!getFlag(PortFlags.HAS_QUEUE));
+        standardAssign = !getFlag(Flag.NON_STANDARD_ASSIGN) && (!getFlag(Flag.HAS_QUEUE));
 
         bufferPool = hasSpecialReuseQueue() ? null : new PortDataBufferPool(dataType, isOutputPort() ? 2 : 0);
         multiBufferPool = hasSpecialReuseQueue() ? new MultiTypePortDataBufferPool() : null;
-        queue = getFlag(PortFlags.HAS_QUEUE) ? new PortQueue(pci.maxQueueSize) : null;
+        queue = getFlag(Flag.HAS_QUEUE) ? new PortQueue(pci.maxQueueSize) : null;
         if (queue != null) {
             queue.init();
         }
@@ -139,8 +138,8 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     /** makes adjustment to flags passed through constructor */
     private static PortCreationInfo processPci(PortCreationInfo pci) {
-        if ((pci.flags & PortFlags.IS_OUTPUT_PORT) == 0) { // no output port
-            pci.flags |= PortFlags.SPECIAL_REUSE_QUEUE;
+        if ((pci.flags & Flag.IS_OUTPUT_PORT) == 0) { // no output port
+            pci.flags |= Flag.MULTI_TYPE_BUFFER_POOL;
         }
         return pci;
     }
@@ -158,7 +157,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Is SPECIAL_REUSE_QUEUE flag set (see PortFlags)?
      */
     protected boolean hasSpecialReuseQueue() {
-        return (constFlags & PortFlags.SPECIAL_REUSE_QUEUE) > 0;
+        return getFlag(Flag.MULTI_TYPE_BUFFER_POOL);
     }
 
     /**
@@ -175,7 +174,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         return multiBufferPool.getUnusedBuffer(dt);
     }
 
-    protected PortDataManager lockCurrentValueForRead() {
+    public PortDataManager lockCurrentValueForRead() {
         return lockCurrentValueForRead((byte)1).getManager();
     }
 
@@ -222,8 +221,8 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param pdr New Data
      */
     protected void nonStandardAssign(PublishCache pc) {
-        if (getFlag(PortFlags.USES_QUEUE)) {
-            assert(getFlag(PortFlags.HAS_QUEUE));
+        if (getFlag(Flag.USES_QUEUE)) {
+            assert(getFlag(Flag.HAS_QUEUE));
 
             // enqueue
             addLock(pc);
@@ -547,7 +546,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     }
 
     public void notifyDisconnect() {
-        if (getFlag(PortFlags.DEFAULT_ON_DISCONNECT)) {
+        if (getFlag(Flag.DEFAULT_ON_DISCONNECT)) {
             applyDefaultValue();
         }
     }
@@ -673,7 +672,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     @Override
     protected void setMaxQueueLengthImpl(int length) {
-        assert(getFlag(PortFlags.HAS_QUEUE) && queue != null);
+        assert(getFlag(Flag.HAS_QUEUE) && queue != null);
         assert(!isOutputPort());
         assert(length >= 1);
         queue.setMaxLength(length);

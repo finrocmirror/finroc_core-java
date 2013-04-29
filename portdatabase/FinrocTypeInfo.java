@@ -22,7 +22,6 @@
 package org.finroc.core.portdatabase;
 
 import org.finroc.core.RuntimeSettings;
-import org.finroc.core.port.rpc.method.PortInterface;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
@@ -54,9 +53,6 @@ public class FinrocTypeInfo {
 
     /** "Cheap copy" index */
     private short ccIndex = -1;
-
-    /** Pointer to port interface in case of method type */
-    private PortInterface portInterface;
 
     /** Data type uid */
     private short uid = -1;
@@ -153,7 +149,6 @@ public class FinrocTypeInfo {
      * Initialize finroc type info
      */
     public void init(Type type) {
-        //Cpp static util::AtomicInt lastCcIndex(0);
         if (this.type != Type.STD) {
             return;
         }
@@ -166,16 +161,6 @@ public class FinrocTypeInfo {
         if (type == Type.CC) {
             ccIndex = (short)lastCcIndex.getAndIncrement();
         }
-    }
-
-    /**
-     * Initialize Type Info for RPC interface
-     *
-     * @param methods RPC interface
-     */
-    public void init(PortInterface methods) {
-        type = Type.METHOD;
-        portInterface = methods;
     }
 
     /**
@@ -250,12 +235,5 @@ public class FinrocTypeInfo {
         } else {
             return 4096; // very imprecise... but doesn't matter currently
         }
-    }
-
-    /**
-     * @return the portInterface
-     */
-    public PortInterface getPortInterface() {
-        return portInterface;
     }
 }

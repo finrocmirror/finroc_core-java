@@ -25,6 +25,7 @@ import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.plugins.blackboard.BBLockException;
@@ -40,7 +41,6 @@ import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
@@ -110,52 +110,52 @@ public class NetworkTestSuite extends LogUser {
 
         if (CC_TESTS) {
             if (PUSH_TESTS) {
-                ccPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Output", FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                ccPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Input", FrameworkElementFlags.SHARED_INPUT_PORT));
                 ccPushIn.setMinNetUpdateInterval(RECV_FREQ);
             }
             if (PULL_PUSH_TESTS) {
-                ccPullPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccPullPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccPullPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Output", FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                ccPullPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCPullPush Input", FrameworkElementFlags.SHARED_INPUT_PORT));
                 ccPullPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 ccPullPushIn.setPushStrategy(false);
             }
             if (REVERSE_PUSH_TESTS) {
-                ccRevPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output", PortFlags.SHARED_OUTPUT_PORT | PortFlags.ACCEPTS_REVERSE_DATA_PUSH));
-                ccRevPushOutLocal = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output Local", PortFlags.SHARED_OUTPUT_PORT));
-                ccRevPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Input", PortFlags.SHARED_INPUT_PORT));
+                ccRevPushOut = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output", FrameworkElementFlags.SHARED_OUTPUT_PORT | FrameworkElementFlags.PUSH_STRATEGY_REVERSE));
+                ccRevPushOutLocal = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Output Local", FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                ccRevPushIn = new PortNumeric<Integer>(new PortCreationInfo("CCRevPush Input", FrameworkElementFlags.SHARED_INPUT_PORT));
                 ccRevPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 ccRevPushOutLocal.connectTo(ccRevPushIn);
             }
             if (Q_TESTS) {
-                ccQOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Output", PortFlags.SHARED_OUTPUT_PORT));
-                ccQIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Input", PortFlags.SHARED_INPUT_PORT, 0));
+                ccQOut = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Output", FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                ccQIn = new PortNumeric<Integer>(new PortCreationInfo("CCPush Queue Input", FrameworkElementFlags.SHARED_INPUT_PORT, 0));
                 ccQIn.setMinNetUpdateInterval(RECV_FREQ);
             }
         }
         if (STD_TESTS) {
             DataTypeBase bt = MemoryBuffer.TYPE;
             if (PUSH_TESTS) {
-                stdPushOut = new TestStdPort(new PortCreationInfo("StdPush Output", bt, PortFlags.SHARED_OUTPUT_PORT));
-                stdPushIn = new TestStdPort(new PortCreationInfo("StdPush Input", bt, PortFlags.SHARED_INPUT_PORT));
+                stdPushOut = new TestStdPort(new PortCreationInfo("StdPush Output", bt, FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                stdPushIn = new TestStdPort(new PortCreationInfo("StdPush Input", bt, FrameworkElementFlags.SHARED_INPUT_PORT));
                 stdPushIn.setMinNetUpdateInterval(RECV_FREQ);
             }
             if (PULL_PUSH_TESTS) {
-                stdPullPushOut = new TestStdPort(new PortCreationInfo("StdPullPush Output", bt, PortFlags.SHARED_OUTPUT_PORT));
-                stdPullPushIn = new TestStdPort(new PortCreationInfo("StdPullPush Input", bt, PortFlags.SHARED_INPUT_PORT));
+                stdPullPushOut = new TestStdPort(new PortCreationInfo("StdPullPush Output", bt, FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                stdPullPushIn = new TestStdPort(new PortCreationInfo("StdPullPush Input", bt, FrameworkElementFlags.SHARED_INPUT_PORT));
                 stdPullPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 stdPullPushIn.setPushStrategy(false);
             }
             if (REVERSE_PUSH_TESTS) {
-                stdRevPushOut = new TestStdPort(new PortCreationInfo("StdRevPush Output", bt, PortFlags.SHARED_OUTPUT_PORT | PortFlags.ACCEPTS_REVERSE_DATA_PUSH));
-                stdRevPushOutLocal = new TestStdPort(new PortCreationInfo("StdRevPush Output Local", bt, PortFlags.SHARED_OUTPUT_PORT));
-                stdRevPushIn = new TestStdPort(new PortCreationInfo("StdRevPush Input", bt, PortFlags.SHARED_INPUT_PORT));
+                stdRevPushOut = new TestStdPort(new PortCreationInfo("StdRevPush Output", bt, FrameworkElementFlags.SHARED_OUTPUT_PORT | FrameworkElementFlags.PUSH_STRATEGY_REVERSE));
+                stdRevPushOutLocal = new TestStdPort(new PortCreationInfo("StdRevPush Output Local", bt, FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                stdRevPushIn = new TestStdPort(new PortCreationInfo("StdRevPush Input", bt, FrameworkElementFlags.SHARED_INPUT_PORT));
                 stdRevPushIn.setMinNetUpdateInterval(RECV_FREQ);
                 stdRevPushOutLocal.connectTo(stdRevPushIn);
             }
             if (Q_TESTS) {
-                stdQOut = new TestStdPort(new PortCreationInfo("StdPush Queue Output", bt, PortFlags.SHARED_OUTPUT_PORT));
-                stdQIn = new TestStdPort(new PortCreationInfo("StdPush Queue Input", bt, PortFlags.SHARED_INPUT_PORT, 0));
+                stdQOut = new TestStdPort(new PortCreationInfo("StdPush Queue Output", bt, FrameworkElementFlags.SHARED_OUTPUT_PORT));
+                stdQIn = new TestStdPort(new PortCreationInfo("StdPush Queue Input", bt, FrameworkElementFlags.SHARED_INPUT_PORT, 0));
                 stdQIn.setMinNetUpdateInterval(RECV_FREQ);
             }
         }

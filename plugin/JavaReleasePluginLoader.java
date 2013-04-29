@@ -33,7 +33,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.log.LogStream;
@@ -55,11 +54,11 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
      * @see org.finroc.core.plugin.PluginLoader#findPlugins()
      */
     @Override
-    public SimpleList<Plugin> findPlugins() {
+    public ArrayList<Plugin> findPlugins() {
 
         List<URL> allJars = new ArrayList<URL>();
         List<File> pluginMainJars = new ArrayList<File>();
-        SimpleList<Plugin> result = new SimpleList<Plugin>();
+        ArrayList<Plugin> result = new ArrayList<Plugin>();
 
         // collect jars
         File rootDir = RuntimeSettings.getRootDir();

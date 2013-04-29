@@ -21,15 +21,12 @@
  */
 package org.finroc.core.finstructable;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.datatype.PortCreationList;
 import org.finroc.core.parameter.StaticParameter;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.ConstructorCreateModuleAction;
 import org.finroc.core.plugin.StandardCreateModuleAction;
-import org.finroc.core.port.EdgeAggregator;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortGroup;
 
 /**
@@ -64,7 +61,7 @@ public class GroupInterface extends PortGroup {
      * @param parent Parent element
      */
     public GroupInterface(FrameworkElement parent, String name) {
-        super(parent, name, EdgeAggregator.IS_INTERFACE, 0);
+        super(parent, name, Flag.INTERFACE, 0);
         addAnnotation(new StaticParameterList(ports));
         ports.getValue().initialSetup(this, 0, true);
     }
@@ -96,17 +93,17 @@ public class GroupInterface extends PortGroup {
      * @return flags for these parameters
      */
     private static int computeFlags(DataClassification dataClass, boolean shared, boolean uniqueLink) {
-        int flags = EdgeAggregator.IS_INTERFACE;
+        int flags = Flag.INTERFACE;
         if (dataClass == DataClassification.SENSOR_DATA) {
-            flags |= EdgeAggregator.SENSOR_DATA;
+            flags |= Flag.SENSOR_DATA;
         } else if (dataClass == DataClassification.CONTROLLER_DATA) {
-            flags |= EdgeAggregator.CONTROLLER_DATA;
+            flags |= Flag.CONTROLLER_DATA;
         }
         if (shared) {
-            flags |= CoreFlags.SHARED;
+            flags |= Flag.SHARED;
         }
         if (uniqueLink) {
-            flags |= CoreFlags.GLOBALLY_UNIQUE_LINK;
+            flags |= Flag.GLOBALLY_UNIQUE_LINK;
         }
         return flags;
     }
@@ -123,15 +120,15 @@ public class GroupInterface extends PortGroup {
     private static int computePortFlags(PortDirection portDir, boolean shared, boolean uniqueLink) {
         int flags = 0;
         if (shared) {
-            flags |= CoreFlags.SHARED;
+            flags |= Flag.SHARED;
         }
         if (uniqueLink) {
-            flags |= CoreFlags.GLOBALLY_UNIQUE_LINK;
+            flags |= Flag.GLOBALLY_UNIQUE_LINK;
         }
         if (portDir == PortDirection.INPUT_ONLY) {
-            flags |= PortFlags.INPUT_PROXY;
+            flags |= Flag.INPUT_PROXY;
         } else if (portDir == PortDirection.OUTPUT_ONLY) {
-            flags |= PortFlags.OUTPUT_PROXY;
+            flags |= Flag.OUTPUT_PROXY;
         }
         return flags;
     }

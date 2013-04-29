@@ -23,6 +23,7 @@ package org.finroc.core.port;
 
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.datatype.Unit;
 
 /**
@@ -166,13 +167,13 @@ public class PortCreationInfo {
 
     public PortCreationInfo(String name, int flags, int qSize) {
         this.name = name;
-        this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
+        this.flags = flags | FrameworkElementFlags.HAS_QUEUE | FrameworkElementFlags.USES_QUEUE;
         this.maxQueueSize = qSize;
     }
 
     public PortCreationInfo(String name, DataTypeBase dataType, int flags, int qSize) {
         this.name = name;
-        this.flags = flags | PortFlags.HAS_QUEUE | PortFlags.USES_QUEUE;
+        this.flags = flags | FrameworkElementFlags.HAS_QUEUE | FrameworkElementFlags.USES_QUEUE;
         this.dataType = dataType;
         this.maxQueueSize = qSize;
     }

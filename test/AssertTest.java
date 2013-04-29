@@ -21,6 +21,8 @@
  */
 package org.finroc.core.test;
 
+import java.net.UnknownHostException;
+
 /**
  * @author Max Reichardt
  *
@@ -32,6 +34,13 @@ public class AssertTest {
      * @param args
      */
     public static void main(String[] args) {
+
+        try {
+            String localhostname = java.net.InetAddress.getLocalHost().getHostName();
+            System.out.println(localhostname);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         assert 1 == 0 : "Test";
         System.out.println("1 = 0 ?!");
     }

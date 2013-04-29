@@ -359,15 +359,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
     }
 
     /**
-     * TODO
-     *
-     * @return Manager time stamp
-     */
-    public long getTimestamp() {
-        return 0;
-    }
-
-    /**
      * Recycle manager and port data...
      * (This method is not intended to be used by framework users. Use only, if you know exactly what you're doing.)
      */

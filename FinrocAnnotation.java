@@ -62,12 +62,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
         if (type != null) {
             return; // already set
         }
-
-        //JavaOnlyBlock
         type = DataTypeBase.findType(this.getClass());
-
-        //Cpp type = rrlib::serialization::DataTypeBase::findTypeByRtti(_typeid(*this)._name());
-
         assert type != null : "Unknown Object type";
     }
 

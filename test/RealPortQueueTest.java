@@ -24,10 +24,10 @@ package org.finroc.core.test;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortQueueFragment;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
@@ -51,8 +51,8 @@ public class RealPortQueueTest extends Thread {
         // Create number output port and input port with queue
         RuntimeEnvironment.getInstance();
         ThreadLocalCache.get();
-        output = new PortNumeric<Integer>(new PortCreationInfo("output", PortFlags.OUTPUT_PORT));
-        PortCreationInfo inputPCI = new PortCreationInfo("input", PortFlags.INPUT_PORT | PortFlags.HAS_AND_USES_QUEUE | PortFlags.PUSH_STRATEGY);
+        output = new PortNumeric<Integer>(new PortCreationInfo("output", FrameworkElementFlags.OUTPUT_PORT));
+        PortCreationInfo inputPCI = new PortCreationInfo("input", FrameworkElementFlags.INPUT_PORT | FrameworkElementFlags.USES_QUEUE | FrameworkElementFlags.HAS_QUEUE | FrameworkElementFlags.PUSH_STRATEGY);
         inputPCI.maxQueueSize = 10;
         PortNumeric<Integer> input = new PortNumeric<Integer>(inputPCI);
         inputPCI.maxQueueSize = 0;

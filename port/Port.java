@@ -22,11 +22,11 @@
 package org.finroc.core.port;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortWrapperBase;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortBoundedNumeric;
@@ -83,7 +83,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      * @param outputPort Output port? (or rather input port)
      */
     Port(String name, FrameworkElement parent, boolean outputPort) {
-        this(new PortCreationInfo(name, parent, outputPort ? PortFlags.OUTPUT_PORT : PortFlags.INPUT_PORT));
+        this(new PortCreationInfo(name, parent, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT));
     }
 
     /**

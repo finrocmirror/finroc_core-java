@@ -25,6 +25,7 @@ import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.plugins.blackboard.BBLockException;
 import org.finroc.plugins.blackboard.BlackboardBuffer;
@@ -32,15 +33,14 @@ import org.finroc.plugins.blackboard.BlackboardClient;
 import org.finroc.plugins.blackboard.BlackboardManager;
 import org.finroc.plugins.blackboard.BlackboardWriteAccess;
 import org.finroc.plugins.blackboard.SingleBufferedBlackboardServer;
+import org.finroc.plugins.rpc_ports.RPCException;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.PortDataList;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.cc.PortNumeric;
-import org.finroc.core.port.rpc.MethodCallException;
 import org.finroc.core.port.std.PortDataManager;
 
 public class RealPortTest5 { /*extends CoreThreadBase*/
@@ -137,8 +137,8 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
     public static void testSimpleEdge2() {
         BlackboardManager.getInstance();
 
-        Port<BlackboardBuffer> input = new Port<BlackboardBuffer>(new PortCreationInfo("input", BlackboardBuffer.class, PortFlags.INPUT_PORT));
-        Port<BlackboardBuffer> output = new Port<BlackboardBuffer>(new PortCreationInfo("output", BlackboardBuffer.class, PortFlags.OUTPUT_PORT));
+        Port<BlackboardBuffer> input = new Port<BlackboardBuffer>(new PortCreationInfo("input", BlackboardBuffer.class, FrameworkElementFlags.INPUT_PORT));
+        Port<BlackboardBuffer> output = new Port<BlackboardBuffer>(new PortCreationInfo("output", BlackboardBuffer.class, FrameworkElementFlags.OUTPUT_PORT));
 
         output.connectTo(input);
         FrameworkElement.initAll();
@@ -205,7 +205,7 @@ public class RealPortTest5 { /*extends CoreThreadBase*/
         co.close();
         try {
             client.commitAsynchChange(buf, 0, 2);
-        } catch (MethodCallException e) {
+        } catch (RPCException e) {
             e.printStackTrace();
         }
 

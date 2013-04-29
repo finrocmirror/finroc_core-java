@@ -69,11 +69,10 @@ public class FrameworkElement extends Annotatable {
 
     // Splitting flags up might allow compiler optimizations??
 
-    /** Constant Flags - see CoreFlags */
-    protected final int constFlags;
-
-    /** Variable Flags - see CoreFlags */
+    /** Flags - see FrameworkElementFlags */
     protected int flags;
+
+    public static class Flag extends FrameworkElementFlags {}; // instead of 'typedef FrameworkElementFlags Flag' in C++
 
     /**
      * @author Max Reichardt
@@ -158,7 +157,7 @@ public class FrameworkElement extends Annotatable {
     public static final LogDomain edgeLog = LogDefinitions.finroc.getSubDomain("edges");
 
     public FrameworkElement(FrameworkElement parent, String name) {
-        this(parent, name, CoreFlags.ALLOWS_CHILDREN, -1);
+        this(parent, name, 0, -1);
     }
 
     /**
@@ -170,9 +169,8 @@ public class FrameworkElement extends Annotatable {
     @SuppressWarnings("unchecked")
     public FrameworkElement(FrameworkElement parent_, String name, int flags_, int lockOrder_) {
         createrThreadUid = ThreadUtil.getCurrentThreadId();
-        constFlags = flags_ & CoreFlags.CONSTANT_FLAGS;
-        flags = flags_ & CoreFlags.NON_CONSTANT_FLAGS;
-        assert((flags_ & CoreFlags.STATUS_FLAGS) == 0);
+        flags = flags_;
+        assert((flags_ & Flag.STATUS_FLAGS) == 0);
 
         if (name == null) {
             name = "";
@@ -180,14 +178,14 @@ public class FrameworkElement extends Annotatable {
 
         primary.name = name;
 
-        objMutex = new MutexLockOrder(getLockOrder(flags_, parent_, lockOrder_), getFlag(CoreFlags.IS_RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this));
+        objMutex = new MutexLockOrder(getLockOrder(flags_, parent_, lockOrder_), getFlag(Flag.RUNTIME) ? Integer.MIN_VALUE : RuntimeEnvironment.getInstance().registerElement(this));
 
         //treeNode = RuntimeSettings.CREATE_TREE_NODES_FOR_RUNTIME_ELEMENTS.get() ? createTreeNode() : null;
         // save memory in case of port
-        children = getFlag(CoreFlags.ALLOWS_CHILDREN) ? new SafeConcurrentlyIterableList<Link>(4, 4) :
+        children = (!getFlag(Flag.PORT)) ? new SafeConcurrentlyIterableList<Link>(4, 4) :
                    SafeConcurrentlyIterableList.getEmptyInstance();
 
-        if (!getFlag(CoreFlags.IS_RUNTIME)) {
+        if (!getFlag(Flag.RUNTIME)) {
             FrameworkElement parent = (parent_ != null) ? parent_ : RuntimeEnvironment.getInstance().unrelated;
             if (lockOrder_ < 0) {
                 lockOrder_ = parent.getLockOrder() + 1;
@@ -209,7 +207,7 @@ public class FrameworkElement extends Annotatable {
      * @return Primary lock order
      */
     private static int getLockOrder(int flags, FrameworkElement parent, int lockOrder) {
-        if ((flags & CoreFlags.IS_RUNTIME) == 0) {
+        if ((flags & Flag.RUNTIME) == 0) {
             parent = (parent != null) ? parent : RuntimeEnvironment.getInstance().unrelated;
             if (lockOrder < 0) {
                 return parent.getLockOrder() + 1;
@@ -247,7 +245,7 @@ public class FrameworkElement extends Annotatable {
      */
     protected void setFlag(int flag) {
         synchronized (flagMutex) {
-            assert(flag & CoreFlags.CONSTANT_FLAGS) == 0;
+            assert(flag & Flag.CONSTANT_FLAGS) == 0;
             flags |= flag;
         }
     }
@@ -259,7 +257,7 @@ public class FrameworkElement extends Annotatable {
      */
     protected void removeFlag(int flag) {
         synchronized (flagMutex) {
-            assert(flag & CoreFlags.NON_CONSTANT_FLAGS) != 0;
+            assert(flag & Flag.CONSTANT_FLAGS) == 0;
             flags &= ~flag;
         }
     }
@@ -272,18 +270,14 @@ public class FrameworkElement extends Annotatable {
      * @return Answer
      */
     public boolean getFlag(int flag) {
-        if (flag <= CoreFlags.CONSTANT_FLAGS) {
-            return (constFlags & flag) == flag;
-        } else {
-            return (flags & flag) == flag;
-        }
+        return (flags & flag) == flag;
     }
 
     /**
      * @return Name of this framework element
      */
     public String getName() {
-        if (isReady() || getFlag(CoreFlags.IS_RUNTIME)) {
+        if (isReady() || getFlag(Flag.RUNTIME)) {
             return primary.name.length() == 0 ? "(anonymous)" : primary.name;
         } else {
             synchronized (getRegistryLock()) { // synchronize, while name can be changed (C++ strings may not be thread safe...)
@@ -316,17 +310,26 @@ public class FrameworkElement extends Annotatable {
      * (only valid/possible before, element is initialized)
      */
     public void setName(String name) {
-        assert(!getFlag(CoreFlags.IS_RUNTIME));
+        assert(!getFlag(Flag.RUNTIME));
         synchronized (getRegistryLock()) { // synchronize, C++ strings may not be thread safe...
             assert(isConstructing());
             assert(isCreator());
             primary.name = name;
         }
+    }
 
-        // JavaOnlyBlock
-        /*if (treeNode != null) {
-            treeNode.setUserObject(name);
-        }*/
+    /**
+     * @param name New Port name
+     * @param linkNo Index of link to set name of
+     * (only valid/possible before, element is initialized)
+     */
+    public void setName(String name, int linkIndex) {
+        assert(!getFlag(Flag.RUNTIME));
+        synchronized (getRegistryLock()) { // synchronize, C++ strings may not be thread safe...
+            assert(isConstructing());
+            assert(isCreator());
+            getLink(linkIndex).name = name;
+        }
     }
 
     /**
@@ -344,21 +347,21 @@ public class FrameworkElement extends Annotatable {
      * @return Is element a port?
      */
     public boolean isPort() {
-        return (constFlags & CoreFlags.IS_PORT) > 0;
+        return (flags & Flag.PORT) > 0;
     }
 
     /**
      * @return Is framework element ready/fully initialized and not yet deleted?
      */
     public boolean isReady() {
-        return (flags & CoreFlags.READY) > 0;
+        return (flags & Flag.READY) > 0;
     }
 
     /**
      * @return Has framework element been deleted? - dangerous if you actually encounter this in C++...
      */
     public boolean isDeleted() {
-        return (flags & CoreFlags.DELETED) > 0;
+        return (flags & Flag.DELETED) > 0;
     }
 
     /**
@@ -416,7 +419,7 @@ public class FrameworkElement extends Annotatable {
             }
 
             // Check if child with same name already exists and possibly rename (?)
-            if (getFlag(CoreFlags.AUTO_RENAME) && (!getFlag(CoreFlags.IS_PORT)) && getChild(child.getName()) != null) {
+            if (getFlag(Flag.AUTO_RENAME) && (!getFlag(Flag.PORT)) && getChild(child.getName()) != null) {
                 String pointerBuffer = " (" + child.getChild().hashCode() + ")";
                 child.getChild().setName(child.getChild().getName() + pointerBuffer);
                 while (getChild(child.getName()) != null) {
@@ -477,13 +480,13 @@ public class FrameworkElement extends Annotatable {
                 return root.getChildElement(name, nameIndex + 1, onlyGloballyUniqueChildren, root);
             }
 
-            onlyGloballyUniqueChildren &= (!getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK));
+            onlyGloballyUniqueChildren &= (!getFlag(Flag.GLOBALLY_UNIQUE_LINK));
             ArrayWrapper<Link> iterable = children.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
                 Link child = iterable.get(i);
                 if (child != null && name.regionMatches(nameIndex, child.name, 0, child.name.length()) && (!child.getChild().isDeleted())) {
                     if (name.length() == nameIndex + child.name.length()) {
-                        if (!onlyGloballyUniqueChildren || child.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK)) {
+                        if (!onlyGloballyUniqueChildren || child.getChild().getFlag(Flag.GLOBALLY_UNIQUE_LINK)) {
                             return child.getChild();
                         }
                     }
@@ -530,9 +533,9 @@ public class FrameworkElement extends Annotatable {
 
     public void delete() {
         super.delete();
-        assert(getFlag(CoreFlags.DELETED) || getFlag(CoreFlags.IS_RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
+        assert(getFlag(Flag.DELETED) || getFlag(Flag.RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
         log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement destructor");
-        if (!getFlag(CoreFlags.IS_RUNTIME)) {
+        if (!getFlag(Flag.RUNTIME)) {
             // synchronizes on runtime - so no elements will be deleted while runtime is locked
             RuntimeEnvironment.getInstance().unregisterElement(this);
         }
@@ -582,11 +585,7 @@ public class FrameworkElement extends Annotatable {
         if (objMutex.validAfter(getRuntime().getRegistryHelper().objMutex)) {
             return getRegistryLock();
         }
-
-        //JavaOnlyBlock
         return this;
-
-        //Cpp return this->objMutex;
     }
 
     /**
@@ -619,7 +618,7 @@ public class FrameworkElement extends Annotatable {
             postChildInit();
             //System.out.println("Setting Ready " + toString() + " Thread: " + ThreadUtil.getCurrentThreadId());
             synchronized (flagMutex) {
-                flags |= CoreFlags.READY;
+                flags |= Flag.READY;
             }
 
             doStaticParameterEvaluation();
@@ -638,14 +637,14 @@ public class FrameworkElement extends Annotatable {
 
         if (isReady()) {
 
-            if (!getFlag(CoreFlags.PUBLISHED) && allParentsReady()) {
-                setFlag(CoreFlags.PUBLISHED);
+            if (!getFlag(Flag.PUBLISHED) && allParentsReady()) {
+                setFlag(Flag.PUBLISHED);
                 log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Publishing");
                 publishUpdatedInfo(RuntimeListener.ADD);
             }
 
             // publish any children?
-            if (getFlag(CoreFlags.PUBLISHED)) {
+            if (getFlag(Flag.PUBLISHED)) {
                 ArrayWrapper<Link> iterable = children.getIterable();
                 for (int i = 0, n = iterable.size(); i < n; i++) {
                     Link child = iterable.get(i);
@@ -663,7 +662,7 @@ public class FrameworkElement extends Annotatable {
      * (may only be called in runtime-registry-synchronized context)
      */
     private boolean allParentsReady() {
-        if (getFlag(CoreFlags.IS_RUNTIME)) {
+        if (getFlag(Flag.RUNTIME)) {
             return true;
         }
         for (Link l = primary; l != null; l = l.next) {
@@ -727,14 +726,14 @@ public class FrameworkElement extends Annotatable {
 
                     log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting");
                     //System.out.println("Deleting " + toString() + " (" + hashCode() + ")");
-                    assert !getFlag(CoreFlags.DELETED);
-                    assert((primary.getParent() != null) | getFlag(CoreFlags.IS_RUNTIME));
+                    assert !getFlag(Flag.DELETED);
+                    assert((primary.getParent() != null) | getFlag(Flag.RUNTIME));
 
                     synchronized (flagMutex) {
-                        flags = (flags | CoreFlags.DELETED) & ~CoreFlags.READY;
+                        flags = (flags | Flag.DELETED) & ~Flag.READY;
                     }
 
-                    if (!getFlag(CoreFlags.IS_RUNTIME)) {
+                    if (!getFlag(Flag.RUNTIME)) {
                         RuntimeEnvironment.getInstance().markElementDeleted(this);
                     }
                 }
@@ -956,7 +955,7 @@ public class FrameworkElement extends Annotatable {
      * @return true before element is officially declared as being initialized
      */
     public boolean isConstructing() {
-        return !getFlag(CoreFlags.READY);
+        return !getFlag(Flag.READY);
     }
 
     /**
@@ -1044,7 +1043,7 @@ public class FrameworkElement extends Annotatable {
      * @return Returns constant and non-constant flags
      */
     public int getAllFlags() {
-        return flags | constFlags;
+        return flags;
     }
 
     /**
@@ -1166,9 +1165,9 @@ public class FrameworkElement extends Annotatable {
     private boolean getQualifiedNameImpl(StringBuilder sb, Link start, boolean forceFullLink) {
         int length = 0;
         boolean abortAtLinkRoot = false;
-        for (Link l = start; l.parent != null && !(abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)); l = l.parent.primary) {
-            abortAtLinkRoot |= (!forceFullLink) && l.getChild().getFlag(CoreFlags.GLOBALLY_UNIQUE_LINK);
-            if (abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT)) { // if unique_link element is at the same time a link root
+        for (Link l = start; l.parent != null && !(abortAtLinkRoot && l.getChild().getFlag(Flag.ALTERNATIVE_LINK_ROOT)); l = l.parent.primary) {
+            abortAtLinkRoot |= (!forceFullLink) && l.getChild().getFlag(Flag.GLOBALLY_UNIQUE_LINK);
+            if (abortAtLinkRoot && l.getChild().getFlag(Flag.ALTERNATIVE_LINK_ROOT)) { // if unique_link element is at the same time a link root
                 break;
             }
             length += l.name.length() + 1;
@@ -1259,7 +1258,7 @@ public class FrameworkElement extends Annotatable {
      * @param abortAtLinkRoot Abort when an alternative link root is reached?
      */
     private static void getNameHelper(StringBuilder sb, Link l, boolean abortAtLinkRoot) {
-        if (l.parent == null || (abortAtLinkRoot && l.getChild().getFlag(CoreFlags.ALTERNATE_LINK_ROOT))) { // runtime?
+        if (l.parent == null || (abortAtLinkRoot && l.getChild().getFlag(Flag.ALTERNATIVE_LINK_ROOT))) { // runtime?
             return;
         }
         getNameHelper(sb, l.parent.primary, abortAtLinkRoot);
@@ -1276,7 +1275,7 @@ public class FrameworkElement extends Annotatable {
      * (should only be called by AbstractPort class)
      */
     protected void publishUpdatedEdgeInfo(byte changeType, AbstractPort target) {
-        if (getFlag(CoreFlags.PUBLISHED)) {
+        if (getFlag(Flag.PUBLISHED)) {
             RuntimeEnvironment.getInstance().runtimeChange(changeType, this, target);
         }
     }
@@ -1289,7 +1288,7 @@ public class FrameworkElement extends Annotatable {
      * (should only be called by FrameworkElement class)
      */
     protected void publishUpdatedInfo(byte changeType) {
-        if (changeType == RuntimeListener.ADD || getFlag(CoreFlags.PUBLISHED)) {
+        if (changeType == RuntimeListener.ADD || getFlag(Flag.PUBLISHED)) {
             RuntimeEnvironment.getInstance().runtimeChange(changeType, this, null);
         }
     }
@@ -1340,7 +1339,7 @@ public class FrameworkElement extends Annotatable {
                 return;
             }
 
-            output.append(getName()).append(" (").append((isReady() ? (getFlag(CoreFlags.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
+            output.append(getName()).append(" (").append((isReady() ? (getFlag(Flag.PUBLISHED) ? "published" : "ready") : isDeleted() ? "deleted" : "constructing")).appendln(")");
 
             // print child element info
             ArrayWrapper<Link> iterable = children.getIterable();
@@ -1374,7 +1373,7 @@ public class FrameworkElement extends Annotatable {
     }
 
     public String getLogDescription() {
-        if (getFlag(CoreFlags.IS_RUNTIME)) {
+        if (getFlag(Flag.RUNTIME)) {
             return "Runtime";
         } else {
             return getQualifiedName();
@@ -1467,10 +1466,10 @@ public class FrameworkElement extends Annotatable {
      * @param params Parameters that module was created with (may be null)
      */
     public void setFinstructed(CreateFrameworkElementAction createAction, ConstructorParameters params) {
-        assert(!getFlag(CoreFlags.FINSTRUCTED));
+        assert(!getFlag(Flag.FINSTRUCTED));
         StaticParameterList list = StaticParameterList.getOrCreate(this);
         list.setCreateAction(createAction);
-        setFlag(CoreFlags.FINSTRUCTED);
+        setFlag(Flag.FINSTRUCTED);
         if (params != null) {
             addAnnotation(params);
         }
@@ -1658,11 +1657,11 @@ public class FrameworkElement extends Annotatable {
          */
         public void reset(FrameworkElement parent, int flags, int result, boolean onlyReadyElements) {
             assert(parent != null);
-            this.flags = flags | CoreFlags.DELETED;
+            this.flags = flags | Flag.DELETED;
             this.result = result;
             if (onlyReadyElements) {
-                this.flags |= CoreFlags.READY;
-                this.result |= CoreFlags.READY;
+                this.flags |= Flag.READY;
+                this.result |= Flag.READY;
             }
             curParent = parent;
 

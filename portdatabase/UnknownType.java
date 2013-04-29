@@ -25,8 +25,8 @@ import java.util.ArrayList;
 
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.XML;
-import org.finroc.core.port.net.RemoteTypes;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.remote.RemoteTypes;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.Factory;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;

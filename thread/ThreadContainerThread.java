@@ -21,9 +21,9 @@
  */
 package org.finroc.core.thread;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElement.Flag;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.port.AbstractPort;
@@ -216,13 +216,13 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                     traceOutgoing(task, dest);
                 } else if (isInterface(dest)) {
                     FrameworkElement parent = dest.getParent();
-                    if (parent.getFlag(CoreFlags.EDGE_AGGREGATOR)) {
+                    if (parent.getFlag(Flag.EDGE_AGGREGATOR)) {
                         EdgeAggregator ea = (EdgeAggregator)parent;
                         if (!trace.contains(ea)) {
                             traceOutgoing(task, ea);
                         }
                     }
-                    FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(parent, CoreFlags.READY | CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
+                    FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(parent, Flag.READY | Flag.EDGE_AGGREGATOR | Flag.INTERFACE);
                     FrameworkElement otherIf = null;
                     while ((otherIf = ci.next()) != null) {
                         EdgeAggregator ea = (EdgeAggregator)otherIf;
@@ -244,7 +244,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
      * @return Is framework element an interface?
      */
     public boolean isInterface(FrameworkElement fe) {
-        return fe.getFlag(CoreFlags.EDGE_AGGREGATOR | EdgeAggregator.IS_INTERFACE);
+        return fe.getFlag(Flag.EDGE_AGGREGATOR | Flag.INTERFACE);
     }
 
     @Override

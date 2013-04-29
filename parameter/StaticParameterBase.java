@@ -21,8 +21,8 @@
  */
 package org.finroc.core.parameter;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.portdatabase.SerializationHelper;
@@ -245,7 +245,7 @@ public class StaticParameterBase implements HasDestructor {
             if ((!sp.getName().equals(outerParameterAttachment)) || (sp == this)) {
 
                 // find parameter to attach to
-                FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+                FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(FrameworkElementFlags.FINSTRUCTABLE_GROUP);
                 if (fg == null) {
                     logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "No parent finstructable group. Ignoring...");
                     return;
@@ -555,12 +555,15 @@ public class StaticParameterBase implements HasDestructor {
      * @param parent Parent framework element
      */
     public void loadValue() {
+        if (remote) {
+            return;
+        }
 
         FrameworkElement parent = parentList.getAnnotated();
         if (useValueOf == this && (!enforceCurrentValue)) {
 
             // command line
-            FrameworkElement fg = parent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+            FrameworkElement fg = parent.getParentWithFlags(FrameworkElementFlags.FINSTRUCTABLE_GROUP);
             if (commandLineOption.length() > 0 && (fg == null || fg.getParent() == RuntimeEnvironment.getInstance())) { // outermost group?
                 String arg = RuntimeEnvironment.getInstance().getCommandLineArgument(commandLineOption);
                 if (arg.length() > 0) {

@@ -24,6 +24,7 @@ package org.finroc.core.plugin;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -31,7 +32,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.util.Files;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.w3c.dom.Document;
@@ -99,9 +99,9 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
      * @see org.finroc.core.plugin.PluginLoader#findPlugins()
      */
     @Override
-    public SimpleList<Plugin> findPlugins() {
+    public ArrayList<Plugin> findPlugins() {
 
-        SimpleList<Plugin> result = new SimpleList<Plugin>();
+        ArrayList<Plugin> result = new ArrayList<Plugin>();
 
         // idea/implementation: search for plugin-classes in make.xml files
         findFinrocRepository();

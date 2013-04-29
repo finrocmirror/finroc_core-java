@@ -21,13 +21,12 @@
  */
 package org.finroc.core.datatype;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.cc.CCPortBase;
-import org.finroc.core.port.rpc.InterfacePort;
+import org.finroc.core.port.rpc.ProxyPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
@@ -52,7 +51,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
 public class PortCreationList extends RRLibSerializableImpl {
 
     /** Relevant flags for comparison */
-    private static final int RELEVANT_FLAGS = CoreFlags.SHARED | PortFlags.IS_VOLATILE;
+    private static final int RELEVANT_FLAGS = FrameworkElementFlags.SHARED | FrameworkElementFlags.VOLATILE;
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<PortCreationList>(PortCreationList.class);
@@ -213,7 +212,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         // compute flags to use
         int tmp = 0;
         if (showOutputPortSelection) {
-            tmp = output ? PortFlags.OUTPUT_PROXY : PortFlags.INPUT_PROXY;
+            tmp = output ? FrameworkElementFlags.OUTPUT_PROXY : FrameworkElementFlags.INPUT_PROXY;
         }
         flags |= tmp;
 
@@ -223,7 +222,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         } else if (FinrocTypeInfo.isCCType(dt)) {
             ap = new CCPortBase(new PortCreationInfo(name, ioVector, dt, flags));
         } else if (FinrocTypeInfo.isMethodType(dt)) {
-            ap = new InterfacePort(name, ioVector, dt, InterfacePort.Type.Routing, flags & PortFlags.IS_OUTPUT_PORT);
+            ap = new ProxyPort(new PortCreationInfo(name, ioVector, dt, flags & FrameworkElementFlags.IS_OUTPUT_PORT)).getWrapped();
         } else {
             log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + dt.getName());
         }
@@ -389,6 +388,13 @@ public class PortCreationList extends RRLibSerializableImpl {
      */
     public void removeElement(int index) {
         list.remove(index);
+    }
+
+    /**
+     * @param show Should output port selection be visible in finstruct?
+     */
+    public void setShowOutputPortSelection(boolean show) {
+        this.showOutputPortSelection = show;
     }
 
     /**

@@ -21,7 +21,8 @@
  */
 package org.finroc.core.finstructable;
 
-import org.finroc.core.CoreFlags;
+import java.util.ArrayList;
+
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.LinkEdge;
@@ -65,7 +66,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("finstructable");
 
     /** Temporary variable for save operation: List to store connected ports in */
-    private SimpleList<AbstractPort> connectTmp = new SimpleList<AbstractPort>();
+    private ArrayList<AbstractPort> connectTmp = new ArrayList<AbstractPort>();
 
     /** Temporary variable for save operation: Qualified link to this group */
     private String linkTmp = "";
@@ -82,7 +83,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         new StandardCreateModuleAction<FinstructableGroup>("Finstructable Group", FinstructableGroup.class);
 
     public FinstructableGroup(FrameworkElement parent, String name) {
-        super(parent, name, CoreFlags.FINSTRUCTABLE_GROUP | CoreFlags.ALLOWS_CHILDREN, -1);
+        super(parent, name, Flag.FINSTRUCTABLE_GROUP, -1);
         addAnnotation(new StaticParameterList(xmlFile));
     }
 
@@ -329,7 +330,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
                 // serialize edges
                 linkTmp = getQualifiedName() + "/";
-                FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(CoreFlags.STATUS_FLAGS | CoreFlags.IS_PORT, CoreFlags.READY | CoreFlags.PUBLISHED | CoreFlags.IS_PORT);
+                FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(Flag.STATUS_FLAGS | Flag.PORT, Flag.READY | Flag.PUBLISHED | Flag.PORT);
 
                 saveParameterConfigEntries = false;
                 filter.traverseElementTree(this, this, root);
@@ -355,14 +356,14 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     public boolean isResponsibleForConfigFileConnections(FrameworkElement ap) {
         ConfigFile cf = ConfigFile.find(ap);
         if (cf == null) {
-            return this.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP) == null;
+            return this.getParentWithFlags(Flag.FINSTRUCTABLE_GROUP) == null;
         }
         FrameworkElement configElement = (FrameworkElement)cf.getAnnotated();
-        FrameworkElement responsible = configElement.getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? configElement : configElement.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+        FrameworkElement responsible = configElement.getFlag(Flag.FINSTRUCTABLE_GROUP) ? configElement : configElement.getParentWithFlags(Flag.FINSTRUCTABLE_GROUP);
         if (responsible == null) { // ok, config file is probably attached to runtime. Choose outer-most finstructable group.
             responsible = this;
             FrameworkElement tmp;
-            while ((tmp = responsible.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP)) != null) {
+            while ((tmp = responsible.getParentWithFlags(Flag.FINSTRUCTABLE_GROUP)) != null) {
                 responsible = tmp;
             }
         }
@@ -407,7 +408,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
             // save edge?
             // check1: different finstructed elements as parent?
-            if (ap.getParentWithFlags(CoreFlags.FINSTRUCTED) == ap2.getParentWithFlags(CoreFlags.FINSTRUCTED)) {
+            if (ap.getParentWithFlags(Flag.FINSTRUCTED) == ap2.getParentWithFlags(Flag.FINSTRUCTED)) {
                 // TODO: check why continue causes problems here
                 // continue;
             }
@@ -417,7 +418,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             while (!ap2.isChildOf(commonParent)) {
                 commonParent = commonParent.getParent();
             }
-            FrameworkElement commonFinstructableParent = commonParent.getFlag(CoreFlags.FINSTRUCTABLE_GROUP) ? commonParent : commonParent.getParentWithFlags(CoreFlags.FINSTRUCTABLE_GROUP);
+            FrameworkElement commonFinstructableParent = commonParent.getFlag(Flag.FINSTRUCTABLE_GROUP) ? commonParent : commonParent.getParentWithFlags(Flag.FINSTRUCTABLE_GROUP);
             if (commonFinstructableParent != this) {
                 continue;
             }
@@ -471,7 +472,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @return Relative link to this port (or absolute link if it is globally unique)
      */
     protected String getEdgeLink(AbstractPort ap) {
-        FrameworkElement altRoot = ap.getParentWithFlags(CoreFlags.ALTERNATE_LINK_ROOT);
+        FrameworkElement altRoot = ap.getParentWithFlags(Flag.ALTERNATIVE_LINK_ROOT);
         if (altRoot != null && altRoot.isChildOf(this)) {
             return ap.getQualifiedLink();
         }
@@ -490,7 +491,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         while ((fe = ci.next()) != null) {
             StaticParameterList spl = (StaticParameterList)fe.getAnnotation(StaticParameterList.TYPE);
             ConstructorParameters cps = (ConstructorParameters)fe.getAnnotation(ConstructorParameters.TYPE);
-            if (fe.isReady() && fe.getFlag(CoreFlags.FINSTRUCTED)) {
+            if (fe.isReady() && fe.getFlag(Flag.FINSTRUCTED)) {
 
                 // serialize framework element
                 XMLNode n = node.addChildNode("element");
@@ -508,7 +509,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 }
 
                 // serialize its children
-                if (!fe.getFlag(CoreFlags.FINSTRUCTABLE_GROUP)) {
+                if (!fe.getFlag(Flag.FINSTRUCTABLE_GROUP)) {
                     serializeChildren(n, fe);
                 }
             }

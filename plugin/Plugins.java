@@ -23,11 +23,11 @@ package org.finroc.core.plugin;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.finstructable.FinstructableGroup;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -46,13 +46,13 @@ public class Plugins { /*implements HTTPResource*/
     private static Plugins instance;
 
     /** All Plugins that are currently available */
-    private final SimpleList<Plugin> plugins = new SimpleList<Plugin>();
+    private final ArrayList<Plugin> plugins = new ArrayList<Plugin>();
 
     /** List with actions to create external connections */
-    private final SimpleList<CreateExternalConnectionAction> externalConnections = new SimpleList<CreateExternalConnectionAction>();
+    private final ArrayList<CreateExternalConnectionAction> externalConnections = new ArrayList<CreateExternalConnectionAction>();
 
     /** List with actions to create modules */
-    private final SimpleList<CreateFrameworkElementAction> moduleTypes = new SimpleList<CreateFrameworkElementAction>();
+    private final ArrayList<CreateFrameworkElementAction> moduleTypes = new ArrayList<CreateFrameworkElementAction>();
 
 //    /** Plugin manager instance */
 //    private final PluginManager pluginManager = new PluginManager();
@@ -91,8 +91,8 @@ public class Plugins { /*implements HTTPResource*/
         }
         loadAllDataTypesInPackage(CoreNumber.class);
         loadAllDataTypesInPackage(FinstructableGroup.class);
-        SimpleList<Plugin> plugins = pluginLoader.findPlugins(/*Plugins.class*/);
-        for (Plugin plugin : plugins.getBackend()) {
+        ArrayList<Plugin> plugins = pluginLoader.findPlugins(/*Plugins.class*/);
+        for (Plugin plugin : plugins) {
             addPlugin(plugin);
         }
         //JavaPlugins.loadAllDataTypesInPackage(BehaviourInfo.class);
@@ -113,7 +113,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with modules for external connections
      */
-    public SimpleList<CreateExternalConnectionAction> getExternalConnections() {
+    public ArrayList<CreateExternalConnectionAction> getExternalConnections() {
         return externalConnections;
     }
 
@@ -132,7 +132,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with plugins (do not modify!)
      */
-    public SimpleList<Plugin> getPlugins() {
+    public ArrayList<Plugin> getPlugins() {
         return plugins;
     }
 
@@ -174,7 +174,7 @@ public class Plugins { /*implements HTTPResource*/
     /**
      * @return List with modules that can be instantiated in this runtime using the standard mechanism
      */
-    public SimpleList<CreateFrameworkElementAction> getModuleTypes() {
+    public ArrayList<CreateFrameworkElementAction> getModuleTypes() {
         return moduleTypes;
     }
 
@@ -208,7 +208,7 @@ public class Plugins { /*implements HTTPResource*/
     public CreateFrameworkElementAction loadModuleType(String group, String name) {
 
         // try to find module among existing modules
-        SimpleList<CreateFrameworkElementAction> modules = getModuleTypes();
+        ArrayList<CreateFrameworkElementAction> modules = getModuleTypes();
         for (int i = 0; i < modules.size(); i++) {
             CreateFrameworkElementAction cma = modules.get(i);
             if (cma.getModuleGroup().equals(group) && cma.getName().equals(name)) {

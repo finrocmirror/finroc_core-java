@@ -21,9 +21,9 @@
  */
 package org.finroc.core.port.stream;
 
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PublishCache;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
@@ -76,7 +76,7 @@ public class SingletonPort<T extends RRLibSerializable> extends Port<T> {
     private static PortCreationInfo adjustPci(PortCreationInfo pci) {
         pci.sendBufferSize = 1;
         pci.altSendBufferSize = 0;
-        pci.setFlag(PortFlags.PUSH_DATA_IMMEDIATELY | PortFlags.NON_STANDARD_ASSIGN, true);
+        pci.setFlag(/*FrameworkElementFlags..PUSH_DATA_IMMEDIATELY |*/ FrameworkElementFlags.NON_STANDARD_ASSIGN, true);
         return Port.processPci(pci);
     }
 }

@@ -21,10 +21,10 @@
  */
 package org.finroc.core.port.stream;
 
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.port.std.PublishCache;
@@ -97,7 +97,7 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
 
         // we have a new connection
         @Override
-        protected void newConnection(AbstractPort partner) {
+        protected void connectionAdded(AbstractPort partner, boolean partnerIsDestination) {
             if (connHandler != null) {
                 connHandler.handleNewConnection(partner);
             }
@@ -114,8 +114,9 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
     private static PortCreationInfo processPCI(PortCreationInfo pci, String name) {
         pci.maxQueueSize = Integer.MAX_VALUE;  // unlimited size
         pci.name = name;
-        pci.setFlag(PortFlags.HAS_AND_USES_QUEUE, true);
-        pci.setFlag(PortFlags.OUTPUT_PORT, false);
+        pci.setFlag(FrameworkElementFlags.HAS_QUEUE, true);
+        pci.setFlag(FrameworkElementFlags.USES_QUEUE, true);
+        pci.setFlag(FrameworkElementFlags.OUTPUT_PORT, false);
         //pci.setFlag(PortFlags.ACCEPTS_REVERSE_DATA, false);
         return Port.processPci(pci);
     }

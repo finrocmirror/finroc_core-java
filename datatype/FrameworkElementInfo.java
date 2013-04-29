@@ -21,21 +21,22 @@
  */
 package org.finroc.core.datatype;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.EdgeAggregator;
-import org.finroc.core.port.net.RemoteTypes;
+
 
 /**
  * @author Max Reichardt
@@ -55,8 +56,8 @@ public class FrameworkElementInfo {
         /** parent handle */
         public int parent;
 
-        /** additional flags to store (especially if parent or this is globally unique link) */
-        public int extraFlags;
+        /** Port with globally unique UID? */
+        public boolean unique;
     }
 
     /**
@@ -76,6 +77,16 @@ public class FrameworkElementInfo {
         }
     }
 
+    /**
+     * Enum on different levels of structure (framework elements and ports) exchanged among peers
+     */
+    public enum StructureExchange {
+        NONE,               // No structure info on structure is sent
+        SHARED_PORTS,       // Send info on shared ports to connection partner
+        COMPLETE_STRUCTURE, // Send info on complete structure to connection partner (e.g. for fingui)
+        FINSTRUCT,          // Send info on complete structure including port connections to partner (as required by finstruct)
+    }
+
     /** EDGE_CHANGE Opcode */
     public static final byte EDGE_CHANGE = RuntimeListener.REMOVE + 1;
 
@@ -84,9 +95,6 @@ public class FrameworkElementInfo {
 
     /** Number of links */
     private byte linkCount = 0;
-
-    /** Op code: ADD CHANGE or DELETE */
-    public byte opCode;
 
     /** Handle in remote Runtime */
     private int handle;
@@ -104,7 +112,10 @@ public class FrameworkElementInfo {
     private short minNetUpdateTime;
 
     /** Stores outgoing connection destination ports - if this is a port */
-    private SimpleList<ConnectionInfo> connections = new SimpleList<ConnectionInfo>();
+    private ArrayList<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
+
+    /** Number of connections */
+    private int connectionCount = 0;
 
     /** Framework element tags */
     private FrameworkElementTags tags = new FrameworkElementTags();
@@ -114,154 +125,160 @@ public class FrameworkElementInfo {
     //public final static DataType TYPE = DataTypeRegister.getInstance().getDataType(FrameworkElementInfo.class);
 
     /** mask for non-ports and non-edge-aggregators */
-    private static final int PARENT_FLAGS_TO_STORE = CoreFlags.GLOBALLY_UNIQUE_LINK | CoreFlags.ALTERNATE_LINK_ROOT | CoreFlags.EDGE_AGGREGATOR /*| CoreFlags.FINSTRUCTABLE_GROUP*/;
+    private static final int PARENT_FLAGS_TO_STORE = FrameworkElementFlags.GLOBALLY_UNIQUE_LINK | FrameworkElementFlags.ALTERNATIVE_LINK_ROOT |
+            FrameworkElementFlags.EDGE_AGGREGATOR /*| CoreFlags.FINSTRUCTABLE_GROUP*/;
 
     /** mask for non-ports and non-edge-aggregators */
     private static final int EDGE_AGG_PARENT_FLAGS_TO_STORE = PARENT_FLAGS_TO_STORE | EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS;
 
     static {
-        assert(PARENT_FLAGS_TO_STORE & 0x7E) == PARENT_FLAGS_TO_STORE;
-        assert(EDGE_AGG_PARENT_FLAGS_TO_STORE & 0x7F7E) == EDGE_AGG_PARENT_FLAGS_TO_STORE;
+        assert(PARENT_FLAGS_TO_STORE & 0xFE) == PARENT_FLAGS_TO_STORE;
+        assert(EDGE_AGG_PARENT_FLAGS_TO_STORE & 0xFE) == EDGE_AGG_PARENT_FLAGS_TO_STORE;
     }
 
     public FrameworkElementInfo() {
     }
 
+//    /**
+//     * Serialize framework element information to transaction packet
+//     *
+//     * @param fe Framework element to serialize info of
+//     * @param opCode Typically ADD, CHANGE or DELETE
+//     * @param tp Packet to serialize to
+//     * @param elementFilter Element filter for client
+//     * @param tmp Temporary string buffer
+//     *
+//     * (call in runtime-registry synchronized context only)
+//     */
+//    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, OutputStreamBuffer tp, FrameworkElementTreeFilter elementFilter, StringBuilder tmp) {
+//
+//        tp.writeByte(opCode); // write opcode (see base class)
+//
+//        // write common info
+//        tp.writeInt(fe.getHandle());
+//        tp.writeInt(fe.getAllFlags());
+//        if (opCode == RuntimeListener.REMOVE) {
+//            return;
+//        }
+//        assert(!fe.isDeleted());
+//        int cnt = fe.getLinkCount();
+//        tp.writeBoolean(elementFilter.isPortOnlyFilter());
+//
+//        // write links (only when creating element)
+//        if (opCode == RuntimeListener.ADD) {
+//            if (elementFilter.isPortOnlyFilter()) {
+//                for (int i = 0; i < cnt; i++) {
+//                    boolean unique = fe.getQualifiedLink(tmp, i);
+//                    tp.writeByte(1 | (unique ? FrameworkElementFlags.GLOBALLY_UNIQUE_LINK : 0));
+//                    tp.writeString(tmp.substring(1));
+//                }
+//            } else {
+//                for (int i = 0; i < cnt; i++) {
+//
+//                    // we only serialize parents that target is interested in
+//                    FrameworkElement parent = fe.getParent(i);
+//                    if (elementFilter.accept(parent, tmp)) {
+//                        // serialize 1 for another link - ORed with CoreFlags for parent LINK_ROOT and GLOBALLY_UNIQUE
+//                        tp.writeByte(1 | (parent.getAllFlags() & PARENT_FLAGS_TO_STORE));
+//                        if (parent.getFlag(FrameworkElementFlags.EDGE_AGGREGATOR)) {
+//                            tp.writeByte((parent.getAllFlags() & EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS) >> 8);
+//                        }
+//                        fe.writeName(tp, i);
+//                        tp.writeInt(parent.getHandle());
+//                    }
+//                }
+//            }
+//            tp.writeByte(0);
+//        }
+//
+//        // possibly write port info
+//        if (fe.isPort()) {
+//            AbstractPort port = (AbstractPort)fe;
+//
+//            tp.writeType(port.getDataType());
+//            tp.writeShort(port.getStrategy());
+//            tp.writeShort(port.getMinNetUpdateInterval());
+//
+//            if (elementFilter.isAcceptAllFilter()) {
+//                port.serializeOutgoingConnections(tp);
+//            } else if (!elementFilter.isPortOnlyFilter()) {
+//                tp.writeByte(0);
+//            }
+//        }
+//
+//        // possibly send tags
+//        if (elementFilter.sendTags()) {
+//            FrameworkElementTags tags = (FrameworkElementTags)fe.getAnnotation(FrameworkElementTags.TYPE);
+//            tp.writeBoolean(tags != null);
+//            if (tags != null) {
+//                tags.serialize(tp);
+//            }
+//        } else {
+//            tp.writeBoolean(false);
+//        }
+//    }
+
     /**
-     * Serialize framework element information to transaction packet
-     *
-     * @param fe Framework element to serialize info of
-     * @param opCode Typically ADD, CHANGE or DELETE
-     * @param tp Packet to serialize to
-     * @param elementFilter Element filter for client
-     * @param tmp Temporary string buffer
-     *
-     * (call in runtime-registry synchronized context only)
+     * @param is Input Stream to deserialize from
+     * @param structureExchange Determines how much information is deserialized
      */
-    public static void serializeFrameworkElement(FrameworkElement fe, byte opCode, OutputStreamBuffer tp, FrameworkElementTreeFilter elementFilter, StringBuilder tmp) {
+    public void deserialize(InputStreamBuffer is, StructureExchange structureExchange) {
+        reset();
+        //opCode = is.readByte();
 
-        tp.writeByte(opCode); // write opcode (see base class)
-
-        // write common info
-        tp.writeInt(fe.getHandle());
-        tp.writeInt(fe.getAllFlags());
-        if (opCode == RuntimeListener.REMOVE) {
-            return;
-        }
-        assert(!fe.isDeleted());
-        int cnt = fe.getLinkCount();
-        tp.writeBoolean(elementFilter.isPortOnlyFilter());
-
-        // write links (only when creating element)
-        if (opCode == RuntimeListener.ADD) {
-            if (elementFilter.isPortOnlyFilter()) {
-                for (int i = 0; i < cnt; i++) {
-                    boolean unique = fe.getQualifiedLink(tmp, i);
-                    tp.writeByte(1 | (unique ? CoreFlags.GLOBALLY_UNIQUE_LINK : 0));
-                    tp.writeString(tmp.substring(1));
-                }
-            } else {
-                for (int i = 0; i < cnt; i++) {
-
-                    // we only serialize parents that target is interested in
-                    FrameworkElement parent = fe.getParent(i);
-                    if (elementFilter.accept(parent, tmp)) {
-                        // serialize 1 for another link - ORed with CoreFlags for parent LINK_ROOT and GLOBALLY_UNIQUE
-                        tp.writeByte(1 | (parent.getAllFlags() & PARENT_FLAGS_TO_STORE));
-                        if (parent.getFlag(CoreFlags.EDGE_AGGREGATOR)) {
-                            tp.writeByte((parent.getAllFlags() & EdgeAggregator.ALL_EDGE_AGGREGATOR_FLAGS) >> 8);
-                        }
-                        fe.writeName(tp, i);
-                        tp.writeInt(parent.getHandle());
-                    }
-                }
-            }
-            tp.writeByte(0);
-        }
-
-        // possibly write port info
-        if (fe.isPort()) {
-            AbstractPort port = (AbstractPort)fe;
-
-            tp.writeType(port.getDataType());
-            tp.writeShort(port.getStrategy());
-            tp.writeShort(port.getMinNetUpdateInterval());
-
-            if (elementFilter.isAcceptAllFilter()) {
-                port.serializeOutgoingConnections(tp);
-            } else if (!elementFilter.isPortOnlyFilter()) {
-                tp.writeByte(0);
+        // read common info
+        handle = is.readInt();
+        int linkCountTemp = is.readByte() & 0xFF;
+        linkCount = (byte)(linkCountTemp & 0x7F);
+        boolean isPort = linkCountTemp > 0x7F;
+        for (int i = 0; i < linkCount; i++) {
+            links[i].name = is.readString();
+            links[i].unique = is.readBoolean();
+            if (structureExchange != StructureExchange.SHARED_PORTS) {
+                links[i].parent = is.readInt();
             }
         }
 
-        // possibly send tags
-        if (elementFilter.sendTags()) {
-            FrameworkElementTags tags = (FrameworkElementTags)fe.getAnnotation(FrameworkElementTags.TYPE);
-            tp.writeBoolean(tags != null);
-            if (tags != null) {
-                tags.serialize(tp);
-            }
+        if (!isPort) {
+            flags = is.readInt();
         } else {
-            tp.writeBoolean(false);
+            type = is.readType();
+            assert(type != null);
+            flags = is.readInt();
+            strategy = is.readShort();
+            minNetUpdateTime = is.readShort();
+        }
+
+        connectionCount = 0;
+        tags.clear();
+        if (structureExchange == StructureExchange.FINSTRUCT) {
+
+            // possibly read connections
+            if (isPort) {
+                deserializeConnections(is);
+            }
+
+            // possibly read tags
+            if (is.readBoolean()) {
+                tags.deserialize(is);
+            }
         }
     }
 
     /**
-     * @param is Input Stream to deserialize from
-     * @param typeLookup Remote type information to lookup type
+     * Deserializes connections only
+     *
+     * @param stream Stream to read from
      */
-    public void deserialize(InputStreamBuffer is, RemoteTypes typeLookup) {
-        reset();
-        opCode = is.readByte();
-
-        // read common info
-        handle = is.readInt();
-        flags = is.readInt();
-        if (opCode == RuntimeListener.REMOVE) {
-            return;
-        }
-        boolean portOnlyClient = is.readBoolean();
-
-        // read links
-        linkCount = 0;
-        byte next = 0;
-        if (opCode == RuntimeListener.ADD) {
-            while ((next = is.readByte()) != 0) {
-                LinkInfo li = links[linkCount];
-                li.extraFlags = next & PARENT_FLAGS_TO_STORE;
-                if ((li.extraFlags & CoreFlags.EDGE_AGGREGATOR) > 0) {
-                    li.extraFlags |= (((int)is.readByte()) << 8);
-                }
-                li.name = is.readString();
-                if (!portOnlyClient) {
-                    li.parent = is.readInt();
-                } else {
-                    li.parent = 0;
-                }
-                linkCount++;
+    public void deserializeConnections(InputStreamBuffer stream) {
+        connectionCount = stream.readByte() & 0xFF;
+        for (int i = 0; i < connectionCount; i++) {
+            if (i >= connections.size()) {
+                connections.add(new ConnectionInfo(stream.readInt(), stream.readBoolean()));
+            } else {
+                connections.get(i).handle = stream.readInt();
+                connections.get(i).finstructed = stream.readBoolean();
             }
-            assert(linkCount > 0);
-        }
-
-        // possibly read port specific info
-        if ((flags & CoreFlags.IS_PORT) > 0) {
-            type = is.readType();
-            strategy = is.readShort();
-            minNetUpdateTime = is.readShort();
-
-            if (!portOnlyClient) {
-                byte cnt = is.readByte();
-                for (int i = 0; i < cnt; i++) {
-                    int handle = is.readInt();
-                    connections.add(new ConnectionInfo(handle, is.readBoolean()));
-                }
-            }
-        }
-
-        // possibly read tags
-        tags.clear();
-        if (is.readBoolean()) {
-            tags.deserialize(is);
         }
     }
 
@@ -275,7 +292,7 @@ public class FrameworkElementInfo {
         strategy = 0;
         minNetUpdateTime = 0;
         linkCount = 0;
-        connections.clear();
+        connectionCount = 0;
         tags.clear();
     }
 
@@ -340,43 +357,18 @@ public class FrameworkElementInfo {
      * @return Is this information about remote port?
      */
     public boolean isPort() {
-        return (flags & CoreFlags.IS_PORT) != 0;
+        return (flags & FrameworkElementFlags.PORT) != 0;
     }
 
     public String toString() {
-        if (linkCount > 0) {
-            return getOpCodeString() + " " + links[0].name + " (" + handle + ") - parent: " + links[0].parent + " - flags: " + flags;
-        } else {
-            return getOpCodeString() + " (" + handle + ") - flags: " + flags;
-        }
+        return links[0].name + " (" + handle + ") - parent: " + links[0].parent + " - flags: " + flags;
     }
 
     /**
-     * @return OpCode as string
+     * @return Outgoing connection's destination handles etc.
      */
-    private String getOpCodeString() {
-        switch (opCode) {
-        case RuntimeListener.ADD:
-            return "ADD";
-        case RuntimeListener.CHANGE:
-            return "CHANGE";
-        case RuntimeListener.REMOVE:
-            return "REMOVE";
-        case EDGE_CHANGE:
-            return "EDGE_CHANGE";
-        default:
-            return "INVALID OPCODE";
-        }
-    }
-
-    /**
-     * Get outgoing connection's destination handles etc.
-     *
-     * @param copyTo List to copy result of get operation to
-     */
-    public void getConnections(SimpleList<ConnectionInfo> copyTo) {
-        copyTo.clear();
-        copyTo.addAll(connections);
+    public List<ConnectionInfo> getConnections() {
+        return Collections.unmodifiableList(connections);
     }
 
     /**
@@ -384,7 +376,7 @@ public class FrameworkElementInfo {
      * @return Flags relevant for a remote parent framework element
      */
     public static int filterParentFlags(int extraFlags) {
-        if ((extraFlags & CoreFlags.EDGE_AGGREGATOR) != 0) {
+        if ((extraFlags & FrameworkElementFlags.EDGE_AGGREGATOR) != 0) {
             return extraFlags & EDGE_AGG_PARENT_FLAGS_TO_STORE;
         }
         return extraFlags & PARENT_FLAGS_TO_STORE;

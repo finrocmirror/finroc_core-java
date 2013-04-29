@@ -22,13 +22,13 @@
 package org.finroc.core.test;
 
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.plugins.blackboard.BlackboardBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
 
@@ -46,11 +46,11 @@ public class InitialPushTest {
         // setup and initialize ports
         //ThreadLocalCache.get();
         RuntimeEnvironment.getInstance();
-        Port<BlackboardBuffer> out = new Port<BlackboardBuffer>(new PortCreationInfo("StdOut", BlackboardBuffer.TYPE, PortFlags.OUTPUT_PORT));
-        Port<BlackboardBuffer> in = new Port<BlackboardBuffer>(new PortCreationInfo("StdIn", BlackboardBuffer.TYPE, PortFlags.INPUT_PORT));
-        PortNumeric<Integer> nOut = new PortNumeric<Integer>(new PortCreationInfo("NumOut", PortFlags.OUTPUT_PORT));
-        PortNumeric<Integer> nIn = new PortNumeric<Integer>(new PortCreationInfo("NumIn", PortFlags.INPUT_PORT));
-        PortNumeric<Integer> nRevOut = new PortNumeric<Integer>(new PortCreationInfo("NumRevOut", PortFlags.OUTPUT_PORT | PortFlags.PUSH_STRATEGY_REVERSE));
+        Port<BlackboardBuffer> out = new Port<BlackboardBuffer>(new PortCreationInfo("StdOut", BlackboardBuffer.TYPE, FrameworkElementFlags.OUTPUT_PORT));
+        Port<BlackboardBuffer> in = new Port<BlackboardBuffer>(new PortCreationInfo("StdIn", BlackboardBuffer.TYPE, FrameworkElementFlags.INPUT_PORT));
+        PortNumeric<Integer> nOut = new PortNumeric<Integer>(new PortCreationInfo("NumOut", FrameworkElementFlags.OUTPUT_PORT));
+        PortNumeric<Integer> nIn = new PortNumeric<Integer>(new PortCreationInfo("NumIn", FrameworkElementFlags.INPUT_PORT));
+        PortNumeric<Integer> nRevOut = new PortNumeric<Integer>(new PortCreationInfo("NumRevOut", FrameworkElementFlags.OUTPUT_PORT | FrameworkElementFlags.PUSH_STRATEGY_REVERSE));
         FrameworkElement.initAll();
 
         // fill output ports with something
@@ -92,16 +92,16 @@ public class InitialPushTest {
         System.out.println("\nNow for a complex net...");
 
         // o1->o2
-        PortNumeric<Integer> o1 = new PortNumeric<Integer>(new PortCreationInfo("o1", PortFlags.OUTPUT_PROXY));
+        PortNumeric<Integer> o1 = new PortNumeric<Integer>(new PortCreationInfo("o1", FrameworkElementFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o1.publish(24);
-        PortNumeric<Integer> o2 = new PortNumeric<Integer>(new PortCreationInfo("o2", PortFlags.INPUT_PROXY | PortFlags.PUSH_STRATEGY));
+        PortNumeric<Integer> o2 = new PortNumeric<Integer>(new PortCreationInfo("o2", FrameworkElementFlags.INPUT_PROXY | FrameworkElementFlags.PUSH_STRATEGY));
         FrameworkElement.initAll();
         o1.connectTo(o2);
         print(o2, 24);
 
         // o1->o2->o3
-        PortNumeric<Integer> o3 = new PortNumeric<Integer>(new PortCreationInfo("o3", PortFlags.INPUT_PORT));
+        PortNumeric<Integer> o3 = new PortNumeric<Integer>(new PortCreationInfo("o3", FrameworkElementFlags.INPUT_PORT));
         o2.connectTo(o3);
         FrameworkElement.initAll();
         o2.setPushStrategy(false);
@@ -112,7 +112,7 @@ public class InitialPushTest {
         print(o3, 22);
 
         // o0->o1->o2->o3
-        PortNumeric<Integer> o0 = new PortNumeric<Integer>(new PortCreationInfo("o0", PortFlags.OUTPUT_PROXY));
+        PortNumeric<Integer> o0 = new PortNumeric<Integer>(new PortCreationInfo("o0", FrameworkElementFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o0.publish(42);
         o0.connectTo(o1);
@@ -121,13 +121,13 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //              \            .
         //               o4->o5
-        PortNumeric<Integer> o4 = new PortNumeric<Integer>(new PortCreationInfo("o4", PortFlags.INPUT_PROXY));
-        PortNumeric<Integer> o5 = new PortNumeric<Integer>(new PortCreationInfo("o5", PortFlags.INPUT_PORT));
+        PortNumeric<Integer> o4 = new PortNumeric<Integer>(new PortCreationInfo("o4", FrameworkElementFlags.INPUT_PROXY));
+        PortNumeric<Integer> o5 = new PortNumeric<Integer>(new PortCreationInfo("o5", FrameworkElementFlags.INPUT_PORT));
         FrameworkElement.initAll();
         o4.connectTo(o5);
         o2.getWrapped().connectTo(o4.getWrapped(), AbstractPort.ConnectDirection.TO_TARGET, false);
         print(o5, 42);
-        PortNumeric<Integer> o6 = new PortNumeric<Integer>(new PortCreationInfo("o6", PortFlags.OUTPUT_PORT));
+        PortNumeric<Integer> o6 = new PortNumeric<Integer>(new PortCreationInfo("o6", FrameworkElementFlags.OUTPUT_PORT));
         FrameworkElement.initAll();
         o6.publish(44);
         o6.connectTo(o0);
@@ -137,10 +137,10 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //        /     \            .
         //      o7->o8   o4->o5
-        PortNumeric<Integer> o7 = new PortNumeric<Integer>(new PortCreationInfo("o7", PortFlags.OUTPUT_PROXY));
+        PortNumeric<Integer> o7 = new PortNumeric<Integer>(new PortCreationInfo("o7", FrameworkElementFlags.OUTPUT_PROXY));
         FrameworkElement.initAll();
         o7.publish(33);
-        PortNumeric<Integer> o8 = new PortNumeric<Integer>(new PortCreationInfo("o8", PortFlags.INPUT_PORT));
+        PortNumeric<Integer> o8 = new PortNumeric<Integer>(new PortCreationInfo("o8", FrameworkElementFlags.INPUT_PORT));
         FrameworkElement.initAll();
         o7.connectTo(o8);
         print(o8, 33);
@@ -150,7 +150,7 @@ public class InitialPushTest {
         // o6->o0->o1->o2->o3
         //        /     \            .
         //  o9->o7->o8   o4->o5
-        PortNumeric<Integer> o9 = new PortNumeric<Integer>(new PortCreationInfo("o9", PortFlags.OUTPUT_PORT));
+        PortNumeric<Integer> o9 = new PortNumeric<Integer>(new PortCreationInfo("o9", FrameworkElementFlags.OUTPUT_PORT));
         FrameworkElement.initAll();
         o9.publish(88);
         o9.connectTo(o7);

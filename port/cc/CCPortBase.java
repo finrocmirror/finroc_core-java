@@ -33,7 +33,6 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortListener;
 import org.finroc.core.port.PortListenerManager;
 import org.finroc.core.port.ThreadLocalCache;
@@ -124,8 +123,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
         defaultValue = createDefaultValue(pci.dataType);
 
         // standard assign?
-        standardAssign = !getFlag(PortFlags.NON_STANDARD_ASSIGN) && (!getFlag(PortFlags.HAS_QUEUE));
-        queue = getFlag(PortFlags.HAS_QUEUE) ? new CCPortQueue(pci.maxQueueSize) : null;
+        standardAssign = !getFlag(Flag.NON_STANDARD_ASSIGN) && (!getFlag(Flag.HAS_QUEUE));
+        queue = getFlag(Flag.HAS_QUEUE) ? new CCPortQueue(pci.maxQueueSize) : null;
         if (queue != null) {
             queue.init();
         }
@@ -215,8 +214,8 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @param tc ThreadLocalCache with tc.data set
      */
     protected void nonStandardAssign(ThreadLocalCache tc) {
-        if (getFlag(PortFlags.USES_QUEUE)) {
-            assert(getFlag(PortFlags.HAS_QUEUE));
+        if (getFlag(Flag.USES_QUEUE)) {
+            assert(getFlag(Flag.HAS_QUEUE));
 
             // enqueue
             CCPortDataManager itc = tc.getUnusedInterThreadBuffer(tc.data.getObject().getType());
@@ -394,7 +393,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
     }
 
     public void notifyDisconnect() {
-        if (getFlag(PortFlags.DEFAULT_ON_DISCONNECT)) {
+        if (getFlag(Flag.DEFAULT_ON_DISCONNECT)) {
             applyDefaultValue();
         }
     }
@@ -723,7 +722,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
 
     @Override
     protected void setMaxQueueLengthImpl(int length) {
-        assert(getFlag(PortFlags.HAS_QUEUE) && queue != null);
+        assert(getFlag(Flag.HAS_QUEUE) && queue != null);
         assert(!isOutputPort());
         assert(length >= 1);
         queue.setMaxLength(length);

@@ -87,8 +87,6 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     @Override
     public void deserialize(InputStreamBuffer is) {
         if (getAnnotated() == null) {
-
-            //JavaOnlyBlock
             createAction = is.readInt();
             clear();
             int newSize = is.readInt();
@@ -97,9 +95,6 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
                 param.deserialize(is);
                 add(param);
             }
-
-            //Cpp assert(false && "not supported");
-
         } else { // attached to module - only update parameter values
             if (createAction != is.readInt() || ((int)parameters.size()) != is.readInt()) {
                 throw new RuntimeException("Invalid action id or parameter number");

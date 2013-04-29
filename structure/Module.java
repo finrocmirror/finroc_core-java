@@ -22,8 +22,6 @@
 package org.finroc.core.structure;
 
 import org.finroc.core.FrameworkElement;
-import org.finroc.core.port.EdgeAggregator;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.PortGroup;
 import org.finroc.core.thread.PeriodicFrameworkElementTask;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
@@ -49,16 +47,16 @@ public class Module extends FrameworkElement implements Task {
     private SenseTask senseTask = new SenseTask();
 
     /** Sensor Input interface */
-    protected PortGroup sensorInput = new PortGroup(this, "Sensor Input", EdgeAggregator.IS_INTERFACE | EdgeAggregator.SENSOR_DATA, PortFlags.INPUT_PORT);
+    protected PortGroup sensorInput = new PortGroup(this, "Sensor Input", Flag.INTERFACE | Flag.SENSOR_DATA, Flag.INPUT_PORT);
 
     /** Sensor Output interface */
-    protected PortGroup sensorOutput = new PortGroup(this, "Sensor Output", EdgeAggregator.IS_INTERFACE | EdgeAggregator.SENSOR_DATA, PortFlags.OUTPUT_PORT);
+    protected PortGroup sensorOutput = new PortGroup(this, "Sensor Output", Flag.INTERFACE | Flag.SENSOR_DATA, Flag.OUTPUT_PORT);
 
     /** Controller Input interface */
-    protected PortGroup controllerInput = new PortGroup(this, "Controller Input", EdgeAggregator.IS_INTERFACE | EdgeAggregator.CONTROLLER_DATA, PortFlags.INPUT_PORT);
+    protected PortGroup controllerInput = new PortGroup(this, "Controller Input", Flag.INTERFACE | Flag.CONTROLLER_DATA, Flag.INPUT_PORT);
 
     /** Controller output interface */
-    protected PortGroup controllerOutput = new PortGroup(this, "Controller Output", EdgeAggregator.IS_INTERFACE | EdgeAggregator.CONTROLLER_DATA, PortFlags.OUTPUT_PORT);
+    protected PortGroup controllerOutput = new PortGroup(this, "Controller Output", Flag.INTERFACE | Flag.CONTROLLER_DATA, Flag.OUTPUT_PORT);
 
     /**
      * @param name Module name

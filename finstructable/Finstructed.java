@@ -22,7 +22,7 @@
 package org.finroc.core.finstructable;
 
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.plugins.tcp.TCPServer;
+import org.finroc.plugins.tcp.Peer;
 
 /**
  * @author Max Reichardt
@@ -35,7 +35,7 @@ public class Finstructed {
 
     public static void main(String[] args) {
         RuntimeEnvironment re = RuntimeEnvironment.getInstance();
-        TCPServer server = new TCPServer(4444, true, null);
+        Peer server = new Peer("Finstructed", 4444, true, null);
         server.init();
 
         FinstructableGroup fg = new FinstructableGroup(re, "finstructed", "etc/finstructed_test.xml");

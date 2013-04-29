@@ -21,7 +21,7 @@
  */
 package org.finroc.core.plugin;
 
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
+import java.util.ArrayList;
 
 /**
  * @author Max Reichardt
@@ -33,7 +33,7 @@ public interface PluginLoader {
     /**
      * Load plugins
      */
-    public SimpleList<Plugin> findPlugins();
+    public ArrayList<Plugin> findPlugins();
 
     /**
      * @return Plugin class loader

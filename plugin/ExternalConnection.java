@@ -21,16 +21,18 @@
  */
 package org.finroc.core.plugin;
 
+
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
-import org.finroc.core.CoreFlags;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameterList;
+import org.finroc.core.remote.ModelHandler;
+
 
 /**
  * @author Max Reichardt
@@ -63,12 +65,15 @@ public abstract class ExternalConnection extends FrameworkElement {
     /** if set, this module automatically connects to this address */
     private StaticParameterString autoConnectTo = new StaticParameterString("Autoconnect to", "");
 
+    /** Model handler/manager for this connection (optional - may be NULL) */
+    private ModelHandler modelHandler;
+
     /**
      * @param name Name of class
      * @param defaultAddress Default connection address (some string)
      */
     public ExternalConnection(String name, String defaultAddress) {
-        super(RuntimeEnvironment.getInstance(), name, CoreFlags.ALLOWS_CHILDREN | CoreFlags.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
+        super(RuntimeEnvironment.getInstance(), name, Flag.NETWORK_ELEMENT, LockOrderLevels.LEAF_GROUP);
         StaticParameterList.getOrCreate(this).add(autoConnectTo);
         lastAddress = defaultAddress;
     }
@@ -77,8 +82,9 @@ public abstract class ExternalConnection extends FrameworkElement {
      * Universal connect method
      *
      * @param address Address to connect to
+     * @param modelHandler Model handler/manager for this connection (optional - may be NULL)
      */
-    public synchronized void connect(String address) throws Exception {
+    public synchronized void connect(String address, ModelHandler modelHandler) throws Exception {
 
         if (needsAddress()) {
             if (address == null || address.equals("")) {  // cancel pressed
@@ -86,6 +92,8 @@ public abstract class ExternalConnection extends FrameworkElement {
                 return;
             }
         }
+
+        this.modelHandler = modelHandler;
 
         connectImpl(address, (!firstConnect) && address.equals(lastAddress));
         postConnect(address);
@@ -142,7 +150,7 @@ public abstract class ExternalConnection extends FrameworkElement {
      * Connect (to same address as last time)
      */
     public synchronized void reconnect() throws Exception {
-        connect(lastAddress);
+        connect(lastAddress, modelHandler);
     }
 
     public void addConnectionListener(ConnectionListener l) {
@@ -221,7 +229,7 @@ public abstract class ExternalConnection extends FrameworkElement {
             }
             if (!isConnected()) {
                 try {
-                    connect(s);
+                    connect(s, null);
                 } catch (Exception e) {
                     log(LogLevel.LL_ERROR, logDomain, e);
                 }
@@ -236,4 +244,10 @@ public abstract class ExternalConnection extends FrameworkElement {
         this.lastAddress = address;
     }
 
+    /**
+     * @return The model handler/manager for this connection (optional - may be null)
+     */
+    public ModelHandler getModelHandler() {
+        return modelHandler;
+    }
 }

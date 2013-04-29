@@ -25,7 +25,6 @@ import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.PortFlags;
 import org.finroc.core.port.ThreadLocalCache;
 import org.rrlib.finroc_core_utils.log.LogLevel;
 
@@ -51,7 +50,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
      * Make sure non-standard assign flag is set
      */
     private static PortCreationInfo processPciBNP(PortCreationInfo pci) {
-        pci.flags = pci.flags | PortFlags.NON_STANDARD_ASSIGN;
+        pci.flags = pci.flags | Flag.NON_STANDARD_ASSIGN;
         pci.dataType = CoreNumber.TYPE;
         return pci;
     }

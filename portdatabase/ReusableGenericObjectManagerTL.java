@@ -21,6 +21,7 @@
  */
 package org.finroc.core.portdatabase;
 
+import org.finroc.core.datatype.Timestamp;
 import org.rrlib.finroc_core_utils.jc.container.ReusableTL;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
@@ -35,9 +36,20 @@ public class ReusableGenericObjectManagerTL extends ReusableTL implements Generi
     /** Managed object */
     private GenericObject managedObject;
 
+    /** Timestamp of attached data */
+    public final Timestamp timestamp = new Timestamp();
+
+
     @Override
     public GenericObject getObject() {
         return managedObject;
+    }
+
+    /**
+     * @return Timestamp of attached data
+     */
+    public Timestamp getTimestamp() {
+        return timestamp;
     }
 
     @Override
