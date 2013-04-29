@@ -7,7 +7,7 @@
     </sources>
   </finroclibrary>
 
-  <testprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
+  <!--testprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
     <sources>
       test/*.java
     </sources>
@@ -18,7 +18,7 @@
     <script name="initial_pushing_java" main-class="org.finroc.core.test.InitialPushTest"/>
     <script name="p2p_java" main-class="org.finroc.core.test.Peer2PeerTest"/>
     <script name="basic_realtime_java" main-class="org.finroc.core.test.BasicRealtimeTest"/>
-  </testprogram>
+  </testprogram-->
   
   <finrocprogram name="finstructed_java" libs="finroc_core.jar finroc_plugin_tcp.jar" main-class="org.finroc.core.finstructable.Finstructed">
     <sources>
