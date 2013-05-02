@@ -22,7 +22,6 @@
 package org.finroc.core.datatype;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
@@ -74,6 +73,10 @@ public class FrameworkElementInfo {
         public ConnectionInfo(int handle, boolean finstructed) {
             this.handle = handle;
             this.finstructed = finstructed;
+        }
+
+        public ConnectionInfo cloneInfo() {
+            return new ConnectionInfo(handle, finstructed);
         }
     }
 
@@ -365,10 +368,14 @@ public class FrameworkElementInfo {
     }
 
     /**
-     * @return Outgoing connection's destination handles etc.
+     * @return Copy of port's outgoing connection info (destination handles etc.)
      */
-    public List<ConnectionInfo> getConnections() {
-        return Collections.unmodifiableList(connections);
+    public ArrayList<ConnectionInfo> copyConnections() {
+        ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
+        for (int i = 0; i < connectionCount; i++) {
+            result.add(connections.get(i).cloneInfo());
+        }
+        return result;
     }
 
     /**
