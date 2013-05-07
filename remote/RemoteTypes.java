@@ -198,7 +198,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      */
     public void setTime(DataTypeBase dt, short newTime) {
         assert(initialized()) : "Not initialized";
-        if (dt == null) {
+        if (dt == null || dt == DataTypeBase.getNullType()) {
             assert(newTime >= 0);
             globalDefault = newTime;
         } else {
@@ -253,6 +253,10 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
             deserialize(is);
             uid = is.readShort();
         }
+        if (uid == -1) {
+            return DataTypeBase.getNullType();
+        }
+
         assert(initialized()) : "Not initialized";
         int typesSize = types.size(); // to avoid warning
         if (uid < 0 || uid >= typesSize) {
