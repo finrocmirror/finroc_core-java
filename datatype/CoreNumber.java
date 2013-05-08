@@ -452,7 +452,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (Character.isLetter(c)) {
-                if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (c == '-' || Character.isDigit(s.charAt(i + 1)))) {
+                if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (s.charAt(i + 1) == '-' || Character.isDigit(s.charAt(i + 1)))) {
                     continue; // exponent in decimal notation
                 }
                 num = s.substring(0, i).trim();
