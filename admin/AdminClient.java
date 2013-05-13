@@ -295,14 +295,9 @@ public class AdminClient extends ClientPort {
      * @throws Throws Exception if remote element is no longer available - or has no Executable parent
      */
     public AdministrationService.ExecutionStatus isExecuting(int remoteHandle) throws Exception {
-        try {
-            AdministrationService.ExecutionStatus result =
-                (AdministrationService.ExecutionStatus)this.callSynchronous(2000, AdminServer.IS_EXECUTING, remoteHandle);
-            return result;
-        } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
-            throw e;
-        }
+        AdministrationService.ExecutionStatus result =
+            (AdministrationService.ExecutionStatus)this.callSynchronous(2000, AdminServer.IS_EXECUTING, remoteHandle);
+        return result;
     }
 
     /**
