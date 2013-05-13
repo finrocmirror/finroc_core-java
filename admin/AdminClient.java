@@ -202,6 +202,17 @@ public class AdminClient extends ClientPort {
     }
 
     /**
+     * Saves all finstructable files in remote runtime environment
+     */
+    public void saveAllFinstructableFiles() {
+        try {
+            this.call(AdminServer.SAVE_ALL_FINSTRUCTABLE_FILES);
+        } catch (Exception e) {
+            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+        }
+    }
+
+    /**
      * Get annotation from remote framework element
      *
      * @param remoteHandle remote handle of framework element
@@ -403,5 +414,4 @@ public class AdminClient extends ClientPort {
         }
         return null;
     }
-
 }

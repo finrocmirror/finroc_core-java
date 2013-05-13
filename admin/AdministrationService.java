@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.RuntimeSettings;
@@ -380,6 +381,27 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                 ecs.get(i).pause();
             }
         }
+    }
+
+    /**
+     * Saves all finstructable files in this runtime environment
+     */
+    public void saveAllFinstructableFiles() {
+        log(LogLevel.LL_USER, logDomain, "Saving all finstructable files in this process:");
+        (new FrameworkElementTreeFilter()).traverseElementTree(RuntimeEnvironment.getInstance(), new FrameworkElementTreeFilter.Callback<Integer>() {
+            @Override
+            public void treeFilterCallback(FrameworkElement fe, Integer customParam) {
+                if (fe.getFlag(FrameworkElementFlags.FINSTRUCTABLE_GROUP)) {
+                    try {
+                        ((FinstructableGroup)fe).saveXml();
+                    } catch (Exception e) {
+                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error saving finstructable group " + fe.getQualifiedLink());
+                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                    }
+                }
+            }
+        }, null, new StringBuilder());
+        log(LogLevel.LL_USER, logDomain, "Done.");
     }
 
     /**
