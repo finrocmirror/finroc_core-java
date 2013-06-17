@@ -73,6 +73,9 @@ public abstract class NetPort extends LogUser implements PortListener {
     /** Data type to use when writing data to the network */
     private Serialization.DataEncoding encoding = Serialization.DataEncoding.BINARY;
 
+    /** Data type to actually use when writing data to the network. This can be different from getEncoding() with adapter types. */
+    private Serialization.DataEncoding internalEncoding = Serialization.DataEncoding.BINARY;
+
     public NetPort(PortCreationInfo pci, Object belongsTo) {
         // keep most these flags
         int f = pci.flags & (FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA | FrameworkElementFlags.IS_OUTPUT_PORT |
@@ -99,6 +102,7 @@ public abstract class NetPort extends LogUser implements PortListener {
         if (isUnknownType()) {
             if (ut.isAdaptable()) {
                 encoding = ut.determineEncoding();
+                internalEncoding = ut.determineInternalEncoding();
                 wrapped = new StdNetPort(pci);
             } else {
                 wrapped = new UnknownTypedNetPort(pci);
@@ -270,7 +274,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, dataEncoding);
+                manager.getObject().deserialize(stream, getInternalEncoding());
                 pb.publishFromNet(manager, changeType);
             } else if (isCCType()) {
                 CCNetPort pb = (CCNetPort)wrapped;
@@ -278,7 +282,7 @@ public abstract class NetPort extends LogUser implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, dataEncoding);
+                manager.getObject().deserialize(stream, getInternalEncoding());
                 pb.publishFromNet(manager, changeType);
             } else { // interface port
                 throw new RuntimeException("Method calls are not handled using this mechanism");
@@ -737,5 +741,12 @@ public abstract class NetPort extends LogUser implements PortListener {
      */
     public void setEncoding(Serialization.DataEncoding enc) {
         encoding = enc;
+    }
+
+    /**
+     * @return Data type to actually use when writing data to the network. This can be different from getEncoding() with adapter types.
+     */
+    public Serialization.DataEncoding getInternalEncoding() {
+        return internalEncoding;
     }
 }

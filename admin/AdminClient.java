@@ -34,7 +34,6 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.rpc.ClientPort;
 import org.finroc.core.port.rpc.ResponseHandler;
-import org.finroc.core.portdatabase.SerializationHelper;
 import org.finroc.core.remote.RemoteFrameworkElement;
 import org.finroc.core.remote.RemoteRuntime;
 import org.rrlib.finroc_core_utils.log.LogLevel;
@@ -109,7 +108,7 @@ public class AdminClient extends ClientPort {
             MemoryBuffer mb = new MemoryBuffer();
             OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
             co.writeEnum(np.getEncoding());
-            SerializationHelper.writeObject(co, np.getDataType(), container.getObject(), np.getEncoding());
+            container.getObject().serialize(co, np.getInternalEncoding());
             co.close();
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
             return;

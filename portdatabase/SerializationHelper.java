@@ -32,8 +32,6 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.rtti.DefaultFactory;
 import org.rrlib.finroc_core_utils.rtti.GenericObject;
 import org.rrlib.finroc_core_utils.rtti.TypedObject;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 import org.rrlib.finroc_core_utils.serialization.Serialization;
 import org.rrlib.finroc_core_utils.serialization.StringInputStream;
@@ -166,58 +164,5 @@ public class SerializationHelper {
             logDomain.log(LogLevel.LL_ERROR, "SerializationHelper", e);
             return null;
         }
-    }
-
-    /**
-     * Serialize Object of arbitrary type to stream (including unknown adapter types
-     * (including type information)
-     *
-     * @param os Output stream buffer to write to
-     * @param portType Data type of port
-     * @param to Object to write (may be null)
-     * @param enc Data encoding to use
-     */
-    public static void writeObject(OutputStreamBuffer os, DataTypeBase portType, GenericObject to, Serialization.DataEncoding enc) {
-        if (to == null) {
-            os.writeType(null);
-            return;
-        }
-
-        os.writeType(portType);
-        if (FinrocTypeInfo.isUnknownType(portType)) {
-            ((UnknownType)portType).serialize(os, to, enc);
-        } else {
-            to.serialize(os, enc);
-        }
-    }
-
-    /**
-     * Deserialize object with yet unknown type from stream
-     * (should have been written to stream with OutputStream.WriteObject() before; typeencoder should be of the same type)
-     *
-     * @param is Input stream to deserialize from
-     * @param expectedType expected type (optional, may be null)
-     * @param factoryParameter Custom parameter for possibly user defined factory
-     * @param enc Data type encoding to use
-     * @return Buffer with read object (caller needs to take care of deleting it)
-     */
-    public static GenericObject readObject(InputStreamBuffer is, DataTypeBase expectedType, Object factoryParameter, Serialization.DataEncoding enc) {
-        //readSkipOffset();
-        DataTypeBase dt = is.readType();
-        if (dt == null) {
-            return null;
-        }
-
-        if (expectedType != null && (!dt.isConvertibleTo(expectedType))) {
-            dt = expectedType; // fix to cope with mca2 legacy blackboards
-        }
-
-        GenericObject buffer = is.getFactory().createGenericObject(dt, factoryParameter);
-        if (FinrocTypeInfo.isUnknownType(dt)) {
-            ((UnknownType)dt).deserialize(is, buffer, enc);
-        } else {
-            buffer.deserialize(is, enc);
-        }
-        return buffer;
     }
 }

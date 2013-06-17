@@ -107,7 +107,7 @@ public class UnknownType extends DataTypeBase {
     }
 
     /**
-     * @return Encoding to use for this unknown type
+     * @return Encoding to use for this unknown type (in remote part)
      */
     public Serialization.DataEncoding determineEncoding() {
         if (isEnum()) {
@@ -118,6 +118,14 @@ public class UnknownType extends DataTypeBase {
             return Serialization.DataEncoding.XML;
         }
         return Serialization.DataEncoding.BINARY;
+    }
+
+    /**
+     * @return Encoding to use for this unknown type (in this part for adapter type
+     */
+    public Serialization.DataEncoding determineInternalEncoding() {
+        Serialization.DataEncoding encoding = determineEncoding();
+        return encoding == Serialization.DataEncoding.XML ? Serialization.DataEncoding.BINARY : encoding;
     }
 
     /**
@@ -179,36 +187,5 @@ public class UnknownType extends DataTypeBase {
             ((RRLibSerializable)obj).deserialize(is);
         }
 
-    }
-
-    /**
-     * Serialize object of this type to stream
-     *
-     * @param os Output stream buffer to write to
-     * @param go Object to write (may be null)
-     * @param enc Data encoding to use
-     */
-    public void serialize(OutputStreamBuffer os, GenericObject go, Serialization.DataEncoding enc) {
-        if (enc == Serialization.DataEncoding.XML) {
-            go.serialize(os, Serialization.DataEncoding.STRING);
-        } else {
-            go.serialize(os, enc);
-        }
-    }
-
-    /**
-     * Deserialize object of this type from stream
-     *
-     * @param is Input stream to deserialize from
-     * @param go Object to deserialize
-     * @param enc Data type encoding to use
-     * @return Buffer with read object (caller needs to take care of deleting it)
-     */
-    public void deserialize(InputStreamBuffer is, GenericObject go, Serialization.DataEncoding enc) {
-        if (enc == Serialization.DataEncoding.XML) {
-            go.deserialize(is, Serialization.DataEncoding.STRING);
-        } else {
-            go.deserialize(is, enc);
-        }
     }
 }
