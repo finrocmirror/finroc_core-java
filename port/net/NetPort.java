@@ -321,6 +321,9 @@ public abstract class NetPort extends LogUser implements PortListener {
                 // dual-way ports are somewhat ugly anyway
 
                 super.publish(tc, readObject, true, changedFlag);
+                if (!isOutputPort() && getOutgoingConnectionCount() > 0) { // we have proxy port on server => input widget could be connected
+                    super.publish(tc, readObject, false, changedFlag);
+                }
             }
         }
 
@@ -429,6 +432,9 @@ public abstract class NetPort extends LogUser implements PortListener {
                 // dual-way ports are somewhat ugly anyway
             }
             super.publish(readObject, !isOutputPort(), changedFlag);
+            if (!isOutputPort() && getOutgoingConnectionCount() > 0) { // we have proxy port on server => input widget could be connected
+                super.publish(readObject, false, changedFlag);
+            }
         }
 
         @Override
