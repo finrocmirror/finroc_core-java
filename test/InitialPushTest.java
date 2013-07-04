@@ -24,7 +24,7 @@ package org.finroc.core.test;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
-import org.finroc.plugins.blackboard.BlackboardBuffer;
+import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
 import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.Port;
@@ -46,8 +46,8 @@ public class InitialPushTest {
         // setup and initialize ports
         //ThreadLocalCache.get();
         RuntimeEnvironment.getInstance();
-        Port<BlackboardBuffer> out = new Port<BlackboardBuffer>(new PortCreationInfo("StdOut", BlackboardBuffer.TYPE, FrameworkElementFlags.OUTPUT_PORT));
-        Port<BlackboardBuffer> in = new Port<BlackboardBuffer>(new PortCreationInfo("StdIn", BlackboardBuffer.TYPE, FrameworkElementFlags.INPUT_PORT));
+        Port<MemoryBuffer> out = new Port<MemoryBuffer>(new PortCreationInfo("StdOut", MemoryBuffer.TYPE, FrameworkElementFlags.OUTPUT_PORT));
+        Port<MemoryBuffer> in = new Port<MemoryBuffer>(new PortCreationInfo("StdIn", MemoryBuffer.TYPE, FrameworkElementFlags.INPUT_PORT));
         PortNumeric<Integer> nOut = new PortNumeric<Integer>(new PortCreationInfo("NumOut", FrameworkElementFlags.OUTPUT_PORT));
         PortNumeric<Integer> nIn = new PortNumeric<Integer>(new PortCreationInfo("NumIn", FrameworkElementFlags.INPUT_PORT));
         PortNumeric<Integer> nRevOut = new PortNumeric<Integer>(new PortCreationInfo("NumRevOut", FrameworkElementFlags.OUTPUT_PORT | FrameworkElementFlags.PUSH_STRATEGY_REVERSE));
@@ -55,7 +55,7 @@ public class InitialPushTest {
 
         // fill output ports with something
         nOut.publish(23);
-        BlackboardBuffer bb = out.getUnusedBuffer();
+        MemoryBuffer bb = out.getUnusedBuffer();
         OutputStreamBuffer co = new OutputStreamBuffer();
         co.reset(bb);
         co.writeInt(23);
@@ -70,7 +70,7 @@ public class InitialPushTest {
         // print output
         System.out.println("NumIn (exp 23): " + nIn.getDoubleRaw());
         System.out.println("NumRevOut (exp 23): " + nRevOut.getDoubleRaw());
-        BlackboardBuffer bb2 = in.getAutoLocked();
+        MemoryBuffer bb2 = in.getAutoLocked();
         System.out.println("StdIn (exp 23): " + bb2.getBuffer().getInt(0));
         ThreadLocalCache.getFast().releaseAllLocks();
 
