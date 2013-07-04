@@ -35,8 +35,6 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  */
 public class RemotePort extends RemoteFrameworkElement implements PortWrapperTreeNode, HasUid {
 
-    /** UID */
-    private static final long serialVersionUID = 2569967663663276126L;
 
     /** Wrapped port link */
     private final FrameworkElement.Link portLink;

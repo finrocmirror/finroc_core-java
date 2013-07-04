@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-
 
 /**
  * @author Max Reichardt
@@ -34,24 +32,83 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Base class for all (tree) elements in the model of the remote runtime
  * environment.
  */
-public class ModelNode extends DefaultMutableTreeNode {
+public class ModelNode {
 
-    /** UID */
-    private static final long serialVersionUID = 8477445014938753322L;
+    /** Name of node - as displayed in tree */
+    private String name;
+
+    /** Children of node */
+    private ArrayList<ModelNode> children;
+
+    /** Node's parent */
+    private ModelNode parent;
 
     /**
      * @param name Name of node
      */
     public ModelNode(String name) {
-        super(name);
+        this.name = name;
     }
+
+    /**
+     * @return Number of child nodes
+     */
+    public int getChildCount() {
+        return children == null ? 0 : children.size();
+    }
+
+    /**
+     * @param index Index n of child node
+     * @return nth child of this node
+     */
+    public ModelNode getChildAt(int index) {
+        return children.get(index);
+    }
+
+    /**
+     * @return Name of remote framework element
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @return Parent of this node
+     */
+    public ModelNode getParent() {
+        return parent;
+    }
+
+    /**
+     * @param ancestor Possible ancestor
+     * @return True if specified node actually is ancestor of this node (parent, or parent of parent, ...)
+     */
+    public boolean isNodeAncestor(ModelNode ancestor) {
+        if (parent == ancestor) {
+            return true;
+        }
+        if (parent != null) {
+            return parent.isNodeAncestor(ancestor);
+        }
+        return false;
+    }
+
+    /**
+     * (As soon as this node is part of Swing Tree Model, it may ONLY be
+     *  called by the Swing Thread - typically via the ModelHandler)
+     *
+     * @param name New name of model node
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
 
     /**
      * Sorts children using specified comparator
      *
      * @param comparator Comparator to use
      */
-    @SuppressWarnings("unchecked")
     public void sortChildren(Comparator<ModelNode> comparator) {
         if (this.children != null) {
             Collections.sort(this.children, comparator);
@@ -172,14 +229,98 @@ public class ModelNode extends DefaultMutableTreeNode {
     }
 
     /**
-     * @return Name of remote framework element
+     * Adds child node to this node.
+     *
+     * (As soon as this node is part of Swing Tree Model, it may ONLY be
+     *  called by the Swing Thread - typically via the ModelHandler)
+     *
+     * @param newChild Child node to add
      */
-    public String getName() {
-        return toString();
+    public void add(ModelNode newChild) {
+        if (newChild.parent == this) {
+            return;
+        }
+        if (newChild.parent != null) {
+            newChild.parent.remove(newChild);
+        }
+        newChild.parent = this;
+        if (children == null) {
+            children = new ArrayList<ModelNode>();
+        }
+        children.add(newChild);
+    }
+
+    /**
+     * Removes specified child node.
+     * If the specified node is not a child of this node - operation does nothing.
+     *
+     * (As soon as this node is part of Swing Tree Model, it may ONLY be
+     *  called by the Swing Thread - typically via the ModelHandler)
+     *
+     * @param child Child node to remove from this node
+     */
+    public void remove(ModelNode child) {
+        if (child.parent == this) {
+            children.remove(child);
+            child.parent = null;
+        }
+    }
+
+    /**
+     * Replaces specified child node with new child node (at same position)
+     * If the specified old node is not a child of this node - operation does nothing.
+     * If the specified new node is a child of this node already - operation does nothing.
+     *
+     * (As soon as this node is part of Swing Tree Model, it may ONLY be
+     *  called by the Swing Thread - typically via the ModelHandler)
+     *
+     * @param oldChild Node to remove
+     * @param newChild Node to insert at the same position
+     */
+    public void replace(ModelNode oldChild, ModelNode newChild) {
+        if (newChild.parent == this || children == null) {
+            return;
+        }
+        int i = children.indexOf(oldChild);
+        if (i >= 0) {
+            if (newChild.parent != null) {
+                newChild.parent.remove(newChild);
+            }
+            children.set(i, newChild).parent = null;
+            newChild.parent = this;
+        }
+    }
+
+    /**
+     * @param child Child Node
+     * @return Index of child; -1 if specified node is no child of this node
+     */
+    public int indexOf(ModelNode child) {
+        if (children != null) {
+            return children.indexOf(child);
+        }
+        return -1;
+    }
+
+    /**
+     * Adds specified child node to this node - at specified position
+     *
+     * @param i Index of insertion position
+     * @param newChild Child node to insert
+     */
+    public void insertChild(int i, ModelNode newChild) {
+        if (newChild.parent != null) {
+            newChild.parent.remove(newChild);
+        }
+        newChild.parent = this;
+        if (children == null) {
+            children = new ArrayList<ModelNode>();
+        }
+        children.add(i, newChild);
     }
 
     @Override
-    public ModelNode getParent() {
-        return (ModelNode)super.getParent();
+    public String toString() {
+        return name;
     }
 }

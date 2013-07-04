@@ -21,7 +21,6 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
-import javax.swing.tree.TreeNode;
 
 import org.finroc.core.port.AbstractPort;
 
@@ -31,7 +30,7 @@ import org.finroc.core.port.AbstractPort;
  *
  * Interface for tree nodes that are tree nodes representing a port
  */
-public interface PortWrapperTreeNode extends TreeNode {
+public interface PortWrapperTreeNode { /*extends TreeNode*/
 
     /**
      * @return Wrapped port

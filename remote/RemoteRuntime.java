@@ -34,9 +34,6 @@ import org.finroc.core.port.net.NetPort;
  */
 public class RemoteRuntime extends RemoteFrameworkElement {
 
-    /** UID */
-    private static final long serialVersionUID = 62274497011893894L;
-
     /** Admin interface for remote runtime */
     private final AdminClient adminInterface;
 

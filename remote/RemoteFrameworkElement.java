@@ -36,9 +36,6 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  */
 public class RemoteFrameworkElement extends ModelNode {
 
-    /** UID */
-    private static final long serialVersionUID = -8386942339498894796L;
-
     /** Handle of remote element */
     private final int remoteHandle;
 
