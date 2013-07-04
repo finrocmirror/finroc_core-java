@@ -28,6 +28,8 @@ import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.finroc.core.RuntimeEnvironment;
+import org.rrlib.finroc_core_utils.log.LogLevel;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -60,7 +62,7 @@ public class Timestamp extends CoreNumber {
         try {
             tmp = DatatypeFactory.newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
+            RuntimeEnvironment.logDomain.log(LogLevel.LL_DEBUG_WARNING, "Timestamp class", "Could not initialize DatatypeFactory. String serialization not available. This is normal for Android platforms.");
         }
         factory = tmp;
     }
@@ -77,21 +79,25 @@ public class Timestamp extends CoreNumber {
 
     @Override
     public void serialize(StringOutputStream os) {
-        long l = longValue();
-        long ms = l / 1000000;
-        long ns = l % 1000000;
+        if (factory != null) {
+            long l = longValue();
+            long ms = l / 1000000;
+            long ns = l % 1000000;
 
-        GregorianCalendar c = (GregorianCalendar)GregorianCalendar.getInstance();
-        c.setTimeInMillis(ms);
-        XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(c);
-        if (ns != 0) {
-            if (ns % 1000 == 0) {
-                xgc.setFractionalSecond(xgc.getFractionalSecond().add(new BigDecimal(BigInteger.valueOf(ns / 1000), 6)));
-            } else {
-                xgc.setFractionalSecond(xgc.getFractionalSecond().add(new BigDecimal(BigInteger.valueOf(ns), 9)));
+            GregorianCalendar c = (GregorianCalendar)GregorianCalendar.getInstance();
+            c.setTimeInMillis(ms);
+            XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(c);
+            if (ns != 0) {
+                if (ns % 1000 == 0) {
+                    xgc.setFractionalSecond(xgc.getFractionalSecond().add(new BigDecimal(BigInteger.valueOf(ns / 1000), 6)));
+                } else {
+                    xgc.setFractionalSecond(xgc.getFractionalSecond().add(new BigDecimal(BigInteger.valueOf(ns), 9)));
+                }
             }
+            os.append(xgc.toString());
+        } else {
+            os.append("No string serialization available for timestamps");
         }
-        os.append(xgc.toString());
 
         /*os.append(CORE_DATE_TIME_FORMAT.format(d));
         if (ns != 0) {
@@ -108,13 +114,17 @@ public class Timestamp extends CoreNumber {
 
     @Override
     public void deserialize(StringInputStream is) throws Exception {
-        XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(is.readLine());
-        long ms = xgc.toGregorianCalendar().getTimeInMillis();
-        long ns = 0;
-        if (xgc.getFractionalSecond() != null) {
-            ns = xgc.getFractionalSecond().scaleByPowerOfTen(9).longValueExact() % 1000000;
+        if (factory != null) {
+            XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(is.readLine());
+            long ms = xgc.toGregorianCalendar().getTimeInMillis();
+            long ns = 0;
+            if (xgc.getFractionalSecond() != null) {
+                ns = xgc.getFractionalSecond().scaleByPowerOfTen(9).longValueExact() % 1000000;
+            }
+            setValue(ms * 1000000 + ns, Unit.ns);
+        } else {
+            throw new Exception("No string serialization available for timestamps");
         }
-        setValue(ms * 1000000 + ns, Unit.ns);
 
         /*String s = is.readLine();
 

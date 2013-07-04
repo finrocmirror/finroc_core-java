@@ -142,6 +142,9 @@ public class Plugins { /*implements HTTPResource*/
      * @param classInPackage Class in this package
      */
     public static void loadAllDataTypesInPackage(Class<?> classInPackage) {
+        if (RuntimeSettings.ANDROID_PLATFORM) { // Does not work on Android platforms
+            return;
+        }
         try {
             //System.out.println("loadAllDataTypesInPackage: " + classInPackage.toString());
             for (Class<?> c : Files.getPackageClasses(classInPackage, "", getInstance().pluginLoader == null ? null : getInstance().pluginLoader.getClassLoader())) {
