@@ -80,6 +80,16 @@ public class ModelNode {
     }
 
     /**
+     * @return Root element of tree that this node belongs to
+     */
+    public ModelNode getRoot() {
+        if (parent == null) {
+            return this;
+        }
+        return parent.getRoot();
+    }
+
+    /**
      * @param ancestor Possible ancestor
      * @return True if specified node actually is ancestor of this node (parent, or parent of parent, ...)
      */
