@@ -35,7 +35,10 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
 
 import org.finroc.core.admin.AdminServer;
 import org.finroc.core.datatype.Constant;
+import org.finroc.core.datatype.CoreNumber;
+import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.Unit;
+import org.finroc.core.datatype.XML;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.AbstractPort;
@@ -157,6 +160,12 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         //deleteLast(RuntimeSettings.getInstance());
 
         instance.setFlag(Flag.READY);
+
+        if (RuntimeSettings.ANDROID_PLATFORM) {
+            new CoreString();
+            new XML();
+            new CoreNumber();
+        }
 
         return instance;
     }
