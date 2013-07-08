@@ -233,7 +233,7 @@ public class FrameworkElementInfo {
         handle = is.readInt();
         int linkCountTemp = is.readByte() & 0xFF;
         linkCount = (byte)(linkCountTemp & 0x7F);
-        boolean isPort = linkCountTemp > 0x7F;
+        boolean isPort = (structureExchange == StructureExchange.SHARED_PORTS) || (linkCountTemp > 0x7F);
         for (int i = 0; i < linkCount; i++) {
             links[i].name = is.readString();
             links[i].unique = is.readBoolean();
