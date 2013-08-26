@@ -67,6 +67,10 @@ public class Timestamp extends CoreNumber {
         factory = tmp;
     }
 
+    public Timestamp() {
+        set(0);
+    }
+
     public void deserialize(InputStreamBuffer is) {
         setValue(is.readLong(), Unit.ns);
     }
