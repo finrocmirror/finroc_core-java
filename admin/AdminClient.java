@@ -221,7 +221,7 @@ public class AdminClient extends ClientPort {
     public FinrocAnnotation getAnnotation(int remoteHandle, DataTypeBase annType) {
         try {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(5000, AdminServer.GET_ANNOTATION, remoteHandle, annType.getName());
-            if (mb == null) {
+            if (mb == null || mb.getSize() == 0) {
                 return null;
             }
             InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
