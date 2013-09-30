@@ -83,7 +83,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
     public static final String PORT_NAME = "Administration";
 
     /** Qualified port name */
-    public static final String QUALIFIED_PORT_NAME = "/Runtime/Services/Administration";
+    public static final String QUALIFIED_PORT_NAME = "Runtime/Services/Administration";
 
     /** Log domain for this class */
     public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("administration");
