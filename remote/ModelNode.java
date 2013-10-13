@@ -239,6 +239,42 @@ public class ModelNode {
     }
 
     /**
+     * Returns a child with the specified qualified name
+     *
+     * @param qualifiedName Qualified name (Names of elements separated with separator char)
+     * @param separator Separator
+     * @return Child with the specified qualified name. Null if no such child exists.
+     */
+    public ModelNode getChildByQualifiedName(String qualifiedName, char separator) {
+        return getChildByQualifiedName(qualifiedName, 0, separator);
+    }
+
+    /**
+     * Returns a child with the specified qualified name
+     *
+     * @param qualifiedName Qualified name (Names of elements separated with separator char)
+     * @param qualifiedNameStartIndex Start index of relevant substring in qualifiedName
+     * @param separator Separator
+     * @return Child with the specified qualified name. Null if no such child exists.
+     */
+    public ModelNode getChildByQualifiedName(String qualifiedName, int qualifiedNameStartIndex, char separator) {
+        for (ModelNode child : children) {
+            if (qualifiedName.regionMatches(qualifiedNameStartIndex, child.name, 0, child.name.length())) {
+                if (child.name.length() == qualifiedName.length() - qualifiedNameStartIndex) {
+                    return child;
+                }
+                if (qualifiedName.charAt(qualifiedNameStartIndex + child.name.length()) == separator) {
+                    ModelNode result = child.getChildByQualifiedName(qualifiedName, qualifiedNameStartIndex + child.name.length() + 1, separator);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Adds child node to this node.
      *
      * (As soon as this node is part of Swing Tree Model, it may ONLY be
