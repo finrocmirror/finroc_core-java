@@ -379,7 +379,7 @@ public class Files {
         try {
             return new URL(dirName);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_ERROR, "Files", e);
+            logDomain.log(LogLevel.ERROR, "Files", e);
         }
         return null;
     }

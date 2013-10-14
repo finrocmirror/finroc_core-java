@@ -110,7 +110,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Interrupted ?!!");
+                logDomain.log(LogLevel.WARNING, getLogDescription(), "Interrupted ?!!");
             }
             thread = null;
         }

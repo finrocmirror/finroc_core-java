@@ -85,7 +85,7 @@ public class LinkEdge implements HasDestructor {
         this.bothConnectDirections = bothConnectDirections;
         this.finstructed = finstructed;
         if (ports[0].link.length() == 0 && ports[1].link.length() == 0) {
-            FrameworkElement.logDomain.log(LogLevel.LL_ERROR, "LinkEdge", "At least one of two ports needs to be linked. Otherwise, it does not make sense to use this class.");
+            FrameworkElement.logDomain.log(LogLevel.ERROR, "LinkEdge", "At least one of two ports needs to be linked. Otherwise, it does not make sense to use this class.");
             throw new RuntimeException();
         }
         synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {

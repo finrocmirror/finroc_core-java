@@ -83,7 +83,7 @@ public class RPCResponse extends AbstractCall {
                 }
             }
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_DEBUG, "RPCResponse", "Incoming RPC response caused exception: ", e);
+            logDomain.log(LogLevel.DEBUG, "RPCResponse", "Incoming RPC response caused exception: ", e);
         }
     }
 
@@ -116,7 +116,7 @@ public class RPCResponse extends AbstractCall {
                 try {
                     this.resultBuffer = responseFuture.get(10000);
                 } catch (RPCException e) {
-                    log(LogLevel.LL_ERROR, logDomain, "This must not happen");
+                    log(LogLevel.ERROR, logDomain, "This must not happen");
                     throw new RuntimeException(e);
                 }
                 Serialization.returnSerialization(stream, this.resultBuffer, method.getFutureType(), this);

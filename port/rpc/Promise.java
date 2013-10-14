@@ -93,7 +93,7 @@ public class Promise extends LogUser {
     public void setValue(Object value) {
         FutureStatus current = FutureStatus.values()[storage.futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            log(LogLevel.LL_WARNING, logDomain, "Call already has status " + current.toString() + ". Ignoring.");
+            log(LogLevel.WARNING, logDomain, "Call already has status " + current.toString() + ". Ignoring.");
             return;
         }
 

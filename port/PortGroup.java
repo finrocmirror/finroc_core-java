@@ -102,10 +102,10 @@ public class PortGroup extends EdgeAggregator {
 
         }
         if (startWith != null) {
-            log(LogLevel.LL_WARNING, logDomain, "Port " + startWith.getQualifiedName() + " no child of " + this.getQualifiedName() + ". Did not connect anything.");
+            log(LogLevel.WARNING, logDomain, "Port " + startWith.getQualifiedName() + " no child of " + this.getQualifiedName() + ". Did not connect anything.");
         }
         if (count > 0) {
-            log(LogLevel.LL_WARNING, logDomain, "Could only connect " + (orgCount - count) + " ports (" + orgCount + " desired).");
+            log(LogLevel.WARNING, logDomain, "Could only connect " + (orgCount - count) + " ports (" + orgCount + " desired).");
         }
     }
 
@@ -146,7 +146,7 @@ public class PortGroup extends EdgeAggregator {
      * @return Created port
      */
     public AbstractPort createPort(String name, DataTypeBase type, int extraFlags) {
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + this.getQualifiedLink());
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + this.getQualifiedLink());
         AbstractPort ap = null;
         if (FinrocTypeInfo.isStdType(type)) {
             ap = new PortBase(new PortCreationInfo(name, this, type, defaultPortFlags | extraFlags));
@@ -155,7 +155,7 @@ public class PortGroup extends EdgeAggregator {
         } else if (FinrocTypeInfo.isMethodType(type)) {
             ap = new ProxyPort(new PortCreationInfo(name, this, type, (defaultPortFlags | extraFlags) & Flag.IS_OUTPUT_PORT)).getWrapped();
         } else {
-            log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + type.getName());
+            log(LogLevel.WARNING, logDomain, "Cannot create port with type: " + type.getName());
         }
         if (ap != null) {
             ap.init();

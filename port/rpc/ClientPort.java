@@ -67,7 +67,7 @@ public class ClientPort extends PortWrapperBase {
                 try {
                     method.getNativeMethod().invoke(serverInterface, arguments);
                 } catch (Exception e) {
-                    logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                    logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                 }
             } else {
                 serverPort.sendCall(new RPCMessage(method, arguments));
@@ -97,11 +97,11 @@ public class ClientPort extends PortWrapperBase {
                 if (e.getCause() instanceof RPCException) {
                     responseHandler.handleException(method, ((RPCException)e.getCause()).getType());
                 } else {
-                    logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                    logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                     responseHandler.handleException(method, FutureStatus.INTERNAL_ERROR);
                 }
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                 responseHandler.handleException(method, FutureStatus.INTERNAL_ERROR);
             }
             return;
@@ -137,11 +137,11 @@ public class ClientPort extends PortWrapperBase {
                 if (e.getCause() instanceof RPCException) {
                     throw(RPCException)e.getCause();
                 } else {
-                    logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                    logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                     throw new RPCException(FutureStatus.INTERNAL_ERROR);
                 }
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                 throw new RPCException(FutureStatus.INTERNAL_ERROR);
             }
         }
@@ -178,11 +178,11 @@ public class ClientPort extends PortWrapperBase {
                 if (e.getCause() instanceof RPCException) {
                     response.setException(((RPCException)e.getCause()).getType());
                 } else {
-                    logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                    logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                     response.setException(FutureStatus.INTERNAL_ERROR);
                 }
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                 response.setException(FutureStatus.INTERNAL_ERROR);
             }
             return response.getFuture();
@@ -222,7 +222,7 @@ public class ClientPort extends PortWrapperBase {
             try {
                 method.getNativeMethod().invoke(serverInterface, arguments);
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+                logDomain.log(LogLevel.WARNING, getLogDescription(), e);
                 Promise response = new Promise();
                 response.setException(FutureStatus.INTERNAL_ERROR);
                 return response.getFuture();

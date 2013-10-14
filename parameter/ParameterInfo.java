@@ -115,7 +115,7 @@ public class ParameterInfo extends FinrocAnnotation {
             try {
                 loadValue();
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
             }
         }
     }
@@ -203,7 +203,7 @@ public class ParameterInfo extends FinrocAnnotation {
             try {
                 loadValue();
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
             }
         }
     }
@@ -239,7 +239,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublishRaw(c);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
                                 c.recycleUnused();
                             }
                         } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -250,7 +250,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublish(pd);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
                                 pd.recycleUnused();
                             }
                         } else {
@@ -273,7 +273,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublishRaw(c);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
                                 c.recycleUnused();
                             }
                         } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -284,7 +284,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublish(pd);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
                                 pd.recycleUnused();
                             }
                         } else {
@@ -304,7 +304,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             port.browserPublishRaw(c);
                             return;
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
+                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
                             c.recycleUnused();
                         }
                     } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -315,7 +315,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             port.browserPublish(pd);
                             return;
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
+                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
                             pd.recycleUnused();
                         }
                     } else {
@@ -363,7 +363,7 @@ public class ParameterInfo extends FinrocAnnotation {
         try {
             loadValue(true);
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, FrameworkElement.logDomain, e);
+            log(LogLevel.ERROR, FrameworkElement.logDomain, e);
         }
     }
 

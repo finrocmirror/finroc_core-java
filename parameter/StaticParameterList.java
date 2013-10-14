@@ -207,7 +207,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     public void deserialize(XMLNode node, boolean finstructContext) throws Exception {
         int numberOfChildren = node.childCount();
         if (numberOfChildren != size()) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
         }
         int count = Math.min(numberOfChildren, size());
         XMLNode.ConstChildIterator child = node.getChildrenBegin();

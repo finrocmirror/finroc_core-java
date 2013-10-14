@@ -106,7 +106,7 @@ public class RPCRequest extends AbstractCall {
 
             // clientPort.call(method, parameters);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_DEBUG, "RPCRequest", "Incoming RPC request caused exception: ", e);
+            logDomain.log(LogLevel.DEBUG, "RPCRequest", "Incoming RPC request caused exception: ", e);
         }
     }
 
@@ -119,7 +119,7 @@ public class RPCRequest extends AbstractCall {
     public void returnValue(Object returnValue) {
         FutureStatus current = FutureStatus.values()[futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Call already has status " + current.toString() + ". Ignoring.");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Call already has status " + current.toString() + ". Ignoring.");
             return;
         }
 

@@ -93,7 +93,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
         if (b.inBounds(d)) {
             setDefault(new CoreNumber(defaultValue, u));
         } else {
-            logDomain.log(LogLevel.LL_DEBUG_WARNING, getLogDescription(), "Default value is out of bounds");
+            logDomain.log(LogLevel.DEBUG_WARNING, getLogDescription(), "Default value is out of bounds");
             setDefault(new CoreNumber(b.toBounds(d), u));
         }
         cache.currentValue = defaultValue;

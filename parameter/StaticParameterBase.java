@@ -192,7 +192,7 @@ public class StaticParameterBase implements HasDestructor {
         try {
             deserializeValue(is);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
         }
     }
 
@@ -247,7 +247,7 @@ public class StaticParameterBase implements HasDestructor {
                 // find parameter to attach to
                 FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(FrameworkElementFlags.FINSTRUCTABLE_GROUP);
                 if (fg == null) {
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "No parent finstructable group. Ignoring...");
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), "No parent finstructable group. Ignoring...");
                     return;
                 }
 
@@ -264,9 +264,9 @@ public class StaticParameterBase implements HasDestructor {
                     sp = new StaticParameterBase(outerParameterAttachment, type, false, true);
                     attachTo(sp);
                     spl.add(sp);
-                    logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
+                    logDomain.log(LogLevel.DEBUG, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
                 } else {
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "No parameter named '" + outerParameterAttachment + "' found in parent group.");
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), "No parameter named '" + outerParameterAttachment + "' found in parent group.");
                 }
             }
         }
@@ -571,7 +571,7 @@ public class StaticParameterBase implements HasDestructor {
                         set(arg);
                         return;
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
+                        logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
                     }
                 }
             }
@@ -591,7 +591,7 @@ public class StaticParameterBase implements HasDestructor {
                         try {
                             value.deserialize(node);
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
                         }
                     }
                 }

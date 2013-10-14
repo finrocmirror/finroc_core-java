@@ -198,7 +198,7 @@ public class FrameworkElement extends Annotatable {
 //          parent.addChild(primary);
 //      }
 
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Constructing FrameworkElement");
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Constructing FrameworkElement");
     }
 
     /**
@@ -423,7 +423,7 @@ public class FrameworkElement extends Annotatable {
                 String pointerBuffer = " (" + child.getChild().hashCode() + ")";
                 child.getChild().setName(child.getChild().getName() + pointerBuffer);
                 while (getChild(child.getName()) != null) {
-                    log(LogLevel.LL_DEBUG_WARNING, logDomain, "Spooky framework elements name duplicates: " + child.getName());
+                    log(LogLevel.DEBUG_WARNING, logDomain, "Spooky framework elements name duplicates: " + child.getName());
                     child.getChild().setName(child.getChild().getName() + pointerBuffer);
                 }
             }
@@ -534,7 +534,7 @@ public class FrameworkElement extends Annotatable {
     public void delete() {
         super.delete();
         assert(getFlag(Flag.DELETED) || getFlag(Flag.RUNTIME)) : "Frameworkelement was not deleted with managedDelete()";
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement destructor");
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "FrameworkElement destructor");
         if (!getFlag(Flag.RUNTIME)) {
             // synchronizes on runtime - so no elements will be deleted while runtime is locked
             RuntimeEnvironment.getInstance().unregisterElement(this);
@@ -639,7 +639,7 @@ public class FrameworkElement extends Annotatable {
 
             if (!getFlag(Flag.PUBLISHED) && allParentsReady()) {
                 setFlag(Flag.PUBLISHED);
-                log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Publishing");
+                log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Publishing");
                 publishUpdatedInfo(RuntimeListener.ADD);
             }
 
@@ -717,14 +717,14 @@ public class FrameworkElement extends Annotatable {
                     return;
                 }
 
-                log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "FrameworkElement managedDelete");
+                log(LogLevel.DEBUG_VERBOSE_1, logDomain, "FrameworkElement managedDelete");
 
                 // synchronizes on runtime - so no elements will be deleted while runtime is locked
                 synchronized (getRegistryLock()) {
 
                     notifyAnnotationsDelete();
 
-                    log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting");
+                    log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Deleting");
                     //System.out.println("Deleting " + toString() + " (" + hashCode() + ")");
                     assert !getFlag(Flag.DELETED);
                     assert((primary.getParent() != null) | getFlag(Flag.RUNTIME));
@@ -1304,7 +1304,7 @@ public class FrameworkElement extends Annotatable {
      * Helper for Debugging: Prints structure below this framework element to console
      */
     public void printStructure() {
-        printStructure(LogLevel.LL_USER);
+        printStructure(LogLevel.USER);
     }
 
     /**

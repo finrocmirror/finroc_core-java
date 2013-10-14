@@ -66,7 +66,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.CONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Connecting remote ports failed");
+        logDomain.log(LogLevel.WARNING, getLogDescription(), "Connecting remote ports failed");
     }
 
     /**
@@ -80,7 +80,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.DISCONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Disconnecting remote ports failed");
+        logDomain.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed");
     }
 
     /**
@@ -93,7 +93,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.DISCONNECT_ALL, np1.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Disconnecting remote port failed");
+        logDomain.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote port failed");
     }
 
     /**
@@ -113,7 +113,7 @@ public class AdminClient extends ClientPort {
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
             return;
         }
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of remote port failed");
+        logDomain.log(LogLevel.WARNING, getLogDescription(), "Setting value of remote port failed");
     }
 
     /**
@@ -124,7 +124,7 @@ public class AdminClient extends ClientPort {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(2000, AdminServer.GET_CREATE_MODULE_ACTIONS);
             return toRemoteCreateModuleActionArray(mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return new ArrayList<RemoteCreateModuleAction>();
     }
@@ -174,7 +174,7 @@ public class AdminClient extends ClientPort {
             }
             return "";
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
             return e.getMessage();
         }
     }
@@ -196,7 +196,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SAVE_FINSTRUCTABLE_GROUP, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -207,7 +207,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SAVE_ALL_FINSTRUCTABLE_FILES);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -231,7 +231,7 @@ public class AdminClient extends ClientPort {
             ci.close();
             return fa;
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return null;
     }
@@ -256,7 +256,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SET_ANNOTATION, remoteHandle, mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -269,7 +269,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.DELETE_ELEMENT, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -282,7 +282,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.START_EXECUTION, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -295,7 +295,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.PAUSE_EXECUTION, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -318,7 +318,7 @@ public class AdminClient extends ClientPort {
     public void getParameterInfo(RemoteFrameworkElement remoteElement) throws Exception {
         RemoteRuntime rr = RemoteRuntime.find(remoteElement);
         if (rr == null) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot find remote runtime object");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot find remote runtime object");
             return;
         }
         try {
@@ -372,7 +372,7 @@ public class AdminClient extends ClientPort {
 
             ci.close();
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
             throw e;
         }
     }
@@ -390,7 +390,7 @@ public class AdminClient extends ClientPort {
             }
             return result;
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return result;
     }
@@ -409,7 +409,7 @@ public class AdminClient extends ClientPort {
             }
             return toRemoteCreateModuleActionArray(mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return null;
     }

@@ -88,7 +88,7 @@ public abstract class ExternalConnection extends FrameworkElement {
 
         if (needsAddress()) {
             if (address == null || address.equals("")) {  // cancel pressed
-                log(LogLevel.LL_ERROR, logDomain, "No address specified. Cancelling connection attempt.");
+                log(LogLevel.ERROR, logDomain, "No address specified. Cancelling connection attempt.");
                 return;
             }
         }
@@ -126,7 +126,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnectImpl();
         } catch (Exception e) {
-            log(LogLevel.LL_WARNING, logDomain, e);
+            log(LogLevel.WARNING, logDomain, e);
             //JavaOnlyBlock
             //JOptionPane.showMessageDialog(null, e.getMessage(), "Error disconnecting", JOptionPane.ERROR_MESSAGE);
         }
@@ -171,7 +171,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnect();
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, logDomain, e);
+            log(LogLevel.ERROR, logDomain, e);
         }
         super.prepareDelete();
     }
@@ -222,7 +222,7 @@ public abstract class ExternalConnection extends FrameworkElement {
                     try {
                         disconnect();
                     } catch (Exception e) {
-                        log(LogLevel.LL_ERROR, logDomain, e);
+                        log(LogLevel.ERROR, logDomain, e);
                     }
                 }
                 lastAddress = s;
@@ -231,7 +231,7 @@ public abstract class ExternalConnection extends FrameworkElement {
                 try {
                     connect(s, null);
                 } catch (Exception e) {
-                    log(LogLevel.LL_ERROR, logDomain, e);
+                    log(LogLevel.ERROR, logDomain, e);
                 }
             }
         }

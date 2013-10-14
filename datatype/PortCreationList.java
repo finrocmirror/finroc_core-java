@@ -216,7 +216,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         }
         flags |= tmp;
 
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
         if (FinrocTypeInfo.isStdType(dt)) {
             ap = new PortBase(new PortCreationInfo(name, ioVector, dt, flags));
         } else if (FinrocTypeInfo.isCCType(dt)) {
@@ -224,7 +224,7 @@ public class PortCreationList extends RRLibSerializableImpl {
         } else if (FinrocTypeInfo.isMethodType(dt)) {
             ap = new ProxyPort(new PortCreationInfo(name, ioVector, dt, flags & FrameworkElementFlags.IS_OUTPUT_PORT)).getWrapped();
         } else {
-            log(LogLevel.LL_WARNING, logDomain, "Cannot create port with type: " + dt.getName());
+            log(LogLevel.WARNING, logDomain, "Cannot create port with type: " + dt.getName());
         }
         if (ap != null) {
             ap.init();

@@ -161,7 +161,7 @@ public class SerializationHelper {
             }
             return result;
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_ERROR, "SerializationHelper", e);
+            logDomain.log(LogLevel.ERROR, "SerializationHelper", e);
             return null;
         }
     }

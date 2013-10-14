@@ -107,17 +107,17 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         AbstractPort src = re.getPort(sourcePortHandle);
         AbstractPort dest = re.getPort(destinationPortHandle);
         if (src == null || dest == null) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Can't connect ports that do not exists");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Can't connect ports that do not exists");
             return;
         }
         if (src.isVolatile() && dest.isVolatile()) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot really persistently connect two network ports: " + src.getQualifiedLink() + ", " + dest.getQualifiedLink());
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot really persistently connect two network ports: " + src.getQualifiedLink() + ", " + dest.getQualifiedLink());
         }
         connect(src, dest);
         if (!src.isConnectedTo(dest)) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Could not connect ports '" + src.getQualifiedName() + "' and '" + dest.getQualifiedName() + "'.");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Could not connect ports '" + src.getQualifiedName() + "' and '" + dest.getQualifiedName() + "'.");
         } else {
-            logDomain.log(LogLevel.LL_USER, getLogDescription(), "Connected ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
+            logDomain.log(LogLevel.USER, getLogDescription(), "Connected ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
         }
     }
 
@@ -140,12 +140,12 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                 FrameworkElement parent = RuntimeEnvironment.getInstance().getElement(parentHandle);
                 if (parent == null || (!parent.isReady())) {
                     result = "Parent not available. Cancelling remote module creation.";
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), result.toString());
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), result.toString());
                 } else if ((!RuntimeSettings.duplicateQualifiedNamesAllowed()) && parent.getChild(moduleName) != null) {
                     result = "Element with name '" + moduleName + "' already exists. Creating another module with this name is not allowed.";
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), result.toString());
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), result.toString());
                 } else {
-                    logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module " + parent.getQualifiedLink() + "/" + moduleName);
+                    logDomain.log(LogLevel.USER, getLogDescription(), "Creating Module " + parent.getQualifiedLink() + "/" + moduleName);
 
                     if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
                         params = cma.getParameterTypes().instantiate();
@@ -156,8 +156,8 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                                 param.deserializeValue(ci);
                             } catch (Exception e) {
                                 result = "Error parsing value for parameter " + param.getName();
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), result.toString());
-                                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), result.toString());
+                                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
                             }
                         }
                         ci.close();
@@ -167,11 +167,11 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                     created.init();
                     params = null;
 
-                    logDomain.log(LogLevel.LL_USER, getLogDescription(), "Creating Module succeeded");
+                    logDomain.log(LogLevel.USER, getLogDescription(), "Creating Module succeeded");
                 }
             }
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
             result = e.getMessage();
         }
         return result;
@@ -185,10 +185,10 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
     public void deleteElement(int elementHandle) {
         FrameworkElement fe = RuntimeEnvironment.getInstance().getElement(elementHandle);
         if (fe != null && (!fe.isDeleted())) {
-            logDomain.log(LogLevel.LL_USER, getLogDescription(), "Deleting element " + fe.getQualifiedLink());
+            logDomain.log(LogLevel.USER, getLogDescription(), "Deleting element " + fe.getQualifiedLink());
             fe.managedDelete();
         } else {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not delete Framework element, because it does not appear to be available.");
+            logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not delete Framework element, because it does not appear to be available.");
         }
         return;
     }
@@ -204,7 +204,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         AbstractPort src = re.getPort(sourcePortHandle);
         AbstractPort dest = re.getPort(destinationPortHandle);
         if (src == null || dest == null) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Can't disconnect ports that do not exists");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Can't disconnect ports that do not exists");
             return;
         }
 
@@ -216,9 +216,9 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         }
         src.disconnectFrom(dest);
         if (src.isConnectedTo(dest)) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Could not disconnect ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Could not disconnect ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
         } else {
-            logDomain.log(LogLevel.LL_USER, getLogDescription(), "Disconnected ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
+            logDomain.log(LogLevel.USER, getLogDescription(), "Disconnected ports " + src.getQualifiedName() + " " + dest.getQualifiedName());
         }
 
     }
@@ -232,11 +232,11 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         RuntimeEnvironment re = RuntimeEnvironment.getInstance();
         AbstractPort src = re.getPort(portHandle);
         if (src == null) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Can't disconnect port that doesn't exist");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Can't disconnect port that doesn't exist");
             return;
         }
         src.disconnectAll();
-        logDomain.log(LogLevel.LL_USER, getLogDescription(), "Disconnected port " + src.getQualifiedName());
+        logDomain.log(LogLevel.USER, getLogDescription(), "Disconnected port " + src.getQualifiedName());
     }
 
     /**
@@ -253,7 +253,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         if (fe != null && fe.isReady() && dt != null) {
             result = fe.getAnnotation(dt);
         } else {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not query element for annotation type " + annotationTypeName);
+            logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not query element for annotation type " + annotationTypeName);
         }
 
         if (result == null) {
@@ -295,7 +295,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
      * @return Available module libraries (.so files) that have not been loaded yet - serialized
      */
     public MemoryBuffer getModuleLibraries() {
-        log(LogLevel.LL_WARNING, logDomain, "getModuleLibraries() only available in C++, currently");
+        log(LogLevel.WARNING, logDomain, "getModuleLibraries() only available in C++, currently");
         return new MemoryBuffer(0);
     }
 
@@ -306,7 +306,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
     public MemoryBuffer getParameterInfo(int rootElementHandle) {
         FrameworkElement fe = RuntimeEnvironment.getInstance().getElement(rootElementHandle);
         if (fe == null || (!fe.isReady())) {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not get parameter info for framework element " + rootElementHandle);
+            logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not get parameter info for framework element " + rootElementHandle);
             return new MemoryBuffer(0);
         }
 
@@ -360,7 +360,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
      * @return Available module libraries (.so files) that have not been loaded yet - serialized (Updated version)
      */
     public MemoryBuffer loadModuleLibrary(String libraryName) {
-        log(LogLevel.LL_WARNING, logDomain, "loadModuleLibrary() only available in C++, currently");
+        log(LogLevel.WARNING, logDomain, "loadModuleLibrary() only available in C++, currently");
         return getCreateModuleActions();
     }
 
@@ -374,7 +374,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         ArrayList<ExecutionControl> ecs = new ArrayList<ExecutionControl>();
         getExecutionControls(ecs, elementHandle);
         if (ecs.size() == 0) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Pause command has not effect");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Pause command has not effect");
         }
         for (int i = 0; i < ecs.size(); i++) {
             if (ecs.get(i).isRunning()) {
@@ -387,7 +387,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
      * Saves all finstructable files in this runtime environment
      */
     public void saveAllFinstructableFiles() {
-        log(LogLevel.LL_USER, logDomain, "Saving all finstructable files in this process:");
+        log(LogLevel.USER, logDomain, "Saving all finstructable files in this process:");
         (new FrameworkElementTreeFilter()).traverseElementTree(RuntimeEnvironment.getInstance(), new FrameworkElementTreeFilter.Callback<Integer>() {
             @Override
             public void treeFilterCallback(FrameworkElement fe, Integer customParam) {
@@ -395,13 +395,13 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                     try {
                         ((FinstructableGroup)fe).saveXml();
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error saving finstructable group " + fe.getQualifiedLink());
-                        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                        logDomain.log(LogLevel.ERROR, getLogDescription(), "Error saving finstructable group " + fe.getQualifiedLink());
+                        logDomain.log(LogLevel.ERROR, getLogDescription(), e);
                     }
                 }
             }
         }, null, new StringBuilder());
-        log(LogLevel.LL_USER, logDomain, "Done.");
+        log(LogLevel.USER, logDomain, "Done.");
     }
 
     /**
@@ -415,11 +415,11 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
             try {
                 ((FinstructableGroup)fe).saveXml();
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Error saving finstructable group " + fe.getQualifiedLink());
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), e);
+                logDomain.log(LogLevel.ERROR, getLogDescription(), "Error saving finstructable group " + fe.getQualifiedLink());
+                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
             }
         } else {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not save finstructable group, because it does not appear to be available.");
+            logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not save finstructable group, because it does not appear to be available.");
         }
     }
 
@@ -432,18 +432,18 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
     public void setAnnotation(int elementHandle, MemoryBuffer serializedAnnotation) {
         FrameworkElement elem = RuntimeEnvironment.getInstance().getElement(elementHandle);
         if (elem == null || (!elem.isReady())) {
-            logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");
+            logDomain.log(LogLevel.ERROR, getLogDescription(), "Parent not available. Cancelling setting of annotation.");
         } else {
             InputStreamBuffer ci = new InputStreamBuffer(serializedAnnotation, InputStreamBuffer.TypeEncoding.Names);
             DataTypeBase dt = ci.readType();
             if (dt == null) {
-                logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Data type not available. Cancelling setting of annotation.");
+                logDomain.log(LogLevel.ERROR, getLogDescription(), "Data type not available. Cancelling setting of annotation.");
             } else {
                 FinrocAnnotation ann = elem.getAnnotation(dt);
                 if (ann == null) {
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Creating new annotations not supported yet. Cancelling setting of annotation.");
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), "Creating new annotations not supported yet. Cancelling setting of annotation.");
                 } else if (ann.getType() != dt) {
-                    logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Existing annotation has wrong type?!. Cancelling setting of annotation.");
+                    logDomain.log(LogLevel.ERROR, getLogDescription(), "Existing annotation has wrong type?!. Cancelling setting of annotation.");
                 } else {
                     ann.deserialize(ci);
                 }
@@ -475,7 +475,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                             c.getObject().deserialize(ci, enc);
                             result = p.browserPublishRaw(c);
                             if (result.toString().length() > 0) {
-                                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of port '" + port.getQualifiedName() + "' failed: " + result.toString());
+                                logDomain.log(LogLevel.WARNING, getLogDescription(), "Setting value of port '" + port.getQualifiedName() + "' failed: " + result.toString());
                             }
                         } else if (FinrocTypeInfo.isStdType(port.getDataType()) && FinrocTypeInfo.isStdType(dt)) {
                             PortBase p = (PortBase)port;
@@ -484,7 +484,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
                             p.browserPublish(portData);
                         }
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of port '" + port.getQualifiedName() + "' failed: ", e);
+                        logDomain.log(LogLevel.WARNING, getLogDescription(), "Setting value of port '" + port.getQualifiedName() + "' failed: ", e);
                         result = e.getMessage();
                     }
                     return result;
@@ -493,7 +493,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         }
 
         result = "Port with handle " + portHandle + " is not available.";
-        logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Setting value of port failed: " + result.toString());
+        logDomain.log(LogLevel.WARNING, getLogDescription(), "Setting value of port failed: " + result.toString());
         return result;
     }
 
@@ -507,7 +507,7 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         ArrayList<ExecutionControl> ecs = new ArrayList<ExecutionControl>();
         getExecutionControls(ecs, elementHandle);
         if (ecs.size() == 0) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Start command has not effect");
+            logDomain.log(LogLevel.WARNING, getLogDescription(), "Start command has not effect");
         }
         for (int i = 0; i < ecs.size(); i++) {
             if (!ecs.get(i).isRunning()) {

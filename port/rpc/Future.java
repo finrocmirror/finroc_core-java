@@ -60,7 +60,7 @@ public class Future extends LogUser {
                 status = FutureStatus.values()[storage.futureStatus.get()];
                 if (status == FutureStatus.PENDING) {
                     if (storage.waiting) {
-                        log(LogLevel.LL_ERROR, logDomain, "There's already a thread waiting on this object");
+                        log(LogLevel.ERROR, logDomain, "There's already a thread waiting on this object");
                         throw new RPCException(FutureStatus.INVALID_CALL);
                     }
                     storage.waiting = true;

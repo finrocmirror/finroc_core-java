@@ -114,7 +114,7 @@ public class RPCPort extends AbstractPort {
             for (int i = 0; i < it.size(); i++) {
                 RPCPort outgoingConnection = it.get(i);
                 if (outgoingConnection != partner) {
-                    log(LogLevel.LL_WARNING, logDomain, "Port was already connected to a server. Removing connection to '" + outgoingConnection.getQualifiedName() + "' and adding the new one to '" + partner.getQualifiedName() + "'.");
+                    log(LogLevel.WARNING, logDomain, "Port was already connected to a server. Removing connection to '" + outgoingConnection.getQualifiedName() + "' and adding the new one to '" + partner.getQualifiedName() + "'.");
                     outgoingConnection.disconnectFrom(this);
                 }
             }
@@ -129,7 +129,7 @@ public class RPCPort extends AbstractPort {
         RPCPort serverPortOfThis = (isServer() || getFlag(Flag.NETWORK_ELEMENT)) ? this : getServer(false);
         RPCPort serverPortOfOther = (otherInterfacePort.isServer() || otherInterfacePort.getFlag(Flag.NETWORK_ELEMENT)) ? otherInterfacePort : otherInterfacePort.getServer(false);
         if (serverPortOfThis != null && serverPortOfOther != null) {
-            log(LogLevel.LL_WARNING, logDomain, "Both ports (this and " + other.getQualifiedLink() + ") are connected to a server already.");
+            log(LogLevel.WARNING, logDomain, "Both ports (this and " + other.getQualifiedLink() + ") are connected to a server already.");
         } else if (serverPortOfThis != null) {
             return ConnectDirection.TO_SOURCE;
         } else if (serverPortOfOther != null) {

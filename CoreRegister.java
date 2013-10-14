@@ -79,7 +79,7 @@ public class CoreRegister<T> {
      * @param positiveIndices Positive handles? (or rather negative??)
      */
     public CoreRegister(boolean positiveIndices) {
-        RuntimeEnvironment.logDomain.log(LogLevel.LL_DEBUG, "CoreRegister", "Created Core Register with a maximum of " + MAX_ELEMENTS + " elements.");
+        RuntimeEnvironment.logDomain.log(LogLevel.DEBUG, "CoreRegister", "Created Core Register with a maximum of " + MAX_ELEMENTS + " elements.");
         sign = positiveIndices ? 0 : 0x80000000;
     }
 

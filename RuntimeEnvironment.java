@@ -340,7 +340,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param edge Edge to add
      */
     protected void addLinkEdge(String link, LinkEdge edge) {
-        edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding link edge connecting to " + link);
+        edgeLog.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Adding link edge connecting to " + link);
         synchronized (registry) {
             LinkEdge interested = registry.linkEdges.get(link);
             if (interested == null) {
@@ -388,7 +388,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     prev = current;
                     current = current.getNextEdge();
                 }
-                log(LogLevel.LL_DEBUG_WARNING, logDomain, "warning: Could not remove link edge for link: " + link);
+                log(LogLevel.DEBUG_WARNING, logDomain, "warning: Could not remove link edge for link: " + link);
             }
         }
     }
@@ -470,7 +470,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     for (int i = 0; i < ap.getLinkCount(); i++) {
                         ap.getQualifiedLink(registry.tempBuffer, i);
                         String s = registry.tempBuffer.toString();
-                        edgeLog.log(LogLevel.LL_DEBUG_VERBOSE_2, getLogDescription(), "Checking link " + s + " with respect to link edges");
+                        edgeLog.log(LogLevel.DEBUG_VERBOSE_2, getLogDescription(), "Checking link " + s + " with respect to link edges");
                         LinkEdge le = registry.linkEdges.get(s);
                         while (le != null) {
                             le.linkAdded(this, s, ap);

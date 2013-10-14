@@ -68,7 +68,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
                 try {
                     allJars.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
-                    log(LogLevel.LL_WARNING, Plugins.logDomain, "Error finding plugin", e);
+                    log(LogLevel.WARNING, Plugins.logDomain, "Error finding plugin", e);
                 }
             }
         }
@@ -83,7 +83,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
                 result.add(loadPlugin(jf.getManifest(), pluginJar.getAbsolutePath()));
                 jf.close();
             } catch (Exception e) {
-                log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugin: " + pluginJar.getName(), e);
+                log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugin: " + pluginJar.getName(), e);
             }
         }
 
@@ -108,7 +108,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
         if (!Plugin.class.isAssignableFrom(c)) {
             throw new Exception(className + " is not a plugin class.");
         }
-        log(LogLevel.LL_DEBUG, Plugins.logDomain, "Found plugin: " + className);
+        log(LogLevel.DEBUG, Plugins.logDomain, "Found plugin: " + className);
 
         Plugin plugin = c.newInstance();
         return plugin;
@@ -124,7 +124,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
             try {
                 classLoader = new PluginClassLoader(jars.toArray(new URL[0]));
             } catch (Exception e) {
-                log(LogLevel.LL_ERROR, Plugins.logDomain, e);
+                log(LogLevel.ERROR, Plugins.logDomain, e);
             }
         } else {
             for (URL url : jars) {
@@ -145,7 +145,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
          */
         PluginClassLoader(URL[] jars) throws Exception {
             super(jars);
-            LogStream ls = Plugins.logDomain.getLogStream(LogLevel.LL_DEBUG, getLogDescription());
+            LogStream ls = Plugins.logDomain.getLogStream(LogLevel.DEBUG, getLogDescription());
             ls.append("Constructed PluginClassLoader: ");
             for (URL url : jars) {
                 ls.append(url.toString() + " ");
@@ -155,7 +155,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
 
         @Override
         protected void addURL(URL url) {
-            Plugins.logDomain.log(LogLevel.LL_DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
+            Plugins.logDomain.log(LogLevel.DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
             for (URL u : getURLs()) {
                 if (u.equals(url)) {
                     return;
@@ -185,7 +185,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
             }
             return m.group(1);
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, Plugins.logDomain, "Error extracting jar file from URL " + url, e);
+            log(LogLevel.ERROR, Plugins.logDomain, "Error extracting jar file from URL " + url, e);
         }
         return null;
     }

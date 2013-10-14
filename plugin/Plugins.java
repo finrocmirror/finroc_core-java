@@ -159,7 +159,7 @@ public class Plugins { /*implements HTTPResource*/
                 }
             }
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), e);
+            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -188,7 +188,7 @@ public class Plugins { /*implements HTTPResource*/
      * @param cma CreateFrameworkElementAction to add
      */
     public void addModuleType(CreateFrameworkElementAction cma) {
-        logDomain.log(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
+        logDomain.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
         getModuleTypes().add(cma);
     }
 
@@ -219,7 +219,7 @@ public class Plugins { /*implements HTTPResource*/
             }
         }
 
-        logDomain.log(LogLevel.LL_ERROR, getLogDescription(), "Could not find/load module " + name + " in " + group);
+        logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not find/load module " + name + " in " + group);
         return null;
     }
 

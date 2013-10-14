@@ -60,7 +60,7 @@ public class RPCMessage extends AbstractCall {
             ClientPort clientPort = ClientPort.wrap(port, true);
             clientPort.call(method, parameters);
         } catch (Exception e) {
-            logDomain.log(LogLevel.LL_DEBUG, "RPCMessage", "Incoming RPC message caused exception: ", e);
+            logDomain.log(LogLevel.DEBUG, "RPCMessage", "Incoming RPC message caused exception: ", e);
         }
     }
 

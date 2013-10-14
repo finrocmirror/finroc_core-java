@@ -135,7 +135,7 @@ public class ThreadLocalCache extends LogUser {
         threadUid = threadUidCounter.getAndIncrement();
         threadId = ThreadUtil.getCurrentThreadId();
 
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
     }
 
     protected void finalize() {
@@ -147,7 +147,7 @@ public class ThreadLocalCache extends LogUser {
      */
     private void finalDelete() {
 
-        log(LogLevel.LL_DEBUG_VERBOSE_1, logDomain, "Deleting ThreadLocalCache");
+        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Deleting ThreadLocalCache");
 
         /** Delete local port data buffer pools */
         for (int i = 0; i < ccTypePools.length; i++) {

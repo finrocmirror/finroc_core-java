@@ -103,7 +103,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      * @param ci Input Stream Buffer to read from
      */
     private void deserialize(InputStreamBuffer ci) {
-        LogStream ls = logDomain.getLogStream(LogLevel.LL_DEBUG_VERBOSE_1, getLogDescription());
+        LogStream ls = logDomain.getLogStream(LogLevel.DEBUG_VERBOSE_1, getLogDescription());
         if (types.size() == 0) {
             assert(!initialized()) : "Already initialized";
             globalDefault = ci.readShort();
@@ -260,7 +260,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
         assert(initialized()) : "Not initialized";
         int typesSize = types.size(); // to avoid warning
         if (uid < 0 || uid >= typesSize) {
-            log(LogLevel.LL_ERROR, logDomain, "Corrupt type information from received from connection partner: " + uid);
+            log(LogLevel.ERROR, logDomain, "Corrupt type information from received from connection partner: " + uid);
             throw new RuntimeException("Corrupt type information from received from connection partner");
         }
 

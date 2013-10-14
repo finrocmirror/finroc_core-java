@@ -62,7 +62,7 @@ public class Timestamp extends CoreNumber {
         try {
             tmp = DatatypeFactory.newInstance();
         } catch (Exception e) {
-            RuntimeEnvironment.logDomain.log(LogLevel.LL_DEBUG_WARNING, "Timestamp class", "Could not initialize DatatypeFactory. String serialization not available. This is normal for Android platforms.");
+            RuntimeEnvironment.logDomain.log(LogLevel.DEBUG_WARNING, "Timestamp class", "Could not initialize DatatypeFactory. String serialization not available. This is normal for Android platforms.");
         }
         factory = tmp;
     }

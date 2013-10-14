@@ -125,7 +125,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                     }
 
                     // ok, we didn't find module to continue with... (loop)
-                    logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Detected loop: doing traceback");
+                    logDomain.log(LogLevel.WARNING, getLogDescription(), "Detected loop: doing traceback");
                     traceBack.clear();
                     PeriodicFrameworkElementTask current = tasks.get(0);
                     traceBack.add(current);
@@ -141,7 +141,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             }
                         }
                         if (end) {
-                            logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Choosing " + current.incoming.getQualifiedName() + " as next element");
+                            logDomain.log(LogLevel.WARNING, getLogDescription(), "Choosing " + current.incoming.getQualifiedName() + " as next element");
                             schedule.add(current);
                             tasks.removeElem(current);
 

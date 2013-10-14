@@ -63,7 +63,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         }
         if (!bounds.inBounds(val)) {
             if (tc.ref.getContainer().getRefCounter() == 0) { // still unused
-                log(LogLevel.LL_DEBUG_WARNING, logDomain, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
+                log(LogLevel.DEBUG_WARNING, logDomain, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
                 tc.ref.getContainer().recycleUnused();
             }
             if (bounds.discard()) {
@@ -109,7 +109,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         }
         if (!bounds.inBounds(val)) {
             if (bounds.discard()) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Cannot discard value - applying default");
+                logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot discard value - applying default");
                 applyDefaultValue();
             } else if (bounds.adjustToRange()) {
                 CCPortDataManagerTL buf = ThreadLocalCache.getFast().getUnusedBuffer(getDataType());

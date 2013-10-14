@@ -174,7 +174,7 @@ public class AbstractCall extends Queueable {
     public void setException(FutureStatus newStatus) {
         FutureStatus current = FutureStatus.values()[futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            log(LogLevel.LL_WARNING, logDomain, "Exception cannot be set twice. Ignoring.");
+            log(LogLevel.WARNING, logDomain, "Exception cannot be set twice. Ignoring.");
             return;
         }
 

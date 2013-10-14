@@ -78,7 +78,7 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
             try {
                 return user.processPacket(data);
             } catch (Exception e) {
-                logDomain.log(LogLevel.LL_WARNING, getLogDescription(), "Error while processing packet: ", e);
+                logDomain.log(LogLevel.WARNING, getLogDescription(), "Error while processing packet: ", e);
             }
             return false;
         }

@@ -125,16 +125,16 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                             if (!Plugin.class.isAssignableFrom(c)) {
                                 throw new Exception(className + " is not a plugin class.");
                             }
-                            log(LogLevel.LL_DEBUG, Plugins.logDomain, "Found plugin: " + className);
+                            log(LogLevel.DEBUG, Plugins.logDomain, "Found plugin: " + className);
                             result.add((Plugin)c.newInstance());
                         } catch (Exception e) {
-                            log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugin", e);
+                            log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugin", e);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            log(LogLevel.LL_WARNING, Plugins.logDomain, "Error loading plugins", e);
+            log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugins", e);
         }
 
         return result;
@@ -179,9 +179,9 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
             }, false, false);
 
             if (files.size() == 0) {
-                log(LogLevel.LL_ERROR, Plugins.logDomain, "Cannot determine jar file name for " + file + ": Not found in finroc repository");
+                log(LogLevel.ERROR, Plugins.logDomain, "Cannot determine jar file name for " + file + ": Not found in finroc repository");
             } else if (files.size() > 1) {
-                log(LogLevel.LL_WARNING, Plugins.logDomain, "Problem determining jar file name for " + file + ": Found in finroc repository multiple times (!). Taking first.");
+                log(LogLevel.WARNING, Plugins.logDomain, "Problem determining jar file name for " + file + ": Found in finroc repository multiple times (!). Taking first.");
             }
             found = files.get(0);
             String dir = found.getAbsoluteFile().getParent();
@@ -208,13 +208,13 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                 prefix = "rrlib_";
             }
             if (nl.getLength() == 0) {
-                log(LogLevel.LL_ERROR, Plugins.logDomain, "Can't find suitable target in " + dir + "/make.xml");
+                log(LogLevel.ERROR, Plugins.logDomain, "Can't find suitable target in " + dir + "/make.xml");
                 return "unknown binary";
             }
             return prefix + ((Element)nl.item(0)).getAttribute("name") + ".jar";
 
         } catch (Exception e) {
-            log(LogLevel.LL_ERROR, Plugins.logDomain, "Cannot determine jar file name", e);
+            log(LogLevel.ERROR, Plugins.logDomain, "Cannot determine jar file name", e);
             return null;
         }
     }
