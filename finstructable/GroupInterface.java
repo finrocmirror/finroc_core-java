@@ -63,7 +63,7 @@ public class GroupInterface extends PortGroup {
     public GroupInterface(FrameworkElement parent, String name) {
         super(parent, name, Flag.INTERFACE, 0);
         addAnnotation(new StaticParameterList(ports));
-        ports.getValue().initialSetup(this, 0, true);
+        ports.getValue().initialSetup(this, 0, PortCreationList.CREATE_OPTION_ALL);
     }
 
     /**
@@ -80,7 +80,7 @@ public class GroupInterface extends PortGroup {
     public GroupInterface(FrameworkElement parent, String name, DataClassification dataClass, PortDirection portDir, boolean shared, boolean uniqueLink) {
         super(parent, name, computeFlags(dataClass, shared, uniqueLink), computePortFlags(portDir, shared, uniqueLink));
         addAnnotation(new StaticParameterList(ports));
-        ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), portDir == PortDirection.BOTH);
+        ports.getValue().initialSetup(this, computePortFlags(portDir, shared, uniqueLink), (byte)(PortCreationList.CREATE_OPTION_SHARED | (portDir == PortDirection.BOTH ? PortCreationList.CREATE_OPTION_OUTPUT : 0)));
     }
 
     /**

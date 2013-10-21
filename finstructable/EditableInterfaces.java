@@ -69,6 +69,8 @@ public class EditableInterfaces extends FinrocAnnotation {
             boolean interfaceHasPorts = stream.readBoolean();
             if (interfaceHasPorts) {
                 editableInterface.getValue().deserialize(stream);
+            } else {
+                editableInterface.getValue().setSelectableCreateOptions(stream.readByte());
             }
         }
     }
@@ -84,6 +86,8 @@ public class EditableInterfaces extends FinrocAnnotation {
             stream.writeBoolean(hasPorts);
             if (hasPorts) {
                 editableInterface.getValue().serialize(stream);
+            } else {
+                stream.writeByte(editableInterface.getValue().getSelectableCreateOptions());
             }
         }
     }

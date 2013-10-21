@@ -46,6 +46,6 @@ public class Group extends PortGroup {
     public Group(FrameworkElement parent, String name) {
         super(parent, name, 0, 0);
         addAnnotation(new StaticParameterList(ports));
-        ports.getValue().initialSetup(this, 0, true);
+        ports.getValue().initialSetup(this, 0, PortCreationList.CREATE_OPTION_ALL);
     }
 }

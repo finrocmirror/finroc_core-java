@@ -33,6 +33,7 @@ import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.log.LogDomain;
 import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.finroc_core_utils.rtti.Copyable;
 import org.rrlib.finroc_core_utils.rtti.DataType;
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
@@ -48,10 +49,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
  * Is only meant to be used in StaticParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
-public class PortCreationList extends RRLibSerializableImpl {
-
-    /** Relevant flags for comparison */
-    private static final int RELEVANT_FLAGS = FrameworkElementFlags.SHARED | FrameworkElementFlags.VOLATILE;
+public class PortCreationList extends RRLibSerializableImpl implements Copyable<PortCreationList> {
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<PortCreationList>(PortCreationList.class);
@@ -70,19 +68,31 @@ public class PortCreationList extends RRLibSerializableImpl {
         /** Port type - as string (used remote) */
         public DataTypeReference type = new DataTypeReference();
 
-        /** Output port? */
-        public boolean outputPort;
+        /** Port creation options for this specific port (e.g. output port? shared port?) */
+        public byte createOptions;
 
-        public Entry(String name, String type, boolean outputPort) {
+        public Entry(String name, String type, byte createOptions) {
             this.name = name;
             StringInputStream sis = new StringInputStream(type);
             this.type.deserialize(sis);
-            this.outputPort = outputPort;
+            this.createOptions = createOptions;
+        }
+
+        public Entry(String name, DataTypeReference type, byte createOptions) {
+            this.name = name;
+            this.type = new DataTypeReference(type.get());
+            this.createOptions = createOptions;
         }
     }
 
-    /** Should output port selection be visible in finstruct? */
-    private boolean showOutputPortSelection;
+    /** Flags in create options */
+    public final static byte CREATE_OPTION_OUTPUT = 1, CREATE_OPTION_SHARED = 2, CREATE_OPTION_ALL = CREATE_OPTION_OUTPUT | CREATE_OPTION_SHARED;
+
+    /**
+     * Which creation options should be visible and selectable in finstruct?
+     * (the user can e.g. select whether port is input or output port - or shared)
+     */
+    private byte selectableCreateOptions;
 
     /** List backend (for remote Runtimes) */
     private SimpleList<Entry> list = new SimpleList<Entry>();
@@ -103,18 +113,18 @@ public class PortCreationList extends RRLibSerializableImpl {
      *
      * @param managedIoVector FrameworkElement that list is wrapping
      * @param portCreationFlags Flags for port creation
-     * @param showOutputPortSelection Should output port selection be visible in finstruct?
+     * @param selectableCreateOptions Which creation options should be visible and selectable in finstruct?
      */
-    public void initialSetup(FrameworkElement managedIoVector, int portCreationFlags, boolean showOutputPortSelection) {
+    public void initialSetup(FrameworkElement managedIoVector, int portCreationFlags, byte selectableCreateOptions) {
         assert((ioVector == null || ioVector == managedIoVector) && list.isEmpty());
         ioVector = managedIoVector;
         flags = portCreationFlags;
-        this.showOutputPortSelection = showOutputPortSelection;
+        this.selectableCreateOptions = selectableCreateOptions;
     }
 
     @Override
     public void serialize(OutputStreamBuffer os) {
-        os.writeBoolean(showOutputPortSelection);
+        os.writeByte(selectableCreateOptions);
         if (ioVector == null) {
             int size = list.size();
             os.writeInt(size);
@@ -122,7 +132,7 @@ public class PortCreationList extends RRLibSerializableImpl {
                 Entry e = list.get(i);
                 os.writeString(e.name);
                 os.writeString(e.type.toString());
-                os.writeBoolean(e.outputPort);
+                os.writeByte(e.createOptions);
             }
         } else {
             synchronized (ioVector) {
@@ -134,10 +144,17 @@ public class PortCreationList extends RRLibSerializableImpl {
                     AbstractPort p = ports.get(i);
                     os.writeString(p.getName());
                     os.writeString(p.getDataType().getName());
-                    os.writeBoolean(p.isOutputPort());
+                    os.writeByte(toPortCreateOptions(p.getAllFlags(), selectableCreateOptions));
                 }
             }
         }
+    }
+
+
+    private static byte toPortCreateOptions(int flags, byte selectableCreateOptions) {
+        byte result = ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0) && ((flags & FrameworkElementFlags.SHARED) > 0) ? CREATE_OPTION_SHARED : 0;
+        result |= ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0) && ((flags & FrameworkElementFlags.IS_OUTPUT_PORT) > 0) ? CREATE_OPTION_OUTPUT : 0;
+        return result;
     }
 
     /**
@@ -158,15 +175,15 @@ public class PortCreationList extends RRLibSerializableImpl {
     @Override
     public void deserialize(InputStreamBuffer is) {
         if (ioVector == null) {
-            showOutputPortSelection = is.readBoolean();
+            selectableCreateOptions = is.readByte();
             int size = is.readInt();
             list.clear();
             for (int i = 0; i < size; i++) {
-                list.add(new Entry(is.readString(), is.readString(), is.readBoolean()));
+                list.add(new Entry(is.readString(), is.readString(), is.readByte()));
             }
         } else {
             synchronized (ioVector) {
-                showOutputPortSelection = is.readBoolean();
+                is.readByte(); // skip selectable create options, as this is not defined by finstruct
                 int size = is.readInt();
                 SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
                 getPorts(ioVector, ports);
@@ -178,7 +195,7 @@ public class PortCreationList extends RRLibSerializableImpl {
                     if (dt == null) {
                         throw new RuntimeException("Type " + dtName + " not available");
                     }
-                    boolean output = is.readBoolean();
+                    byte output = is.readByte();
                     checkPort(ap, ioVector, flags, name, dt, output, null);
                 }
                 for (int i = size; i < ports.size(); i++) {
@@ -196,13 +213,17 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param flags Creation flags
      * @param name New name
      * @param dt new data type
-     * @param output output port
+     * @param createOptions Selected create options for port
      * @param prototype Port prototype (only interesting for listener)
      */
-    private void checkPort(AbstractPort ap, FrameworkElement ioVector, int flags, String name, DataTypeBase dt, boolean output, AbstractPort prototype) {
-        if (ap != null && ap.nameEquals(name) && ap.getDataType() == dt && (ap.getAllFlags() & RELEVANT_FLAGS) == (flags & RELEVANT_FLAGS)) {
-            if ((!showOutputPortSelection) || (output == ap.isOutputPort())) {
-                return;
+    private void checkPort(AbstractPort ap, FrameworkElement ioVector, int flags, String name, DataTypeBase dt, byte createOptions, AbstractPort prototype) {
+        if (ap != null && ap.nameEquals(name) && ap.getDataType() == dt &&
+                ap.getFlag(FrameworkElementFlags.VOLATILE) == (flags & FrameworkElementFlags.VOLATILE) > 0) {
+            boolean createOutputPort = ((createOptions & CREATE_OPTION_OUTPUT) != 0) || ((flags & FrameworkElementFlags.IS_OUTPUT_PORT) != 0);
+            boolean createSharedPort = ((createOptions & CREATE_OPTION_SHARED) != 0) || ((flags & FrameworkElementFlags.SHARED) != 0);
+            if (((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 || (ap.getFlag(FrameworkElementFlags.IS_OUTPUT_PORT) == createOutputPort)) &&
+                    ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 || (ap.getFlag(FrameworkElementFlags.SHARED) == createSharedPort))) {
+                return; // port is as it should be
             }
         }
         if (ap != null) {
@@ -210,11 +231,8 @@ public class PortCreationList extends RRLibSerializableImpl {
         }
 
         // compute flags to use
-        int tmp = 0;
-        if (showOutputPortSelection) {
-            tmp = output ? FrameworkElementFlags.OUTPUT_PROXY : FrameworkElementFlags.INPUT_PROXY;
-        }
-        flags |= tmp;
+        flags |= FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA; // proxy port
+        flags |= toFlags(createOptions, selectableCreateOptions);
 
         log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
         if (FinrocTypeInfo.isStdType(dt)) {
@@ -234,6 +252,17 @@ public class PortCreationList extends RRLibSerializableImpl {
         }
     }
 
+    private static int toFlags(byte createOptions, byte selectableCreateOptions) {
+        int result = 0;
+        if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && (createOptions & CREATE_OPTION_SHARED) != 0) {
+            result |= FrameworkElementFlags.SHARED;
+        }
+        if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && (createOptions & CREATE_OPTION_OUTPUT) != 0) {
+            result |= FrameworkElementFlags.IS_OUTPUT_PORT;
+        }
+        return result;
+    }
+
     /**
      * Applies changes to another IO vector
      *
@@ -250,7 +279,7 @@ public class PortCreationList extends RRLibSerializableImpl {
             for (int i = 0; i < ports1.size(); i++) {
                 AbstractPort ap1 = ports1.get(i);
                 AbstractPort ap2 = i < ports2.size() ? ports2.get(i) : null;
-                checkPort(ap2, ioVector, flags, ap1.getName(), ap1.getDataType(), ap1.isOutputPort(), ap1);
+                checkPort(ap2, ioVector, flags, ap1.getName(), ap1.getDataType(), toPortCreateOptions(ap1.getAllFlags(), selectableCreateOptions), ap1);
             }
             for (int i = ports1.size(); i < ports2.size(); i++) {
                 ports2.get(i).managedDelete();
@@ -260,7 +289,7 @@ public class PortCreationList extends RRLibSerializableImpl {
 
     @Override
     public void serialize(XMLNode node) throws Exception {
-        node.setAttribute("showOutputSelection", showOutputPortSelection);
+        node.setAttribute("showOutputSelection", (selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0);
         if (ioVector == null) {
             int size = list.size();
             for (int i = 0; i < size; i++) {
@@ -268,7 +297,9 @@ public class PortCreationList extends RRLibSerializableImpl {
                 Entry e = list.get(i);
                 child.setAttribute("name", e.name);
                 child.setAttribute("type", e.type.toString());
-                child.setAttribute("output", e.outputPort);
+                if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0) {
+                    child.setAttribute("output", (e.createOptions & CREATE_OPTION_OUTPUT) != 0);
+                }
             }
         } else {
             synchronized (ioVector) {
@@ -280,8 +311,11 @@ public class PortCreationList extends RRLibSerializableImpl {
                     XMLNode child = node.addChildNode("port");
                     child.setAttribute("name", p.getName());
                     child.setAttribute("type", p.getDataType().getName());
-                    if (showOutputPortSelection) {
+                    if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0) {
                         child.setAttribute("output", p.isOutputPort());
+                    }
+                    if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && p.getFlag(FrameworkElementFlags.SHARED)) {
+                        child.setAttribute("output", true);
                     }
                 }
             }
@@ -290,12 +324,19 @@ public class PortCreationList extends RRLibSerializableImpl {
 
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        showOutputPortSelection = node.getBoolAttribute("showOutputSelection");
+        selectableCreateOptions = node.getBoolAttribute("showOutputSelection") ? CREATE_OPTION_OUTPUT : 0;
         if (ioVector == null) {
             for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next()) {
                 String portName = port.get().getName();
                 assert(portName.equals("port"));
-                list.add(new Entry(port.get().getStringAttribute("name"), port.get().getStringAttribute("type"), port.get().hasAttribute("output") ? port.get().getBoolAttribute("output") : false));
+                byte createOptions = 0;
+                if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.get().hasAttribute("output") && port.get().getBoolAttribute("output")) {
+                    createOptions |= CREATE_OPTION_OUTPUT;
+                }
+                if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.get().hasAttribute("shared") && port.get().getBoolAttribute("shared")) {
+                    createOptions |= CREATE_OPTION_SHARED;
+                }
+                list.add(new Entry(port.get().getStringAttribute("name"), port.get().getStringAttribute("type"), createOptions));
             }
         } else {
             assert(ioVector != null) : "Only available on local systems";
@@ -307,16 +348,19 @@ public class PortCreationList extends RRLibSerializableImpl {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
                     String portName = port.get().getName();
                     assert(portName.equals("port"));
-                    boolean b = false;
-                    if (showOutputPortSelection) {
-                        b = port.get().getBoolAttribute("output");
+                    byte createOptions = 0;
+                    if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.get().hasAttribute("output") && port.get().getBoolAttribute("output")) {
+                        createOptions |= CREATE_OPTION_OUTPUT;
+                    }
+                    if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.get().hasAttribute("shared") && port.get().getBoolAttribute("shared")) {
+                        createOptions |= CREATE_OPTION_SHARED;
                     }
                     String dtName = port.get().getStringAttribute("type");
                     DataTypeBase dt = DataTypeBase.findType(dtName);
                     if (dt == null) {
                         throw new RuntimeException("Type " + dtName + " not available");
                     }
-                    checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, b, null);
+                    checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, createOptions, null);
                 }
                 for (; i < ports.size(); i++) {
                     ports.get(i).managedDelete();
@@ -330,11 +374,11 @@ public class PortCreationList extends RRLibSerializableImpl {
      *
      * @param name Port name
      * @param dt Data type
-     * @param output Output port? (possibly irrelevant)
+     * @param createOptions Create options for this port
      */
-    public void add(String name, DataTypeBase dt, boolean output) {
+    public void add(String name, DataTypeBase dt, byte createOptions) {
         synchronized (ioVector) {
-            checkPort(null, ioVector, flags, name, dt, output, null);
+            checkPort(null, ioVector, flags, name, dt, createOptions, null);
         }
     }
 
@@ -376,7 +420,7 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @return List entry
      */
     public Entry addElement() {
-        Entry e = new Entry("Port" + list.size(), CoreNumber.TYPE.getName(), false);
+        Entry e = new Entry("Port" + list.size(), CoreNumber.TYPE.getName(), (byte)0);
         list.add(e);
         return e;
     }
@@ -394,7 +438,25 @@ public class PortCreationList extends RRLibSerializableImpl {
      * @param show Should output port selection be visible in finstruct?
      */
     public void setShowOutputPortSelection(boolean show) {
-        this.showOutputPortSelection = show;
+        if (show) {
+            selectableCreateOptions |= CREATE_OPTION_OUTPUT;
+        } else {
+            selectableCreateOptions &= ~CREATE_OPTION_OUTPUT;
+        }
+    }
+
+    /**
+     * @return Which creation options should be visible and selectable in finstruct?
+     */
+    public byte getSelectableCreateOptions() {
+        return selectableCreateOptions;
+    }
+
+    /**
+     * @param selectableCreateOptions Which creation options should be visible and selectable in finstruct?
+     */
+    public void setSelectableCreateOptions(byte selectableCreateOptions) {
+        this.selectableCreateOptions = selectableCreateOptions;
     }
 
     /**
@@ -409,5 +471,17 @@ public class PortCreationList extends RRLibSerializableImpl {
          * @param prototype Prototype after which port was created
          */
         public void portCreated(AbstractPort ap, AbstractPort prototype);
+    }
+
+    @Override
+    public void copyFrom(PortCreationList source) {
+        flags = source.flags;
+        ioVector = source.ioVector;
+        list.clear();
+        for (int i = 0; i < source.list.size(); i++) {
+            Entry e = source.list.get(i);
+            list.add(new Entry(e.name, e.type, e.createOptions));
+        }
+        selectableCreateOptions = source.selectableCreateOptions;
     }
 }
