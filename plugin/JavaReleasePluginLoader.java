@@ -63,7 +63,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
         // collect jars
         File rootDir = RuntimeSettings.getRootDir();
         for (File file : rootDir.listFiles()) {
-            if (file.getName().startsWith("finroc_plugin_") && file.getName().endsWith(".jar")) {
+            if (file.getName().startsWith("finroc_plugins_") && file.getName().endsWith(".jar")) {
                 pluginMainJars.add(file);
                 try {
                     allJars.add(file.toURI().toURL());
