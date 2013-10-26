@@ -188,7 +188,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         p12 = createParam(ps2[12], psn[12]);
     }
 
-    @SuppressWarnings( { "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     private StaticParameterBase createParam(Class<?> c, String name) {
         if (c == null) {
             return null;
@@ -222,7 +222,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
      * @param p Parameter
      * @return Converted parameter
      */
-    @SuppressWarnings( { "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     private Object convertParam(Class<?> c, StaticParameterBase p) {
         if (c.equals(boolean.class) || Boolean.class.isAssignableFrom(c)) {
             return ((StaticParameterBool)p).get();

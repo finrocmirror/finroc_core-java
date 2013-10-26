@@ -86,7 +86,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
     }
 
 
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds b, Unit u, String configEntry) {
         super(name, parent, getDefaultValue(defaultValue), b, u, configEntry, CoreNumber.TYPE);
         double d = defaultValue.doubleValue();

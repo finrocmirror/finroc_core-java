@@ -58,17 +58,17 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
         this(new PortCreationInfo(name, parent, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT));
     }
 
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public PortNumeric(PortCreationInfo pci, Bounds<T> b) {
         super(pci.derive(CoreNumber.TYPE), (Bounds)b);
     }
 
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public PortNumeric(String name, boolean outputPort, Bounds<T> b) {
         this(new PortCreationInfo(name, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT), (Bounds)b);
     }
 
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public PortNumeric(String name, FrameworkElement parent, boolean outputPort, Bounds<T> b) {
         this(new PortCreationInfo(name, parent, outputPort ? FrameworkElementFlags.OUTPUT_PORT : FrameworkElementFlags.INPUT_PORT), (Bounds)b);
     }

@@ -83,7 +83,7 @@ public class Serialization {
      * @param type Type object must have
      * @return Deserialized object
      */
-    @SuppressWarnings( { "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static Object deserializeObject(InputStreamBuffer stream, Class<?> type) throws Exception {
         if (type.isPrimitive()) {
             if (type == byte.class) {

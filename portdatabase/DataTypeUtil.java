@@ -35,7 +35,7 @@ public class DataTypeUtil {
      * @param param1 Custom parameter 1
      * @param param2 Custom parameter 2
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static void applyChange(Object obj, Object transaction, long param1, long param2) {
         if (obj instanceof GenericChangeable) {
             ((GenericChangeable)obj).applyChange(transaction, param1, param2);

@@ -165,7 +165,7 @@ public class UnknownType extends DataTypeBase {
             }
         }
 
-        @SuppressWarnings( { "unchecked", "rawtypes" })
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         public GenericObject createInstanceGeneric(int placement, int managerSize) {
             return new GenericObjectInstance((RRLibSerializable)createInstance(placement), dataType, null);
         }

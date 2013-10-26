@@ -39,7 +39,7 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public StaticParameterEnum(String name, E defaultValue, boolean constructorPrototype) {
         super(name, new DataType(defaultValue.getDeclaringClass()), constructorPrototype);
         if (!constructorPrototype) {
@@ -53,7 +53,7 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param defaultValue Default Value
      * @param stringConstants String constants for enum values (comma-separated string)
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public StaticParameterEnum(String name, E defaultValue) {
         super(name, new DataType(defaultValue.getDeclaringClass()));
         set(defaultValue);

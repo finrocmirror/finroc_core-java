@@ -141,7 +141,7 @@ public class SerializationHelper {
      * @param result Object to copy to (a new one is created if null)
      * @return Object which was copied to
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public synchronized static <T extends RRLibSerializable> T deepCopy(T src, T result) {
         try {
             if (src == null) {

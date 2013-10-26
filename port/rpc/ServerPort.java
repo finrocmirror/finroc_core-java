@@ -57,7 +57,7 @@ public class ServerPort<T> extends PortWrapperBase {
      *
      * @param wrap Type-less port to wrap as ServerPort<T>
      */
-    @SuppressWarnings( { "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     static <T> ServerPort<T> wrap(AbstractPort wrap) {
         if ((!wrap.getFlag(FrameworkElementFlags.ACCEPTS_DATA)) || (wrap.getFlag(FrameworkElementFlags.EMITS_DATA))) {
             throw new RuntimeException("Port to wrap has invalid flags");

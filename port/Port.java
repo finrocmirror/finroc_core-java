@@ -65,7 +65,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
     /**
      * @param pci Construction parameters in Port Creation Info Object
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Port(PortCreationInfo pci, Bounds<T> bounds) {
         if (RuntimeSettings.useCCPorts()) {
             assert(pci.dataType == CoreNumber.TYPE);
@@ -345,7 +345,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
     /**
      * @return Bounds as they are currently set
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Bounds<T> getBounds() {
         return ((CCPortBoundedNumeric)wrapped).getBounds();
     }
@@ -356,7 +356,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      *
      * @param b New Bounds
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void setBounds(Bounds<T> b) {
         ((CCPortBoundedNumeric)wrapped).setBounds(b);
     }
