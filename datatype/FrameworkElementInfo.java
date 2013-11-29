@@ -105,6 +105,9 @@ public class FrameworkElementInfo {
         /** Handle of connected port */
         int portHandle;
 
+        /** True if encoded destination port is the source/output port of this network connection */
+        boolean destinationIsSource;
+
         public void deserialize(InputStreamBuffer stream) {
             encoding = stream.readEnum(Encoding.class);
             switch (encoding) {
@@ -113,6 +116,7 @@ public class FrameworkElementInfo {
             case UUID_AND_HANDLE:
                 uuid = stream.readString();
                 portHandle = stream.readInt();
+                destinationIsSource = stream.readBoolean();
                 break;
             default:
                 throw new RuntimeException("Unsupported Encoding");
