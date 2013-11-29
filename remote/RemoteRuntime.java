@@ -46,9 +46,12 @@ public class RemoteRuntime extends RemoteFrameworkElement {
      */
     public final HashMap<Integer, RemoteFrameworkElement> elementLookup = new HashMap<Integer, RemoteFrameworkElement>();
 
+    /** Remote Runtime's UUID */
+    public final String uuid;
 
-    public RemoteRuntime(String name, AdminClient adminInterface, RemoteTypes remoteTypes) {
+    public RemoteRuntime(String name, String uuid, AdminClient adminInterface, RemoteTypes remoteTypes) {
         super(0, name);
+        this.uuid = uuid;
         this.adminInterface = adminInterface;
         this.remoteTypes = remoteTypes;
         elementLookup.put(0, this); // Runtime lookup
@@ -107,5 +110,26 @@ public class RemoteRuntime extends RemoteFrameworkElement {
      */
     public RemoteFrameworkElement getRemoteElement(int handle) {
         return elementLookup.get(handle);
+    }
+
+    /**
+     * Find other remote runtime environment with the specified UUID
+     *
+     * @param uuid uuid of other runtime environment
+     * @return Other runtime - or null if no runtime environment with specified id could be found
+     */
+    public RemoteRuntime findOther(String uuid) {
+
+        // A more sophisticated search might be necessary in the future
+        ModelNode parent = this.getParent();
+        if (parent != null) {
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                ModelNode child = parent.getChildAt(i);
+                if (child instanceof RemoteRuntime && ((RemoteRuntime)child).uuid.equals(uuid)) {
+                    return (RemoteRuntime)child;
+                }
+            }
+        }
+        return null;
     }
 }
