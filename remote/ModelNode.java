@@ -258,6 +258,9 @@ public class ModelNode {
      * @return Child with the specified qualified name. Null if no such child exists.
      */
     public ModelNode getChildByQualifiedName(String qualifiedName, int qualifiedNameStartIndex, char separator) {
+        if (children == null) {
+            return null;
+        }
         for (ModelNode child : children) {
             if (qualifiedName.regionMatches(qualifiedNameStartIndex, child.name, 0, child.name.length())) {
                 if (child.name.length() == qualifiedName.length() - qualifiedNameStartIndex) {
