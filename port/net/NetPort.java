@@ -21,6 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.net;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.finroc.core.FrameworkElementFlags;
@@ -726,7 +727,17 @@ public abstract class NetPort extends LogUser implements PortListener {
     /**
      * @return Targets of remote edges
      */
-    public abstract List<AbstractPort> getRemoteEdgeDestinations();
+    public List<AbstractPort> getRemoteEdgeDestinations() {
+        ArrayList<AbstractPort> result = new ArrayList<AbstractPort>();
+        getRemoteEdgeDestinations(result);
+        return result;
+    }
+
+    /**
+     * @param resultList List to put the targets of the remote edges in (filled after call) - edges with reverse direction are the last in the list
+     * @return Index of the first edge in reverse direction
+     */
+    public abstract int getRemoteEdgeDestinations(List<AbstractPort> resultList);
 
     /**
      * @return Data type of port in remote runtime (with unknown types this might be different from type of local port)

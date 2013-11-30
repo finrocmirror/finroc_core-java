@@ -146,6 +146,13 @@ public class FrameworkElementInfo {
                 throw new RuntimeException("Unsupported Encoding");
             }
         }
+
+        /**
+         * @return True if encoded destination port is the source/output port of this network connection
+         */
+        public boolean isDestinationSource() {
+            return destinationIsSource;
+        }
     }
 
     /**
