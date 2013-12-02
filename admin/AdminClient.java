@@ -104,13 +104,14 @@ public class AdminClient extends ClientPort {
      * @param remoteRuntimeUuid UUID of remote runtime
      * @param remotePortHandle Handle of remote port
      * @param remotePortLink Link of port in remote runtime environment
+     * @param disconnect If 'false' the ports are connected - if 'true' the ports are disconnected
      * @return Returns error message if connecting failed. On success, null is returned.
      */
-    public String networkConnect(NetPort port1, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink) {
+    public String networkConnect(NetPort port1, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
         String result;
         if (port1 != null && getAdminInterface(port1) == this) {
             try {
-                result = (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port1.getRemoteHandle(), preferredTransport, remoteRuntimeUuid, remotePortHandle, remotePortLink);
+                result = (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port1.getRemoteHandle(), preferredTransport, remoteRuntimeUuid, remotePortHandle, remotePortLink, disconnect);
                 if (result.length() == 0) {
                     result = null;
                 }

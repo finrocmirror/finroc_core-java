@@ -559,9 +559,10 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
      * @param remoteRuntimeUuid UUID of remote runtime
      * @param remotePortHandle Handle of remote port
      * @param remotePortLink Link of port in remote runtime environment
+     * @param disconnect If 'false' the ports are connected - if 'true' the ports are disconnected
      * @return Returns error message if connecting failed. On success an empty string is returned.
      */
-    public String networkConnect(int localPortHandle, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink) {
+    public String networkConnect(int localPortHandle, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
         return "Not implemented in Java yet";
     }
 
