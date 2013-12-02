@@ -550,6 +550,22 @@ public class AdministrationService extends LogUser implements FrameworkElementTr
         }
     }
 
+    /**
+     * Connect local port to port in remote runtime environment using one of the
+     * available network transport plugins.
+     *
+     * @param localPortHandle Handle of local port
+     * @param preferredTransport ID of preferred network transport to be used (e.g. "tcp"). If specified, it will be attempted to create the connection using this transport first.
+     * @param remoteRuntimeUuid UUID of remote runtime
+     * @param remotePortHandle Handle of remote port
+     * @param remotePortLink Link of port in remote runtime environment
+     * @param disconnect If 'false' the ports are connected - if 'true' the ports are disconnected
+     * @return Returns error message if connecting failed. On success an empty string is returned.
+     */
+    public String networkConnect(int localPortHandle, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
+        return "Not implemented in Java yet";
+    }
+
     @Override
     public void treeFilterCallback(FrameworkElement fe, CallbackParameters customParam) {
         ConfigFile cf = (ConfigFile)fe.getAnnotation(ConfigFile.TYPE);

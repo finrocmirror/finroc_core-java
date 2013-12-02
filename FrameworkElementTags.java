@@ -44,6 +44,9 @@ public class FrameworkElementTags extends FinrocAnnotation {
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<FrameworkElementTags>(FrameworkElementTags.class);
 
+    /** "hidden in tools" - Tag that marks element that should not be visible in tools by default */
+    public static final String HIDDEN_IN_TOOLS = "hidden in tools";
+
     /**
      * Adds tag to framework element.
      * If framework element already has this tag, function call has no effect.

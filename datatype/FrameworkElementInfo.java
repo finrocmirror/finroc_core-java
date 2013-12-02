@@ -26,15 +26,15 @@ import java.util.List;
 
 import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
 
-import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTags;
-import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.RuntimeListener;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.EdgeAggregator;
+import org.finroc.core.remote.RemoteFrameworkElement;
+import org.finroc.core.remote.RemotePort;
+import org.finroc.core.remote.RemoteRuntime;
 
 
 /**
@@ -81,6 +81,81 @@ public class FrameworkElementInfo {
     }
 
     /**
+     * Single network connection.
+     * Encodes destination so that finstruct can identify connected port
+     * in another runtime environment.
+     */
+    public static class NetworkConnection {
+
+        /**
+         * Contains possible ways of encoding port connections to elements in
+         * remote runtime environments
+         */
+        enum Encoding {
+            NONE,           /** There is no destination encoded */
+            UUID_AND_HANDLE /** UUID of destination runtime environment and port handle */
+        }
+
+        /** Encoding/Identification that is used for connected element in remote runtime environment */
+        Encoding encoding;
+
+        /** uuid of connected runtime environment - as string */
+        String uuid;
+
+        /** Handle of connected port */
+        int portHandle;
+
+        /** True if encoded destination port is the source/output port of this network connection */
+        boolean destinationIsSource;
+
+        public void deserialize(InputStreamBuffer stream) {
+            encoding = stream.readEnum(Encoding.class);
+            switch (encoding) {
+            case NONE:
+                break;
+            case UUID_AND_HANDLE:
+                uuid = stream.readString();
+                portHandle = stream.readInt();
+                destinationIsSource = stream.readBoolean();
+                break;
+            default:
+                throw new RuntimeException("Unsupported Encoding");
+            }
+        }
+
+        /**
+         * Tries to obtain destination port in remote model
+         *
+         * @param runtime Remote runtime environment that this (source) port is part of
+         * @return Destination port - or null if no such port exists
+         */
+        public AbstractPort getDestinationPort(RemoteRuntime runtime) {
+            switch (encoding) {
+            case NONE:
+                return null;
+            case UUID_AND_HANDLE:
+                RemoteRuntime destinationRuntime = runtime.findOther(uuid);
+                if (destinationRuntime != null) {
+                    RemoteFrameworkElement remoteElement = destinationRuntime.getRemoteElement(portHandle);
+                    if (remoteElement instanceof RemotePort) {
+                        return ((RemotePort)remoteElement).getPort();
+                    }
+                }
+                return null;
+            default:
+                throw new RuntimeException("Unsupported Encoding");
+            }
+        }
+
+        /**
+         * @return True if encoded destination port is the source/output port of this network connection
+         */
+        public boolean isDestinationSource() {
+            return destinationIsSource;
+        }
+    }
+
+    /**
      * Enum on different levels of structure (framework elements and ports) exchanged among peers
      */
     public enum StructureExchange {
@@ -115,10 +190,13 @@ public class FrameworkElementInfo {
     private short minNetUpdateTime;
 
     /** Stores outgoing connection destination ports - if this is a port */
-    private ArrayList<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
+    private final ArrayList<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
 
     /** Number of connections */
     private int connectionCount = 0;
+
+    /** Stores outgoing network connections - if this is a port */
+    private final ArrayList<NetworkConnection> networkConnections = new ArrayList<NetworkConnection>();
 
     /** Framework element tags */
     private FrameworkElementTags tags = new FrameworkElementTags();
@@ -275,12 +353,26 @@ public class FrameworkElementInfo {
      */
     public void deserializeConnections(InputStreamBuffer stream) {
         connectionCount = stream.readByte() & 0xFF;
+        boolean hasNetworkConnections = (connectionCount == 0xFF);
+        if (hasNetworkConnections) {
+            connectionCount = stream.readByte() & 0xFF;
+        }
+
         for (int i = 0; i < connectionCount; i++) {
             if (i >= connections.size()) {
                 connections.add(new ConnectionInfo(stream.readInt(), stream.readBoolean()));
             } else {
                 connections.get(i).handle = stream.readInt();
                 connections.get(i).finstructed = stream.readBoolean();
+            }
+        }
+
+        networkConnections.clear();
+        if (hasNetworkConnections) {
+            int count = stream.readInt();
+            for (int i = 0; i < count; i++) {
+                networkConnections.add(new NetworkConnection());
+                networkConnections.get(networkConnections.size() - 1).deserialize(stream);
             }
         }
     }
@@ -387,5 +479,12 @@ public class FrameworkElementInfo {
             return extraFlags & EDGE_AGG_PARENT_FLAGS_TO_STORE;
         }
         return extraFlags & PARENT_FLAGS_TO_STORE;
+    }
+
+    /**
+     * @return Copy of port's outgoing network connection info
+     */
+    public ArrayList<NetworkConnection> copyNetworkConnections() {
+        return new ArrayList<NetworkConnection>(networkConnections);
     }
 }

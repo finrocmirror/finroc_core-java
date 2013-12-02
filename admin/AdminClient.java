@@ -97,6 +97,35 @@ public class AdminClient extends ClientPort {
     }
 
     /**
+     * Connect port in remote runtime to port in another remote runtime
+     *
+     * @param port1 Port1
+     * @param preferredTransport ID of preferred network transport to be used (e.g. "tcp"). If specified, it will be attempted to create the connection using this transport first.
+     * @param remoteRuntimeUuid UUID of remote runtime
+     * @param remotePortHandle Handle of remote port
+     * @param remotePortLink Link of port in remote runtime environment
+     * @param disconnect If 'false' the ports are connected - if 'true' the ports are disconnected
+     * @return Returns error message if connecting failed. On success, null is returned.
+     */
+    public String networkConnect(NetPort port1, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
+        String result;
+        if (port1 != null && getAdminInterface(port1) == this) {
+            try {
+                result = (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port1.getRemoteHandle(), preferredTransport, remoteRuntimeUuid, remotePortHandle, remotePortLink, disconnect);
+                if (result.length() == 0) {
+                    result = null;
+                }
+            } catch (Exception e) {
+                result = "timeout";
+            }
+            return result;
+        }
+        result = "No suitable administration interface found for connecting port '" + port1.getPort().getQualifiedLink() + "'";
+        logDomain.log(LogLevel.WARNING, getLogDescription(), result);
+        return result;
+    }
+
+    /**
      * Sets value of remote port
      *
      * @param np network port of remote port

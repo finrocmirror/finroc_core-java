@@ -51,12 +51,14 @@ public class AdminServer extends ServerPort<AdministrationService> {
     SAVE_FINSTRUCTABLE_GROUP = new Method(AdministrationService.class, "saveFinstructableGroup"),
     SET_ANNOTATION = new Method(AdministrationService.class, "setAnnotation"),
     SET_PORT_VALUE = new Method(AdministrationService.class, "setPortValue"),
-    START_EXECUTION = new Method(AdministrationService.class, "startExecution");
+    START_EXECUTION = new Method(AdministrationService.class, "startExecution"),
+    NETWORK_CONNECT = new Method(AdministrationService.class, "networkConnect");
 
     /** Data Type of method calls to this port */
     public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration Interface", CONNECT, CREATE_MODULE, DELETE_ELEMENT,
             DISCONNECT, DISCONNECT_ALL, GET_ANNOTATION, GET_CREATE_MODULE_ACTIONS, GET_MODULE_LIBRARIES, GET_PARAMETER_INFO, IS_EXECUTING,
-            LOAD_MODULE_LIBRARY, PAUSE_EXECUTION, SAVE_ALL_FINSTRUCTABLE_FILES, SAVE_FINSTRUCTABLE_GROUP, SET_ANNOTATION, SET_PORT_VALUE, START_EXECUTION);
+            LOAD_MODULE_LIBRARY, PAUSE_EXECUTION, SAVE_ALL_FINSTRUCTABLE_FILES, SAVE_FINSTRUCTABLE_GROUP, SET_ANNOTATION, SET_PORT_VALUE, START_EXECUTION,
+            NETWORK_CONNECT);
 
     public AdminServer() {
         super(new AdministrationService(), new PortCreationInfo(AdministrationService.PORT_NAME, AdminServer.DATA_TYPE, 0));

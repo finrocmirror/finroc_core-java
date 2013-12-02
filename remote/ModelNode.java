@@ -43,6 +43,9 @@ public class ModelNode {
     /** Node's parent */
     private ModelNode parent;
 
+    /** Is this node hidden by default? */
+    private boolean hidden;
+
     /**
      * @param name Name of node
      */
@@ -258,6 +261,9 @@ public class ModelNode {
      * @return Child with the specified qualified name. Null if no such child exists.
      */
     public ModelNode getChildByQualifiedName(String qualifiedName, int qualifiedNameStartIndex, char separator) {
+        if (children == null) {
+            return null;
+        }
         for (ModelNode child : children) {
             if (qualifiedName.regionMatches(qualifiedNameStartIndex, child.name, 0, child.name.length())) {
                 if (child.name.length() == qualifiedName.length() - qualifiedNameStartIndex) {
@@ -368,5 +374,23 @@ public class ModelNode {
     @Override
     public String toString() {
         return name;
+    }
+
+    /**
+     * @param checkAncestors Also check ancestors for 'hidden' flag ("Is element part of a hidden subtree?")
+     * @return Is this node hidden by default?
+     */
+    public boolean isHidden(boolean checkAncestors) {
+        if ((!checkAncestors) || parent == null) {
+            return hidden;
+        }
+        return hidden || parent.isHidden(checkAncestors);
+    }
+
+    /**
+     * @param hidden Whether this node should be hidden by default
+     */
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 }
