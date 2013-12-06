@@ -91,8 +91,8 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /** Cycle time for stream thread */
     public static ParameterNumeric<Integer> STREAM_THREAD_CYCLE_TIME;
 
-    /** > 0 if Runtime is instantiated in Java Applet - contains bit size of server CPU */
-    //public static final IntSetting runningInApplet = inst.add("RUNNING_IN_APPLET", 0, false);
+    /** Is runtime instantiated in Java Applet */
+    private static boolean runningInApplet;
 
     /**
      * Period in ms after which garbage collector will delete objects... any threads
@@ -235,7 +235,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * @return Is application running in applet?
      */
     public static boolean isRunningInApplet() {
-        return false;
+        return runningInApplet;
     }
 
     /**
@@ -287,5 +287,12 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      */
     public static boolean duplicateQualifiedNamesAllowed() {
         return duplicateQualifiedNamesAllowed;
+    }
+
+    /**
+     * @param runningInApplet Is runtime instantiated in Java Applet
+     */
+    public static void setRunningInApplet(boolean runningInApplet) {
+        RuntimeSettings.runningInApplet = runningInApplet;
     }
 }

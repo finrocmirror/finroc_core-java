@@ -83,6 +83,9 @@ public class Plugins { /*implements HTTPResource*/
 
     private void findAndLoadPlugins() {
         //TODO do properly
+        if (RuntimeSettings.isRunningInApplet()) {
+            return;
+        }
 
         if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
             pluginLoader = new JavaReleasePluginLoader();
