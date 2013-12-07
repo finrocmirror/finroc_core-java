@@ -82,7 +82,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     private final static File rootDir = new File(Files.getRootDir(RuntimeSettings.class)); //new File(new File(Files.getRootDir(RuntimeSettings.class)).getParentFile().getAbsolutePath());
 
     /** Is runtime executed as .class files (usually in Debug mode) or in .jar file */
-    private final static Boolean debugging = ANDROID_PLATFORM ? false : !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
+    private static Boolean debugging;
     // new File(Files.getRootDir(RuntimeSettings.class)).getName().equals("bin") || new File(Files.getRootDir(RuntimeSettings.class) + "/org/finroc/core/RuntimeSettings.java").exists();
 
     /** Loop time for buffer tracker (in ms) */
@@ -158,6 +158,13 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * @return Returns whether runtime is executed as .class files (usually in Debug mode) or in .jar file
      */
     public synchronized static boolean isDebugging() {
+        if (debugging == null) {
+            try {
+                debugging = (ANDROID_PLATFORM || runningInApplet) ? false : !RuntimeSettings.class.getResource("RuntimeSettings.class").toString().contains(".jar!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return debugging;
     }
 
