@@ -24,7 +24,8 @@ package org.finroc.core.port.rpc.internal;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 
 /**
@@ -114,7 +115,7 @@ public class RPCPort extends AbstractPort {
             for (int i = 0; i < it.size(); i++) {
                 RPCPort outgoingConnection = it.get(i);
                 if (outgoingConnection != partner) {
-                    log(LogLevel.WARNING, logDomain, "Port was already connected to a server. Removing connection to '" + outgoingConnection.getQualifiedName() + "' and adding the new one to '" + partner.getQualifiedName() + "'.");
+                    Log.log(LogLevel.WARNING, this, "Port was already connected to a server. Removing connection to '" + outgoingConnection.getQualifiedName() + "' and adding the new one to '" + partner.getQualifiedName() + "'.");
                     outgoingConnection.disconnectFrom(this);
                 }
             }
@@ -129,7 +130,7 @@ public class RPCPort extends AbstractPort {
         RPCPort serverPortOfThis = (isServer() || getFlag(Flag.NETWORK_ELEMENT)) ? this : getServer(false);
         RPCPort serverPortOfOther = (otherInterfacePort.isServer() || otherInterfacePort.getFlag(Flag.NETWORK_ELEMENT)) ? otherInterfacePort : otherInterfacePort.getServer(false);
         if (serverPortOfThis != null && serverPortOfOther != null) {
-            log(LogLevel.WARNING, logDomain, "Both ports (this and " + other.getQualifiedLink() + ") are connected to a server already.");
+            Log.log(LogLevel.WARNING, this, "Both ports (this and " + other.getQualifiedLink() + ") are connected to a server already.");
         } else if (serverPortOfThis != null) {
             return ConnectDirection.TO_SOURCE;
         } else if (serverPortOfOther != null) {

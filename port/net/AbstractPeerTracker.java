@@ -29,7 +29,6 @@ import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
 
 /**
  * @author Max Reichardt
@@ -37,7 +36,7 @@ import org.rrlib.finroc_core_utils.jc.log.LogUser;
  * This is the abstract base class for "peer trackers".
  * Peer trackers look for other systems on the network that can be connected to.
  */
-public abstract class AbstractPeerTracker extends LogUser implements HasDestructor {
+public abstract class AbstractPeerTracker implements HasDestructor {
 
     /** callIDs */
     private static final byte DISCOVERED = 0, REMOVED = 1;

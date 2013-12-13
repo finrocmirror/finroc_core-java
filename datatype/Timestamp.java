@@ -28,15 +28,15 @@ import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.finroc.core.RuntimeEnvironment;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.StringOutputStream;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -62,7 +62,7 @@ public class Timestamp extends CoreNumber {
         try {
             tmp = DatatypeFactory.newInstance();
         } catch (Exception e) {
-            RuntimeEnvironment.logDomain.log(LogLevel.DEBUG_WARNING, "Timestamp class", "Could not initialize DatatypeFactory. String serialization not available. This is normal for Android platforms.");
+            Log.log(LogLevel.DEBUG_WARNING, "Could not initialize DatatypeFactory. String serialization not available. This is normal for Android platforms.");
         }
         factory = tmp;
     }
@@ -71,12 +71,12 @@ public class Timestamp extends CoreNumber {
         set(0);
     }
 
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         setValue(is.readLong(), Unit.ns);
     }
 
     @Override
-    public void serialize(OutputStreamBuffer oos) {
+    public void serialize(BinaryOutputStream oos) {
         assert(getUnit() == Unit.ns);
         oos.writeLong(longValue());
     }

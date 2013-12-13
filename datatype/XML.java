@@ -23,11 +23,12 @@ package org.finroc.core.datatype;
 
 import java.io.StringReader;
 
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
-import org.rrlib.finroc_core_utils.xml.XMLDocument;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.serialization.XMLSerializable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLException;
+import org.rrlib.xml.XMLDocument;
+import org.rrlib.xml.XMLNode;
 import org.xml.sax.InputSource;
 
 /**
@@ -35,7 +36,7 @@ import org.xml.sax.InputSource;
  *
  * Buffer containing XML Data
  */
-public class XML extends CoreString {
+public class XML extends CoreString implements XMLSerializable {
 
     /** UID */
     private static final long serialVersionUID = -239392323342057L;
@@ -65,7 +66,7 @@ public class XML extends CoreString {
                 XMLDocument d1 = new XMLDocument(new InputSource(new StringReader(toString())), false);
                 XMLDocument d2 = new XMLDocument(new InputSource(new StringReader(other.toString())), false);
                 return d1.getRootNode().nodeEquals(d2.getRootNode());
-            } catch (XML2WrapperException e) {
+            } catch (XMLException e) {
                 e.printStackTrace();
                 return false;
             }

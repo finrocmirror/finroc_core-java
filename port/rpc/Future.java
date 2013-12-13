@@ -22,10 +22,8 @@
 package org.finroc.core.port.rpc;
 
 import org.finroc.core.port.rpc.internal.AbstractCall;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 
 /**
@@ -36,11 +34,7 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
  * Some irrelevant functionality (reference types, shared futures) is
  * removed as it is not required in the context of RPC ports.
  */
-public class Future extends LogUser {
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc_ports");
-
+public class Future {
 
     /**
      * Obtains value from future.
@@ -60,7 +54,7 @@ public class Future extends LogUser {
                 status = FutureStatus.values()[storage.futureStatus.get()];
                 if (status == FutureStatus.PENDING) {
                     if (storage.waiting) {
-                        log(LogLevel.ERROR, logDomain, "There's already a thread waiting on this object");
+                        Log.log(LogLevel.ERROR, this, "There's already a thread waiting on this object");
                         throw new RPCException(FutureStatus.INVALID_CALL);
                     }
                     storage.waiting = true;

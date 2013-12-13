@@ -23,13 +23,14 @@ package org.finroc.core.datatype;
 
 import java.io.Serializable;
 
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.StringOutputStream;
+import org.rrlib.serialization.StringSerializable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -37,7 +38,7 @@ import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
  * Simple string (buffer) type to use in ports
  * Has 128 bytes initially.
  */
-public class CoreString extends RRLibSerializableImpl implements Serializable {
+public class CoreString implements BinarySerializable, StringSerializable, Serializable {
 
     /** UID */
     private static final long serialVersionUID = 7483490124678921514L;
@@ -72,12 +73,12 @@ public class CoreString extends RRLibSerializableImpl implements Serializable {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeString(buffer);
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         is.readString(buffer);
     }
 

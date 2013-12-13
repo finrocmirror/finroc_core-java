@@ -22,8 +22,8 @@
 package org.finroc.core.port.std;
 
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPoolCR;
-import org.rrlib.finroc_core_utils.log.LogStream;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.logging.LogStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

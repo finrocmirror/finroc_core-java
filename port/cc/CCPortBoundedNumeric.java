@@ -26,7 +26,8 @@ import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.ThreadLocalCache;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -56,14 +57,14 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
     }
 
     protected void nonStandardAssign(ThreadLocalCache tc) {
-        CoreNumber cn = tc.data.getObject().<CoreNumber>getData();
+        CoreNumber cn = (CoreNumber)tc.data.getObject().getData();
         double val = cn.doubleValue();
         if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
         }
         if (!bounds.inBounds(val)) {
             if (tc.ref.getContainer().getRefCounter() == 0) { // still unused
-                log(LogLevel.DEBUG_WARNING, logDomain, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
+                Log.log(LogLevel.DEBUG_WARNING, this, "Attempt to publish value that is out-of-bounds of output (!) port. This is typically not wise.");
                 tc.ref.getContainer().recycleUnused();
             }
             if (bounds.discard()) {
@@ -71,13 +72,13 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
                 tc.data = tc.ref.getContainer();
             } else if (bounds.adjustToRange()) {
                 CCPortDataManagerTL container = super.getUnusedBuffer(tc);
-                CoreNumber cnc = container.getObject().<CoreNumber>getData();
+                CoreNumber cnc = (CoreNumber)container.getObject().getData();
                 tc.data = container;
                 tc.ref = container.getCurrentRef();
                 cnc.setValue(bounds.toBounds(val), cn.getUnit());
             } else if (bounds.applyDefault()) {
                 tc.data = tc.getUnusedBuffer(CoreNumber.TYPE);
-                CoreNumber cnc = tc.data.getObject().<CoreNumber>getData();
+                CoreNumber cnc = (CoreNumber)tc.data.getObject().getData();
                 tc.ref = tc.data.getCurrentRef();
                 cnc.setValue(bounds.getOutOfBoundsDefault());
                 tc.data.setRefCounter(0); // locks will be added during assign
@@ -102,18 +103,18 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
     public void setBounds(Bounds<T> bounds2) {
         bounds.set(bounds2);
         CCPortDataManager mgr = super.getInInterThreadContainer();
-        CoreNumber cn = mgr.getObject().<CoreNumber>getData();
+        CoreNumber cn = (CoreNumber)mgr.getObject().getData();
         double val = cn.doubleValue();
         if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
         }
         if (!bounds.inBounds(val)) {
             if (bounds.discard()) {
-                logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot discard value - applying default");
+                Log.log(LogLevel.WARNING, this, "Cannot discard value - applying default");
                 applyDefaultValue();
             } else if (bounds.adjustToRange()) {
                 CCPortDataManagerTL buf = ThreadLocalCache.getFast().getUnusedBuffer(getDataType());
-                buf.getObject().<CoreNumber>getData().setValue(bounds.toBounds(val));
+                ((CoreNumber)buf.getObject().getData()).setValue(bounds.toBounds(val));
                 super.publish(buf);
             } else if (bounds.applyDefault()) {
                 applyDefaultValue();
@@ -127,7 +128,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         if (buffer.getObject().getType() != CoreNumber.TYPE) {
             return "Buffer has wrong type";
         }
-        CoreNumber cn = buffer.getObject().getData();
+        CoreNumber cn = (CoreNumber)buffer.getObject().getData();
         double val = cn.doubleValue();
         if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());

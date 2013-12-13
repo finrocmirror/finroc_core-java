@@ -23,10 +23,8 @@ package org.finroc.core.port.std;
 
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObjectManager;
 
 import org.finroc.core.portdatabase.ReusableGenericObjectManager;
 
@@ -68,9 +66,6 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
 
     /** Different reference to port data (because of reuse problem - see portratio) */
     private final PortDataReference[] refs = new PortDataReference[NUMBER_OF_REFERENCES];
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_data");
 
     /**
      * Standard constructor

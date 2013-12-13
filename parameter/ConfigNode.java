@@ -23,8 +23,8 @@ package org.finroc.core.parameter;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

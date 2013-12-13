@@ -27,15 +27,15 @@ import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
  *
  * Parameter template class for standard types
  */
-public class Parameter<T extends RRLibSerializable> extends Port<T> {
+public class Parameter<T extends BinarySerializable> extends Port<T> {
 
     public Parameter(String name, FrameworkElement parent, String configEntry, DataTypeBase dt) {
         super(new PortCreationInfo(name, parent, getType(dt), FrameworkElementFlags.INPUT_PORT));

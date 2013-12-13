@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.cc;
 
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * References to cheap copy port data.

@@ -22,23 +22,22 @@
 package org.finroc.core.datatype;
 
 import org.finroc.core.portdatabase.CCType;
-import org.rrlib.finroc_core_utils.rtti.Copyable;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.NumericRepresentation;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.StringOutputStream;
+import org.rrlib.serialization.StringSerializable;
+import org.rrlib.serialization.rtti.Copyable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
  *
  * boolean type
  */
-public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreBoolean>, CCType, NumericRepresentation {
+public class CoreBoolean implements StringSerializable, Copyable<CoreBoolean>, CCType, NumericRepresentation {
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<CoreBoolean>(CoreBoolean.class, "bool", false);
@@ -58,12 +57,12 @@ public class CoreBoolean extends RRLibSerializableImpl implements Copyable<CoreB
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeBoolean(value);
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         value = is.readBoolean();
     }
 

@@ -26,7 +26,7 @@ import java.util.List;
 
 import org.finroc.core.Annotatable;
 import org.finroc.core.FinrocAnnotation;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 
 /**
@@ -101,7 +101,7 @@ public class RemoteFrameworkElement extends ModelNode {
     }
 
     /**
-     * @see org.finroc.core.Annotatable#getAnnotation(org.rrlib.finroc_core_utils.rtti.DataTypeBase)
+     * @see org.finroc.core.Annotatable#getAnnotation(org.rrlib.serialization.rtti.DataTypeBase)
      */
     public FinrocAnnotation getAnnotation(DataTypeBase dt) {
         return annotationManager.getAnnotation(dt);

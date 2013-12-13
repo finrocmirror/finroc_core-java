@@ -77,7 +77,7 @@ public class ParameterBool extends Parameter<CoreBoolean> {
      */
     public void set(boolean b) {
         CCPortDataManagerTL cb = ThreadLocalCache.get().getUnusedBuffer(CoreBoolean.TYPE);
-        cb.getObject().<CoreBoolean>getData().set(b);
+        ((CoreBoolean)cb.getObject().getData()).set(b);
         ((CCPortBase)wrapped).browserPublishRaw(cb);
         cache.currentValue = b;
     }

@@ -27,15 +27,10 @@ import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.XML;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.remote.RemoteTypes;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.Factory;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectInstance;
-import org.rrlib.finroc_core_utils.serialization.EnumValue;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
+import org.rrlib.serialization.EnumValue;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -55,7 +50,7 @@ public class UnknownType extends DataTypeBase {
      * @param name Name of RPC Interface
      * @param type Type of unknown type
      * @param enumConstants Enum constants if this is a (unknown) enum type - otherwise NULL (may be an array of strings)
-     * @param Type traits of remote type
+     * @param Classification traits of remote type
      */
     public UnknownType(String name, FinrocTypeInfo.Type type, Object[] enumConstants, byte traits) {
         super(getDataTypeInfo(name, traits));
@@ -149,7 +144,7 @@ public class UnknownType extends DataTypeBase {
         DataTypeBase dataType;
 
         public UnknownTypeInfo(String name, byte traits) {
-            type = Type.PLAIN;
+            type = Classification.PLAIN;
             javaClass = ((traits & RemoteTypes.IS_ENUM) != 0) ? EnumValue.class : ((traits & RemoteTypes.IS_STRING_SERIALIZABLE) != 0) ? CoreString.class : XML.class;
             this.name = name;
         }
@@ -165,27 +160,26 @@ public class UnknownType extends DataTypeBase {
             }
         }
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
         public GenericObject createInstanceGeneric(int placement, int managerSize) {
-            return new GenericObjectInstance((RRLibSerializable)createInstance(placement), dataType, null);
+            return new GenericObject(createInstance(placement), dataType, null);
         }
 
-        @Override
-        public void deepCopy(Object src, Object dest, Factory f) {
-            RRLibSerializable s = (RRLibSerializable)src;
-            RRLibSerializable d = (RRLibSerializable)dest;
-            Serialization.deepCopy(s, d, f);
-        }
-
-        @Override
-        public void serialize(OutputStreamBuffer os, Object obj) {
-            ((RRLibSerializable)obj).serialize(os);
-        }
-
-        @Override
-        public void deserialize(InputStreamBuffer is, Object obj) {
-            ((RRLibSerializable)obj).deserialize(is);
-        }
+//        @Override
+//        public void deepCopy(Object src, Object dest, Factory f) {
+//            RRLibSerializable s = (RRLibSerializable)src;
+//            RRLibSerializable d = (RRLibSerializable)dest;
+//            Serialization.deepCopy(s, d, f);
+//        }
+//
+//        @Override
+//        public void serialize(BinaryOutputStream os, Object obj) {
+//            ((RRLibSerializable)obj).serialize(os);
+//        }
+//
+//        @Override
+//        public void deserialize(BinaryInputStream is, Object obj) {
+//            ((RRLibSerializable)obj).deserialize(is);
+//        }
 
     }
 }

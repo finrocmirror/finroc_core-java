@@ -31,9 +31,8 @@ import org.finroc.core.port.AggregatedEdge;
 import org.finroc.core.port.EdgeAggregator;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /** ThreadContainer thread class */
 public class ThreadContainerThread extends CoreLoopThreadBase implements RuntimeListener, FrameworkElementTreeFilter.Callback<Boolean> {
@@ -64,9 +63,6 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
 
     /** temp buffer */
     private final StringBuilder tmp = new StringBuilder();
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_container");
 
     public ThreadContainerThread(ThreadContainer threadContainer, long defaultCycleTime, boolean warnOnCycleTimeExceed) {
         super(defaultCycleTime, warnOnCycleTimeExceed);
@@ -125,7 +121,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                     }
 
                     // ok, we didn't find module to continue with... (loop)
-                    logDomain.log(LogLevel.WARNING, getLogDescription(), "Detected loop: doing traceback");
+                    Log.log(LogLevel.WARNING, this, "Detected loop: doing traceback");
                     traceBack.clear();
                     PeriodicFrameworkElementTask current = tasks.get(0);
                     traceBack.add(current);
@@ -141,7 +137,7 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                             }
                         }
                         if (end) {
-                            logDomain.log(LogLevel.WARNING, getLogDescription(), "Choosing " + current.incoming.getQualifiedName() + " as next element");
+                            Log.log(LogLevel.WARNING, this, "Choosing " + current.incoming.getQualifiedName() + " as next element");
                             schedule.add(current);
                             tasks.removeElem(current);
 

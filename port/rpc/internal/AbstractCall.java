@@ -27,10 +27,9 @@ import org.finroc.core.port.rpc.FutureStatus;
 import org.finroc.core.port.rpc.Method;
 import org.finroc.core.port.rpc.ResponseHandler;
 import org.rrlib.finroc_core_utils.jc.container.Queueable;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryOutputStream;
 
 
 /**
@@ -49,9 +48,6 @@ public class AbstractCall extends Queueable {
         RPC_RESPONSE,
         UNSPECIFIED
     }
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc_ports");
 
     /** True while thread is waiting on condition variable */
     public boolean waiting;
@@ -155,7 +151,7 @@ public class AbstractCall extends Queueable {
     /**
      * Serializes call to stream
      */
-    public void serialize(OutputStreamBuffer stream) {}
+    public void serialize(BinaryOutputStream stream) {}
 
     /**
      * @param callId Call ID for call
@@ -174,7 +170,7 @@ public class AbstractCall extends Queueable {
     public void setException(FutureStatus newStatus) {
         FutureStatus current = FutureStatus.values()[futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            log(LogLevel.WARNING, logDomain, "Exception cannot be set twice. Ignoring.");
+            Log.log(LogLevel.WARNING, this, "Exception cannot be set twice. Ignoring.");
             return;
         }
 

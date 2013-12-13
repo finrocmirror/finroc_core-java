@@ -31,7 +31,8 @@ import org.rrlib.finroc_core_utils.jc.container.ConcurrentMap;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 import org.finroc.core.admin.AdminServer;
 import org.finroc.core.datatype.Constant;
@@ -340,7 +341,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * @param edge Edge to add
      */
     protected void addLinkEdge(String link, LinkEdge edge) {
-        edgeLog.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Adding link edge connecting to " + link);
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Adding link edge connecting to " + link);
         synchronized (registry) {
             LinkEdge interested = registry.linkEdges.get(link);
             if (interested == null) {
@@ -388,7 +389,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     prev = current;
                     current = current.getNextEdge();
                 }
-                log(LogLevel.DEBUG_WARNING, logDomain, "warning: Could not remove link edge for link: " + link);
+                Log.log(LogLevel.DEBUG_WARNING, this, "Could not remove link edge for link: " + link);
             }
         }
     }
@@ -470,7 +471,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     for (int i = 0; i < ap.getLinkCount(); i++) {
                         ap.getQualifiedLink(registry.tempBuffer, i);
                         String s = registry.tempBuffer.toString();
-                        edgeLog.log(LogLevel.DEBUG_VERBOSE_2, getLogDescription(), "Checking link " + s + " with respect to link edges");
+                        Log.log(LogLevel.DEBUG_VERBOSE_2, this, "Checking link " + s + " with respect to link edges");
                         LinkEdge le = registry.linkEdges.get(s);
                         while (le != null) {
                             le.linkAdded(this, s, ap);

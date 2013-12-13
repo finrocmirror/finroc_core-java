@@ -23,7 +23,7 @@ package org.finroc.core.port.cc;
 
 import org.finroc.core.portdatabase.ReusableGenericObjectManagerTL;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

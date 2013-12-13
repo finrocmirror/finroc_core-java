@@ -35,7 +35,7 @@ import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameter;
 import org.finroc.core.parameter.StaticParameterBase;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

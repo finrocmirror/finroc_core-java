@@ -28,17 +28,15 @@ import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.portdatabase.SerializationHelper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.rtti.TypedObject;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
+import org.rrlib.xml.XMLNode;
 
 /**
  * @author Max Reichardt
@@ -111,9 +109,6 @@ public class StaticParameterBase implements HasDestructor {
     /** List of attached parameters */
     private SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
 
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameters");
-
     /** Constructor for remote parameters */
     public StaticParameterBase() {
         remote = true;
@@ -144,7 +139,7 @@ public class StaticParameterBase implements HasDestructor {
         remote = false;
     }
 
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeString(name);
         os.writeType(type);
         os.writeString(commandLineOption);
@@ -162,16 +157,16 @@ public class StaticParameterBase implements HasDestructor {
      *
      * @param os Output stream
      */
-    public void serializeValue(OutputStreamBuffer os) {
+    public void serializeValue(BinaryOutputStream os) {
         GenericObject val = valPointer();
         os.writeBoolean(val != null);
         if (val != null) {
             os.writeType(val.getType());
-            Serialization.serialize(os, val, Serialization.DataEncoding.XML);
+            val.serialize(os, Serialization.DataEncoding.XML);
         }
     }
 
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         if (remoteValue()) {
             name = is.readString();
             type = is.readType();
@@ -192,7 +187,7 @@ public class StaticParameterBase implements HasDestructor {
         try {
             deserializeValue(is);
         } catch (Exception e) {
-            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+            Log.log(LogLevel.ERROR, this, e);
         }
     }
 
@@ -201,7 +196,7 @@ public class StaticParameterBase implements HasDestructor {
      *
      * @param is Input stream
      */
-    public void deserializeValue(InputStreamBuffer is) {
+    public void deserializeValue(BinaryInputStream is) throws Exception {
         if (is.readBoolean()) {
             DataTypeBase dt = is.readType();
             GenericObject val = valPointer();
@@ -209,7 +204,7 @@ public class StaticParameterBase implements HasDestructor {
                 createBuffer(dt);
                 val = valPointer();
             }
-            Serialization.deserialize(is, val, Serialization.DataEncoding.XML);
+            val.deserialize(is, Serialization.DataEncoding.XML);
         }
     }
 
@@ -247,7 +242,7 @@ public class StaticParameterBase implements HasDestructor {
                 // find parameter to attach to
                 FrameworkElement fg = parentList.getAnnotated().getParentWithFlags(FrameworkElementFlags.FINSTRUCTABLE_GROUP);
                 if (fg == null) {
-                    logDomain.log(LogLevel.ERROR, getLogDescription(), "No parent finstructable group. Ignoring...");
+                    Log.log(LogLevel.ERROR, this, "No parent finstructable group. Ignoring...");
                     return;
                 }
 
@@ -264,19 +259,12 @@ public class StaticParameterBase implements HasDestructor {
                     sp = new StaticParameterBase(outerParameterAttachment, type, false, true);
                     attachTo(sp);
                     spl.add(sp);
-                    logDomain.log(LogLevel.DEBUG, getLogDescription(), "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
+                    Log.log(LogLevel.DEBUG, this, "Creating proxy parameter '" + outerParameterAttachment + "' in '" + fg.getQualifiedName() + "'.");
                 } else {
-                    logDomain.log(LogLevel.ERROR, getLogDescription(), "No parameter named '" + outerParameterAttachment + "' found in parent group.");
+                    Log.log(LogLevel.ERROR, this, "No parameter named '" + outerParameterAttachment + "' found in parent group.");
                 }
             }
         }
-    }
-
-    /**
-     * @return Log description
-     */
-    public String getLogDescription() {
-        return name;
     }
 
     @Override
@@ -305,7 +293,7 @@ public class StaticParameterBase implements HasDestructor {
     public void set(String s) throws Exception {
         assert(type != null);
         DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
-        TypedObject val = valPointer();
+        GenericObject val = valPointer();
         if (val.getType() != dt) {
             createBuffer(dt);
             val = valPointer();
@@ -351,7 +339,7 @@ public class StaticParameterBase implements HasDestructor {
 
     public void serialize(XMLNode node, boolean finstructContext) throws Exception {
         assert(!(node.hasAttribute("type") || node.hasAttribute("cmdline") || node.hasAttribute("config") || node.hasAttribute("attachouter")));
-        TypedObject val = valPointer();
+        GenericObject val = valPointer();
         if (val.getType() != type || structureParameterProxy) {
             node.setAttribute("type", val.getType().getName());
         }
@@ -377,7 +365,7 @@ public class StaticParameterBase implements HasDestructor {
             dt = DataTypeBase.findType(node.getStringAttribute("type"));
         }
         enforceCurrentValue = node.hasAttribute("enforcevalue") && node.getBoolAttribute("enforcevalue");
-        TypedObject val = valPointer();
+        GenericObject val = valPointer();
         if (val == null || val.getType() != dt) {
             createBuffer(dt);
             val = valPointer();
@@ -546,7 +534,12 @@ public class StaticParameterBase implements HasDestructor {
      */
     public boolean hasChanged() {
         StaticParameterBase sp = getParameterWithBuffer();
-        return !Serialization.equals(sp.value, lastValue);
+        try {
+            return !Serialization.equals(sp.value, lastValue);
+        } catch (Exception e) {
+            Log.log(LogLevel.ERROR, this, e);
+            return false; // avoids endless loops - should not happen
+        }
     }
 
     /**
@@ -571,7 +564,7 @@ public class StaticParameterBase implements HasDestructor {
                         set(arg);
                         return;
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
+                        Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);
                     }
                 }
             }
@@ -591,7 +584,7 @@ public class StaticParameterBase implements HasDestructor {
                         try {
                             value.deserialize(node);
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                            Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + getName() + "' from config entry '" + fullConfigEntry + "': ", e);
                         }
                     }
                 }

@@ -23,8 +23,8 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.datatype.CoreBoolean;
 import org.finroc.core.datatype.CoreNumber;
-import org.rrlib.finroc_core_utils.rtti.GenericChangeable;
-import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
+import org.rrlib.serialization.NumericRepresentation;
+import org.rrlib.serialization.rtti.GenericChangeable;
 
 public class DataTypeUtil {
 

@@ -44,15 +44,13 @@ import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
+import org.rrlib.serialization.rtti.GenericObjectManager;
 
 /**
  * @author Max Reichardt
@@ -65,7 +63,7 @@ import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
  *
  * Obviously, this class is somewhat critical for overall performance.
  */
-public class ThreadLocalCache extends LogUser {
+public class ThreadLocalCache {
 
     // maybe TODO: reuse old ThreadLocalInfo objects for other threads - well - would cause a lot of "Verschnitt"
 
@@ -96,7 +94,7 @@ public class ThreadLocalCache extends LogUser {
     public final CCQueueFragmentRaw tempCCFragment = new CCQueueFragmentRaw();
 
     /** CoreInput for Input packet processor */
-    public final InputStreamBuffer inputPacketProcessor = new InputStreamBuffer();
+    public final BinaryInputStream inputPacketProcessor = new BinaryInputStream();
 
     /** Object to gain fast access to the thread local information */
     private static final FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache> info =
@@ -126,16 +124,13 @@ public class ThreadLocalCache extends LogUser {
     /** Port Register - we need to have this for clean thread cleanup */
     public final CoreRegister<AbstractPort> portRegister;
 
-    /** Log domain for this class */
-    protected static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("thread_local_cache");
-
     private ThreadLocalCache(/*@SizeT int index*/) {
         portRegister = RuntimeEnvironment.getInstance().getPorts();
         infosLock = infos;
         threadUid = threadUidCounter.getAndIncrement();
         threadId = ThreadUtil.getCurrentThreadId();
 
-        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Creating ThreadLocalCache for thread " + Thread.currentThread().getName());
     }
 
     protected void finalize() {
@@ -147,7 +142,7 @@ public class ThreadLocalCache extends LogUser {
      */
     private void finalDelete() {
 
-        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Deleting ThreadLocalCache");
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Deleting ThreadLocalCache");
 
         /** Delete local port data buffer pools */
         for (int i = 0; i < ccTypePools.length; i++) {

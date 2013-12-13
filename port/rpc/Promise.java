@@ -23,12 +23,9 @@ package org.finroc.core.port.rpc;
 
 import org.finroc.core.port.rpc.internal.AbstractCall;
 import org.finroc.core.port.rpc.internal.ResponseSender;
-import org.finroc.core.port.rpc.internal.Serialization;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryOutputStream;
 
 
 /**
@@ -53,14 +50,11 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
  * Due to the lack of RAII, this Java version does not work quite as well
  * as the C++ one.
  */
-public class Promise extends LogUser {
+public class Promise {
 
     public Promise() {
         storage.futureStatus.set(FutureStatus.PENDING.ordinal());
     }
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("rpc_ports");
 
     /**
      * Breaks promise (what happens when destructed in C++)
@@ -93,7 +87,7 @@ public class Promise extends LogUser {
     public void setValue(Object value) {
         FutureStatus current = FutureStatus.values()[storage.futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            log(LogLevel.WARNING, logDomain, "Call already has status " + current.toString() + ". Ignoring.");
+            Log.log(LogLevel.WARNING, this, "Call already has status " + current.toString() + ". Ignoring.");
             return;
         }
 
@@ -117,7 +111,7 @@ public class Promise extends LogUser {
         long remotePromiseCallId;
 
         @Override
-        public void serialize(OutputStreamBuffer stream) {
+        public void serialize(BinaryOutputStream stream) {
             // Deserialized by network transport implementation
             stream.writeType(method.getInterfaceType());
             stream.writeByte(method.getMethodID());
@@ -128,7 +122,7 @@ public class Promise extends LogUser {
             FutureStatus status = FutureStatus.values()[storage.futureStatus.get()];
             assert(status == FutureStatus.READY) : "only ready responses should be serialized";
             stream.writeEnum(status);
-            Serialization.serializeObject(stream, resultBuffer, method.getPromiseType());
+            stream.writeObject(resultBuffer, method.getPromiseType());
         }
     }
 

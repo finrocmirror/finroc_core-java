@@ -21,28 +21,28 @@
 //----------------------------------------------------------------------
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.rtti.Copyable;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.NumericRepresentation;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.serialization.StringOutputStream;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.NumericRepresentation;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.StringOutputStream;
+import org.rrlib.serialization.StringSerializable;
+import org.rrlib.serialization.XMLSerializable;
+import org.rrlib.serialization.rtti.Copyable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLNode;
 
 import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.ExpressData;
-import org.finroc.core.portdatabase.MaxStringSerializationLength;
 
 /**
  * @author Max Reichardt
  *
  * This class stores numbers (with units) of different types.
  */
-public class CoreNumber extends Number implements RRLibSerializable, ExpressData, Copyable<CoreNumber>, CCType, NumericRepresentation {
+public class CoreNumber extends Number implements StringSerializable, XMLSerializable, ExpressData, Copyable<CoreNumber>, CCType, NumericRepresentation {
 
     /** UID */
     private static final long serialVersionUID = 8;
@@ -280,7 +280,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
                       FLOAT32 = -60, CONST = -59, MIN_BARRIER = -58;
 
     @Override
-    public void serialize(OutputStreamBuffer oos) {
+    public void serialize(BinaryOutputStream oos) {
         if (numType == Type.LONG || numType == Type.INT) {
             //Cpp int64 value = (numType == eLONG) ? lval : ival;
             if (value >= MIN_BARRIER && value <= 63) {
@@ -324,7 +324,7 @@ public class CoreNumber extends Number implements RRLibSerializable, ExpressData
     }
 
     @Override
-    public void deserialize(InputStreamBuffer ois) {
+    public void deserialize(BinaryInputStream ois) {
         byte firstByte = ois.readByte();
         boolean hasUnit = (firstByte & 1) > 0;
         switch (firstByte >> 1) {

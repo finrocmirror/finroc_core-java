@@ -36,13 +36,14 @@ import org.finroc.core.port.rpc.ClientPort;
 import org.finroc.core.port.rpc.ResponseHandler;
 import org.finroc.core.remote.RemoteFrameworkElement;
 import org.finroc.core.remote.RemoteRuntime;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer.TypeEncoding;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.MemoryBuffer;
+import org.rrlib.serialization.BinaryOutputStream.TypeEncoding;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObjectManager;
 
 /**
  * @author Max Reichardt
@@ -66,7 +67,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.CONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.WARNING, getLogDescription(), "Connecting remote ports failed");
+        Log.log(LogLevel.WARNING, getLogDescription(), "Connecting remote ports failed");
     }
 
     /**
@@ -80,7 +81,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.DISCONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed");
+        Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed");
     }
 
     /**
@@ -93,7 +94,7 @@ public class AdminClient extends ClientPort {
             this.call(AdminServer.DISCONNECT_ALL, np1.getRemoteHandle());
             return;
         }
-        logDomain.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote port failed");
+        Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote port failed");
     }
 
     /**
@@ -121,7 +122,7 @@ public class AdminClient extends ClientPort {
             return result;
         }
         result = "No suitable administration interface found for connecting port '" + port1.getPort().getQualifiedLink() + "'";
-        logDomain.log(LogLevel.WARNING, getLogDescription(), result);
+        Log.log(LogLevel.WARNING, getLogDescription(), result);
         return result;
     }
 
@@ -135,14 +136,14 @@ public class AdminClient extends ClientPort {
     public void setRemotePortValue(NetPort np, GenericObjectManager container, ResponseHandler handler) {
         if (np != null && getAdminInterface(np) == this) {
             MemoryBuffer mb = new MemoryBuffer();
-            OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+            BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
             co.writeEnum(np.getEncoding());
             container.getObject().serialize(co, np.getInternalEncoding());
             co.close();
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
             return;
         }
-        logDomain.log(LogLevel.WARNING, getLogDescription(), "Setting value of remote port failed");
+        Log.log(LogLevel.WARNING, getLogDescription(), "Setting value of remote port failed");
     }
 
     /**
@@ -153,7 +154,7 @@ public class AdminClient extends ClientPort {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(2000, AdminServer.GET_CREATE_MODULE_ACTIONS);
             return toRemoteCreateModuleActionArray(mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return new ArrayList<RemoteCreateModuleAction>();
     }
@@ -164,7 +165,7 @@ public class AdminClient extends ClientPort {
      */
     private ArrayList<RemoteCreateModuleAction> toRemoteCreateModuleActionArray(MemoryBuffer mb) {
         ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
-        InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+        BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
         while (ci.moreDataAvailable()) {
             String name = ci.readString();
             RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, name, ci.readString(), result.size());
@@ -188,7 +189,7 @@ public class AdminClient extends ClientPort {
      */
     public String createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
         MemoryBuffer mb = new MemoryBuffer();
-        OutputStreamBuffer co = new OutputStreamBuffer(mb, TypeEncoding.Names);
+        BinaryOutputStream co = new BinaryOutputStream(mb, TypeEncoding.Names);
         if (spl != null) {
             for (int i = 0; i < spl.size(); i++) {
                 spl.get(i).serializeValue(co);
@@ -203,7 +204,7 @@ public class AdminClient extends ClientPort {
             }
             return "";
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
             return e.getMessage();
         }
     }
@@ -225,7 +226,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SAVE_FINSTRUCTABLE_GROUP, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -236,7 +237,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SAVE_ALL_FINSTRUCTABLE_FILES);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -253,14 +254,14 @@ public class AdminClient extends ClientPort {
             if (mb == null || mb.getSize() == 0) {
                 return null;
             }
-            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
             //DataTypeBase dt = DataTypeBase.findType(ci.readString());
             FinrocAnnotation fa = (FinrocAnnotation)annType.createInstance();
             fa.deserialize(ci);
             ci.close();
             return fa;
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return null;
     }
@@ -274,7 +275,7 @@ public class AdminClient extends ClientPort {
      */
     public void setAnnotation(int remoteHandle, FinrocAnnotation ann) {
         MemoryBuffer mb = new MemoryBuffer();
-        OutputStreamBuffer co = new OutputStreamBuffer(mb, OutputStreamBuffer.TypeEncoding.Names);
+        BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
         if (ann.getType() == null) {
             ann.initDataType();
         }
@@ -285,7 +286,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.SET_ANNOTATION, remoteHandle, mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -298,7 +299,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.DELETE_ELEMENT, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -311,7 +312,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.START_EXECUTION, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -324,7 +325,7 @@ public class AdminClient extends ClientPort {
         try {
             this.call(AdminServer.PAUSE_EXECUTION, remoteHandle);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
     }
 
@@ -347,7 +348,7 @@ public class AdminClient extends ClientPort {
     public void getParameterInfo(RemoteFrameworkElement remoteElement) throws Exception {
         RemoteRuntime rr = RemoteRuntime.find(remoteElement);
         if (rr == null) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot find remote runtime object");
+            Log.log(LogLevel.WARNING, getLogDescription(), "Cannot find remote runtime object");
             return;
         }
         try {
@@ -355,7 +356,7 @@ public class AdminClient extends ClientPort {
             if (mb == null) {
                 return;
             }
-            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
 
             // No config file available?
             if (ci.readBoolean() == false) {
@@ -401,7 +402,7 @@ public class AdminClient extends ClientPort {
 
             ci.close();
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
             throw e;
         }
     }
@@ -413,13 +414,13 @@ public class AdminClient extends ClientPort {
         ArrayList<String> result = new ArrayList<String>();
         try {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(2000, AdminServer.GET_MODULE_LIBRARIES);
-            InputStreamBuffer ci = new InputStreamBuffer(mb, InputStreamBuffer.TypeEncoding.Names);
+            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
             while (ci.moreDataAvailable()) {
                 result.add(ci.readString());
             }
             return result;
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return result;
     }
@@ -438,7 +439,7 @@ public class AdminClient extends ClientPort {
             }
             return toRemoteCreateModuleActionArray(mb);
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return null;
     }

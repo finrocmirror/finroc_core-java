@@ -28,13 +28,12 @@ import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.Factory;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.Factory;
+import org.rrlib.serialization.rtti.GenericObject;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LinkEdge;
 import org.finroc.core.LockOrderLevels;
@@ -123,12 +122,6 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /** Bit vector indicating which of the outgoing edges was finstructed */
     private BitSet outgoingEdgesFinstructed = new BitSet();
 
-    /** Log domain for initial pushing */
-    public static final LogDomain initialPushLog = LogDefinitions.finroc.getSubDomain("initial_pushes");
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("ports");
-
     /**
      * @param pci PortCreationInformation
      */
@@ -169,9 +162,9 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public void printNotReadyMessage(String extraMessage) {
         if (isDeleted()) {
-            log(LogLevel.DEBUG, logDomain, "Port is about to be deleted. " + extraMessage + " (This may happen occasionally due to non-blocking nature)");
+            Log.log(LogLevel.DEBUG, this, "Port is about to be deleted. " + extraMessage + " (This may happen occasionally due to non-blocking nature)");
         } else {
-            log(LogLevel.WARNING, logDomain, "Port has not been initialized yet and thus cannot be used. Fix your application. " + extraMessage);
+            Log.log(LogLevel.WARNING, this, "Port has not been initialized yet and thus cannot be used. Fix your application. " + extraMessage);
         }
     }
 
@@ -253,21 +246,21 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     public boolean mayConnectTo(AbstractPort target, boolean warnIfImpossible) {
         if (!getFlag(Flag.EMITS_DATA)) {
             if (warnIfImpossible) {
-                log(LogLevel.WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because this (source) port does not emit data.");
+                Log.log(LogLevel.WARNING, this, "Cannot connect to target port '" + target.getQualifiedName() + "', because this (source) port does not emit data.");
             }
             return false;
         }
 
         if (!target.getFlag(Flag.ACCEPTS_DATA)) {
             if (warnIfImpossible) {
-                log(LogLevel.WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because it does not accept data.");
+                Log.log(LogLevel.WARNING, this, "Cannot connect to target port '" + target.getQualifiedName() + "', because it does not accept data.");
             }
             return false;
         }
 
         if (!dataType.isConvertibleTo(target.dataType)) {
             if (warnIfImpossible) {
-                log(LogLevel.WARNING, edgeLog, "Cannot connect to target port '" + target.getQualifiedName() + "', because data types are incompatible ('" + getDataType().getName() + "' and '" + target.getDataType().getName() + "').");
+                Log.log(LogLevel.WARNING, this, "Cannot connect to target port '" + target.getQualifiedName() + "', because data types are incompatible ('" + getDataType().getName() + "' and '" + target.getDataType().getName() + "').");
             }
             return false;
         }
@@ -294,11 +287,11 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     public void connectTo(AbstractPort to, ConnectDirection connectDirection, boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted() || to.isDeleted()) {
-                log(LogLevel.WARNING, edgeLog, "Ports already deleted!");
+                Log.log(LogLevel.WARNING, this, "Ports already deleted!");
                 return;
             }
             if (to == this) {
-                log(LogLevel.WARNING, edgeLog, "Cannot connect port to itself.");
+                Log.log(LogLevel.WARNING, this, "Cannot connect port to itself.");
                 return;
             }
             if (isConnectedTo(to)) {
@@ -314,7 +307,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 } else if (to_target_possible || to_source_possible) {
                     connectDirection = to_target_possible ? ConnectDirection.TO_TARGET : ConnectDirection.TO_SOURCE;
                 } else {
-                    log(LogLevel.WARNING, edgeLog, "Could not connect ports '" + getQualifiedName() + "' and '" + to.getQualifiedName() + "' for the following reasons:");
+                    Log.log(LogLevel.WARNING, this, "Could not connect ports '" + getQualifiedName() + "' and '" + to.getQualifiedName() + "' for the following reasons:");
                     mayConnectTo(to, true);
                     to.mayConnectTo(this, true);
                     return;
@@ -330,7 +323,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 target.propagateStrategy(null, source);
                 source.connectionAdded(target, true);
                 target.connectionAdded(source, false);
-                log(LogLevel.DEBUG_VERBOSE_1, edgeLog, "Creating Edge from " + source.getQualifiedName() + " to " + target.getQualifiedName());
+                Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Creating Edge from " + source.getQualifiedName() + " to " + target.getQualifiedName());
 
                 // check whether we need an initial reverse push
                 source.considerInitialReversePush(target);
@@ -347,7 +340,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private void considerInitialReversePush(AbstractPort target) {
         if (isReady() && target.isReady()) {
             if (reversePushStrategy() && edgesSrc.countElements() == 1) {
-                initialPushLog.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Performing initial reverse push from " + target.getQualifiedName() + " to " + getQualifiedName());
+                Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Performing initial reverse push from " + target.getQualifiedName() + " to " + getQualifiedName());
                 target.initialPushTo(this, true);
             }
         }
@@ -403,7 +396,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
             }
         }
         if (!found) {
-            edgeLog.log(LogLevel.DEBUG_WARNING, getLogDescription(), "edge not found in AbstractPort::disconnectFrom()");
+            Log.log(LogLevel.DEBUG_WARNING, this, "edge not found in AbstractPort::disconnectFrom()");
         }
         // not found: throw error message?
     }
@@ -550,7 +543,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     public void connectTo(String linkName, ConnectDirection connectDirection, boolean finstructed) {
         synchronized (getRegistryLock()) {
             if (isDeleted()) {
-                log(LogLevel.WARNING, edgeLog, "Ports already deleted!");
+                Log.log(LogLevel.WARNING, this, "Ports already deleted!");
                 return;
             }
             if (linkEdges == null) { // lazy initialization
@@ -587,7 +580,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         if (p != null && p.isPort()) {
             connectTo((AbstractPort)p, connectDirection, false);
         } else if (warnIfNotAvailable) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), "Cannot find port '" + partnerPortName + "' in " + partnerPortParent.getQualifiedName() + ".");
+            Log.log(LogLevel.WARNING, this, "Cannot find port '" + partnerPortName + "' in " + partnerPortParent.getQualifiedName() + ".");
         }
     }
 
@@ -652,7 +645,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 for (int i = 0, n = it.size(); i < n; i++) {
                     AbstractPort ap = it.get(i);
                     if (ap != null && ap.isReady()) {
-                        initialPushLog.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
+                        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Performing initial reverse push from " + ap.getQualifiedName() + " to " + getQualifiedName());
                         ap.initialPushTo(this, true);
                         break;
                     }
@@ -833,7 +826,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 }
                 if (sourcePort) {
                     if (isReady() && pushWanter.isReady() && (!getFlag(Flag.NO_INITIAL_PUSHING)) && (!pushWanter.getFlag(Flag.NO_INITIAL_PUSHING))) {
-                        initialPushLog.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
+                        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Performing initial push from " + getQualifiedName() + " to " + pushWanter.getQualifiedName());
                         initialPushTo(pushWanter, false);
                     }
                     pushWanter = null;
@@ -962,7 +955,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      */
     public void setMaxQueueLength(int queueLength) {
         if (!getFlag(Flag.HAS_QUEUE)) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), "warning: tried to set queue length on port without queue - ignoring");
+            Log.log(LogLevel.WARNING, this, "warning: tried to set queue length on port without queue - ignoring");
             return;
         }
         synchronized (getRegistryLock()) {
@@ -1081,7 +1074,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
      * @param co Output Stream
      */
     @SuppressWarnings("unchecked")
-    public void serializeOutgoingConnections(OutputStreamBuffer co) {
+    public void serializeOutgoingConnections(BinaryOutputStream co) {
         ArrayWrapper<AbstractPort> it = edgesSrc.getIterable();
         byte count = 0;
         for (int i = 0, n = it.size(); i < n; i++) {
@@ -1196,7 +1189,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 return ThreadLocalCache.get().getUnusedInterThreadBuffer(dt).getObject();
             }
         }
-        log(LogLevel.ERROR, logDomain, "Cannot create buffer of type " + dt.getName());
+        Log.log(LogLevel.ERROR, this, "Cannot create buffer of type " + dt.getName());
         return null;
     }
 
@@ -1295,7 +1288,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 returnToTarget = (thisOutputProxy && otherParentNodeCount < thisParentNodeCount) ||
                                  ((!thisOutputProxy) && thisParentNodeCount < otherParentNodeCount);
             } else {
-                log(LogLevel.WARNING, edgeLog, "Two proxy ports ('" + getQualifiedName() + "' and '" + other.getQualifiedName() + "') in the same direction and on the same level are to be connected. Cannot infer direction. Guessing TO_TARGET.");
+                Log.log(LogLevel.WARNING, this, "Two proxy ports ('" + getQualifiedName() + "' and '" + other.getQualifiedName() + "') in the same direction and on the same level are to be connected. Cannot infer direction. Guessing TO_TARGET.");
             }
         }
 

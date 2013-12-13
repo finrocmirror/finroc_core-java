@@ -32,8 +32,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.util.Files;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -43,7 +43,7 @@ import org.w3c.dom.NodeList;
  * @author Max Reichardt
  *
  */
-public class JavaDebugPluginLoader extends LogUser implements PluginLoader, FilenameFilter {
+public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
 
     /** Finroc repository root */
     private File finrocRepRoot;
@@ -125,16 +125,16 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                             if (!Plugin.class.isAssignableFrom(c)) {
                                 throw new Exception(className + " is not a plugin class.");
                             }
-                            log(LogLevel.DEBUG, Plugins.logDomain, "Found plugin: " + className);
+                            Log.log(LogLevel.DEBUG, "Found plugin: " + className);
                             result.add((Plugin)c.newInstance());
                         } catch (Exception e) {
-                            log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugin", e);
+                            Log.log(LogLevel.WARNING, this, "Error loading plugin", e);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugins", e);
+            Log.log(LogLevel.WARNING, this, "Error loading plugins", e);
         }
 
         return result;
@@ -179,9 +179,9 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
             }, false, false);
 
             if (files.size() == 0) {
-                log(LogLevel.ERROR, Plugins.logDomain, "Cannot determine jar file name for " + file + ": Not found in finroc repository");
+                Log.log(LogLevel.ERROR, this, "Cannot determine jar file name for " + file + ": Not found in finroc repository");
             } else if (files.size() > 1) {
-                log(LogLevel.WARNING, Plugins.logDomain, "Problem determining jar file name for " + file + ": Found in finroc repository multiple times (!). Taking first.");
+                Log.log(LogLevel.WARNING, this, "Problem determining jar file name for " + file + ": Found in finroc repository multiple times (!). Taking first.");
             }
             found = files.get(0);
             String dir = found.getAbsoluteFile().getParent();
@@ -208,13 +208,13 @@ public class JavaDebugPluginLoader extends LogUser implements PluginLoader, File
                 prefix = "rrlib_";
             }
             if (nl.getLength() == 0) {
-                log(LogLevel.ERROR, Plugins.logDomain, "Can't find suitable target in " + dir + "/make.xml");
+                Log.log(LogLevel.ERROR, this, "Can't find suitable target in " + dir + "/make.xml");
                 return "unknown binary";
             }
             return prefix + ((Element)nl.item(0)).getAttribute("name") + ".jar";
 
         } catch (Exception e) {
-            log(LogLevel.ERROR, Plugins.logDomain, "Cannot determine jar file name", e);
+            Log.log(LogLevel.ERROR, this, "Cannot determine jar file name", e);
             return null;
         }
     }

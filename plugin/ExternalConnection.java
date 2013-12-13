@@ -22,9 +22,8 @@
 package org.finroc.core.plugin;
 
 
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.LockOrderLevels;
@@ -59,9 +58,6 @@ public abstract class ExternalConnection extends FrameworkElement {
     /** Is this the first connect ? */
     private boolean firstConnect = true;
 
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("connections");
-
     /** if set, this module automatically connects to this address */
     private StaticParameterString autoConnectTo = new StaticParameterString("Autoconnect to", "");
 
@@ -88,7 +84,7 @@ public abstract class ExternalConnection extends FrameworkElement {
 
         if (needsAddress()) {
             if (address == null || address.equals("")) {  // cancel pressed
-                log(LogLevel.ERROR, logDomain, "No address specified. Cancelling connection attempt.");
+                Log.log(LogLevel.ERROR, this, "No address specified. Cancelling connection attempt.");
                 return;
             }
         }
@@ -126,7 +122,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnectImpl();
         } catch (Exception e) {
-            log(LogLevel.WARNING, logDomain, e);
+            Log.log(LogLevel.WARNING, this, e);
             //JavaOnlyBlock
             //JOptionPane.showMessageDialog(null, e.getMessage(), "Error disconnecting", JOptionPane.ERROR_MESSAGE);
         }
@@ -171,7 +167,7 @@ public abstract class ExternalConnection extends FrameworkElement {
         try {
             disconnect();
         } catch (Exception e) {
-            log(LogLevel.ERROR, logDomain, e);
+            Log.log(LogLevel.ERROR, this, e);
         }
         super.prepareDelete();
     }
@@ -222,7 +218,7 @@ public abstract class ExternalConnection extends FrameworkElement {
                     try {
                         disconnect();
                     } catch (Exception e) {
-                        log(LogLevel.ERROR, logDomain, e);
+                        Log.log(LogLevel.ERROR, this, e);
                     }
                 }
                 lastAddress = s;
@@ -231,7 +227,7 @@ public abstract class ExternalConnection extends FrameworkElement {
                 try {
                     connect(s, null);
                 } catch (Exception e) {
-                    log(LogLevel.ERROR, logDomain, e);
+                    Log.log(LogLevel.ERROR, this, e);
                 }
             }
         }

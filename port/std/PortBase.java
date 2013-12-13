@@ -24,9 +24,9 @@ package org.finroc.core.port.std;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.AtomicPtr;
 import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
-import org.rrlib.finroc_core_utils.log.LogStream;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.logging.LogStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.MultiTypePortDataBufferPool;
@@ -444,7 +444,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Answer
      */
     public boolean valueIs(Object pd) {
-        return value.get().getData().getRawDataPtr() == pd;
+        return value.get().getData().getData() == pd;
     }
 
     /**
@@ -694,6 +694,6 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * @return Does port contain default value?
      */
     public boolean containsDefaultValue() {
-        return value.get().getData().getRawDataPtr() == defaultValue.getObject().getRawDataPtr();
+        return value.get().getData().getData() == defaultValue.getObject().getData();
     }
 }

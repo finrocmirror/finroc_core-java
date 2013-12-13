@@ -33,16 +33,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.log.LogStream;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.logging.LogStream;
+import org.rrlib.serialization.Serialization;
 
 /**
  * @author Max Reichardt
  *
  * Loads plugins when code is compiled and packed in jar files.
  */
-public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
+public class JavaReleasePluginLoader implements PluginLoader {
 
     /** Class loader for plugins */
     private PluginClassLoader classLoader;
@@ -68,7 +69,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
                 try {
                     allJars.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
-                    log(LogLevel.WARNING, Plugins.logDomain, "Error finding plugin", e);
+                    Log.log(LogLevel.WARNING, this, "Error finding plugin", e);
                 }
             }
         }
@@ -83,7 +84,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
                 result.add(loadPlugin(jf.getManifest(), pluginJar.getAbsolutePath()));
                 jf.close();
             } catch (Exception e) {
-                log(LogLevel.WARNING, Plugins.logDomain, "Error loading plugin: " + pluginJar.getName(), e);
+                Log.log(LogLevel.WARNING, this, "Error loading plugin: " + pluginJar.getName(), e);
             }
         }
 
@@ -108,7 +109,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
         if (!Plugin.class.isAssignableFrom(c)) {
             throw new Exception(className + " is not a plugin class.");
         }
-        log(LogLevel.DEBUG, Plugins.logDomain, "Found plugin: " + className);
+        Log.log(LogLevel.DEBUG, this, "Found plugin: " + className);
 
         Plugin plugin = c.newInstance();
         return plugin;
@@ -124,7 +125,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
             try {
                 classLoader = new PluginClassLoader(jars.toArray(new URL[0]));
             } catch (Exception e) {
-                log(LogLevel.ERROR, Plugins.logDomain, e);
+                Log.log(LogLevel.ERROR, this, e);
             }
         } else {
             for (URL url : jars) {
@@ -145,17 +146,18 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
          */
         PluginClassLoader(URL[] jars) throws Exception {
             super(jars);
-            LogStream ls = Plugins.logDomain.getLogStream(LogLevel.DEBUG, getLogDescription());
+            LogStream ls = Log.getLogStream(LogLevel.DEBUG, getLogDescription());
             ls.append("Constructed PluginClassLoader: ");
             for (URL url : jars) {
                 ls.append(url.toString() + " ");
             }
             ls.close();
+            Serialization.setDeepCopyClassLoader(this);
         }
 
         @Override
         protected void addURL(URL url) {
-            Plugins.logDomain.log(LogLevel.DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
+            Log.log(LogLevel.DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
             for (URL u : getURLs()) {
                 if (u.equals(url)) {
                     return;
@@ -185,7 +187,7 @@ public class JavaReleasePluginLoader extends LogUser implements PluginLoader {
             }
             return m.group(1);
         } catch (Exception e) {
-            log(LogLevel.ERROR, Plugins.logDomain, "Error extracting jar file from URL " + url, e);
+            Log.log(LogLevel.ERROR, this, "Error extracting jar file from URL " + url, e);
         }
         return null;
     }

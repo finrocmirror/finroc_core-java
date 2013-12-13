@@ -21,9 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core;
 
-import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -31,7 +29,7 @@ import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
  * Abstract base class for classes that can be annotated with
  * an arbitrary number of FinrocAnnotations.
  */
-public class Annotatable extends LogUser implements HasDestructor {
+public class Annotatable {
 
     /**
      * First element of framework element annotation linked list
@@ -93,7 +91,6 @@ public class Annotatable extends LogUser implements HasDestructor {
     }
 
 
-    @Override
     public void delete() {
 
         // delete annotations

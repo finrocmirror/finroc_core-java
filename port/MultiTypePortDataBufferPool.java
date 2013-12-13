@@ -26,8 +26,8 @@ import org.finroc.core.port.std.PortDataBufferPool;
 import org.finroc.core.port.std.PortDataManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.log.LogStream;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.logging.LogStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

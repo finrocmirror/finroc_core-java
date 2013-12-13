@@ -24,9 +24,9 @@ package org.finroc.core.parameter;
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.Unit;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -90,7 +90,7 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
      */
     private CoreNumber getBuffer() {
         GenericObject go = valPointer();
-        return go.<CoreNumber>getData();
+        return (CoreNumber)go.getData();
     }
 
     /**

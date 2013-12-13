@@ -24,8 +24,8 @@ package org.finroc.core.test;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
-import org.rrlib.finroc_core_utils.serialization.MemoryBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.MemoryBuffer;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
@@ -56,7 +56,7 @@ public class InitialPushTest {
         // fill output ports with something
         nOut.publish(23);
         MemoryBuffer bb = out.getUnusedBuffer();
-        OutputStreamBuffer co = new OutputStreamBuffer();
+        BinaryOutputStream co = new BinaryOutputStream();
         co.reset(bb);
         co.writeInt(23);
         co.close();

@@ -28,7 +28,6 @@ import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.ThreadLocalCache;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.rpc.internal.AbstractCall;
@@ -39,10 +38,10 @@ import org.finroc.core.port.PortListener;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.UnknownType;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
-import org.rrlib.finroc_core_utils.serialization.Serialization.DataEncoding;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.Serialization.DataEncoding;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -51,7 +50,7 @@ import org.rrlib.finroc_core_utils.serialization.Serialization.DataEncoding;
  * Uniform wrapper class for Std, CC, and Interface ports.
  */
 @SuppressWarnings("rawtypes")
-public abstract class NetPort extends LogUser implements PortListener {
+public abstract class NetPort implements PortListener {
 
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
@@ -265,7 +264,7 @@ public abstract class NetPort extends LogUser implements PortListener {
      * @param dataEncoding Data encoding to use
      * @param readTimestamp Read timestamp from stream?
      */
-    public void receiveDataFromStream(InputStreamBuffer stream, DataEncoding dataEncoding, boolean readTimestamp) {
+    public void receiveDataFromStream(BinaryInputStream stream, DataEncoding dataEncoding, boolean readTimestamp) throws Exception {
         boolean anotherValue = false;
         do {
             byte changeType = stream.readByte();

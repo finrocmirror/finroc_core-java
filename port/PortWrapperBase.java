@@ -26,9 +26,7 @@ import org.finroc.core.FrameworkElement;
 import org.finroc.core.port.AbstractPort.ConnectDirection;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -44,9 +42,6 @@ public class PortWrapperBase implements HasDestructor {
 
     /** Wrapped port */
     protected AbstractPort wrapped;
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("ports");
 
     @Override
     public void delete() {

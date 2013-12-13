@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port;
 
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.datatype.Unit;

@@ -25,9 +25,7 @@ import java.io.File;
 import java.nio.ByteOrder;
 
 import org.rrlib.finroc_core_utils.jc.AutoDeleter;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
@@ -128,8 +126,6 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /** List with listeners for update times */
     private final UpdateTimeChangeListener.Manager updateTimeListener = new UpdateTimeChangeListener.Manager();
 
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("settings");
 
     /**
      * @return Absolute Root Directory of Runtime (location of finroc_core.jar)

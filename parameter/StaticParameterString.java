@@ -22,7 +22,7 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.datatype.CoreString;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

@@ -22,7 +22,6 @@
 package org.finroc.core.parameter;
 
 import org.finroc.core.FinrocAnnotation;
-import org.finroc.core.FrameworkElement;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.ThreadLocalCache;
@@ -32,16 +31,16 @@ import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.XMLSerializable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLException;
+import org.rrlib.xml.XMLNode;
 
 /**
  * @author Max Reichardt
@@ -49,7 +48,7 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
  * Annotates ports that are a parameter
  * and provides respective functionality
  */
-public class ParameterInfo extends FinrocAnnotation {
+public class ParameterInfo extends FinrocAnnotation implements XMLSerializable {
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<ParameterInfo>(ParameterInfo.class);
@@ -62,9 +61,6 @@ public class ParameterInfo extends FinrocAnnotation {
 
     /** Is this info on remote parameter? */
     private boolean remote = false;
-
-    /** Log domain */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
 
     /** Was config entry set from finstruct? */
     private boolean entrySetFromFinstruct;
@@ -88,7 +84,7 @@ public class ParameterInfo extends FinrocAnnotation {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeBoolean(entrySetFromFinstruct);
         os.writeString(configEntry);
         os.writeString(commandLineOption);
@@ -96,7 +92,7 @@ public class ParameterInfo extends FinrocAnnotation {
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         entrySetFromFinstruct = is.readBoolean();
         String configEntryTmp = is.readString();
         String commandLineOptionTmp = is.readString();
@@ -115,7 +111,7 @@ public class ParameterInfo extends FinrocAnnotation {
             try {
                 loadValue();
             } catch (Exception e) {
-                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                Log.log(LogLevel.ERROR, this, e);
             }
         }
     }
@@ -145,7 +141,7 @@ public class ParameterInfo extends FinrocAnnotation {
         deserialize(node, false, true);
     }
 
-    public void deserialize(XMLNode node, boolean finstructContext, boolean includeCommandLine) throws XML2WrapperException {
+    public void deserialize(XMLNode node, boolean finstructContext, boolean includeCommandLine) throws XMLException {
         if (node.hasAttribute("config")) {
             configEntry = node.getStringAttribute("config");
             entrySetFromFinstruct = finstructContext;
@@ -203,7 +199,7 @@ public class ParameterInfo extends FinrocAnnotation {
             try {
                 loadValue();
             } catch (Exception e) {
-                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                Log.log(LogLevel.ERROR, this, e);
             }
         }
     }
@@ -239,7 +235,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublishRaw(c);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
                                 c.recycleUnused();
                             }
                         } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -250,7 +246,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublish(pd);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
+                                Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from command line argument '" + arg + "': ", e);
                                 pd.recycleUnused();
                             }
                         } else {
@@ -273,7 +269,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublishRaw(c);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
                                 c.recycleUnused();
                             }
                         } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -284,7 +280,7 @@ public class ParameterInfo extends FinrocAnnotation {
                                 port.browserPublish(pd);
                                 return;
                             } catch (Exception e) {
-                                logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
+                                Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from config entry '" + fullConfigEntry + "': ", e);
                                 pd.recycleUnused();
                             }
                         } else {
@@ -304,7 +300,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             port.browserPublishRaw(c);
                             return;
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
+                            Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
                             c.recycleUnused();
                         }
                     } else if (FinrocTypeInfo.isStdType(ann.getDataType())) {
@@ -315,7 +311,7 @@ public class ParameterInfo extends FinrocAnnotation {
                             port.browserPublish(pd);
                             return;
                         } catch (Exception e) {
-                            logDomain.log(LogLevel.ERROR, getLogDescription(), "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
+                            Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + ann.getQualifiedName() + "' from finstruct default '" + finstructDefault + "': ", e);
                             pd.recycleUnused();
                         }
                     } else {
@@ -363,7 +359,7 @@ public class ParameterInfo extends FinrocAnnotation {
         try {
             loadValue(true);
         } catch (Exception e) {
-            log(LogLevel.ERROR, FrameworkElement.logDomain, e);
+            Log.log(LogLevel.ERROR, this, e);
         }
     }
 

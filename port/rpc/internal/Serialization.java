@@ -23,9 +23,9 @@ package org.finroc.core.port.rpc.internal;
 
 import org.finroc.core.port.rpc.Method;
 import org.finroc.core.port.rpc.Promise;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
 
 
 /**
@@ -36,87 +36,6 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
 public class Serialization {
 
     /**
-     * Serializes object of specified type
-     *
-     * @param stream Stream to serialize to
-     * @param object Object to serialize
-     * @param type Type object must have
-     */
-    @SuppressWarnings("rawtypes")
-    public static void serializeObject(OutputStreamBuffer stream, Object object, Class<?> type) {
-        if (type.isPrimitive()) {
-            if (type == byte.class) {
-                stream.writeByte((Byte)object);
-            } else if (type == short.class) {
-                stream.writeShort((Short)object);
-            } else if (type == int.class) {
-                stream.writeInt((Integer)object);
-            } else if (type == long.class) {
-                stream.writeLong((Long)object);
-            } else if (type == float.class) {
-                stream.writeFloat((Float)object);
-            } else if (type == double.class) {
-                stream.writeDouble((Double)object);
-            } else if (type == boolean.class) {
-                stream.writeBoolean((Boolean)object);
-            } else {
-                throw new RuntimeException("Unsupported primitve type");
-            }
-        } else {
-            assert(object != null && (object.getClass() == type));
-            if (type.isEnum()) {
-                stream.writeEnum((Enum)object);
-            } else if (type == String.class) {
-                stream.writeString(object.toString());
-            } else if (RRLibSerializable.class.isAssignableFrom(type)) {
-                ((RRLibSerializable)object).serialize(stream);
-            } else {
-                throw new RuntimeException("Unsupported type");
-            }
-        }
-    }
-
-    /**
-     * Deserializes object of specified type
-     *
-     * @param stream Stream to deserialize from
-     * @param type Type object must have
-     * @return Deserialized object
-     */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static Object deserializeObject(InputStreamBuffer stream, Class<?> type) throws Exception {
-        if (type.isPrimitive()) {
-            if (type == byte.class) {
-                return stream.readByte();
-            } else if (type == short.class) {
-                return stream.readShort();
-            } else if (type == int.class) {
-                return stream.readInt();
-            } else if (type == long.class) {
-                return stream.readLong();
-            } else if (type == float.class) {
-                return stream.readFloat();
-            } else if (type == double.class) {
-                return stream.readDouble();
-            } else if (type == boolean.class) {
-                return stream.readBoolean();
-            } else {
-                throw new Exception("Unsupported primitve type");
-            }
-        } else if (type.isEnum()) {
-            return stream.readEnum((Class <? extends Enum >)type);
-        } else if (type == String.class) {
-            return stream.readString();
-        } else if (RRLibSerializable.class.isAssignableFrom(type)) {
-            RRLibSerializable result = (RRLibSerializable)type.newInstance();
-            result.deserialize(stream);
-            return result;
-        } else {
-            throw new Exception("Unsupported type");
-        }
-    }
-
-    /**
      * Serializes return values of specified type
      *
      * @param stream Stream to serialize to
@@ -124,15 +43,15 @@ public class Serialization {
      * @param type Type object must have
      * @param storage Abstract Call
      */
-    public static void returnSerialization(OutputStreamBuffer stream, Object object, Class<?> type, AbstractCall storage) {
+    public static void returnSerialization(BinaryOutputStream stream, Object object, Class<?> type, AbstractCall storage) {
         assert(object != null && object.getClass() == type);
         if (type == Promise.class) {
             stream.writeLong(storage.callId);
         } else if (Promise.class.isAssignableFrom(type)) {
             stream.writeLong(storage.callId);
-            serializeObject(stream, object, type);
+            stream.writeObject(object, type);
         } else {
-            serializeObject(stream, object, type);
+            stream.writeObject(object, type);
         }
     }
 
@@ -144,9 +63,9 @@ public class Serialization {
      * @param type Type object must have
      * @param storage Abstract Call
      */
-    public static Object returnDeserialization(InputStreamBuffer stream, ResponseSender responseSender, Method method, boolean promiseResponse) throws Exception {
+    public static Object returnDeserialization(BinaryInputStream stream, ResponseSender responseSender, Method method, boolean promiseResponse) throws Exception {
         if (promiseResponse) {
-            return deserializeObject(stream, method.getPromiseType());
+            return stream.readObject(method.getPromiseType());
         } else {
             Class<?> type = method.hasFutureReturn() ? method.getFutureType() : method.getNativeMethod().getReturnType();
             if (type == Promise.class) {
@@ -154,13 +73,13 @@ public class Serialization {
                 result.setRemotePromise(method, stream.readLong(), responseSender);
                 return result;
             } else if (Promise.class.isAssignableFrom(type)) {
-                RRLibSerializable result = (RRLibSerializable)type.newInstance();
+                BinarySerializable result = (BinarySerializable)type.newInstance();
                 long callId = stream.readLong();
                 result.deserialize(stream);
                 ((Promise)result).setRemotePromise(method, callId, responseSender);
                 return result;
             } else {
-                return deserializeObject(stream, type);
+                return stream.readObject(type);
             }
         }
     }

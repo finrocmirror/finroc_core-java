@@ -30,17 +30,17 @@ import org.finroc.core.port.rpc.ProxyPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.Copyable;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
-import org.rrlib.finroc_core_utils.serialization.StringInputStream;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.StringInputStream;
+import org.rrlib.serialization.XMLSerializable;
+import org.rrlib.serialization.rtti.Copyable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLNode;
 
 /**
  * @author Max Reichardt
@@ -49,13 +49,10 @@ import org.rrlib.finroc_core_utils.xml.XMLNode;
  * Is only meant to be used in StaticParameters
  * For this reason, it is not real-time capable and a little more memory-efficient.
  */
-public class PortCreationList extends RRLibSerializableImpl implements Copyable<PortCreationList> {
+public class PortCreationList implements BinarySerializable, XMLSerializable, Copyable<PortCreationList> {
 
     /** Data Type */
     public final static DataTypeBase TYPE = new DataType<PortCreationList>(PortCreationList.class);
-
-    /** Log domain for edges */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("port_creation_list");
 
     /**
      * Entry in list
@@ -123,7 +120,7 @@ public class PortCreationList extends RRLibSerializableImpl implements Copyable<
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeByte(selectableCreateOptions);
         if (ioVector == null) {
             int size = list.size();
@@ -173,7 +170,7 @@ public class PortCreationList extends RRLibSerializableImpl implements Copyable<
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         if (ioVector == null) {
             selectableCreateOptions = is.readByte();
             int size = is.readInt();
@@ -234,7 +231,7 @@ public class PortCreationList extends RRLibSerializableImpl implements Copyable<
         flags |= FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA; // proxy port
         flags |= toFlags(createOptions, selectableCreateOptions);
 
-        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Creating port " + name + " in IOVector " + ioVector.getQualifiedLink());
         if (FinrocTypeInfo.isStdType(dt)) {
             ap = new PortBase(new PortCreationInfo(name, ioVector, dt, flags));
         } else if (FinrocTypeInfo.isCCType(dt)) {
@@ -242,7 +239,7 @@ public class PortCreationList extends RRLibSerializableImpl implements Copyable<
         } else if (FinrocTypeInfo.isMethodType(dt)) {
             ap = new ProxyPort(new PortCreationInfo(name, ioVector, dt, flags & FrameworkElementFlags.IS_OUTPUT_PORT)).getWrapped();
         } else {
-            log(LogLevel.WARNING, logDomain, "Cannot create port with type: " + dt.getName());
+            Log.log(LogLevel.WARNING, this, "Cannot create port with type: " + dt.getName());
         }
         if (ap != null) {
             ap.init();

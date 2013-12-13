@@ -25,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.finroc.core.datatype.Timestamp;
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
+import org.rrlib.serialization.rtti.GenericObject;
+import org.rrlib.serialization.rtti.GenericObjectManager;
 
 /**
  * @author Max Reichardt

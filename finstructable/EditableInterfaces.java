@@ -25,10 +25,10 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.datatype.PortCreationList;
 import org.finroc.core.parameter.StaticParameter;
 import org.finroc.core.parameter.StaticParameterList;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -60,7 +60,7 @@ public class EditableInterfaces extends FinrocAnnotation {
     }
 
     @Override
-    public void deserialize(InputStreamBuffer stream) {
+    public void deserialize(BinaryInputStream stream) {
         int size = stream.readByte();
         editableInterfaces = new StaticParameterList();
         for (int i = 0; i < size; i++) {
@@ -77,7 +77,7 @@ public class EditableInterfaces extends FinrocAnnotation {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void serialize(OutputStreamBuffer stream) {
+    public void serialize(BinaryOutputStream stream) {
         stream.writeByte(editableInterfaces.size());
         for (int i = 0; i < editableInterfaces.size(); i++) {
             StaticParameter<PortCreationList> editableInterface = (StaticParameter<PortCreationList>)editableInterfaces.get(i);

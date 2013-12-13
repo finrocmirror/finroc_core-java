@@ -21,11 +21,11 @@
 //----------------------------------------------------------------------
 package org.finroc.core;
 
-import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.TypedObjectImpl;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.TypedObjectImpl;
 
 /**
  * @author Max Reichardt
@@ -35,7 +35,7 @@ import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
  * If annotation should be available over the net (e.g. in finstruct),
  * the serialization methods need to be overridden.
  */
-public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDestructor {
+public abstract class FinrocAnnotation extends TypedObjectImpl implements BinarySerializable {
 
     /** Next framework element annotation - used to build linked list - null if no more annotations */
     FinrocAnnotation nextAnnotation;
@@ -66,7 +66,6 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
         assert type != null : "Unknown Object type";
     }
 
-    @Override
     public void delete() {
     }
 
@@ -78,12 +77,12 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements HasDes
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         throw new RuntimeException("Unsupported");
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         throw new RuntimeException("Unsupported");
     }
 

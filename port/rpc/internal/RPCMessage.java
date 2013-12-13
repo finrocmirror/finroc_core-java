@@ -24,9 +24,10 @@ package org.finroc.core.port.rpc.internal;
 import org.finroc.core.port.rpc.ClientPort;
 import org.finroc.core.port.rpc.Method;
 import org.finroc.core.port.rpc.RPCInterfaceType;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
 
 
 /**
@@ -49,30 +50,30 @@ public class RPCMessage extends AbstractCall {
     Object[] parameters;
 
 
-    public static void deserializeAndExecuteCallImplementation(InputStreamBuffer stream, RPCPort port, byte methodId) {
+    public static void deserializeAndExecuteCallImplementation(BinaryInputStream stream, RPCPort port, byte methodId) {
         try {
             RPCInterfaceType type = (RPCInterfaceType) port.getDataType();
             Method method = type.getMethod(methodId);
             Object[] parameters = new Object[method.getNativeMethod().getParameterTypes().length];
             for (int i = 0; i < parameters.length; i++) {
-                parameters[i] = Serialization.deserializeObject(stream, method.getNativeMethod().getParameterTypes()[i]);
+                parameters[i] = stream.readObject(method.getNativeMethod().getParameterTypes()[i]);
             }
             ClientPort clientPort = ClientPort.wrap(port, true);
             clientPort.call(method, parameters);
         } catch (Exception e) {
-            logDomain.log(LogLevel.DEBUG, "RPCMessage", "Incoming RPC message caused exception: ", e);
+            Log.log(LogLevel.DEBUG, "Incoming RPC message caused exception: ", e);
         }
     }
 
     @Override
-    public void serialize(OutputStreamBuffer stream) {
+    public void serialize(BinaryOutputStream stream) {
         // Deserialized by network transport implementation
         stream.writeType(method.getInterfaceType());
         stream.writeByte(method.getMethodID());
 
         // Deserialized by this class
         for (int i = 0; i < parameters.length; i++) {
-            Serialization.serializeObject(stream, parameters[i], method.getNativeMethod().getParameterTypes()[i]);
+            stream.writeObject(parameters[i], method.getNativeMethod().getParameterTypes()[i]);
         }
     }
 }

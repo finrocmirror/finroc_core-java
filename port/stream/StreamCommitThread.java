@@ -24,7 +24,8 @@ package org.finroc.core.port.stream;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.thread.CoreLoopThreadBase;
 
@@ -46,7 +47,7 @@ public class StreamCommitThread extends CoreLoopThreadBase {
     }
 
     public void stopThread() {
-        logDomain.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Stopping StreamCommitThread");
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Stopping StreamCommitThread");
         super.stopThread();
     }
 

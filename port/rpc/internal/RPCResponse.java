@@ -26,9 +26,10 @@ import org.finroc.core.port.rpc.FutureStatus;
 import org.finroc.core.port.rpc.Method;
 import org.finroc.core.port.rpc.Promise;
 import org.finroc.core.port.rpc.RPCException;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
 
 
 /**
@@ -59,7 +60,7 @@ public class RPCResponse extends AbstractCall {
     Future responseFuture;
 
 
-    public static void deserializeAndExecuteCallImplementation(InputStreamBuffer stream, Method method, ResponseSender responseSender, AbstractCall request) {
+    public static void deserializeAndExecuteCallImplementation(BinaryInputStream stream, Method method, ResponseSender responseSender, AbstractCall request) {
         try {
             boolean promiseResponse = stream.readBoolean();
             FutureStatus status = stream.readEnum(FutureStatus.class);
@@ -83,7 +84,7 @@ public class RPCResponse extends AbstractCall {
                 }
             }
         } catch (Exception e) {
-            logDomain.log(LogLevel.DEBUG, "RPCResponse", "Incoming RPC response caused exception: ", e);
+            Log.log(LogLevel.DEBUG, "Incoming RPC response caused exception: ", e);
         }
     }
 
@@ -92,7 +93,7 @@ public class RPCResponse extends AbstractCall {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer stream) {
+    public void serialize(BinaryOutputStream stream) {
         // Deserialized by network transport implementation
         stream.writeType(method.getInterfaceType());
         stream.writeByte(method.getMethodID());
@@ -116,7 +117,7 @@ public class RPCResponse extends AbstractCall {
                 try {
                     this.resultBuffer = responseFuture.get(10000);
                 } catch (RPCException e) {
-                    log(LogLevel.ERROR, logDomain, "This must not happen");
+                    Log.log(LogLevel.ERROR, this, "This must not happen");
                     throw new RuntimeException(e);
                 }
                 Serialization.returnSerialization(stream, this.resultBuffer, method.getFutureType(), this);

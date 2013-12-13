@@ -27,18 +27,20 @@ import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.XMLSerializable;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.xml.XMLNode;
 
 /**
  * @author Max Reichardt
  *
  * List of static parameters
  */
-public class StaticParameterList extends FinrocAnnotation implements HasDestructor {
+public class StaticParameterList extends FinrocAnnotation implements HasDestructor, XMLSerializable {
 
     /** Data Type */
     public final static DataType<StaticParameterList> TYPE = new DataType<StaticParameterList>(StaticParameterList.class);
@@ -76,7 +78,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeInt(createAction);
         os.writeInt(parameters.size());
         for (int i = 0; i < parameters.size(); i++) {
@@ -85,7 +87,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         if (getAnnotated() == null) {
             createAction = is.readInt();
             clear();
@@ -207,7 +209,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     public void deserialize(XMLNode node, boolean finstructContext) throws Exception {
         int numberOfChildren = node.childCount();
         if (numberOfChildren != size()) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), "Parameter list size and number of xml parameters differ. Trying anyway");
+            Log.log(LogLevel.WARNING, this, "Parameter list size and number of xml parameters differ. Trying anyway");
         }
         int count = Math.min(numberOfChildren, size());
         XMLNode.ConstChildIterator child = node.getChildrenBegin();

@@ -25,8 +25,8 @@ import org.finroc.core.port.cc.CCPortDataManager;
 import org.finroc.core.port.cc.CCQueueFragmentRaw;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.Serialization;
 
 /**
  * @author Max Reichardt
@@ -34,7 +34,7 @@ import org.rrlib.finroc_core_utils.serialization.Serialization;
  * Port queue fragment.
  * Can be used to dequeue all values in port queue at once.
  */
-public class PortQueueFragment<T extends RRLibSerializable> {
+public class PortQueueFragment<T extends BinarySerializable> {
 
     /** Wrapped fragments - depending on port type */
     CCQueueFragmentRaw wrappedCC = new CCQueueFragmentRaw();
@@ -47,11 +47,12 @@ public class PortQueueFragment<T extends RRLibSerializable> {
      *
      * @return Next element in QueueFragment
      */
+    @SuppressWarnings("unchecked")
     public T dequeue() {
         if (cc) {
-            return wrappedCC.dequeueUnsafe().getObject().getData();
+            return (T)wrappedCC.dequeueUnsafe().getObject().getData();
         } else {
-            return wrapped.dequeueUnsafe().getObject().getData();
+            return (T)wrapped.dequeueUnsafe().getObject().getData();
         }
     }
 
@@ -61,11 +62,12 @@ public class PortQueueFragment<T extends RRLibSerializable> {
      *
      * @return Next element in QueueFragment
      */
+    @SuppressWarnings("unchecked")
     public T dequeueAutoLocked() {
         if (cc) {
-            return wrappedCC.dequeueAutoLocked().getData();
+            return (T)wrappedCC.dequeueAutoLocked().getData();
         } else {
-            return wrapped.dequeueAutoLocked().getData();
+            return (T)wrapped.dequeueAutoLocked().getData();
         }
     }
 
@@ -80,7 +82,7 @@ public class PortQueueFragment<T extends RRLibSerializable> {
         if (cc) {
             CCPortDataManager mgr = wrappedCC.dequeueUnsafe();
             if (mgr != null) {
-                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                Serialization.deepCopy(mgr.getObject().getData(), result, null);
                 mgr.recycle2();
                 return true;
             }
@@ -88,7 +90,7 @@ public class PortQueueFragment<T extends RRLibSerializable> {
         } else {
             PortDataManager mgr = wrapped.dequeueUnsafe();
             if (mgr != null) {
-                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                Serialization.deepCopy(mgr.getObject().getData(), result, null);
                 mgr.releaseLock();
                 return true;
             }

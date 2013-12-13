@@ -28,9 +28,8 @@ import java.util.ArrayList;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.finstructable.FinstructableGroup;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 import org.finroc.core.util.Files;
 
@@ -59,9 +58,6 @@ public class Plugins { /*implements HTTPResource*/
 
     /** Plugin loader implementation */
     private PluginLoader pluginLoader;
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("plugins");
 
     /**
      * Loads plugins
@@ -162,12 +158,8 @@ public class Plugins { /*implements HTTPResource*/
                 }
             }
         } catch (Exception e) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), e);
+            Log.log(LogLevel.WARNING, e);
         }
-    }
-
-    private static String getLogDescription() {
-        return "Plugins";
     }
 
     /**
@@ -191,7 +183,7 @@ public class Plugins { /*implements HTTPResource*/
      * @param cma CreateFrameworkElementAction to add
      */
     public void addModuleType(CreateFrameworkElementAction cma) {
-        logDomain.log(LogLevel.DEBUG_VERBOSE_1, getLogDescription(), "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Adding module type: " + cma.getName() + " (" + cma.getModuleGroup() + ")");
         getModuleTypes().add(cma);
     }
 
@@ -222,7 +214,7 @@ public class Plugins { /*implements HTTPResource*/
             }
         }
 
-        logDomain.log(LogLevel.ERROR, getLogDescription(), "Could not find/load module " + name + " in " + group);
+        Log.log(LogLevel.ERROR, this, "Could not find/load module " + name + " in " + group);
         return null;
     }
 

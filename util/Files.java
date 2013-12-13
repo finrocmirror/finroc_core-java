@@ -46,9 +46,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -56,9 +55,6 @@ import org.rrlib.finroc_core_utils.log.LogLevel;
  * Contains helpful functions for files and streams
  */
 public class Files {
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("files");
 
     /**
      * Reads All lines from a text file
@@ -379,7 +375,7 @@ public class Files {
         try {
             return new URL(dirName);
         } catch (Exception e) {
-            logDomain.log(LogLevel.ERROR, "Files", e);
+            Log.log(LogLevel.ERROR, e);
         }
         return null;
     }

@@ -30,7 +30,8 @@ import org.finroc.core.port.PortListener;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.cc.CCPortDataManagerTL;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -93,7 +94,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
         if (b.inBounds(d)) {
             setDefault(new CoreNumber(defaultValue, u));
         } else {
-            logDomain.log(LogLevel.DEBUG_WARNING, getLogDescription(), "Default value is out of bounds");
+            Log.log(LogLevel.DEBUG_WARNING, this, "Default value is out of bounds");
             setDefault(new CoreNumber(b.toBounds(d), u));
         }
         cache.currentValue = defaultValue;
@@ -116,7 +117,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
      */
     public void set(T v) {
         CCPortDataManagerTL cb = ThreadLocalCache.get().getUnusedBuffer(CoreNumber.TYPE);
-        cb.getObject().<CoreNumber>getData().setValue(v, ((CCPortBase)wrapped).getUnit());
+        ((CoreNumber)cb.getObject().getData()).setValue(v, ((CCPortBase)wrapped).getUnit());
         ((CCPortBase)wrapped).browserPublishRaw(cb);
         cache.currentValue = v;
     }

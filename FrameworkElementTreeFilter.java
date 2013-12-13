@@ -23,9 +23,9 @@ package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
 
 /**
  * @author Max Reichardt
@@ -34,7 +34,7 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializableImpl;
  *
  * Can be used to efficiently traverse trees of framework elements.
  */
-public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
+public class FrameworkElementTreeFilter implements BinarySerializable {
 
     /** Framework element's flags that are relevant */
     private int relevantFlags;
@@ -148,7 +148,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         relevantFlags = is.readInt();
         flagResult = is.readInt();
         sendTags = is.readBoolean();
@@ -160,7 +160,7 @@ public class FrameworkElementTreeFilter extends RRLibSerializableImpl {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeInt(relevantFlags);
         os.writeInt(flagResult);
         os.writeBoolean(sendTags);

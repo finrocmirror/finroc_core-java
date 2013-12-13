@@ -24,10 +24,10 @@ package org.finroc.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -100,7 +100,7 @@ public class FrameworkElementTags extends FinrocAnnotation {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeInt(tags.size());
         os.writeBoolean(true);
         for (String tag : tags) {
@@ -109,7 +109,7 @@ public class FrameworkElementTags extends FinrocAnnotation {
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         clear();
         int size = is.readInt();
         is.readBoolean();

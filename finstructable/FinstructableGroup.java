@@ -39,13 +39,12 @@ import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.Files;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
-import org.rrlib.finroc_core_utils.xml.XMLDocument;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLException;
+import org.rrlib.xml.XMLDocument;
+import org.rrlib.xml.XMLNode;
 
 /**
  * @author Max Reichardt
@@ -61,9 +60,6 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
 
     /** contains name of XML to use */
     private StaticParameterString xmlFile = new StaticParameterString("XML file", "");
-
-    /** Log domain for edges */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("finstructable");
 
     /** Temporary variable for save operation: List to store connected ports in */
     private ArrayList<AbstractPort> connectTmp = new ArrayList<AbstractPort>();
@@ -98,7 +94,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         try {
             this.xmlFile.set(xmlFile);
         } catch (Exception e) {
-            log(LogLevel.ERROR, logDomain, e);
+            Log.log(LogLevel.ERROR, this, e);
         }
     }
 
@@ -109,7 +105,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             if (Files.finrocFileExists(xmlFile.get())) {
                 loadXml(xmlFile.get());
             } else {
-                log(LogLevel.DEBUG, logDomain, "Cannot find XML file " + xmlFile.get() + ". Creating empty group. You may edit and save this group using finstruct.");
+                Log.log(LogLevel.DEBUG, this, "Cannot find XML file " + xmlFile.get() + ". Creating empty group. You may edit and save this group using finstruct.");
             }
         }
     }
@@ -122,7 +118,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
     private void loadXml(String xmlFile) {
         synchronized (getRegistryLock()) {
             try {
-                log(LogLevel.DEBUG, logDomain, "Loading XML: " + xmlFile);
+                Log.log(LogLevel.DEBUG, this, "Loading XML: " + xmlFile);
                 XMLDocument doc = Files.getFinrocXMLDocument(xmlFile, false);
                 XMLNode root = doc.getRootNode();
                 linkTmp = getQualifiedName() + "/";
@@ -143,7 +139,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         AbstractPort srcPort = getChildPort(src);
                         AbstractPort destPort = getChildPort(dest);
                         if (srcPort == null && destPort == null) {
-                            log(LogLevel.WARNING, logDomain, "Cannot create edge because neither port is available: " + src + ", " + dest);
+                            Log.log(LogLevel.WARNING, this, "Cannot create edge because neither port is available: " + src + ", " + dest);
                         } else if (srcPort == null || srcPort.isVolatile()) { // source volatile
                             destPort.connectTo(qualifyLink(src), AbstractPort.ConnectDirection.AUTO, true);
                         } else if (destPort == null || destPort.isVolatile()) { // destination volatile
@@ -155,12 +151,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                         String param = node.get().getStringAttribute("link");
                         AbstractPort parameter = getChildPort(param);
                         if (parameter == null) {
-                            log(LogLevel.WARNING, logDomain, "Cannot set config entry, because parameter is not available: " + param);
+                            Log.log(LogLevel.WARNING, this, "Cannot set config entry, because parameter is not available: " + param);
                         } else {
                             ParameterInfo pi = parameter.getAnnotation(ParameterInfo.class);
                             boolean outermostGroup = getParent() == RuntimeEnvironment.getInstance();
                             if (pi == null) {
-                                log(LogLevel.WARNING, logDomain, "Port is not parameter: " + param);
+                                Log.log(LogLevel.WARNING, this, "Port is not parameter: " + param);
                             } else {
                                 if (outermostGroup && node.get().hasAttribute("cmdline") && (!isResponsibleForConfigFileConnections(parameter))) {
                                     pi.setCommandLineOption(node.get().getStringAttribute("cmdline"));
@@ -170,17 +166,17 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                                 try {
                                     pi.loadValue();
                                 } catch (Exception e) {
-                                    log(LogLevel.WARNING, logDomain, "Unable to load parameter value: " + param + ". ", e);
+                                    Log.log(LogLevel.WARNING, this, "Unable to load parameter value: " + param + ". ", e);
                                 }
                             }
                         }
                     } else {
-                        log(LogLevel.WARNING, logDomain, "Unknown XML tag: " + name);
+                        Log.log(LogLevel.WARNING, this, "Unknown XML tag: " + name);
                     }
                 }
-                log(LogLevel.DEBUG, logDomain, "Loading XML successful");
+                Log.log(LogLevel.DEBUG, this, "Loading XML successful");
             } catch (Exception e) {
-                log(LogLevel.WARNING, logDomain, "Loading XML failed: " + xmlFile);
+                Log.log(LogLevel.WARNING, this, "Loading XML failed: " + xmlFile);
                 logException(e);
             }
         }
@@ -201,7 +197,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             // find action
             CreateFrameworkElementAction action = Plugins.getInstance().loadModuleType(group, type);
             if (action == null) {
-                log(LogLevel.WARNING, logDomain, "Failed to instantiate element. No module type " + group + "/" + type + " available. Skipping...");
+                Log.log(LogLevel.WARNING, this, "Failed to instantiate element. No module type " + group + "/" + type + " available. Skipping...");
                 return;
             }
 
@@ -241,16 +237,16 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 if (name2.equals("element")) {
                     instantiate(childNode.get(), created);
                 } else {
-                    log(LogLevel.WARNING, logDomain, "Unknown XML tag: " + name2);
+                    Log.log(LogLevel.WARNING, this, "Unknown XML tag: " + name2);
                 }
             }
 
-        } catch (XML2WrapperException e) {
-            log(LogLevel.WARNING, logDomain, "Failed to instantiate element. Skipping...");
+        } catch (XMLException e) {
+            Log.log(LogLevel.WARNING, this, "Failed to instantiate element. Skipping...");
             logException(e);
         } catch (Exception e) {
-            log(LogLevel.WARNING, logDomain, "Failed to instantiate element. Skipping...");
-            log(LogLevel.WARNING, logDomain, e);
+            Log.log(LogLevel.WARNING, this, "Failed to instantiate element. Skipping...");
+            Log.log(LogLevel.WARNING, this, e);
         }
     }
 
@@ -289,7 +285,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      */
     private void logException(Exception e) {
         String msg = e.getMessage();
-        logDomain.log(LogLevel.ERROR, getLogDescription(), msg);
+        Log.log(LogLevel.ERROR, getLogDescription(), msg);
     }
 
     /**
@@ -300,10 +296,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             String saveTo = Files.getFinrocFileToSaveTo(xmlFile.get());
             if (saveTo.length() == 0) {
                 String saveToAlt = Files.getFinrocFileToSaveTo(xmlFile.get().replace('/', '_'));
-                log(LogLevel.ERROR, logDomain, "There does not seem to be any suitable location for: '" + xmlFile.get() + "' . For now, using '" + saveToAlt + "'.");
+                Log.log(LogLevel.ERROR, this, "There does not seem to be any suitable location for: '" + xmlFile.get() + "' . For now, using '" + saveToAlt + "'.");
                 saveTo = saveToAlt;
             }
-            log(LogLevel.USER, logDomain, "Saving XML: " + saveTo);
+            Log.log(LogLevel.USER, this, "Saving XML: " + saveTo);
             XMLDocument doc = new XMLDocument();
             try {
                 final XMLNode root = doc.addRootNode("FinstructableGroup");
@@ -338,10 +334,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 filter.traverseElementTree(this, this, root);
 
                 doc.writeToFile(saveTo);
-                log(LogLevel.USER, logDomain, "Saving successful");
-            } catch (XML2WrapperException e) {
+                Log.log(LogLevel.USER, this, "Saving successful");
+            } catch (XMLException e) {
                 String msg = e.getMessage();
-                log(LogLevel.USER, logDomain, "Saving failed: " + msg);
+                Log.log(LogLevel.USER, this, "Saving failed: " + msg);
                 throw new Exception(msg);
             }
         }
@@ -528,14 +524,14 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
         try {
             XMLDocument doc = Files.getFinrocXMLDocument(finrocFile, false);
             try {
-                logDomain.log(LogLevel.DEBUG, "FinstructableGroup", "Scanning for command line options in " + finrocFile);
+                Log.log(LogLevel.DEBUG, "Scanning for command line options in " + finrocFile);
                 XMLNode root = doc.getRootNode();
 
                 scanForCommandLineArgsHelper(result, root);
 
-                logDomain.log(LogLevel.DEBUG, "FinstructableGroup", "Scanning successful. Found " + result.size() + " additional options.");
+                Log.log(LogLevel.DEBUG, "Scanning successful. Found " + result.size() + " additional options.");
             } catch (Exception e) {
-                logDomain.log(LogLevel.WARNING, "FinstructableGroup", "Scanning failed: " + finrocFile, e);
+                Log.log(LogLevel.WARNING, "Scanning failed: " + finrocFile, e);
             }
         } catch (Exception e) {}
         return result;
@@ -547,7 +543,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param result Result list
      * @param parent Node to scan childs of
      */
-    public static void scanForCommandLineArgsHelper(SimpleList<String> result, XMLNode parent) throws XML2WrapperException {
+    public static void scanForCommandLineArgsHelper(SimpleList<String> result, XMLNode parent) throws XMLException {
         for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
             String name = node.get().getName();
             if (node.get().hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {

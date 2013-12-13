@@ -82,12 +82,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     public void publish(double d) {
         CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
-        if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isDouble(d, getUnit())) {
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData().getData()).isDouble(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = (CoreNumber)ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -101,12 +101,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     public void publish(long d) {
         CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
-        if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isLong(d, getUnit())) {
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData().getData()).isLong(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = (CoreNumber)ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -120,12 +120,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     public void publish(float d) {
         CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
-        if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isFloat(d, getUnit())) {
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData().getData()).isFloat(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = (CoreNumber)ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -139,12 +139,12 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
     public void publish(int d) {
         CCPortBase wrapped = (CCPortBase)super.wrapped;
         CCPortDataRef value = wrapped.value;
-        if (value.getContainer().isOwnerThread() && value.getData().<CoreNumber>getData().isInt(d, getUnit())) {
+        if (value.getContainer().isOwnerThread() && ((CoreNumber)value.getData().getData()).isInt(d, getUnit())) {
             return;
         }
         ThreadLocalCache tc = ThreadLocalCache.getFast();
         CCPortDataManagerTL ccdc = wrapped.getUnusedBuffer(tc);
-        CoreNumber cnc = ccdc.getObject().getData();
+        CoreNumber cnc = (CoreNumber)ccdc.getObject().getData();
         cnc.setValue(d, getUnit());
         wrapped.publish(tc, ccdc);
     }
@@ -157,14 +157,14 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = wrapped.value;
-                double d = val.getData().<CoreNumber>getData().doubleValue();
+                double d = ((CoreNumber)val.getData().getData()).doubleValue();
                 if (val == wrapped.value) { // still valid??
                     return d;
                 }
             }
         } else {
             CCPortDataManagerTL dc = wrapped.pullValueRaw();
-            double result = dc.getObject().<CoreNumber>getData().doubleValue();
+            double result = ((CoreNumber)dc.getObject().getData()).doubleValue();
             dc.releaseLock();
             return result;
         }
@@ -178,14 +178,14 @@ public class PortNumeric<T extends Number> extends Port<CoreNumber> {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = wrapped.value;
-                int d = val.getData().<CoreNumber>getData().intValue();
+                int d = ((CoreNumber)val.getData().getData()).intValue();
                 if (val == wrapped.value) { // still valid??
                     return d;
                 }
             }
         } else {
             CCPortDataManagerTL dc = wrapped.pullValueRaw();
-            int result = dc.getObject().<CoreNumber>getData().intValue();
+            int result = ((CoreNumber)dc.getObject().getData()).intValue();
             dc.releaseLock();
             return result;
         }

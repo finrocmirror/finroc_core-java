@@ -23,11 +23,11 @@ package org.finroc.core.port.cc;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.rtti.GenericObjectManager;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
+import org.rrlib.serialization.rtti.GenericObjectManager;
 import org.finroc.core.CoreRegister;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.datatype.Unit;
@@ -494,18 +494,18 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
      *
      * @param buffer Buffer to copy current data to
      */
-    public <T extends RRLibSerializable> void getRawT(T buffer) {
+    public <T extends BinarySerializable> void getRawT(T buffer) {
         if (pushStrategy()) {
             for (;;) {
                 CCPortDataRef val = value;
-                Serialization.deepCopy(val.getData().<T>getData(), buffer, null);
+                Serialization.deepCopy((BinarySerializable)val.getData().getData(), buffer, null);
                 if (val == value) { // still valid??
                     return;
                 }
             }
         } else {
             CCPortDataManagerTL dc = pullValueRaw();
-            Serialization.deepCopy(dc.getObject().<T>getData(), buffer, null);
+            Serialization.deepCopy((BinarySerializable)dc.getObject().getData(), buffer, null);
             dc.releaseLock();
         }
     }
@@ -617,7 +617,7 @@ public class CCPortBase extends AbstractPort { /*implements Callable<PullCall>*/
             CCPortBase pb = sources.get(i);
             if (pb != null) {
                 pb.pullValueRawImpl(tc, intermediateAssign, false);
-                if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getObject().getRawDataPtr()))) {
+                if ((first || intermediateAssign) && (!value.getContainer().contentEquals(tc.data.getObject().getData()))) {
                     assign(tc);
                 }
                 return;

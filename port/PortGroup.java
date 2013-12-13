@@ -26,8 +26,9 @@ import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.rpc.ProxyPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
@@ -102,10 +103,10 @@ public class PortGroup extends EdgeAggregator {
 
         }
         if (startWith != null) {
-            log(LogLevel.WARNING, logDomain, "Port " + startWith.getQualifiedName() + " no child of " + this.getQualifiedName() + ". Did not connect anything.");
+            Log.log(LogLevel.WARNING, this, "Port " + startWith.getQualifiedName() + " no child of " + this.getQualifiedName() + ". Did not connect anything.");
         }
         if (count > 0) {
-            log(LogLevel.WARNING, logDomain, "Could only connect " + (orgCount - count) + " ports (" + orgCount + " desired).");
+            Log.log(LogLevel.WARNING, this, "Could only connect " + (orgCount - count) + " ports (" + orgCount + " desired).");
         }
     }
 
@@ -146,7 +147,7 @@ public class PortGroup extends EdgeAggregator {
      * @return Created port
      */
     public AbstractPort createPort(String name, DataTypeBase type, int extraFlags) {
-        log(LogLevel.DEBUG_VERBOSE_1, logDomain, "Creating port " + name + " in IOVector " + this.getQualifiedLink());
+        Log.log(LogLevel.DEBUG_VERBOSE_1, this, "Creating port " + name + " in IOVector " + this.getQualifiedLink());
         AbstractPort ap = null;
         if (FinrocTypeInfo.isStdType(type)) {
             ap = new PortBase(new PortCreationInfo(name, this, type, defaultPortFlags | extraFlags));
@@ -155,7 +156,7 @@ public class PortGroup extends EdgeAggregator {
         } else if (FinrocTypeInfo.isMethodType(type)) {
             ap = new ProxyPort(new PortCreationInfo(name, this, type, (defaultPortFlags | extraFlags) & Flag.IS_OUTPUT_PORT)).getWrapped();
         } else {
-            log(LogLevel.WARNING, logDomain, "Cannot create port with type: " + type.getName());
+            Log.log(LogLevel.WARNING, this, "Cannot create port with type: " + type.getName());
         }
         if (ap != null) {
             ap.init();

@@ -28,11 +28,10 @@ import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.port.std.PublishCache;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -78,7 +77,7 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
             try {
                 return user.processPacket(data);
             } catch (Exception e) {
-                logDomain.log(LogLevel.WARNING, getLogDescription(), "Error while processing packet: ", e);
+                Log.log(LogLevel.WARNING, this, "Error while processing packet: ", e);
             }
             return false;
         }
@@ -86,11 +85,12 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
         /**
          * Process any packet currently in queue (method only for convenience)
          */
+        @SuppressWarnings("unchecked")
         public void processPackets() {
             dequeueAllRaw(dequeueBuffer);
             GenericObject pdr = null;
             while ((pdr = dequeueBuffer.dequeueAutoLocked()) != null) {
-                user.processPacket(pdr.<T>getData());
+                user.processPacket((T)pdr.getData());
             }
             releaseAutoLocks();
         }
@@ -103,9 +103,6 @@ public class InputStreamPort<T extends ChunkedBuffer> extends Port<T> {
             }
         }
     }
-
-    /** Log domain for this class */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("stream_ports");
 
     public InputStreamPort(String name, PortCreationInfo pci, InputPacketProcessor<T> user, NewConnectionHandler connHandler) {
         wrapped = new PortImpl<T>(processPCI(pci, name), user, connHandler);

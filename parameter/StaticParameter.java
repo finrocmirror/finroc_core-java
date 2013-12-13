@@ -21,9 +21,8 @@
 //----------------------------------------------------------------------
 package org.finroc.core.parameter;
 
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -36,7 +35,7 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
  * of modules and groups.
  * They often influence the port structure of these modules and groups.
  */
-public class StaticParameter<T extends RRLibSerializable> extends StaticParameterBase {
+public class StaticParameter<T> extends StaticParameterBase {
 
     /**
      * @param name Name of parameter
@@ -89,9 +88,10 @@ public class StaticParameter<T extends RRLibSerializable> extends StaticParamete
      * @return Current parameter value (without lock)
      * (without additional locks value is deleted, when parameter is - which doesn't happen while a module is running)
      */
+    @SuppressWarnings("unchecked")
     public T getValue() {
         GenericObject go = super.valPointer();
-        return go.<T>getData();
+        return (T)go.getData();
     }
 
     @Override

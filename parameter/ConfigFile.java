@@ -29,16 +29,15 @@ import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.rrlib.finroc_core_utils.jc.Files;
 import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.rtti.DataType;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.xml.XML2WrapperException;
-import org.rrlib.finroc_core_utils.xml.XMLDocument;
-import org.rrlib.finroc_core_utils.xml.XMLNode;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.rtti.DataType;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.xml.XMLException;
+import org.rrlib.xml.XMLDocument;
+import org.rrlib.xml.XMLNode;
 import org.xml.sax.InputSource;
 
 /**
@@ -66,9 +65,6 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     /** Leaf name in XML */
     private static final String XML_LEAF_NAME = "value";
 
-    /** Log domain */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("parameter");
-
     /** Temp buffer - only used in synchronized context */
     private StringBuilder tempBuffer = new StringBuilder();
 
@@ -84,7 +80,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             try {
                 wrapped = Files.getFinrocXMLDocument(filename, false);// false = do not validate with dtd
             } catch (Exception e) {
-                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                Log.log(LogLevel.ERROR, this, e);
                 wrapped = new XMLDocument();
                 wrapped.addRootNode(XML_BRANCH_NAME);
             }
@@ -129,14 +125,14 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             String saveTo = Files.getFinrocFileToSaveTo(filename);
             if (saveTo.length() == 0) {
                 String saveToAlt = Files.getFinrocFileToSaveTo(filename.replace('/', '_'));
-                log(LogLevel.ERROR, logDomain, "There does not seem to be any suitable location for: '" + filename + "' . For now, using '" + saveToAlt + "'.");
+                Log.log(LogLevel.ERROR, this, "There does not seem to be any suitable location for: '" + filename + "' . For now, using '" + saveToAlt + "'.");
                 saveTo = saveToAlt;
             }
 
             // write new tree to file
             wrapped.writeToFile(saveTo);
         } catch (Exception e) {
-            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+            Log.log(LogLevel.ERROR, this, e);
         }
     }
 
@@ -188,13 +184,13 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
                     try {
                         pi.loadValue();
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                        Log.log(LogLevel.ERROR, this, e);
                     }
                 } else {
                     try {
                         pi.saveValue();
                     } catch (Exception e) {
-                        logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                        Log.log(LogLevel.ERROR, this, e);
                     }
                 }
             }
@@ -244,8 +240,8 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
                             found = true;
                             break;
                         }
-                    } catch (XML2WrapperException e) {
-                        logDomain.log(LogLevel.WARNING, getLogDescription(), "tree node without name");
+                    } catch (XMLException e) {
+                        Log.log(LogLevel.WARNING, this, "tree node without name");
                     }
                 }
             }
@@ -284,7 +280,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         if (this.hasEntry(entry)) {
             try {
                 return getEntry(entry, false).getTextContent();
-            } catch (XML2WrapperException e) {
+            } catch (XMLException e) {
                 return "";
             }
         } else {
@@ -307,7 +303,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
     }
 
     @Override
-    public void serialize(OutputStreamBuffer os) {
+    public void serialize(BinaryOutputStream os) {
         os.writeBoolean(active);
         os.writeString(getFilename());
 
@@ -317,15 +313,15 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             } else {
                 os.writeString(wrapped.getXMLDump(true));
             }
-        } catch (XML2WrapperException e) {
-            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+        } catch (XMLException e) {
+            Log.log(LogLevel.ERROR, this, e);
         } catch (Exception e) {
-            logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+            Log.log(LogLevel.ERROR, this, e);
         }
     }
 
     @Override
-    public void deserialize(InputStreamBuffer is) {
+    public void deserialize(BinaryInputStream is) {
         active = is.readBoolean();
         String file = is.readString();
         String content = is.readString();
@@ -337,12 +333,12 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
                 try {
                     wrapped = Files.getFinrocXMLDocument(filename, false);// false = do not validate with dtd
                 } catch (Exception e) {
-                    logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                    Log.log(LogLevel.ERROR, this, e);
                     wrapped = new XMLDocument();
                     try {
                         wrapped.addRootNode(XML_BRANCH_NAME);
-                    } catch (XML2WrapperException e1) {
-                        logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                    } catch (XMLException e1) {
+                        Log.log(LogLevel.ERROR, this, e);
                     }
                 }
             }
@@ -355,7 +351,7 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
             try {
                 wrapped = new XMLDocument(new InputSource(new StringReader(content)), false);
             } catch (Exception e) {
-                logDomain.log(LogLevel.ERROR, getLogDescription(), e);
+                Log.log(LogLevel.ERROR, this, e);
             }
         }
     }

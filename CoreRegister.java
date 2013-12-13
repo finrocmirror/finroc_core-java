@@ -23,7 +23,8 @@ package org.finroc.core;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.IntArrayWrapper;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -79,7 +80,7 @@ public class CoreRegister<T> {
      * @param positiveIndices Positive handles? (or rather negative??)
      */
     public CoreRegister(boolean positiveIndices) {
-        RuntimeEnvironment.logDomain.log(LogLevel.DEBUG, "CoreRegister", "Created Core Register with a maximum of " + MAX_ELEMENTS + " elements.");
+        Log.log(LogLevel.DEBUG, "CoreRegister", "Created Core Register with a maximum of " + MAX_ELEMENTS + " elements.");
         sign = positiveIndices ? 0 : 0x80000000;
     }
 

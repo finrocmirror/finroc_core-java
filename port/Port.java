@@ -36,9 +36,9 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
-import org.rrlib.finroc_core_utils.serialization.Serialization;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -49,7 +49,7 @@ import org.rrlib.finroc_core_utils.serialization.Serialization;
  *
  * In C++ code for correct casting is generated.
  */
-public class Port<T extends RRLibSerializable> extends PortWrapperBase {
+public class Port<T extends BinarySerializable> extends PortWrapperBase {
 
     /** Does port have "cheap-copy" type? */
     boolean ccType;
@@ -152,10 +152,10 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
      */
     public void get(T result) {
         if (hasCCType()) {
-            ((CCPortBase)wrapped).getRawT((RRLibSerializable)result);
+            ((CCPortBase)wrapped).getRawT(result);
         } else {
             PortDataManager mgr = ((PortBase)wrapped).getLockedUnsafeRaw();
-            Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+            Serialization.deepCopy(mgr.getObject().getData(), result, null);
             mgr.releaseLock();
         }
     }
@@ -307,7 +307,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         if (hasCCType()) {
             CCPortDataManager mgr = ((CCPortBase)wrapped).dequeueSingleUnsafeRaw();
             if (mgr != null) {
-                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                Serialization.deepCopy(mgr.getObject().getData(), result, null);
                 mgr.recycle2();
                 return true;
             }
@@ -315,7 +315,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
         } else {
             PortDataManager mgr = ((PortBase)wrapped).dequeueSingleUnsafeRaw();
             if (mgr != null) {
-                Serialization.deepCopy((RRLibSerializable)mgr.getObject().getData(), (RRLibSerializable)result, null);
+                Serialization.deepCopy(mgr.getObject().getData(), result, null);
                 mgr.releaseLock();
                 return true;
             }
@@ -373,7 +373,7 @@ public class Port<T extends RRLibSerializable> extends PortWrapperBase {
             CCPortDataManagerTL mgr = (CCPortDataManagerTL)CCPortDataManagerTL.getManager(data);
             if (mgr == null) {
                 mgr = ThreadLocalCache.getFast().getUnusedBuffer(getDataType());
-                Serialization.deepCopy((RRLibSerializable)data, mgr.getObject().getData(), null);
+                Serialization.deepCopy(data, mgr.getObject().getData(), null);
             }
             ((CCPortBase)wrapped).publish(mgr);
         } else {

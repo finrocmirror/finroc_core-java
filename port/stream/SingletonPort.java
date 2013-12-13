@@ -26,7 +26,7 @@ import org.finroc.core.port.Port;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PublishCache;
-import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
+import org.rrlib.serialization.BinarySerializable;
 
 /**
  * @author Max Reichardt
@@ -36,7 +36,7 @@ import org.rrlib.finroc_core_utils.serialization.RRLibSerializable;
  * This port class does not handle concurrent access to the data buffer.
  * The data (buffer) has to take care of this issue.
  */
-public class SingletonPort<T extends RRLibSerializable> extends Port<T> {
+public class SingletonPort<T extends BinarySerializable> extends Port<T> {
 
     /** Special Port class to load value when initialized */
     private static class PortImpl<T> extends PortBase {

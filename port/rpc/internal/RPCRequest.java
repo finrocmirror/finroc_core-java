@@ -29,9 +29,10 @@ import org.finroc.core.port.rpc.Method;
 import org.finroc.core.port.rpc.RPCException;
 import org.finroc.core.port.rpc.RPCInterfaceType;
 import org.finroc.core.port.rpc.ResponseHandler;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
 
 
 /**
@@ -74,7 +75,7 @@ public class RPCRequest extends AbstractCall {
     /** Has future been obtained? */
     boolean futureObtained;
 
-    public static void deserializeAndExecuteCallImplementation(InputStreamBuffer stream, RPCPort port, byte methodId, ResponseSender responseSender) {
+    public static void deserializeAndExecuteCallImplementation(BinaryInputStream stream, RPCPort port, byte methodId, ResponseSender responseSender) {
         try {
             RPCInterfaceType type = (RPCInterfaceType) port.getDataType();
             Method method = type.getMethod(methodId);
@@ -83,7 +84,7 @@ public class RPCRequest extends AbstractCall {
             duration.deserialize(stream);
             Object[] parameters = new Object[method.getNativeMethod().getParameterTypes().length];
             for (int i = 0; i < parameters.length; i++) {
-                parameters[i] = Serialization.deserializeObject(stream, method.getNativeMethod().getParameterTypes()[i]);
+                parameters[i] = stream.readObject(method.getNativeMethod().getParameterTypes()[i]);
             }
             ClientPort clientPort = ClientPort.wrap(port, true);
             boolean nativeFutureFunction = method.getNativeMethod().getReturnType().equals(Future.class);
@@ -106,7 +107,7 @@ public class RPCRequest extends AbstractCall {
 
             // clientPort.call(method, parameters);
         } catch (Exception e) {
-            logDomain.log(LogLevel.DEBUG, "RPCRequest", "Incoming RPC request caused exception: ", e);
+            Log.log(LogLevel.DEBUG, "Incoming RPC request caused exception: ", e);
         }
     }
 
@@ -119,7 +120,7 @@ public class RPCRequest extends AbstractCall {
     public void returnValue(Object returnValue) {
         FutureStatus current = FutureStatus.values()[futureStatus.get()];
         if (current != FutureStatus.PENDING) {
-            logDomain.log(LogLevel.WARNING, getLogDescription(), "Call already has status " + current.toString() + ". Ignoring.");
+            Log.log(LogLevel.WARNING, this, "Call already has status " + current.toString() + ". Ignoring.");
             return;
         }
 
@@ -134,7 +135,7 @@ public class RPCRequest extends AbstractCall {
     }
 
     @Override
-    public void serialize(OutputStreamBuffer stream) {
+    public void serialize(BinaryOutputStream stream) {
         // Deserialized by network transport implementation
         stream.writeType(method.getInterfaceType());
         stream.writeByte(method.getMethodID());
@@ -145,11 +146,11 @@ public class RPCRequest extends AbstractCall {
         duration.set(super.responseTimeout);
         duration.serialize(stream);
         for (int i = 0; i < parameters.length; i++) {
-            Serialization.serializeObject(stream, parameters[i], method.getNativeMethod().getParameterTypes()[i]);
+            stream.writeObject(parameters[i], method.getNativeMethod().getParameterTypes()[i]);
         }
     }
 
-    void returnValue(InputStreamBuffer stream, ResponseSender responseSender) throws Exception {
+    void returnValue(BinaryInputStream stream, ResponseSender responseSender) throws Exception {
         Object object = Serialization.returnDeserialization(stream, responseSender, method, false);
         returnValue(object);
     }

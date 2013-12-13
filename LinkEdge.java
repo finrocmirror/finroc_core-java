@@ -23,7 +23,8 @@ package org.finroc.core;
 
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -85,7 +86,7 @@ public class LinkEdge implements HasDestructor {
         this.bothConnectDirections = bothConnectDirections;
         this.finstructed = finstructed;
         if (ports[0].link.length() == 0 && ports[1].link.length() == 0) {
-            FrameworkElement.logDomain.log(LogLevel.ERROR, "LinkEdge", "At least one of two ports needs to be linked. Otherwise, it does not make sense to use this class.");
+            Log.log(LogLevel.ERROR, "LinkEdge", "At least one of two ports needs to be linked. Otherwise, it does not make sense to use this class.");
             throw new RuntimeException();
         }
         synchronized (RuntimeEnvironment.getInstance().getRegistryLock()) {

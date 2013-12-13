@@ -22,7 +22,7 @@
 package org.finroc.core.port.net;
 
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt

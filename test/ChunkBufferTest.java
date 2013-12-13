@@ -22,8 +22,8 @@
 package org.finroc.core.test;
 
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
 
 /**
  * @author Max Reichardt
@@ -50,7 +50,7 @@ public class ChunkBufferTest extends Thread {
         cbt.start();
 
         int i = 0;
-        InputStreamBuffer isb = DESTRUCTIVE_SOURCE ? new InputStreamBuffer(buffer.getDestructiveSource()) : new InputStreamBuffer(buffer);
+        BinaryInputStream isb = DESTRUCTIVE_SOURCE ? new BinaryInputStream(buffer.getDestructiveSource()) : new BinaryInputStream(buffer);
         while (i < 1000000) {
             if (BLOCKING_READER || isb.moreDataAvailable()) {
                 int tmp = isb.readInt();
@@ -69,7 +69,7 @@ public class ChunkBufferTest extends Thread {
 
     public void run() {
 
-        OutputStreamBuffer osb = new OutputStreamBuffer(buffer);
+        BinaryOutputStream osb = new BinaryOutputStream(buffer);
         for (int i = 0; i < 1000000; i++) {
             osb.writeInt(i);
             if (BYTE_WRITE) {

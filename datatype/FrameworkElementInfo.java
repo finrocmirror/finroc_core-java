@@ -24,8 +24,8 @@ package org.finroc.core.datatype;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.rtti.DataTypeBase;
 
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTags;
@@ -108,7 +108,7 @@ public class FrameworkElementInfo {
         /** True if encoded destination port is the source/output port of this network connection */
         boolean destinationIsSource;
 
-        public void deserialize(InputStreamBuffer stream) {
+        public void deserialize(BinaryInputStream stream) {
             encoding = stream.readEnum(Encoding.class);
             switch (encoding) {
             case NONE:
@@ -303,7 +303,7 @@ public class FrameworkElementInfo {
      * @param is Input Stream to deserialize from
      * @param structureExchange Determines how much information is deserialized
      */
-    public void deserialize(InputStreamBuffer is, StructureExchange structureExchange) {
+    public void deserialize(BinaryInputStream is, StructureExchange structureExchange) {
         reset();
         //opCode = is.readByte();
 
@@ -351,7 +351,7 @@ public class FrameworkElementInfo {
      *
      * @param stream Stream to read from
      */
-    public void deserializeConnections(InputStreamBuffer stream) {
+    public void deserializeConnections(BinaryInputStream stream) {
         connectionCount = stream.readByte() & 0xFF;
         boolean hasNetworkConnections = (connectionCount == 0xFF);
         if (hasNetworkConnections) {

@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.parameter;
 
-import org.rrlib.finroc_core_utils.rtti.DataType;
+import org.rrlib.serialization.rtti.DataType;
 
 /**
  * @author Max Reichardt

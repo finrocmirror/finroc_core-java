@@ -29,7 +29,8 @@ import org.finroc.core.parameter.StaticParameterNumeric;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
-import org.rrlib.finroc_core_utils.log.LogLevel;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 
 /**
  * @author Max Reichardt
@@ -110,7 +111,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                logDomain.log(LogLevel.WARNING, getLogDescription(), "Interrupted ?!!");
+                Log.log(LogLevel.WARNING, this, "Interrupted ?!!");
             }
             thread = null;
         }

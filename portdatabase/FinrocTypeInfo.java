@@ -23,8 +23,8 @@ package org.finroc.core.portdatabase;
 
 import org.finroc.core.RuntimeSettings;
 import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.rtti.GenericObject;
+import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt

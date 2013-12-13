@@ -26,15 +26,13 @@ import java.util.List;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
-import org.rrlib.finroc_core_utils.jc.log.LogDefinitions;
-import org.rrlib.finroc_core_utils.jc.log.LogUser;
-import org.rrlib.finroc_core_utils.log.LogDomain;
-import org.rrlib.finroc_core_utils.log.LogLevel;
-import org.rrlib.finroc_core_utils.log.LogStream;
-import org.rrlib.finroc_core_utils.rtti.DataTypeBase;
-import org.rrlib.finroc_core_utils.serialization.InputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.OutputStreamBuffer;
-import org.rrlib.finroc_core_utils.serialization.TypeEncoder;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
+import org.rrlib.logging.LogStream;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.TypeEncoder;
+import org.rrlib.serialization.rtti.DataTypeBase;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.portdatabase.UnknownType;
@@ -44,7 +42,7 @@ import org.finroc.core.portdatabase.UnknownType;
  *
  * This class aggregates information about types used in remote runtime environments.
  */
-public class RemoteTypes extends LogUser implements TypeEncoder {
+public class RemoteTypes implements TypeEncoder {
 
     /** Selected C++ rrlib_rtti type traits */
     public static final int IS_BINARY_SERIALIZABLE = 1 << 0;
@@ -52,8 +50,6 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     public static final int IS_XML_SERIALIZABLE = 1 << 2;
     public static final int IS_ENUM = 1 << 3;
 
-    /** Log domain for edges */
-    public static final LogDomain logDomain = LogDefinitions.finroc.getSubDomain("remote_types");
 
     /** Entry in remote type register */
     static class Entry {
@@ -102,8 +98,8 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      *
      * @param ci Input Stream Buffer to read from
      */
-    private void deserialize(InputStreamBuffer ci) {
-        LogStream ls = logDomain.getLogStream(LogLevel.DEBUG_VERBOSE_1, getLogDescription());
+    private void deserialize(BinaryInputStream ci) {
+        LogStream ls = Log.getLogStream(LogLevel.DEBUG_VERBOSE_1, this);
         if (types.size() == 0) {
             assert(!initialized()) : "Already initialized";
             globalDefault = ci.readShort();
@@ -158,7 +154,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
      *
      * @param co Output Stream to write information to
      */
-    private void serializeLocalDataTypes(OutputStreamBuffer co) {
+    private void serializeLocalDataTypes(BinaryOutputStream co) {
         if (localTypesSent == 0) {
             int t = RuntimeSettings.DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.getValue();
             co.writeShort((short)t);
@@ -246,7 +242,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     }
 
     @Override
-    public DataTypeBase readType(InputStreamBuffer is) {
+    public DataTypeBase readType(BinaryInputStream is) {
         short uid = is.readShort();
         if (uid == -2) {
             // we get info on more data
@@ -260,7 +256,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
         assert(initialized()) : "Not initialized";
         int typesSize = types.size(); // to avoid warning
         if (uid < 0 || uid >= typesSize) {
-            log(LogLevel.ERROR, logDomain, "Corrupt type information from received from connection partner: " + uid);
+            Log.log(LogLevel.ERROR, this, "Corrupt type information from received from connection partner: " + uid);
             throw new RuntimeException("Corrupt type information from received from connection partner");
         }
 
@@ -274,7 +270,7 @@ public class RemoteTypes extends LogUser implements TypeEncoder {
     }
 
     @Override
-    public void writeType(OutputStreamBuffer os, DataTypeBase dt) {
+    public void writeType(BinaryOutputStream os, DataTypeBase dt) {
         int count = DataTypeBase.getTypeCount();
         if (count > localTypesSent) {
             os.writeShort(-2);
