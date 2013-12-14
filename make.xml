@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <targets>
 
-  <finroclibrary libs="rrlib_finroc_core_utils.jar">
+  <finroclibrary>
     <sources exclude="test/** finstructable/Finstructed.java">
       **.java
     </sources>
@@ -20,7 +20,7 @@
     <script name="basic_realtime_java" main-class="org.finroc.core.test.BasicRealtimeTest"/>
   </testprogram-->
   
-  <finrocprogram name="finstructed_java" libs="finroc_core.jar finroc_plugins_tcp.jar" main-class="org.finroc.core.finstructable.Finstructed">
+  <finrocprogram name="finstructed_java" main-class="org.finroc.core.finstructable.Finstructed">
     <sources>
       finstructable/Finstructed.java
     </sources>
