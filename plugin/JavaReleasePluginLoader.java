@@ -69,7 +69,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
                 try {
                     allJars.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
-                    Log.log(LogLevel.WARNING, this, "Error finding plugin", e);
+                    Log.log(LogLevel.WARNING, "Error finding plugin", e);
                 }
             }
         }
@@ -84,7 +84,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
                 result.add(loadPlugin(jf.getManifest(), pluginJar.getAbsolutePath()));
                 jf.close();
             } catch (Exception e) {
-                Log.log(LogLevel.WARNING, this, "Error loading plugin: " + pluginJar.getName(), e);
+                Log.log(LogLevel.WARNING, "Error loading plugin: " + pluginJar.getName(), e);
             }
         }
 
@@ -109,7 +109,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
         if (!Plugin.class.isAssignableFrom(c)) {
             throw new Exception(className + " is not a plugin class.");
         }
-        Log.log(LogLevel.DEBUG, this, "Found plugin: " + className);
+        Log.log(LogLevel.DEBUG, "Found plugin: " + className);
 
         Plugin plugin = c.newInstance();
         return plugin;
@@ -125,7 +125,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
             try {
                 classLoader = new PluginClassLoader(jars.toArray(new URL[0]));
             } catch (Exception e) {
-                Log.log(LogLevel.ERROR, this, e);
+                Log.log(LogLevel.ERROR, e);
             }
         } else {
             for (URL url : jars) {
@@ -146,7 +146,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
          */
         PluginClassLoader(URL[] jars) throws Exception {
             super(jars);
-            LogStream ls = Log.getLogStream(LogLevel.DEBUG, getLogDescription());
+            LogStream ls = Log.getLogStream(LogLevel.DEBUG, "PluginClassLoader");
             ls.append("Constructed PluginClassLoader: ");
             for (URL url : jars) {
                 ls.append(url.toString() + " ");
@@ -157,17 +157,13 @@ public class JavaReleasePluginLoader implements PluginLoader {
 
         @Override
         protected void addURL(URL url) {
-            Log.log(LogLevel.DEBUG, getLogDescription(), "PluginClassLoader: Adding " + url.toString());
+            Log.log(LogLevel.DEBUG, "PluginClassLoader: Adding " + url.toString());
             for (URL u : getURLs()) {
                 if (u.equals(url)) {
                     return;
                 }
             }
             super.addURL(url);
-        }
-
-        private static String getLogDescription() {
-            return "PluginClassLoader";
         }
     }
 
@@ -187,7 +183,7 @@ public class JavaReleasePluginLoader implements PluginLoader {
             }
             return m.group(1);
         } catch (Exception e) {
-            Log.log(LogLevel.ERROR, this, "Error extracting jar file from URL " + url, e);
+            Log.log(LogLevel.ERROR, "Error extracting jar file from URL " + url, e);
         }
         return null;
     }
