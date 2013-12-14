@@ -38,7 +38,6 @@ import org.finroc.core.plugin.Plugins;
 import org.finroc.core.plugin.StandardCreateModuleAction;
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.finroc_core_utils.jc.Files;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.rtti.DataTypeBase;
@@ -519,8 +518,8 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param finrocFile File to scan in.
      * @return List of command line arguments.
      */
-    public static SimpleList<String> scanForCommandLineArgs(String finrocFile) {
-        SimpleList<String> result = new SimpleList<String>();
+    public static ArrayList<String> scanForCommandLineArgs(String finrocFile) {
+        ArrayList<String> result = new ArrayList<String>();
         try {
             XMLDocument doc = Files.getFinrocXMLDocument(finrocFile, false);
             try {
@@ -543,7 +542,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param result Result list
      * @param parent Node to scan childs of
      */
-    public static void scanForCommandLineArgsHelper(SimpleList<String> result, XMLNode parent) throws XMLException {
+    public static void scanForCommandLineArgsHelper(ArrayList<String> result, XMLNode parent) throws XMLException {
         for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
             String name = node.get().getName();
             if (node.get().hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {

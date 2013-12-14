@@ -21,13 +21,13 @@
 //----------------------------------------------------------------------
 package org.finroc.core;
 
+import java.util.ArrayList;
+
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.GarbageCollector;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogDomainRegistry;
@@ -832,7 +832,7 @@ public class FrameworkElement extends Annotatable {
      * @return List with all thread local caches - Some cleanup methods require that this is locked
      * (Only lock runtime for minimal periods of time!)
      */
-    public SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
+    public ArrayList<?> getThreadLocalCacheInfosLock() {
         //return getParent(RuntimeEnvironment.class);
         return RuntimeEnvironment.getInstance().getRegistryHelper().infosLock;
     }
@@ -1388,8 +1388,8 @@ public class FrameworkElement extends Annotatable {
         synchronized (getRuntime().getRegistryLock()) {
 
             // all parameters attached to any of the module's parameters
-            SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
-            SimpleList<StaticParameterBase> attachedParametersTmp = new SimpleList<StaticParameterBase>();
+            ArrayList<StaticParameterBase> attachedParameters = new ArrayList<StaticParameterBase>();
+            ArrayList<StaticParameterBase> attachedParametersTmp = new ArrayList<StaticParameterBase>();
 
             StaticParameterList spl = (StaticParameterList)this.getAnnotation(StaticParameterList.TYPE);
             if (spl != null) {

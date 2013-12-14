@@ -21,8 +21,10 @@
 //----------------------------------------------------------------------
 package org.finroc.core;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.BinarySerializable;
@@ -43,7 +45,7 @@ public class FrameworkElementTreeFilter implements BinarySerializable {
     private int flagResult;
 
     /** Qualified names of framework elements need to start with one of these in order to be published */
-    private final SimpleList<String> paths = new SimpleList<String>();
+    private final ArrayList<String> paths = new ArrayList<String>();
 
     /** Send tags of each framework element? (TODO: maybe we'll need a generic mechanism for annotations one day) */
     private boolean sendTags;
@@ -69,7 +71,7 @@ public class FrameworkElementTreeFilter implements BinarySerializable {
         this.relevantFlags = relevantFlags;
         this.flagResult = flagResult;
         if (paths.length() > 0) {
-            this.paths.addAll(paths.split(","));
+            this.paths.addAll(Arrays.asList(paths.split(",")));
         }
     }
 

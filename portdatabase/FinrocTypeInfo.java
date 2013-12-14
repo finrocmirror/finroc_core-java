@@ -21,8 +21,9 @@
 //----------------------------------------------------------------------
 package org.finroc.core.portdatabase;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.finroc.core.RuntimeSettings;
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
 
@@ -60,7 +61,7 @@ public class FinrocTypeInfo {
     // static stuff
 
     /** CC Type counter */
-    public static final AtomicInt lastCcIndex = new AtomicInt();
+    public static final AtomicInteger lastCcIndex = new AtomicInteger();
 
     /** Maximum number of types */
     public static final int MAX_TYPES = 2000;

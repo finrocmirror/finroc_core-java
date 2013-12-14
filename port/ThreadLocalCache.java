@@ -22,6 +22,8 @@
 package org.finroc.core.port;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.finroc.core.CoreRegister;
 import org.finroc.core.LockOrderLevels;
@@ -39,11 +41,7 @@ import org.finroc.core.port.std.PortQueueElement;
 import org.finroc.core.port.std.PortQueueFragmentRaw;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.thread.CoreThread;
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
@@ -97,26 +95,25 @@ public class ThreadLocalCache {
     public final BinaryInputStream inputPacketProcessor = new BinaryInputStream();
 
     /** Object to gain fast access to the thread local information */
-    private static final FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache> info =
-        new FastStaticThreadLocal<ThreadLocalCache, ThreadLocalCache>();
+    private static final ThreadLocal<ThreadLocalCache> info = new ThreadLocal<ThreadLocalCache>();
 
     /** List with all ThreadLocalInfo objects... necessary for cleaning up... is deleted with last thread */
-    private static SimpleListWithMutex<WeakReference<ThreadLocalCache>> infos;
+    private static ArrayList<WeakReference<ThreadLocalCache>> infos;
 
     /** Lock to above - for every cache */
-    private final SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
+    private final ArrayList<WeakReference<ThreadLocalCache>> infosLock;
 
     /** Uid of thread - unique and constant for runtime of program */
     private final int threadUid;
 
     /** Object to retrieve uids from */
-    private static AtomicInt threadUidCounter = new AtomicInt(1);
+    private static AtomicInteger threadUidCounter = new AtomicInteger(1);
 
     /** Automatic locks - are released/recycled with releaseAllLocks() */
     //@InCpp("util::SimpleList<const PortData*> autoLocks;")
-    private final SimpleList<PortDataManager> autoLocks = new SimpleList<PortDataManager>();
-    private final SimpleList < CCPortDataManagerTL> ccAutoLocks = new SimpleList < CCPortDataManagerTL> ();
-    private final SimpleList < CCPortDataManager> ccInterAutoLocks = new SimpleList < CCPortDataManager> ();
+    private final ArrayList<PortDataManager> autoLocks = new ArrayList<PortDataManager>();
+    private final ArrayList < CCPortDataManagerTL> ccAutoLocks = new ArrayList < CCPortDataManagerTL> ();
+    private final ArrayList < CCPortDataManager> ccInterAutoLocks = new ArrayList < CCPortDataManager> ();
 
     /** Thread ID as reuturned by ThreadUtil::getCurrentThreadId() */
     public final long threadId;
@@ -166,8 +163,8 @@ public class ThreadLocalCache {
         }
     }
 
-    public static SimpleListWithMutex<WeakReference<ThreadLocalCache>> staticInit() {
-        infos = new SimpleListWithMutex<WeakReference<ThreadLocalCache>>(LockOrderLevels.INNER_MOST - 100);
+    public static ArrayList<WeakReference<ThreadLocalCache>> staticInit() {
+        infos = new ArrayList<WeakReference<ThreadLocalCache>>(LockOrderLevels.INNER_MOST - 100);
         return infos;
     }
 
@@ -185,7 +182,7 @@ public class ThreadLocalCache {
             }
         }
 
-        ThreadLocalCache tli = info.getFast();
+        ThreadLocalCache tli = info.get();
         if (tli == null) {
             synchronized (infos) {
                 tli = new ThreadLocalCache(/*infos.size()/*Thread.currentThread()*/);
@@ -210,8 +207,8 @@ public class ThreadLocalCache {
             return ((CoreThread)t).getThreadLocalInfo();
         }
 
-        assert(info.getFast() != null);
-        return info.getFast();
+        assert(info.get() != null);
+        return info.get();
     }
 
 
@@ -387,7 +384,7 @@ public class ThreadLocalCache {
      *
      * (should only be called by CCPortDataBufferPool)
      */
-    public SimpleListWithMutex<WeakReference<ThreadLocalCache>> getInfosLock() {
+    public ArrayList<WeakReference<ThreadLocalCache>> getInfosLock() {
         return infosLock;
     }
 

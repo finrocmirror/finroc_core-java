@@ -21,8 +21,8 @@
 //----------------------------------------------------------------------
 package org.finroc.core.test;
 
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
@@ -132,8 +132,8 @@ public class RealPortQueueTest extends Thread {
         ThreadLocalCache.getFast().releaseAllLocks();
 
         // start writer threads
-        RealPortQueueTest thread1 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(true));
-        RealPortQueueTest thread2 = ThreadUtil.getThreadSharedPtr(new RealPortQueueTest(false));
+        RealPortQueueTest thread1 = new RealPortQueueTest(true);
+        RealPortQueueTest thread2 = new RealPortQueueTest(false);
         thread1.start();
         thread2.start();
 
@@ -219,7 +219,7 @@ public class RealPortQueueTest extends Thread {
         positiveCount = pos;
     }
 
-    public static AtomicInt finished = new AtomicInt(0);
+    public static AtomicInteger finished = new AtomicInteger(0);
 
     public void run() {
         ThreadLocalCache.get();

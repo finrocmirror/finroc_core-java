@@ -21,8 +21,9 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.finroc.core.Annotatable;
-import org.rrlib.finroc_core_utils.jc.AtomicInt64;
 import org.rrlib.finroc_core_utils.jc.Time;
 
 /**
@@ -45,10 +46,10 @@ public class AggregatedEdge extends Annotatable {
     public final long creationTime;
 
     /** Usage statistics: Number of published elements */
-    public AtomicInt64 publishCount = new AtomicInt64(0);
+    public AtomicLong publishCount = new AtomicLong(0);
 
     /** Usage statistics: Size of published elements */
-    public AtomicInt64 publishSize = new AtomicInt64(0);
+    public AtomicLong publishSize = new AtomicLong(0);
 
     /**
      * @param src Source aggregator

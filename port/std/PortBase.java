@@ -21,9 +21,9 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.std;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.AtomicPtr;
-import org.rrlib.finroc_core_utils.jc.FastStaticThreadLocal;
 import org.rrlib.logging.LogStream;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
@@ -61,7 +61,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      * In C++, other lock information is stored in in the last 3 bit - therefore
      * setValueInternal() and getValueInternal() should be used in the common cases.
      */
-    protected final AtomicPtr<PortDataReference> value = new AtomicPtr<PortDataReference>();
+    protected final AtomicReference<PortDataReference> value = new AtomicReference<PortDataReference>();
 
     /** Current type of port data - relevant for ports with multi type buffer pool */
     protected DataTypeBase curDataType;
@@ -83,7 +83,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     /**
      * Thread-local publish cache - in C++ PublishCache is allocated on stack
      */
-    protected FastStaticThreadLocal<PublishCache, PortBase> cacheTL = new FastStaticThreadLocal<PublishCache, PortBase>();
+    protected static ThreadLocal<PublishCache> cacheTL = new ThreadLocal<PublishCache>();
 
     /** Queue for ports with incoming value queue */
     protected final PortQueue queue;
@@ -288,7 +288,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         // assign
         ArrayWrapper<PortBase> dests = reverse ? edgesDest.getIterable() : edgesSrc.getIterable();
 
-        PublishCache pc = cacheTL.getFast();
+        PublishCache pc = cacheTL.get();
         if (pc == null) {
             pc = new PublishCache();
             cacheTL.set(pc);
@@ -468,7 +468,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
     protected PortDataManager pullValueRaw(boolean intermediateAssign, boolean ignorePullRequestHandlerOnThisPort) {
 
         // prepare publish cache
-        PublishCache pc = cacheTL.getFast();
+        PublishCache pc = cacheTL.get();
         if (pc == null) {
             pc = new PublishCache();
             cacheTL.set(pc);
@@ -645,7 +645,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
         assert isInitialized();
         assert target != null;
 
-        PublishCache pc = cacheTL.getFast();
+        PublishCache pc = cacheTL.get();
         if (pc == null) {
             pc = new PublishCache();
             cacheTL.set(pc);

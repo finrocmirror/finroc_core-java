@@ -21,6 +21,8 @@
 //----------------------------------------------------------------------
 package org.finroc.core.datatype;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
@@ -29,7 +31,6 @@ import org.finroc.core.port.cc.CCPortBase;
 import org.finroc.core.port.rpc.ProxyPort;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
@@ -92,7 +93,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
     private byte selectableCreateOptions;
 
     /** List backend (for remote Runtimes) */
-    private SimpleList<Entry> list = new SimpleList<Entry>();
+    private ArrayList<Entry> list = new ArrayList<Entry>();
 
     /** FrameworkElement that list is wrapping (for local Runtimes) */
     private FrameworkElement ioVector = null;
@@ -133,7 +134,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
             }
         } else {
             synchronized (ioVector) {
-                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                ArrayList<AbstractPort> ports = new ArrayList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int size = ports.size();
                 os.writeInt(size);
@@ -160,7 +161,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
      * @param elem Framework Element
      * @param result List containing result
      */
-    private static void getPorts(FrameworkElement elem, SimpleList<AbstractPort> result) {
+    private static void getPorts(FrameworkElement elem, ArrayList<AbstractPort> result) {
         result.clear();
         FrameworkElement.ChildIterator ci = new FrameworkElement.ChildIterator(elem, false);
         AbstractPort ap = null;
@@ -182,7 +183,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
             synchronized (ioVector) {
                 is.readByte(); // skip selectable create options, as this is not defined by finstruct
                 int size = is.readInt();
-                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                ArrayList<AbstractPort> ports = new ArrayList<AbstractPort>();
                 getPorts(ioVector, ports);
                 for (int i = 0; i < size; i++) {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
@@ -268,9 +269,9 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
      */
     public void applyChanges(FrameworkElement ioVector, int flags) {
         synchronized (ioVector) {
-            SimpleList<AbstractPort> ports1 = new SimpleList<AbstractPort>();
+            ArrayList<AbstractPort> ports1 = new ArrayList<AbstractPort>();
             getPorts(this.ioVector, ports1);
-            SimpleList<AbstractPort> ports2 = new SimpleList<AbstractPort>();
+            ArrayList<AbstractPort> ports2 = new ArrayList<AbstractPort>();
             getPorts(ioVector, ports2);
 
             for (int i = 0; i < ports1.size(); i++) {
@@ -300,7 +301,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
             }
         } else {
             synchronized (ioVector) {
-                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                ArrayList<AbstractPort> ports = new ArrayList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int size = ports.size();
                 for (int i = 0; i < size; i++) {
@@ -338,7 +339,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
         } else {
             assert(ioVector != null) : "Only available on local systems";
             synchronized (ioVector) {
-                SimpleList<AbstractPort> ports = new SimpleList<AbstractPort>();
+                ArrayList<AbstractPort> ports = new ArrayList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int i = 0;
                 for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {

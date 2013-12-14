@@ -22,13 +22,14 @@
 package org.finroc.core.parameter;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.FrameworkElementTreeFilter;
 import org.rrlib.finroc_core_utils.jc.Files;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
@@ -222,8 +223,8 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
      * @return XMLNode representing entry
      */
     public XMLNode getEntry(String entry, boolean create) {
-        SimpleList<String> nodes = new SimpleList<String>();
-        nodes.addAll(entry.split(SEPARATOR));
+        ArrayList<String> nodes = new ArrayList<String>();
+        nodes.addAll(Arrays.asList(entry.split(SEPARATOR)));
         int idx = (nodes.size() > 0 && nodes.get(0).length() == 0) ? 1 : 0; // if entry starts with '/', skip first empty string
         XMLNode current = wrapped.getRootNode();
         XMLNode parent = current;

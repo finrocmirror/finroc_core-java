@@ -24,7 +24,6 @@ package org.finroc.core;
 import java.io.File;
 import java.nio.ByteOrder;
 
-import org.rrlib.finroc_core_utils.jc.AutoDeleter;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 import org.finroc.core.datatype.Bounds;
@@ -166,11 +165,11 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
 
     protected RuntimeSettings() {
         super(new FrameworkElement(RuntimeEnvironment.getInstance(), "Settings"), "Core");
-        WARN_ON_CYCLE_TIME_EXCEED = AutoDeleter.addStatic(new ParameterBool("WARN_ON_CYCLE_TIME_EXCEED", this, true));
-        DEFAULT_CYCLE_TIME = AutoDeleter.addStatic(new ParameterNumeric<Long>("DEFAULT_CYCLE_TIME", this, 50L, new Bounds<Long>(1, 2000)));
-        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = AutoDeleter.addStatic(new ParameterNumeric<Integer>("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", this, 40, new Bounds<Integer>(1, 2000)));
-        STREAM_THREAD_CYCLE_TIME = AutoDeleter.addStatic(new ParameterNumeric<Integer>("STREAM_THREAD_CYCLE_TIME", this, 200, new Bounds<Integer>(1, 2000)));
-        GARBAGE_COLLECTOR_SAFETY_PERIOD = AutoDeleter.addStatic(new ParameterNumeric<Integer>("GARBAGE_COLLECTOR_SAFETY_PERIOD", this, 5000, new Bounds<Integer>(500, 50000)));
+        WARN_ON_CYCLE_TIME_EXCEED = new ParameterBool("WARN_ON_CYCLE_TIME_EXCEED", this, true);
+        DEFAULT_CYCLE_TIME = new ParameterNumeric<Long>("DEFAULT_CYCLE_TIME", this, 50L, new Bounds<Long>(1, 2000));
+        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = new ParameterNumeric<Integer>("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", this, 40, new Bounds<Integer>(1, 2000));
+        STREAM_THREAD_CYCLE_TIME = new ParameterNumeric<Integer>("STREAM_THREAD_CYCLE_TIME", this, 200, new Bounds<Integer>(1, 2000));
+        GARBAGE_COLLECTOR_SAFETY_PERIOD = new ParameterNumeric<Integer>("GARBAGE_COLLECTOR_SAFETY_PERIOD", this, 5000, new Bounds<Integer>(500, 50000));
 
         // add ports with update times
         //addChild(DataTypeRegister2.getInstance());

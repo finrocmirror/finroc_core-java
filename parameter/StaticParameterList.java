@@ -21,12 +21,13 @@
 //----------------------------------------------------------------------
 package org.finroc.core.parameter;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
@@ -46,7 +47,7 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     public final static DataType<StaticParameterList> TYPE = new DataType<StaticParameterList>(StaticParameterList.class);
 
     /** List of parameters */
-    private SimpleList<StaticParameterBase> parameters = new SimpleList<StaticParameterBase>();
+    private ArrayList<StaticParameterBase> parameters = new ArrayList<StaticParameterBase>();
 
     /**
      * Index of CreateModuleAction that was used to create framework element

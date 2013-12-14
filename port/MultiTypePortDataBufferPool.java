@@ -21,11 +21,12 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port;
 
+import java.util.ArrayList;
+
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.port.std.PortDataBufferPool;
 import org.finroc.core.port.std.PortDataManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.LogStream;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -39,7 +40,7 @@ import org.rrlib.serialization.rtti.DataTypeBase;
 public class MultiTypePortDataBufferPool {
 
     /** list contains pools for different data types... new pools are added when needed */
-    private final SimpleList<PortDataBufferPool> pools = new SimpleList<PortDataBufferPool>(2);
+    private final ArrayList<PortDataBufferPool> pools = new ArrayList<PortDataBufferPool>(2);
 
     /** Mutex lock order - needs to be locked before AllocationRegister */
     public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.INNER_MOST - 20);

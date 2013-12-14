@@ -21,7 +21,8 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.std;
 
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObjectManager;
@@ -211,7 +212,7 @@ public class PortDataManager extends ReusableGenericObjectManager implements Has
      * In C++ this is a pseudo-class. The 'this'-pointer points to port of the refCounters
      * variable.
      */
-    public static class RefCounter extends AtomicInt {
+    public static class RefCounter extends AtomicInteger {
 
         /** UID */
         private static final long serialVersionUID = -2089004067275013847L;

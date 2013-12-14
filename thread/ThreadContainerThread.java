@@ -21,6 +21,8 @@
 //----------------------------------------------------------------------
 package org.finroc.core.thread;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElement.Flag;
@@ -30,7 +32,6 @@ import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.AggregatedEdge;
 import org.finroc.core.port.EdgeAggregator;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 
@@ -44,19 +45,19 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
     private volatile boolean reschedule = true;
 
     /** simple schedule: Tasks will be executed in specified order */
-    private SimpleList<PeriodicFrameworkElementTask> schedule = new SimpleList<PeriodicFrameworkElementTask>();
+    private ArrayList<PeriodicFrameworkElementTask> schedule = new ArrayList<PeriodicFrameworkElementTask>();
 
     /** temporary list of tasks that need to be scheduled */
-    private SimpleList<PeriodicFrameworkElementTask> tasks = new SimpleList<PeriodicFrameworkElementTask>();
+    private ArrayList<PeriodicFrameworkElementTask> tasks = new ArrayList<PeriodicFrameworkElementTask>();
 
     /** temporary list of tasks that need to be scheduled - which are not sensor tasks */
-    private SimpleList<PeriodicFrameworkElementTask> nonSensorTasks = new SimpleList<PeriodicFrameworkElementTask>();
+    private ArrayList<PeriodicFrameworkElementTask> nonSensorTasks = new ArrayList<PeriodicFrameworkElementTask>();
 
     /** temporary variable for scheduling algorithm: trace we're currently following */
-    private SimpleList<EdgeAggregator> trace = new SimpleList<EdgeAggregator>();
+    private ArrayList<EdgeAggregator> trace = new ArrayList<EdgeAggregator>();
 
     /** temporary variable: trace back */
-    private SimpleList<PeriodicFrameworkElementTask> traceBack = new SimpleList<PeriodicFrameworkElementTask>();
+    private ArrayList<PeriodicFrameworkElementTask> traceBack = new ArrayList<PeriodicFrameworkElementTask>();
 
     /** tree filter to search for tasks */
     private final FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter();
@@ -105,13 +106,13 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                         PeriodicFrameworkElementTask task = tasks.get(i);
                         if (task.previousTasks.size() == 0) {
                             schedule.add(task);
-                            tasks.removeElem(task);
+                            tasks.remove(task);
                             found = true;
 
                             // delete from next tasks' previous task list
                             for (int j = 0; j < task.nextTasks.size(); j++) {
                                 PeriodicFrameworkElementTask next = task.nextTasks.get(j);
-                                next.previousTasks.removeElem(task);
+                                next.previousTasks.remove(task);
                             }
                             break;
                         }
@@ -139,12 +140,12 @@ public class ThreadContainerThread extends CoreLoopThreadBase implements Runtime
                         if (end) {
                             Log.log(LogLevel.WARNING, this, "Choosing " + current.incoming.getQualifiedName() + " as next element");
                             schedule.add(current);
-                            tasks.removeElem(current);
+                            tasks.remove(current);
 
                             // delete from next tasks' previous task list
                             for (int j = 0; j < current.nextTasks.size(); j++) {
                                 PeriodicFrameworkElementTask next = current.nextTasks.get(j);
-                                next.previousTasks.removeElem(current);
+                                next.previousTasks.remove(current);
                             }
                             break;
                         }

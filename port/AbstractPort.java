@@ -27,7 +27,6 @@ import java.util.BitSet;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryOutputStream;
@@ -106,7 +105,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     private EdgeList edgesDest;
 
     /** Contains any link edges created by this port */
-    private SimpleList<LinkEdge> linkEdges;
+    private ArrayList<LinkEdge> linkEdges;
 
     /** Minimum network update interval. Value < 0 means default for this type */
     protected short minNetUpdateTime;
@@ -547,7 +546,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
                 return;
             }
             if (linkEdges == null) { // lazy initialization
-                linkEdges = new SimpleList<LinkEdge>();
+                linkEdges = new ArrayList<LinkEdge>();
             }
             for (int i = 0; i < linkEdges.size(); i++) {
                 if (linkEdges.get(i).getTargetLink().equals(linkName) || linkEdges.get(i).getSourceLink().equals(linkName)) {
@@ -1159,7 +1158,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * @return List with all link edges (must not be modified)
      */
-    public SimpleList<LinkEdge> getLinkEdges() {
+    public ArrayList<LinkEdge> getLinkEdges() {
         return linkEdges;
     }
 

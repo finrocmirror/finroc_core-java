@@ -22,14 +22,13 @@
 package org.finroc.core;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.rrlib.finroc_core_utils.jc.GarbageCollector;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
 import org.rrlib.finroc_core_utils.jc.Time;
 import org.rrlib.finroc_core_utils.jc.container.BoundedQElementContainer;
-import org.rrlib.finroc_core_utils.jc.container.ConcurrentMap;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
-import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.stream.ChunkedBuffer;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
@@ -69,7 +68,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
 
         /** Edges dealing with linked ports */
         //@Elems({PassByValue.class, Ptr.class, Ptr.class})
-        private final ConcurrentMap<String, LinkEdge> linkEdges = new ConcurrentMap<String, LinkEdge>(null);
+        private final ConcurrentHashMap<String, LinkEdge> linkEdges = new ConcurrentHashMap<String, LinkEdge>(null);
 
         /** List with runtime listeners */
         private final RuntimeListenerManager listeners = new RuntimeListenerManager();
@@ -78,10 +77,10 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         private StringBuilder tempBuffer = new StringBuilder();
 
         /** Lock to thread local cache list */
-        SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock;
+        ArrayList<WeakReference<ThreadLocalCache>> infosLock;
 
         /** Alternative roots for links (usually remote runtime environments mapped into this one) */
-        private SimpleList<FrameworkElement> alternativeLinkRoots = new SimpleList<FrameworkElement>();
+        private ArrayList<FrameworkElement> alternativeLinkRoots = new ArrayList<FrameworkElement>();
 
         /** Mutex */
         public final MutexLockOrder objMutex = new MutexLockOrder(LockOrderLevels.RUNTIME_REGISTER);
@@ -129,7 +128,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         Constant.staticInit(); // needs to be done after unit
         Time.getInstance(); // (possibly) init timing thread
         GarbageCollector.createAndStartInstance();
-        SimpleListWithMutex<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
+        ArrayList<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
         DataTypeUtil.initCCTypes();
@@ -462,7 +461,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                     if (changeType == RuntimeListener.ADD) {
                         registry.alternativeLinkRoots.add(element);
                     } else if (changeType == RuntimeListener.REMOVE) {
-                        registry.alternativeLinkRoots.removeElem(element);
+                        registry.alternativeLinkRoots.remove(element);
                     }
                 }
 

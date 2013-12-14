@@ -81,7 +81,7 @@ public class ThreadContainer extends Group implements StartAndPausable {
     @Override
     public void startExecution() {
         assert(thread == null);
-        thread = ThreadUtil.getThreadSharedPtr(new ThreadContainerThread(this, cycleTime.get(), warnOnCycleTimeExceed.get()));
+        thread = new ThreadContainerThread(this, cycleTime.get(), warnOnCycleTimeExceed.get());
         if (rtThread.get()) {
             ThreadUtil.makeThreadRealtime(thread);
         }

@@ -22,13 +22,13 @@
 package org.finroc.core.port.net;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
 import org.rrlib.finroc_core_utils.jc.MutexLockOrder;
-import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 
 /**
  * @author Max Reichardt
@@ -45,13 +45,13 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     protected TrackerListenerManager listeners = new TrackerListenerManager();
 
     /** Peer tracker instances that are used - can be multiple */
-    private static SimpleListWithMutex<AbstractPeerTracker> instances = new SimpleListWithMutex<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
+    private static ArrayList<AbstractPeerTracker> instances = new ArrayList<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
 
     /** Mutex for tracker */
     public final MutexLockOrder objMutex;
 
     /** "Lock" to above - for safe deinitialization */
-    private SimpleListWithMutex<AbstractPeerTracker> instancesLock = instances;
+    private ArrayList<AbstractPeerTracker> instancesLock = instances;
 
     /**
      * @param lockOrder Lock order of tracker
@@ -160,7 +160,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
      */
     public void delete() {
         synchronized (instancesLock) {
-            instancesLock.removeElem(this);
+            instancesLock.remove(this);
         }
     }
 

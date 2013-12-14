@@ -21,11 +21,12 @@
 //----------------------------------------------------------------------
 package org.finroc.core.test;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.cc.PortNumeric;
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
-import org.rrlib.finroc_core_utils.jc.AtomicInt64;
 import org.rrlib.finroc_core_utils.jc.Time;
 import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 
@@ -40,17 +41,17 @@ import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 public class BasicRealtimeTest extends Thread {
 
     PortNumeric<Integer> port;
-    AtomicInt64 maxLatency = new AtomicInt64();
-    AtomicInt64 totalLatency = new AtomicInt64();
-    AtomicInt cycles = new AtomicInt();
+    AtomicLong maxLatency = new AtomicLong();
+    AtomicLong totalLatency = new AtomicLong();
+    AtomicInteger cycles = new AtomicInteger();
     static final int INTERVAL = 500000; // ns
 
     public static void main(String[] args) {
 
         RuntimeEnvironment.getInstance();
 
-        BasicRealtimeTest rt = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("RT-Thread"));
-        BasicRealtimeTest t = ThreadUtil.getThreadSharedPtr(new BasicRealtimeTest("non-RT-Thread"));
+        BasicRealtimeTest rt = new BasicRealtimeTest("RT-Thread");
+        BasicRealtimeTest t = new BasicRealtimeTest("non-RT-Thread");
         ThreadUtil.makeThreadRealtime(rt);
         rt.start();
         t.start();

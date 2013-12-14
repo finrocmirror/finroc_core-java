@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
+import java.util.ArrayList;
 
 /**
  * @author Max Reichardt
@@ -37,7 +37,7 @@ public class Unit {
     private final double factor;
 
     /** Group of units that unit is in */
-    private final SimpleList<Unit> group;
+    private final ArrayList<Unit> group;
 
     /** Unit description */
     private final String description;
@@ -58,7 +58,7 @@ public class Unit {
     private final boolean isAConstant;
 
     /** temp list for uidLookupTable (see below) */
-    private final static SimpleList<Unit> uidLookupTableTemp = new SimpleList<Unit>();
+    private final static ArrayList<Unit> uidLookupTableTemp = new ArrayList<Unit>();
 
     /**
      * Standard constructor for units
@@ -67,7 +67,7 @@ public class Unit {
      * @param description Unit description
      * @param factor Factor regarding base unit
      */
-    private Unit(SimpleList<Unit> group, String description, double factor) {
+    private Unit(ArrayList<Unit> group, String description, double factor) {
         this.group = group;
         this.description = description;
         this.factor = factor;
@@ -149,11 +149,11 @@ public class Unit {
     }
 
     /** No Unit - has Uid 0 */
-    private static final SimpleList<Unit> unknown = new SimpleList<Unit>();
+    private static final ArrayList<Unit> unknown = new ArrayList<Unit>();
     public static final Unit NO_UNIT = new Unit(unknown, "", 1);
 
     /** Length Units */
-    private static final SimpleList<Unit> length = new SimpleList<Unit>();
+    private static final ArrayList<Unit> length = new ArrayList<Unit>();
     public static final Unit nm = new Unit(length, "nm", 0.000000001);
     public static final Unit um = new Unit(length, "um", 0.000001);
     public static final Unit mm = new Unit(length, "mm", 0.001);
@@ -163,12 +163,12 @@ public class Unit {
     public static final Unit km = new Unit(length, "km", 1000);
 
     /** Speed Units */
-    private static final SimpleList<Unit> speed = new SimpleList<Unit>();
+    private static final ArrayList<Unit> speed = new ArrayList<Unit>();
     public static final Unit km_h = new Unit(speed, "km/h", 3.6);
     public static final Unit m_s = new Unit(speed, "m/s", 1);
 
     /** Weight Units */
-    private static final SimpleList<Unit> weight = new SimpleList<Unit>();
+    private static final ArrayList<Unit> weight = new ArrayList<Unit>();
     public static final Unit mg = new Unit(weight, "mg", 0.001);
     public static final Unit g = new Unit(weight, "g", 1);
     public static final Unit kg = new Unit(weight, "kg", 1000);
@@ -176,7 +176,7 @@ public class Unit {
     public static final Unit mt = new Unit(weight, "mt", 1000000000000d);
 
     /** Time Units */
-    private static final SimpleList<Unit> time = new SimpleList<Unit>();
+    private static final ArrayList<Unit> time = new ArrayList<Unit>();
     public static final Unit ns = new Unit(time, "ns", 0.000000001);
     public static final Unit us = new Unit(time, "us", 0.000001);
     public static final Unit ms = new Unit(time, "ms", 0.001);
@@ -186,16 +186,16 @@ public class Unit {
     public static final Unit day = new Unit(time, "day", 86400);
 
     /** Angular Units */
-    private static final SimpleList<Unit> angle = new SimpleList<Unit>();
+    private static final ArrayList<Unit> angle = new ArrayList<Unit>();
     public static final Unit deg = new Unit(angle, "deg", 0.017453292);
     public static final Unit rad = new Unit(angle, "rad", 1);
 
     /** Frequency */
-    private static final SimpleList<Unit> frequency = new SimpleList<Unit>();
+    private static final ArrayList<Unit> frequency = new ArrayList<Unit>();
     public static final Unit Hz = new Unit(frequency, "Hz", 1);
 
     /** Screen Units */
-    private static final SimpleList<Unit> screen = new SimpleList<Unit>();
+    private static final ArrayList<Unit> screen = new ArrayList<Unit>();
     public static final Unit Pixel = new Unit(screen, "Pixel", 1);
 
 
@@ -222,7 +222,7 @@ public class Unit {
      *
      * @param units Group of Units
      */
-    private static void calculateFactors(SimpleList<Unit> units) {
+    private static void calculateFactors(ArrayList<Unit> units) {
         for (int j = 0; j < units.size(); j++) {
             Unit unit = units.get(j);
             unit.factors = new double[units.size()];

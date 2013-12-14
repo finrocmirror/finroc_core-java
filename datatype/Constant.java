@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.datatype;
 
-import org.rrlib.finroc_core_utils.jc.AtomicInt;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Max Reichardt
@@ -36,7 +36,7 @@ public final class Constant extends Unit {
     private static final Constant[] constants = new Constant[128];
 
     /** last assigned unique id for encoding and decoding */
-    private static final AtomicInt constandIdCounter = new AtomicInt(0);
+    private static final AtomicInteger constandIdCounter = new AtomicInteger(0);
 
     /** unique id for encoding and decoding (needs to be changed to short if there are more than 128 constants) */
     private final byte constantId;

@@ -21,10 +21,11 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.cc;
 
+import java.util.ArrayList;
+
 import org.rrlib.finroc_core_utils.jc.container.Reusable;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPool;
 import org.rrlib.finroc_core_utils.jc.container.ReusablesPoolTL;
-import org.rrlib.finroc_core_utils.jc.container.SimpleListWithMutex;
 import org.rrlib.finroc_core_utils.jc.container.WonderQueue;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.finroc.core.RuntimeEnvironment;
@@ -170,7 +171,7 @@ public class CCPortDataBufferPool extends ReusablesPoolTL < CCPortDataManagerTL 
      *
      * @return Lock
      */
-    private SimpleListWithMutex<?> getThreadLocalCacheInfosLock() {
+    private ArrayList<?> getThreadLocalCacheInfosLock() {
         return RuntimeEnvironment.getInstance().getThreadLocalCacheInfosLock();
     }
 }

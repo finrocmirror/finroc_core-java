@@ -21,13 +21,14 @@
 //----------------------------------------------------------------------
 package org.finroc.core.parameter;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.portdatabase.SerializationHelper;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
@@ -107,7 +108,7 @@ public class StaticParameterBase implements HasDestructor {
     private boolean structureParameterProxy;
 
     /** List of attached parameters */
-    private SimpleList<StaticParameterBase> attachedParameters = new SimpleList<StaticParameterBase>();
+    private ArrayList<StaticParameterBase> attachedParameters = new ArrayList<StaticParameterBase>();
 
     /** Constructor for remote parameters */
     public StaticParameterBase() {
@@ -490,7 +491,7 @@ public class StaticParameterBase implements HasDestructor {
      */
     public void attachTo(StaticParameterBase other) {
         if (useValueOf != this) {
-            useValueOf.attachedParameters.removeElem(this);
+            useValueOf.attachedParameters.remove(this);
         }
         useValueOf = other == null ? this : other;
         if (useValueOf != this) {
@@ -602,7 +603,7 @@ public class StaticParameterBase implements HasDestructor {
     /**
      * @param result Result buffer for all attached parameters (including those from parameters this parameter is possibly (indirectly) attached to)
      */
-    public void getAllAttachedParameters(SimpleList<StaticParameterBase> result) {
+    public void getAllAttachedParameters(ArrayList<StaticParameterBase> result) {
         result.clear();
         result.add(this);
 

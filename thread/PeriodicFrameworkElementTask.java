@@ -21,10 +21,11 @@
 //----------------------------------------------------------------------
 package org.finroc.core.thread;
 
+import java.util.ArrayList;
+
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.EdgeAggregator;
-import org.rrlib.finroc_core_utils.jc.container.SimpleList;
 import org.rrlib.finroc_core_utils.jc.thread.Task;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
@@ -51,10 +52,10 @@ public class PeriodicFrameworkElementTask extends FinrocAnnotation {
     public final EdgeAggregator outgoing;
 
     /** Tasks to execute before this one (updated during scheduling) */
-    public final SimpleList<PeriodicFrameworkElementTask> previousTasks = new SimpleList<PeriodicFrameworkElementTask>();
+    public final ArrayList<PeriodicFrameworkElementTask> previousTasks = new ArrayList<PeriodicFrameworkElementTask>();
 
     /** Tasks to execute after this one (updated during scheduling) */
-    public final SimpleList<PeriodicFrameworkElementTask> nextTasks = new SimpleList<PeriodicFrameworkElementTask>();
+    public final ArrayList<PeriodicFrameworkElementTask> nextTasks = new ArrayList<PeriodicFrameworkElementTask>();
 
     /**
      * @param incomingPorts Element containing incoming ports (relevant for execution order)

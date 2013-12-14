@@ -23,7 +23,6 @@ package org.finroc.core.port.stream;
 
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
-import org.rrlib.finroc_core_utils.jc.thread.ThreadUtil;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.finroc.core.RuntimeSettings;
@@ -43,7 +42,7 @@ public class StreamCommitThread extends CoreLoopThreadBase {
     private final SafeConcurrentlyIterableList<Callback> callbacks = new SafeConcurrentlyIterableList<Callback>(4, 4);
 
     public static void staticInit() {
-        instance = ThreadUtil.getThreadSharedPtr(new StreamCommitThread());
+        instance = new StreamCommitThread();
     }
 
     public void stopThread() {
