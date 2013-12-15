@@ -150,10 +150,12 @@ public class Plugins { /*implements HTTPResource*/
                 //c.newInstance();
                 //System.out.println(c.toString());
                 for (Field f : c.getFields()) {
-                    if (Modifier.isStatic(f.getModifiers())) {
-                        f.setAccessible(true);
-                        @SuppressWarnings("unused")
-                        Object o = f.get(null);
+                    if (!RuntimeSettings.isRunningInApplet()) {
+                        if (Modifier.isStatic(f.getModifiers())) {
+                            f.setAccessible(true);
+                            @SuppressWarnings("unused")
+                            Object o = f.get(null);
+                        }
                     }
                 }
             }

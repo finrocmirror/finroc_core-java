@@ -125,16 +125,16 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                     mainName = root.getStringAttribute("defaultname");
                 }
 
-                for (XMLNode.ConstChildIterator node = root.getChildrenBegin(); node.get() != root.getChildrenEnd(); node.next()) {
-                    String name = node.get().getName();
+                for (XMLNode node : root.children()) {
+                    String name = node.getName();
                     if (name.equals("staticparameter")) {
                         StaticParameterList spl = StaticParameterList.getOrCreate(this);
-                        spl.add(new StaticParameterBase(node.get().getStringAttribute("name"), new DataTypeBase(null), false, true));
+                        spl.add(new StaticParameterBase(node.getStringAttribute("name"), new DataTypeBase(null), false, true));
                     } else if (name.equals("element")) {
-                        instantiate(node.get(), this);
+                        instantiate(node, this);
                     } else if (name.equals("edge")) {
-                        String src = node.get().getStringAttribute("src");
-                        String dest = node.get().getStringAttribute("dest");
+                        String src = node.getStringAttribute("src");
+                        String dest = node.getStringAttribute("dest");
                         AbstractPort srcPort = getChildPort(src);
                         AbstractPort destPort = getChildPort(dest);
                         if (srcPort == null && destPort == null) {
@@ -147,7 +147,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                             srcPort.connectTo(destPort, AbstractPort.ConnectDirection.AUTO, true);
                         }
                     } else if (name.equals("parameter")) {
-                        String param = node.get().getStringAttribute("link");
+                        String param = node.getStringAttribute("link");
                         AbstractPort parameter = getChildPort(param);
                         if (parameter == null) {
                             Log.log(LogLevel.WARNING, this, "Cannot set config entry, because parameter is not available: " + param);
@@ -157,10 +157,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                             if (pi == null) {
                                 Log.log(LogLevel.WARNING, this, "Port is not parameter: " + param);
                             } else {
-                                if (outermostGroup && node.get().hasAttribute("cmdline") && (!isResponsibleForConfigFileConnections(parameter))) {
-                                    pi.setCommandLineOption(node.get().getStringAttribute("cmdline"));
+                                if (outermostGroup && node.hasAttribute("cmdline") && (!isResponsibleForConfigFileConnections(parameter))) {
+                                    pi.setCommandLineOption(node.getStringAttribute("cmdline"));
                                 } else {
-                                    pi.deserialize(node.get(), true, outermostGroup);
+                                    pi.deserialize(node, true, outermostGroup);
                                 }
                                 try {
                                     pi.loadValue();
@@ -200,20 +200,27 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                 return;
             }
 
+            ArrayList<XMLNode> children = new ArrayList<XMLNode>();
+            for (XMLNode child : node.children()) {
+                children.add(child);
+            }
+            int childIndex = 0;
+
             // read parameters
-            XMLNode.ConstChildIterator childNode = node.getChildrenBegin();
             XMLNode parameters = null;
             XMLNode constructorParams = null;
-            String pName = childNode.get().getName();
+            String pName = children.get(childIndex).getName();
             if (pName.equals("constructor")) {
 
-                constructorParams = childNode.get();
-                childNode.next();
-                pName = childNode.get().getName();
+                constructorParams = children.get(childIndex);
+                childIndex++;
+                if (childIndex < children.size()) {
+                    pName = children.get(childIndex).getName();
+                }
             }
             if (pName.equals("parameters")) {
-                parameters = childNode.get();
-                childNode.next();
+                parameters = children.get(childIndex);
+                childIndex++;
             }
 
             // create mode
@@ -231,10 +238,10 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
             created.init();
 
             // continue with children
-            for (; childNode.get() != node.getChildrenEnd(); childNode.next()) {
-                String name2 = childNode.get().getName();
+            for (; childIndex < children.size(); childIndex++) {
+                String name2 = children.get(childIndex).getName();
                 if (name2.equals("element")) {
-                    instantiate(childNode.get(), created);
+                    instantiate(children.get(childIndex), created);
                 } else {
                     Log.log(LogLevel.WARNING, this, "Unknown XML tag: " + name2);
                 }
@@ -543,12 +550,12 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
      * @param parent Node to scan childs of
      */
     public static void scanForCommandLineArgsHelper(ArrayList<String> result, XMLNode parent) throws XMLException {
-        for (XMLNode.ConstChildIterator node = parent.getChildrenBegin(); node.get() != parent.getChildrenEnd(); node.next()) {
-            String name = node.get().getName();
-            if (node.get().hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {
-                result.add(node.get().getStringAttribute("cmdline"));
+        for (XMLNode node : parent.children()) {
+            String name = node.getName();
+            if (node.hasAttribute("cmdline") && (name.equals("staticparameter") || name.equals("parameter"))) {
+                result.add(node.getStringAttribute("cmdline"));
             }
-            scanForCommandLineArgsHelper(result, node.get());
+            scanForCommandLineArgsHelper(result, node);
         }
     }
 

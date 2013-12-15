@@ -56,7 +56,10 @@ public class XML extends CoreString implements XMLSerializable {
 
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        set(node.getChildrenBegin().get().getXMLDump(true));
+        for (XMLNode child : node.children()) {
+            set(child.getXMLDump(true));
+            break;
+        }
     }
 
     @Override

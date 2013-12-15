@@ -231,13 +231,13 @@ public class ConfigFile extends FinrocAnnotation implements FrameworkElementTree
         boolean created = false;
         while (idx < nodes.size()) {
             boolean found = false;
-            for (XMLNode.ConstChildIterator child = current.getChildrenBegin(); child.get() != current.getChildrenEnd(); child.next()) {
-                if (XML_BRANCH_NAME.equals(child.get().getName()) || XML_LEAF_NAME.equals(child.get().getName())) {
+            for (XMLNode child : current.children()) {
+                if (XML_BRANCH_NAME.equals(child.getName()) || XML_LEAF_NAME.equals(child.getName())) {
                     try {
-                        if (nodes.get(idx).equals(child.get().getStringAttribute("name"))) {
+                        if (nodes.get(idx).equals(child.getStringAttribute("name"))) {
                             idx++;
                             parent = current;
-                            current = child.get();
+                            current = child;
                             found = true;
                             break;
                         }

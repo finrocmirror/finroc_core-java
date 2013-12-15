@@ -324,17 +324,17 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
     public void deserialize(XMLNode node) throws Exception {
         selectableCreateOptions = node.getBoolAttribute("showOutputSelection") ? CREATE_OPTION_OUTPUT : 0;
         if (ioVector == null) {
-            for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next()) {
-                String portName = port.get().getName();
+            for (XMLNode port : node.children()) {
+                String portName = port.getName();
                 assert(portName.equals("port"));
                 byte createOptions = 0;
-                if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.get().hasAttribute("output") && port.get().getBoolAttribute("output")) {
+                if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.hasAttribute("output") && port.getBoolAttribute("output")) {
                     createOptions |= CREATE_OPTION_OUTPUT;
                 }
-                if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.get().hasAttribute("shared") && port.get().getBoolAttribute("shared")) {
+                if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.hasAttribute("shared") && port.getBoolAttribute("shared")) {
                     createOptions |= CREATE_OPTION_SHARED;
                 }
-                list.add(new Entry(port.get().getStringAttribute("name"), port.get().getStringAttribute("type"), createOptions));
+                list.add(new Entry(port.getStringAttribute("name"), port.getStringAttribute("type"), createOptions));
             }
         } else {
             assert(ioVector != null) : "Only available on local systems";
@@ -342,23 +342,23 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
                 ArrayList<AbstractPort> ports = new ArrayList<AbstractPort>();
                 getPorts(ioVector, ports);
                 int i = 0;
-                for (XMLNode.ConstChildIterator port = node.getChildrenBegin(); port.get() != node.getChildrenEnd(); port.next(), ++i) {
+                for (XMLNode port : node.children()) {
                     AbstractPort ap = i < ports.size() ? ports.get(i) : null;
-                    String portName = port.get().getName();
+                    String portName = port.getName();
                     assert(portName.equals("port"));
                     byte createOptions = 0;
-                    if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.get().hasAttribute("output") && port.get().getBoolAttribute("output")) {
+                    if ((selectableCreateOptions & CREATE_OPTION_OUTPUT) != 0 && port.hasAttribute("output") && port.getBoolAttribute("output")) {
                         createOptions |= CREATE_OPTION_OUTPUT;
                     }
-                    if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.get().hasAttribute("shared") && port.get().getBoolAttribute("shared")) {
+                    if ((selectableCreateOptions & CREATE_OPTION_SHARED) != 0 && port.hasAttribute("shared") && port.getBoolAttribute("shared")) {
                         createOptions |= CREATE_OPTION_SHARED;
                     }
-                    String dtName = port.get().getStringAttribute("type");
+                    String dtName = port.getStringAttribute("type");
                     DataTypeBase dt = DataTypeBase.findType(dtName);
                     if (dt == null) {
                         throw new RuntimeException("Type " + dtName + " not available");
                     }
-                    checkPort(ap, ioVector, flags, port.get().getStringAttribute("name"), dt, createOptions, null);
+                    checkPort(ap, ioVector, flags, port.getStringAttribute("name"), dt, createOptions, null);
                 }
                 for (; i < ports.size(); i++) {
                     ports.get(i).managedDelete();
