@@ -24,7 +24,6 @@ package org.finroc.core.port.net;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
-import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.finroc_core_utils.jc.ListenerManager;
@@ -45,7 +44,7 @@ public abstract class AbstractPeerTracker implements HasDestructor {
     protected TrackerListenerManager listeners = new TrackerListenerManager();
 
     /** Peer tracker instances that are used - can be multiple */
-    private static ArrayList<AbstractPeerTracker> instances = new ArrayList<AbstractPeerTracker>(LockOrderLevels.INNER_MOST - 1);
+    private static ArrayList<AbstractPeerTracker> instances = new ArrayList<AbstractPeerTracker>();
 
     /** Mutex for tracker */
     public final MutexLockOrder objMutex;

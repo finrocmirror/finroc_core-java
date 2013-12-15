@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.finroc.core.CoreRegister;
-import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.cc.CCPortDataManager;
@@ -164,7 +163,7 @@ public class ThreadLocalCache {
     }
 
     public static ArrayList<WeakReference<ThreadLocalCache>> staticInit() {
-        infos = new ArrayList<WeakReference<ThreadLocalCache>>(LockOrderLevels.INNER_MOST - 100);
+        infos = new ArrayList<WeakReference<ThreadLocalCache>>();
         return infos;
     }
 

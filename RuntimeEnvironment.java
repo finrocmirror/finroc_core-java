@@ -68,7 +68,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
 
         /** Edges dealing with linked ports */
         //@Elems({PassByValue.class, Ptr.class, Ptr.class})
-        private final ConcurrentHashMap<String, LinkEdge> linkEdges = new ConcurrentHashMap<String, LinkEdge>(null);
+        private final ConcurrentHashMap<String, LinkEdge> linkEdges = new ConcurrentHashMap<String, LinkEdge>();
 
         /** List with runtime listeners */
         private final RuntimeListenerManager listeners = new RuntimeListenerManager();
