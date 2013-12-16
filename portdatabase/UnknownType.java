@@ -149,7 +149,8 @@ public class UnknownType extends DataTypeBase {
             this.name = name;
         }
 
-        public Object createInstance(int placement) {
+        @Override
+        public Object createInstance() {
             try {
                 if (enumConstants != null) {
                     return new EnumValue(dataType);
@@ -160,8 +161,9 @@ public class UnknownType extends DataTypeBase {
             }
         }
 
-        public GenericObject createInstanceGeneric(int placement, int managerSize) {
-            return new GenericObject(createInstance(placement), dataType, null);
+        @Override
+        public GenericObject createInstanceGeneric() {
+            return new GenericObject(createInstance(), dataType, null);
         }
 
 //        @Override

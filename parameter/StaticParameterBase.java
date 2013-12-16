@@ -527,7 +527,7 @@ public class StaticParameterBase implements HasDestructor {
             assert(lastValue != null);
         }
 
-        Serialization.deepCopy(sp.value, lastValue, null);
+        lastValue.deepCopyFrom(sp.value, null);
     }
 
     /**
