@@ -31,6 +31,7 @@ import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.remote.ModelHandler;
+import org.finroc.core.remote.ModelNode;
 
 
 /**
@@ -61,8 +62,8 @@ public abstract class ExternalConnection extends FrameworkElement {
     /** if set, this module automatically connects to this address */
     private StaticParameterString autoConnectTo = new StaticParameterString("Autoconnect to", "");
 
-    /** Model handler/manager for this connection (optional - may be NULL) */
-    private ModelHandler modelHandler;
+    /** Model handler/manager for this connection */
+    private ModelHandler modelHandler = new EmptyModelHandler();
 
     /**
      * @param name Name of class
@@ -90,6 +91,9 @@ public abstract class ExternalConnection extends FrameworkElement {
         }
 
         this.modelHandler = modelHandler;
+        if (modelHandler == null) {
+            this.modelHandler = new EmptyModelHandler();
+        }
 
         connectImpl(address, (!firstConnect) && address.equals(lastAddress));
         postConnect(address);
@@ -241,9 +245,33 @@ public abstract class ExternalConnection extends FrameworkElement {
     }
 
     /**
-     * @return The model handler/manager for this connection (optional - may be null)
+     * @return The model handler/manager for this connection
      */
     public ModelHandler getModelHandler() {
         return modelHandler;
+    }
+
+    /**
+     * Empty model for cases where no other model handle is set
+     */
+    public class EmptyModelHandler implements ModelHandler {
+
+        @Override
+        public void addNode(ModelNode parent, ModelNode newChild) {}
+
+        @Override
+        public void changeNodeName(ModelNode node, String newName) {}
+
+        @Override
+        public void removeNode(ModelNode childToRemove) {}
+
+        @Override
+        public void replaceNode(ModelNode oldNode, ModelNode newNode) {}
+
+        @Override
+        public void setModelRoot(ModelNode root) {}
+
+        @Override
+        public void updateModel(Runnable updateTask) {}
     }
 }
