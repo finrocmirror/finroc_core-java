@@ -59,8 +59,6 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
     public StaticParameterNumeric(String name, T defaultValue, boolean constructorPrototype, Bounds<T> bounds) {
         super(name, getDataType(), constructorPrototype);
         this.bounds = bounds;
-
-        //JavaOnlyBlock
         numClass = (Class<T>)defaultValue.getClass();
 
         defaultVal = defaultValue;
@@ -121,7 +119,8 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
      *
      * @param Current CoreNumber buffer
      */
-    private void set(CoreNumber cn) {
+    @Override
+    public void set(CoreNumber cn) {
         if (unit != Unit.NO_UNIT && cn.getUnit() != unit) {
             if (cn.getUnit() == Unit.NO_UNIT) {
                 cn.setUnit(unit);

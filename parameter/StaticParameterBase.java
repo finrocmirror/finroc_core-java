@@ -289,19 +289,23 @@ public class StaticParameterBase implements HasDestructor {
     }
 
     /**
-     * @param s serialized as string
+     * @param newValue New Value (will be deep-copied)
      */
-    public void set(String s) throws Exception {
-        assert(type != null);
-        DataTypeBase dt = SerializationHelper.getTypedStringDataType(type, s);
+    public void setValue(Object newValue) throws Exception {
+        if (type == null || (!type.getJavaClass().isAssignableFrom(newValue.getClass()))) {
+            throw new Exception("Value has type (" + newValue.getClass().getSimpleName() + ") that is not assignable to static parameter's (" + type.getJavaClass().getSimpleName() + ")");
+        }
+        DataTypeBase dt = DataTypeBase.findType(newValue.getClass());
+        if (dt == null) {
+            throw new Exception("Value has type (" + newValue.getClass().getSimpleName() + ") that was not registered in rrlib_serialization (rtti)");
+        }
         GenericObject val = valPointer();
         if (val.getType() != dt) {
             createBuffer(dt);
             val = valPointer();
         }
 
-        StringInputStream sis = new StringInputStream(s);
-        val.deserialize(sis);
+        Serialization.deepCopy(newValue, val.getData());
     }
 
     /**
@@ -562,7 +566,7 @@ public class StaticParameterBase implements HasDestructor {
                 String arg = RuntimeEnvironment.getInstance().getCommandLineArgument(commandLineOption);
                 if (arg.length() > 0) {
                     try {
-                        set(arg);
+                        valPointer().deserialize(new StringInputStream(arg));
                         return;
                     } catch (Exception e) {
                         Log.log(LogLevel.ERROR, this, "Failed to load parameter '" + getName() + "' from command line argument '" + arg + "': ", e);

@@ -201,7 +201,7 @@ public class ConstructorCreateModuleAction extends ConstructorCreateModuleAction
         } else if (c.equals(String.class) || c.equals(CoreString.class)) {
             return new StaticParameterString(name, "", true);
         } else {
-            return new StaticParameter(name, DataTypeBase.findType(c), true, "");
+            return new StaticParameter(name, DataTypeBase.findType(c), true, null);
         }
     }
 

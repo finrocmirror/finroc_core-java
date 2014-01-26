@@ -32,15 +32,15 @@ import org.rrlib.serialization.rtti.DataTypeBase;
 public class StaticParameterString extends StaticParameter<CoreString> {
 
     public StaticParameterString(String name, String defaultValue, boolean constructorPrototype) {
-        super(name, getDataType(), constructorPrototype, defaultValue);
+        super(name, getDataType(), constructorPrototype, new CoreString(defaultValue));
     }
 
     public StaticParameterString(String name, String defaultValue) {
-        super(name, getDataType(), defaultValue);
+        super(name, getDataType(), new CoreString(defaultValue));
     }
 
     public StaticParameterString(String name) {
-        super(name, getDataType(), "");
+        super(name, getDataType(), null);
     }
 
     /** Helper to get this safely during static initialization */
@@ -62,9 +62,13 @@ public class StaticParameterString extends StaticParameter<CoreString> {
         getValue().get(sb);
     }
 
-    /* (non-Javadoc)
-     * @see org.finroc.core.parameter.StaticParameter#deepCopy()
+    /**
+     * @param newValue Value to set static parameter to
      */
+    public void set(String newValue) {
+
+    }
+
     @Override
     public StaticParameterBase deepCopy() {
         return new StaticParameterString(getName(), "", false);

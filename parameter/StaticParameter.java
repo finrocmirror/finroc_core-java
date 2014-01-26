@@ -52,12 +52,11 @@ public class StaticParameter<T> extends StaticParameterBase {
      * @param constructorPrototype Is this a CreateModuleAction prototype (no buffer will be allocated)
      * @param defaultValue Default value
      */
-    public StaticParameter(String name, DataTypeBase type, boolean constructorPrototype, String defaultValue) {
+    public StaticParameter(String name, DataTypeBase type, boolean constructorPrototype, T defaultValue) {
         super(name, type, constructorPrototype);
-        String dv = defaultValue;
-        if ((!constructorPrototype) && dv.length() > 0) {
+        if ((!constructorPrototype) && defaultValue != null) {
             try {
-                set(dv);
+                setValue(defaultValue);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -72,7 +71,7 @@ public class StaticParameter<T> extends StaticParameterBase {
      * @param type DataType of parameter
      * @param defaultValue Default value
      */
-    public StaticParameter(String name, DataTypeBase type, String defaultValue) {
+    public StaticParameter(String name, DataTypeBase type, T defaultValue) {
         this(name, type, false, defaultValue);
     }
 
@@ -81,7 +80,7 @@ public class StaticParameter<T> extends StaticParameterBase {
      * @param type DataType of parameter
      */
     public StaticParameter(String name, DataTypeBase type) {
-        this(name, type, "");
+        this(name, type, null);
     }
 
     /**
@@ -94,9 +93,20 @@ public class StaticParameter<T> extends StaticParameterBase {
         return (T)go.getData();
     }
 
+    /**
+     * @param newValue New Value for static parameter
+     */
+    public void set(T newValue) {
+        try {
+            super.setValue(newValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public StaticParameterBase deepCopy() {
-        return new StaticParameter<T>(getName(), getType(), false, "");
+        return new StaticParameter<T>(getName(), getType(), false, null);
     }
 
 }

@@ -36,7 +36,7 @@ public class StaticParameterBool extends StaticParameter<CoreBoolean> {
     }
 
     public StaticParameterBool(String name, boolean defaultValue, boolean constructorPrototype) {
-        super(name, getDataType(), constructorPrototype, "");
+        super(name, getDataType(), constructorPrototype, null);
         if (!constructorPrototype) {
             set(defaultValue);
         }

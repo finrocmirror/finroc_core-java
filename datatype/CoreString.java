@@ -49,8 +49,16 @@ public class CoreString implements BinarySerializable, StringSerializable, Seria
     /** String buffer */
     private final StringBuilder buffer;
 
+    /** Default string buffer size when allocating object */
+    public final static int DEFAULT_SIZE = 128;
+
     public CoreString() {
-        buffer = new StringBuilder(128);
+        buffer = new StringBuilder(DEFAULT_SIZE);
+    }
+
+    public CoreString(String value) {
+        buffer = new StringBuilder(Math.max(DEFAULT_SIZE, value.length()));
+        buffer.append(value);
     }
 
     /**
