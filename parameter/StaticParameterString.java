@@ -66,7 +66,7 @@ public class StaticParameterString extends StaticParameter<CoreString> {
      * @param newValue Value to set static parameter to
      */
     public void set(String newValue) {
-
+        getValue().set(newValue);
     }
 
     @Override
