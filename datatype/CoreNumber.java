@@ -24,15 +24,12 @@ package org.finroc.core.datatype;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.NumericRepresentation;
-import org.rrlib.serialization.Serialization;
 import org.rrlib.serialization.StringInputStream;
 import org.rrlib.serialization.StringOutputStream;
 import org.rrlib.serialization.StringSerializable;
-import org.rrlib.serialization.XMLSerializable;
 import org.rrlib.serialization.rtti.Copyable;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
-import org.rrlib.xml.XMLNode;
 
 import org.finroc.core.portdatabase.CCType;
 import org.finroc.core.portdatabase.ExpressData;
@@ -42,7 +39,7 @@ import org.finroc.core.portdatabase.ExpressData;
  *
  * This class stores numbers (with units) of different types.
  */
-public class CoreNumber extends Number implements StringSerializable, XMLSerializable, ExpressData, Copyable<CoreNumber>, CCType, NumericRepresentation {
+public class CoreNumber extends Number implements StringSerializable, ExpressData, Copyable<CoreNumber>, CCType, NumericRepresentation {
 
     /** UID */
     private static final long serialVersionUID = 8;
@@ -499,16 +496,6 @@ public class CoreNumber extends Number implements StringSerializable, XMLSeriali
      */
     public Type getNumberType() {
         return numType;
-    }
-
-    @Override
-    public void serialize(XMLNode node) throws Exception {
-        Serialization.serialize(node, this);
-    }
-
-    @Override
-    public void deserialize(XMLNode node) throws Exception {
-        deserialize(new StringInputStream(node.getTextContent()));
     }
 
     @Override
