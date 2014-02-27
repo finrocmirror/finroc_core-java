@@ -78,25 +78,22 @@ public class Plugins { /*implements HTTPResource*/
     }
 
     private void findAndLoadPlugins() {
-        //TODO do properly
         if (RuntimeSettings.isRunningInApplet()) {
-            return;
-        }
-
-        if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
+            // Load no additional plugins
+        } else if (!(RuntimeSettings.isDebugging()) || RuntimeSettings.isRunningInApplet()) {
             pluginLoader = new JavaReleasePluginLoader();
         } else {
             pluginLoader = new JavaDebugPluginLoader();
         }
         loadAllDataTypesInPackage(CoreNumber.class);
-        loadAllDataTypesInPackage(FinstructableGroup.class);
-        ArrayList<Plugin> plugins = pluginLoader.findPlugins(/*Plugins.class*/);
+        ArrayList<Plugin> plugins = new ArrayList<Plugin>();
+        if (pluginLoader != null) {
+            loadAllDataTypesInPackage(FinstructableGroup.class);
+            plugins = pluginLoader.findPlugins(/*Plugins.class*/);
+        }
         for (Plugin plugin : plugins) {
             addPlugin(plugin);
         }
-        //JavaPlugins.loadAllDataTypesInPackage(BehaviourInfo.class);
-
-        ////Cpp plugins.add(new MCA2Plugin());
     }
 
     /**
