@@ -39,6 +39,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -396,6 +397,11 @@ public class Files {
         }
 
         String dirName = caller.getResource(caller.getSimpleName() + ".class").toString();
+        try {
+            dirName = URLDecoder.decode(dirName, "utf8");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String packageName = caller.getName().replaceAll("[.]", "/");
         dirName = dirName.substring(0, dirName.indexOf(packageName));
         if (dirName.contains(".jar!")) {
@@ -408,11 +414,6 @@ public class Files {
             dirName = dirName.replaceAll("/", "\\\\");
         } else { // Unix/Linux
             dirName = dirName.substring(dirName.indexOf("file:/") + 5);
-        }
-
-        // replace %20 with spaces
-        while (dirName.contains("%20")) {
-            dirName = dirName.replace("%20", " ");
         }
 
         return dirName.substring(0, dirName.length() - 1); // cut off proceeding File.separator
