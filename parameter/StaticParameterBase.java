@@ -134,7 +134,7 @@ public class StaticParameterBase implements HasDestructor {
         this.type = type;
         this.structureParameterProxy = structureParameterProxy;
 
-        if ((!constructorPrototype) && type.getInfo() != null) {
+        if ((!constructorPrototype) && type != DataTypeBase.NULL_TYPE) {
             createBuffer(type);
         }
         remote = false;
@@ -503,7 +503,7 @@ public class StaticParameterBase implements HasDestructor {
         }
 
         StaticParameterBase sp = getParameterWithBuffer();
-        if (sp.type.getInfo() == null) {
+        if (sp.type == DataTypeBase.NULL_TYPE) {
             sp.type = type;
         }
         if (sp.value == null) {

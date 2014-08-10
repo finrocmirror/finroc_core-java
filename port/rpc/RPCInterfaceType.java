@@ -42,23 +42,14 @@ public class RPCInterfaceType extends DataTypeBase {
      * @param methods Methods in interface
      */
     public RPCInterfaceType(String name, Method ... methods) {
-        super(getDataTypeInfo(name));
+        setName(name);
+        type = DataTypeBase.Classification.OTHER;
         FinrocTypeInfo.get(this).init(FinrocTypeInfo.Type.METHOD);
         this.methods = methods;
         for (int i = 0; i < methods.length; i++) {
             methods[i].methodID = (byte)i;
             methods[i].interfaceType = this;
         }
-    }
-
-    private static DataTypeBase.DataTypeInfoRaw getDataTypeInfo(String name) {
-        DataTypeBase dt = findType(name);
-        if (dt != null) {
-            return dt.getInfo();
-        }
-        DataTypeInfoRaw info = new DataTypeInfoRaw();
-        info.setName(name);
-        return info;
     }
 
     /**

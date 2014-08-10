@@ -137,8 +137,12 @@ public class AdminClient extends ClientPort {
         if (np != null && getAdminInterface(np) == this) {
             MemoryBuffer mb = new MemoryBuffer();
             BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
-            co.writeEnum(np.getEncoding());
-            container.getObject().serialize(co, np.getInternalEncoding());
+            co.writeEnum(np.getNetworkEncoding());
+            if (np.getRemoteType() == null) {
+                container.getObject().serialize(co, np.getNetworkEncoding());
+            } else {
+                np.getRemoteType().serialize(container.getObject());
+            }
             co.close();
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
             return;

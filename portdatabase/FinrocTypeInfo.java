@@ -24,6 +24,7 @@ package org.finroc.core.portdatabase;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.finroc.core.RuntimeSettings;
+import org.finroc.core.remote.RemoteType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
 
@@ -40,10 +41,6 @@ public class FinrocTypeInfo {
         CC, // Is this a "cheap-copy" data type?
         METHOD, // Is this a method type
         TRANSACTION, // Is this a transaction data type?
-        UNKNOWN_STD, // Unknown standard data type
-        UNKNOWN_CC, // Unknown CC data type
-        UNKNOWN_METHOD, // Unknown method data type
-        UNKNOWN_TRANSACTION // Unknown transaction data type
     }
 
     /** Type of data type */
@@ -190,31 +187,11 @@ public class FinrocTypeInfo {
 
     /**
      * @param dt Data type to look this up for
-     * @param includeUnknownTypes Also return true for unknown RPC types?
+     * @param includeRemoteTypes Also return true for remote (unknown) RPC types?
      * @return is this a RPC interface port data type?
      */
-    public static boolean isMethodType(DataTypeBase dt, boolean includeUnknownTypes) {
-        return get(dt).getType() == Type.METHOD || (includeUnknownTypes && get(dt).getType() == Type.UNKNOWN_METHOD);
-    }
-
-
-    /**
-     * @param dt Data type to look this up for
-     * @return Is this an unknown type?
-     */
-    public static boolean isUnknownType(DataTypeBase dt) {
-        return get(dt).getType().ordinal() >= Type.UNKNOWN_STD.ordinal();
-    }
-
-    /**
-     * @param dt Data type to look this up for
-     * @return Is this an unknown type that can be represented/serialized by a local data type?
-     */
-    public static boolean isUnknownAdaptableType(DataTypeBase dt) {
-        if (dt instanceof UnknownType) {
-            return ((UnknownType)dt).isAdaptable();
-        }
-        return false;
+    public static boolean isMethodType(DataTypeBase dt, boolean includeRemoteTypes) {
+        return get(dt).getType() == Type.METHOD && (includeRemoteTypes || (dt instanceof RemoteType));
     }
 
     /**

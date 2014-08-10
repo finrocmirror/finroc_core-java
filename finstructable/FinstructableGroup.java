@@ -129,7 +129,7 @@ public class FinstructableGroup extends FrameworkElement implements FrameworkEle
                     String name = node.getName();
                     if (name.equals("staticparameter")) {
                         StaticParameterList spl = StaticParameterList.getOrCreate(this);
-                        spl.add(new StaticParameterBase(node.getStringAttribute("name"), new DataTypeBase(null), false, true));
+                        spl.add(new StaticParameterBase(node.getStringAttribute("name"), DataTypeBase.NULL_TYPE, false, true));
                     } else if (name.equals("element")) {
                         instantiate(node, this);
                     } else if (name.equals("edge")) {

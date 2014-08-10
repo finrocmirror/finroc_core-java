@@ -35,7 +35,6 @@ import org.rrlib.serialization.TypeEncoder;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.finroc.core.RuntimeSettings;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.finroc.core.portdatabase.UnknownType;
 
 /**
  * @author Max Reichardt
@@ -43,13 +42,6 @@ import org.finroc.core.portdatabase.UnknownType;
  * This class aggregates information about types used in remote runtime environments.
  */
 public class RemoteTypes implements TypeEncoder {
-
-    /** Selected C++ rrlib_rtti type traits */
-    public static final int IS_BINARY_SERIALIZABLE = 1 << 0;
-    public static final int IS_STRING_SERIALIZABLE = 1 << 1;
-    public static final int IS_XML_SERIALIZABLE = 1 << 2;
-    public static final int IS_ENUM = 1 << 3;
-
 
     /** Entry in remote type register */
     static class Entry {
@@ -115,7 +107,14 @@ public class RemoteTypes implements TypeEncoder {
             String name = ci.readString();
             short checkedTypes = DataTypeBase.getTypeCount();
             DataTypeBase local = DataTypeBase.findType(name);
-            ls.append("- ").append(name).append(" (").append(next).append(") - ").appendln((local != null && (!FinrocTypeInfo.isUnknownType(local)) ? "available here, too" : "not available here"));
+            ls.append("- ").append(name).append(" (").append(next).append(") - ");
+            if (local == null) {
+                ls.appendln("not available here");
+            } else if (local instanceof RemoteType) {
+                ls.appendln(((RemoteType)local).isAdaptable() ? "adapted type" : "not available here");
+            } else {
+                ls.appendln("available here");
+            }
             int typesSize = types.size(); // to avoid warning
             assert(next == typesSize);
             Entry e = new Entry(local);
@@ -124,7 +123,7 @@ public class RemoteTypes implements TypeEncoder {
 
             // remote enum type?
             ArrayList<String> enumConstants = null;
-            if ((traits & IS_ENUM) != 0) {
+            if ((traits & DataTypeBase.IS_ENUM) != 0) {
                 enumConstants = new ArrayList<String>();
                 short n = ci.readShort();
                 for (int i = 0; i < n; i++) {
@@ -134,7 +133,8 @@ public class RemoteTypes implements TypeEncoder {
 
             e.name = name;
             if (local == null) {
-                local = new UnknownType(name, type, enumConstants != null ? enumConstants.toArray() : null, traits);
+                local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, traits);
+                FinrocTypeInfo.get(local).init(type);
             }
 
             types.add(e, true);
@@ -173,7 +173,7 @@ public class RemoteTypes implements TypeEncoder {
             co.writeByte(FinrocTypeInfo.get(i).getType().ordinal());
             co.writeString(dt.getName());
             Object[] enumConstants = dt.getEnumConstants();
-            co.writeByte((enumConstants != null ? IS_ENUM : 0) | IS_BINARY_SERIALIZABLE | IS_STRING_SERIALIZABLE | IS_XML_SERIALIZABLE); // type traits
+            co.writeByte(dt.getTypeTraits()); // type traits
             if (enumConstants != null) {
                 assert(enumConstants.length <= Short.MAX_VALUE);
                 co.writeShort(enumConstants.length);
@@ -194,7 +194,7 @@ public class RemoteTypes implements TypeEncoder {
      */
     public void setTime(DataTypeBase dt, short newTime) {
         assert(initialized()) : "Not initialized";
-        if (dt == null || dt == DataTypeBase.getNullType()) {
+        if (dt == null || dt == DataTypeBase.NULL_TYPE) {
             assert(newTime >= 0);
             globalDefault = newTime;
         } else {
@@ -250,7 +250,7 @@ public class RemoteTypes implements TypeEncoder {
             uid = is.readShort();
         }
         if (uid == -1) {
-            return DataTypeBase.getNullType();
+            return DataTypeBase.NULL_TYPE;
         }
 
         assert(initialized()) : "Not initialized";

@@ -36,7 +36,7 @@ import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.port.PortListener;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.finroc.core.portdatabase.UnknownType;
+import org.finroc.core.remote.RemoteType;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.Serialization;
@@ -73,8 +73,8 @@ public abstract class NetPort implements PortListener {
     /** Data type to use when writing data to the network */
     private Serialization.DataEncoding encoding = Serialization.DataEncoding.BINARY;
 
-    /** Data type to actually use when writing data to the network. This can be different from getEncoding() with adapter types. */
-    private Serialization.DataEncoding internalEncoding = Serialization.DataEncoding.BINARY;
+    /** If network port has a data type whose implementation is only available remotely, this stores the remote type - otherwise null */
+    private RemoteType remoteType;
 
     public NetPort(PortCreationInfo pci, Object belongsTo) {
         // keep most these flags
@@ -92,17 +92,16 @@ public abstract class NetPort implements PortListener {
             }
         }
         ftype = FinrocTypeInfo.get(pci.dataType).getType();
-        UnknownType ut = (pci.dataType instanceof UnknownType) ? (UnknownType)pci.dataType : null;
-        if (isStdType() || isMethodType() || (ut != null && ut.isAdaptable())) {
+        remoteType = (pci.dataType instanceof RemoteType) ? (RemoteType)pci.dataType : null;
+        if (isStdType() || isMethodType() || (remoteType != null && remoteType.isAdaptable())) {
             f |= FrameworkElementFlags.MULTI_TYPE_BUFFER_POOL; // different data types may be incoming - cc types are thread local
         }
         pci.flags = f;
         this.belongsTo = belongsTo;
 
-        if (isUnknownType()) {
-            if (ut.isAdaptable()) {
-                encoding = ut.determineEncoding();
-                internalEncoding = ut.determineInternalEncoding();
+        if (remoteType != null) {
+            if (remoteType.isAdaptable()) {
+                encoding = remoteType.getNetworkEncoding();
                 wrapped = new StdNetPort(pci);
             } else {
                 wrapped = new UnknownTypedNetPort(pci);
@@ -129,14 +128,6 @@ public abstract class NetPort implements PortListener {
         return ftype == FinrocTypeInfo.Type.CC;
     }
 
-    public boolean isUnknownType() {
-        return ftype.ordinal() >= FinrocTypeInfo.Type.UNKNOWN_STD.ordinal();
-    }
-
-    public boolean isUnknownAdaptableType() {
-        return isUnknownType() && ((UnknownType)getDataType()).isAdaptable();
-    }
-
     public boolean isMethodType() {
         return ftype == FinrocTypeInfo.Type.METHOD;
     }
@@ -153,12 +144,12 @@ public abstract class NetPort implements PortListener {
         flags &= ~(keepFlags);
         flags |= curFlags;
 
-        if (isUnknownType() && (!isUnknownAdaptableType())) {
+        if (remoteType != null && (!remoteType.isAdaptable())) {
             ((UnknownTypedNetPort)wrapped).updateFlags(flags);
             return;
         }
 
-        if (isStdType() || isTransactionType() || isUnknownAdaptableType()) {
+        if (isStdType() || isTransactionType() || (remoteType != null && remoteType.isAdaptable())) {
             ((StdNetPort)wrapped).updateFlags(flags);
         } else if (isCCType()) {
             ((CCNetPort)wrapped).updateFlags(flags);
@@ -268,13 +259,17 @@ public abstract class NetPort implements PortListener {
         boolean anotherValue = false;
         do {
             byte changeType = stream.readByte();
-            if (isStdType() || isTransactionType() || isUnknownAdaptableType()) {
+            if (isStdType() || isTransactionType() || remoteType != null) {
                 StdNetPort pb = (StdNetPort)wrapped;
                 PortDataManager manager = pb.getUnusedBufferRaw();
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, getInternalEncoding());
+                if (remoteType == null) {
+                    manager.getObject().deserialize(stream, encoding);
+                } else {
+                    remoteType.deserialize(manager.getObject());
+                }
                 pb.publishFromNet(manager, changeType);
             } else if (isCCType()) {
                 CCNetPort pb = (CCNetPort)wrapped;
@@ -282,7 +277,7 @@ public abstract class NetPort implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, getInternalEncoding());
+                manager.getObject().deserialize(stream, encoding);
                 pb.publishFromNet(manager, changeType);
             } else { // interface port
                 throw new RuntimeException("Method calls are not handled using this mechanism");
@@ -620,7 +615,7 @@ public abstract class NetPort implements PortListener {
 
         public UnknownTypedNetPort(PortCreationInfo pci) {
             super(pci);
-            assert(isUnknownType());
+            assert(remoteType != null);
             initLists(edgesSrc, edgesDest);
         }
 
@@ -748,7 +743,7 @@ public abstract class NetPort implements PortListener {
     /**
      * @return Data type to use when writing data to the network
      */
-    public Serialization.DataEncoding getEncoding() {
+    public Serialization.DataEncoding getNetworkEncoding() {
         return encoding;
     }
 
@@ -760,9 +755,9 @@ public abstract class NetPort implements PortListener {
     }
 
     /**
-     * @return Data type to actually use when writing data to the network. This can be different from getEncoding() with adapter types.
+     * @return If network port has a data type whose implementation is only available remotely, this stores the remote type - otherwise null
      */
-    public Serialization.DataEncoding getInternalEncoding() {
-        return internalEncoding;
+    public RemoteType getRemoteType() {
+        return remoteType;
     }
 }

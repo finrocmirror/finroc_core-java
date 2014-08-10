@@ -41,6 +41,7 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.remote.RemoteType;
 
 /**
  * @author Max Reichardt
@@ -1177,7 +1178,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     @Override
     public GenericObject createGenericObject(DataTypeBase dt, Object factoryParameter) {
-        if (FinrocTypeInfo.isStdType(dt) || FinrocTypeInfo.isUnknownAdaptableType(dt)) {
+        if (FinrocTypeInfo.isStdType(dt) || (dt instanceof RemoteType)) {
             return getUnusedBufferRaw(dt).getObject();
         } else if (FinrocTypeInfo.isCCType(dt)) {
             if (factoryParameter == null) {
