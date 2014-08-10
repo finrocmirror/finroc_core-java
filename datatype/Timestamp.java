@@ -72,12 +72,12 @@ public class Timestamp extends CoreNumber {
     }
 
     public void deserialize(BinaryInputStream is) {
-        setValue(is.readLong(), Unit.ns);
+        setValue(is.readLong(), SIUnit.NANOSECOND);
     }
 
     @Override
     public void serialize(BinaryOutputStream oos) {
-        assert(getUnit() == Unit.ns);
+        assert(getUnit() == SIUnit.NANOSECOND);
         oos.writeLong(longValue());
     }
 
@@ -125,7 +125,7 @@ public class Timestamp extends CoreNumber {
             if (xgc.getFractionalSecond() != null) {
                 ns = xgc.getFractionalSecond().scaleByPowerOfTen(9).longValueExact() % 1000000;
             }
-            setValue(ms * 1000000 + ns, Unit.ns);
+            setValue(ms * 1000000 + ns, SIUnit.NANOSECOND);
         } else {
             throw new Exception("No string serialization available for timestamps");
         }
@@ -165,7 +165,7 @@ public class Timestamp extends CoreNumber {
      * @param ms Timestamp in milliseconds (as obtained from System.currentTimeMillis())
      */
     public void set(long ms) {
-        setValue(ms * 1000000, Unit.ns);
+        setValue(ms * 1000000, SIUnit.NANOSECOND);
     }
 
     /**
@@ -173,7 +173,7 @@ public class Timestamp extends CoreNumber {
      * @param nanos Addtional nanoseconds
      */
     public void set(long ms, int nanos) {
-        setValue(ms * 1000000 + nanos, Unit.ns);
+        setValue(ms * 1000000 + nanos, SIUnit.NANOSECOND);
     }
 
 

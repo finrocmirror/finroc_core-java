@@ -36,7 +36,7 @@ import org.rrlib.serialization.rtti.GenericObject;
 public class StaticParameterNumeric<T extends Number> extends StaticParameter<CoreNumber> {
 
     /** Unit of parameter */
-    private Unit unit = Unit.NO_UNIT;
+    private Unit unit = null;
 
     /** Number class */
     private final Class<T> numClass;
@@ -121,8 +121,8 @@ public class StaticParameterNumeric<T extends Number> extends StaticParameter<Co
      */
     @Override
     public void set(CoreNumber cn) {
-        if (unit != Unit.NO_UNIT && cn.getUnit() != unit) {
-            if (cn.getUnit() == Unit.NO_UNIT) {
+        if (unit != null && cn.getUnit() != unit) {
+            if (cn.getUnit() == null) {
                 cn.setUnit(unit);
             } else {
                 cn.setValue(cn.getUnit().convertTo(cn.doubleValue(), unit), unit);

@@ -40,7 +40,7 @@ public class PortCreationInfo {
     public int sendBufferSize = -1, altSendBufferSize = -1;
 
     /** SI Unit of port. NULL for no unit = provides raw numbers */
-    public Unit unit = Unit.NO_UNIT;
+    public Unit unit = null;
 
     /** Input Queue size; value <= 0 means flexible size */
     public int /*initialQueueSize = 10,*/ maxQueueSize = 16;

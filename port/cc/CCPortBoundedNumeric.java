@@ -23,7 +23,6 @@ package org.finroc.core.port.cc;
 
 import org.finroc.core.datatype.Bounds;
 import org.finroc.core.datatype.CoreNumber;
-import org.finroc.core.datatype.Unit;
 import org.finroc.core.port.PortCreationInfo;
 import org.finroc.core.port.ThreadLocalCache;
 import org.rrlib.logging.Log;
@@ -59,7 +58,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
     protected void nonStandardAssign(ThreadLocalCache tc) {
         CoreNumber cn = (CoreNumber)tc.data.getObject().getData();
         double val = cn.doubleValue();
-        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+        if (cn.getUnit() != null && getUnit() != null && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
         }
         if (!bounds.inBounds(val)) {
@@ -105,7 +104,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         CCPortDataManager mgr = super.getInInterThreadContainer();
         CoreNumber cn = (CoreNumber)mgr.getObject().getData();
         double val = cn.doubleValue();
-        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+        if (cn.getUnit() != null && getUnit() != null && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
         }
         if (!bounds.inBounds(val)) {
@@ -130,7 +129,7 @@ public class CCPortBoundedNumeric<T extends CoreNumber> extends CCPortBase {
         }
         CoreNumber cn = (CoreNumber)buffer.getObject().getData();
         double val = cn.doubleValue();
-        if (cn.getUnit() != Unit.NO_UNIT && getUnit() != Unit.NO_UNIT && cn.getUnit() != getUnit()) {
+        if (cn.getUnit() != null && getUnit() != null && cn.getUnit() != getUnit()) {
             val = cn.getUnit().convertTo(val, getUnit());
         }
         if (!bounds.inBounds(val)) {

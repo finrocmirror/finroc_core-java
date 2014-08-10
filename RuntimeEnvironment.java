@@ -34,10 +34,8 @@ import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 
 import org.finroc.core.admin.AdminServer;
-import org.finroc.core.datatype.Constant;
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.CoreString;
-import org.finroc.core.datatype.Unit;
 import org.finroc.core.datatype.XML;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.ThreadLocalCache;
@@ -67,7 +65,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         private final CoreRegister<FrameworkElement> elements = new CoreRegister<FrameworkElement>(false);
 
         /** Edges dealing with linked ports */
-        //@Elems({PassByValue.class, Ptr.class, Ptr.class})
         private final ConcurrentHashMap<String, LinkEdge> linkEdges = new ConcurrentHashMap<String, LinkEdge>();
 
         /** List with runtime listeners */
@@ -124,8 +121,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         assert(!shuttingDown());
 
         // Finish initializing static members of classes
-        Unit.staticInit(); // can safely be done first
-        Constant.staticInit(); // needs to be done after unit
         Time.getInstance(); // (possibly) init timing thread
         GarbageCollector.createAndStartInstance();
         ArrayList<WeakReference<ThreadLocalCache>> infosLock = ThreadLocalCache.staticInit(); // can safely be done first
@@ -133,10 +128,8 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         ChunkedBuffer.staticInit();
         DataTypeUtil.initCCTypes();
 
-        //JavaOnlyBlock
         new RuntimeEnvironment(); // should be done before any ports/elements are added
 
-        //Cpp new RuntimeEnvironment(); // should be done before any ports/elements are added
         instance.registry.infosLock = infosLock;
 
         // add uninitialized child
@@ -173,7 +166,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
     public void delete() {
         super.delete();
         active = false;
-        //Cpp util::Thread::stopThreads();
 
         // delete all children - (runtime settings last)
         ChildIterator ci = new ChildIterator(this, false);
@@ -509,12 +501,6 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
      * at the end of the program in order to shut everything down cleanly.
      */
     public static void shutdown() {
-        /*Cpp
-        util::Thread::stopThreads();
-        if (active) {
-            instance._reset();
-        }
-         */
     }
 
     /**

@@ -22,6 +22,7 @@
 package org.finroc.core.datatype;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Max Reichardt
@@ -33,32 +34,17 @@ import java.util.ArrayList;
  */
 public class Unit {
 
-    /** Factor regarding base unit */
-    private final double factor;
+    /** String that identifies this unit */
+    private String string;
 
-    /** Group of units that unit is in */
-    private final ArrayList<Unit> group;
+    /** Group of units with the same exponents. Entry 0 is always the base unit */
+    protected final ArrayList<Unit> group;
 
-    /** Unit description */
-    private final String description;
+    /** Factor in relation to base unit (e.g. typically "1000" for "kilo", "0.001" for "milli") */
+    protected final double baseUnitFactor;
 
-    /** index in unit group */
-    private final int index;
-
-    /** last assigned unique id for encoding and decoding */
-    private static byte uidCounter = 0;
-
-    /** unique id for encoding and decoding */
-    private final byte uid;
-
-    /** factors for conversion to other units in group */
-    private double[] factors;
-
-    /** Is this class a constant? */
-    private final boolean isAConstant;
-
-    /** temp list for uidLookupTable (see below) */
-    private final static ArrayList<Unit> uidLookupTableTemp = new ArrayList<Unit>();
+    /** List of all unit instances */
+    private final static ArrayList<Unit> instances = new ArrayList<Unit>();
 
     /**
      * Standard constructor for units
@@ -67,32 +53,14 @@ public class Unit {
      * @param description Unit description
      * @param factor Factor regarding base unit
      */
-    private Unit(ArrayList<Unit> group, String description, double factor) {
+    protected Unit(ArrayList<Unit> group, String string, double factor) {
         this.group = group;
-        this.description = description;
-        this.factor = factor;
-        this.isAConstant = false;
-        index = group.size();
+        this.string = string;
+        this.baseUnitFactor = factor;
         group.add(this);
-        uid = uidCounter;
-        uidLookupTableTemp.add(this);
-        uidCounter++;
-    }
-
-    /**
-     * Constructor for constants
-     *
-     * @param description Constant description
-     * @param u Unit of constant
-     */
-    protected Unit(String description, Unit u) {
-        this.group = u.group;
-        this.description = description;
-        this.factor = u.factor;
-        this.isAConstant = true;
-        index = u.index;
-        uid = u.uid;
-        factors = u.factors;
+        synchronized (instances) {
+            instances.add(this);
+        }
     }
 
     /**
@@ -113,22 +81,21 @@ public class Unit {
      */
     public double getConversionFactor(Unit u) {
         if (convertibleTo(u)) {
-            return factor / u.factor;
+            return baseUnitFactor / u.baseUnitFactor;
         }
         throw new RuntimeException("Units cannot be converted.");
     }
 
-    /**
-     * Get conversion factor from this unit to other unit
-     * Fast version (no checks).
-     *
-     * @param u other Unit
-     * @return Factor
-     */
-    public double getConversionFactorUnchecked(Unit u) {
-        return factors[u.index];
-    }
-
+//    /**
+//     * Get conversion factor from this unit to other unit
+//     * Fast version (no checks).
+//     *
+//     * @param u other Unit
+//     * @return Factor
+//     */
+//    public double getConversionFactorUnchecked(Unit u) {
+//        return factors[u.index];
+//    }
 
     /**
      * Converts value from this unit to other unit.
@@ -138,145 +105,97 @@ public class Unit {
      * @return Result
      */
     public double convertTo(double value, Unit toUnit) {
-        if (this == Unit.NO_UNIT || toUnit == Unit.NO_UNIT) {
+        if (toUnit == null) {
             return value;
         }
         return getConversionFactor(toUnit) * value;
     }
 
     public String toString() {
-        return description;
+        return string;
     }
-
-    /** No Unit - has Uid 0 */
-    private static final ArrayList<Unit> unknown = new ArrayList<Unit>();
-    public static final Unit NO_UNIT = new Unit(unknown, "", 1);
-
-    /** Length Units */
-    private static final ArrayList<Unit> length = new ArrayList<Unit>();
-    public static final Unit nm = new Unit(length, "nm", 0.000000001);
-    public static final Unit um = new Unit(length, "um", 0.000001);
-    public static final Unit mm = new Unit(length, "mm", 0.001);
-    public static final Unit cm = new Unit(length, "cm", 0.01);
-    public static final Unit dm = new Unit(length, "dm", 0.1);
-    public static final Unit m = new Unit(length, "m", 1);
-    public static final Unit km = new Unit(length, "km", 1000);
-
-    /** Speed Units */
-    private static final ArrayList<Unit> speed = new ArrayList<Unit>();
-    public static final Unit km_h = new Unit(speed, "km/h", 3.6);
-    public static final Unit m_s = new Unit(speed, "m/s", 1);
-
-    /** Weight Units */
-    private static final ArrayList<Unit> weight = new ArrayList<Unit>();
-    public static final Unit mg = new Unit(weight, "mg", 0.001);
-    public static final Unit g = new Unit(weight, "g", 1);
-    public static final Unit kg = new Unit(weight, "kg", 1000);
-    public static final Unit t = new Unit(weight, "t", 1000000);
-    public static final Unit mt = new Unit(weight, "mt", 1000000000000d);
-
-    /** Time Units */
-    private static final ArrayList<Unit> time = new ArrayList<Unit>();
-    public static final Unit ns = new Unit(time, "ns", 0.000000001);
-    public static final Unit us = new Unit(time, "us", 0.000001);
-    public static final Unit ms = new Unit(time, "ms", 0.001);
-    public static final Unit s = new Unit(time, "s", 1);
-    public static final Unit min = new Unit(time, "min", 60);
-    public static final Unit h = new Unit(time, "h", 3600);
-    public static final Unit day = new Unit(time, "day", 86400);
 
     /** Angular Units */
     private static final ArrayList<Unit> angle = new ArrayList<Unit>();
     public static final Unit deg = new Unit(angle, "deg", 0.017453292);
     public static final Unit rad = new Unit(angle, "rad", 1);
 
-    /** Frequency */
-    private static final ArrayList<Unit> frequency = new ArrayList<Unit>();
-    public static final Unit Hz = new Unit(frequency, "Hz", 1);
-
     /** Screen Units */
     private static final ArrayList<Unit> screen = new ArrayList<Unit>();
     public static final Unit Pixel = new Unit(screen, "Pixel", 1);
-
-
-    /** table for looking up a Unit using its Uid */
-    //private static final Unit[] uidLookupTable;
-
-    /**
-     * Initialize factors
-     * Should be called once, initially
-     */
-    public static void staticInit() {
-        calculateFactors(length);
-        calculateFactors(speed);
-        calculateFactors(weight);
-        calculateFactors(time);
-        calculateFactors(angle);
-
-        // initialize uid lookup table
-        //uidLookupTable = uidLookupTableTemp.toArray(new Unit[0]);
-    }
-
-    /**
-     * Precalculate conversion factors
-     *
-     * @param units Group of Units
-     */
-    private static void calculateFactors(ArrayList<Unit> units) {
-        for (int j = 0; j < units.size(); j++) {
-            Unit unit = units.get(j);
-            unit.factors = new double[units.size()];
-            for (int i = 0; i < units.size(); i++) {
-                unit.factors[i] = unit.getConversionFactor(units.get(i));
-            }
-        }
-    }
-
-    /**
-     * @return Unit's uid
-     */
-    public byte getUid() {
-        return uid;
-    }
 
     /**
      * @param uid Unit's uid
      * @return Unit with this Uid
      */
-    public static Unit getUnit(byte uid) {
-        //return uidLookupTable[uid];
-        return uidLookupTableTemp.get(uid);
+    public static Unit getUnitLegacy(byte uid) {
+        final Unit[] LEGACY_UNIT_LOOKUP = {
+            null,
+            SIUnit.NANOMETER,
+            SIUnit.MICROMETER,
+            SIUnit.MILLIMETER,
+            SIUnit.CENTIMETER,
+            SIUnit.DECIMETER,
+            SIUnit.METER,
+            SIUnit.KILOMETER,
+            SIUnit.KILOMETER_PER_SECOND,
+            SIUnit.METER_PER_SECOND,
+            SIUnit.MILLIGRAM,
+            SIUnit.GRAM,
+            SIUnit.KILOGRAM,
+            SIUnit.TON,
+            SIUnit.MEGATON,
+            SIUnit.NANOSECOND,
+            SIUnit.MICROSECOND,
+            SIUnit.MILLISECOND,
+            SIUnit.SECOND,
+            SIUnit.MINUTE,
+            SIUnit.HOUR,
+            SIUnit.DAY,
+            deg,
+            rad,
+            SIUnit.HERTZ,
+            Pixel
+        };
+        return LEGACY_UNIT_LOOKUP[uid];
     }
 
     /**
-     * @return Is this class a constant ?
+     * Change string of this SI unit
+     *
+     * @param string String for this SI unit
+     * @return Reference to this (for convenience)
      */
-    public boolean isConstant() {
-        return isAConstant;
+    protected Unit setString(String string) {
+        this.string = string;
+        return this;
     }
 
     /**
-     * @return Value of constant - Double.NaN for normal units
+     * Copies all unit objects created to provided list
+     *
+     * @param resultList List to copy all units to
      */
-    public CoreNumber getValue() {
-        //Cpp static Number defaultValue(util::Double::_cNaN);
-        return defaultValue;
+    public static void getAllUnits(List<Unit> resultList) {
+        synchronized (instances) {
+            resultList.addAll(instances);
+        }
     }
-
-    /** Default value for units */
-    private final static CoreNumber defaultValue = new CoreNumber(Double.NaN);
 
     /**
      * @param unitString (Unique) Name of unit
      * @return Unit - NO_UNIT if unit name could not be found
      */
     public static Unit getUnit(String unitString) {
-        for (int i = 0; i < uidLookupTableTemp.size(); i++) {
-            Unit u = uidLookupTableTemp.get(i);
-            if (u.description.equals(unitString)) {
-                return u;
+        for (Unit unit : instances) {
+            if (unit.string.equals(unitString)) {
+                return unit;
             }
         }
-        return NO_UNIT;
+        try {
+            return SIUnit.getInstance(unitString);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

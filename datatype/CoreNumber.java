@@ -56,14 +56,14 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
     /** Zero Constant */
     public final static CoreNumber ZERO = new CoreNumber(0);
 
-    /** Unit of data */
+    /** Unit of data - null if not unit was assigned */
     private Unit unit;
 
     /** Register Data type */
     public final static DataTypeBase TYPE = new DataType<CoreNumber>(CoreNumber.class, "Number");
 
     public CoreNumber() {
-        unit = Unit.NO_UNIT;
+        unit = null;
         numType = Type.INT;
         value = 0;
     }
@@ -93,9 +93,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
     public CoreNumber(float value, Unit unit) {
         setValue(value, unit);
     }
-    public CoreNumber(Constant c) {
-        setValue(c);
-    }
     public CoreNumber(Number value, Unit unit) {
         setValue(value, unit);
     }
@@ -110,7 +107,7 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
 
     // All kinds of variations of setters
     public void setValue(int value) {
-        setValue(value, Unit.NO_UNIT);
+        setValue(value, null);
     }
     public void setValue(int value, Unit unit) {
         this.value = value;
@@ -118,7 +115,7 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
         numType = Type.INT;
     }
     public void setValue(long value) {
-        setValue(value, Unit.NO_UNIT);
+        setValue(value, null);
     }
     public void setValue(long value, Unit unit) {
         this.value = value;
@@ -126,7 +123,7 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
         numType = Type.LONG;
     }
     public void setValue(float value) {
-        setValue(value, Unit.NO_UNIT);
+        setValue(value, null);
     }
     public void setValue(float value, Unit unit) {
         this.value = Float.floatToIntBits(value);
@@ -134,19 +131,15 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
         numType = Type.FLOAT;
     }
     public void setValue(double value) {
-        setValue(value, Unit.NO_UNIT);
+        setValue(value, null);
     }
     public void setValue(double value, Unit unit) {
         this.value = Double.doubleToRawLongBits(value);
         this.unit = unit;
         numType = Type.DOUBLE;
     }
-    public void setValue(Constant value) {
-        this.unit = value;
-        numType = Type.CONSTANT;
-    }
     public void setValue(Number value) {
-        setValue(value, Unit.NO_UNIT);
+        setValue(value, null);
     }
     public void setValue(Number value, Unit unit) {
         if (value instanceof Long) {
@@ -202,8 +195,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             return Double.longBitsToDouble(value);
         case FLOAT:
             return Float.intBitsToFloat((int)value);
-        case CONSTANT:
-            return ((Constant)unit).getValue().doubleValue();
         default:
             // Should not happen
             return Double.NaN;
@@ -220,8 +211,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             return (float)Double.longBitsToDouble(value);
         case FLOAT:
             return Float.intBitsToFloat((int)value);
-        case CONSTANT:
-            return ((Constant)unit).getValue().floatValue();
         default:
             // Should not happen
             return Float.NaN;
@@ -238,8 +227,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             return (int)Double.longBitsToDouble(value);
         case FLOAT:
             return (int)Float.intBitsToFloat((int)value);
-        case CONSTANT:
-            return ((Constant)unit).getValue().intValue();
         default:
             // Should not happen
             return (int)Float.NaN;
@@ -256,8 +243,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             return (long)Double.longBitsToDouble(value);
         case FLOAT:
             return (long)Float.intBitsToFloat((int)value);
-        case CONSTANT:
-            return ((Constant)unit).getValue().longValue();
         default:
             // Should not happen
             return (int)Float.NaN;
@@ -294,30 +279,17 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             }
         } else if (numType == Type.DOUBLE) {
             oos.writeByte(prepFirstByte(FLOAT64));
-
-            // JavaOnlyBlock
             oos.writeLong(value);
-
-            //Cpp oos.writeDouble(dval);
         } else if (numType == Type.FLOAT) {
             oos.writeByte(prepFirstByte(FLOAT32));
-
-            // JavaOnlyBlock
             oos.writeInt((int)value);
-
-            //Cpp oos.writeFloat(fval);
-        } else if (numType == Type.CONSTANT) {
-            oos.writeByte(prepFirstByte(CONST));
-            oos.writeByte(((Constant)unit).getConstantId());
-        }
-        if (unit != Unit.NO_UNIT) {
-            oos.writeByte(unit.getUid());
         }
     }
 
     private byte prepFirstByte(byte value2) {
         int tmp = (value2 << 1);
-        return (byte)((unit == Unit.NO_UNIT || numType == Type.CONSTANT) ? tmp : (tmp | 1));
+        //return (byte)((unit == Unit.NO_UNIT || numType == Type.CONSTANT) ? tmp : (tmp | 1));
+        return (byte)tmp;
     }
 
     @Override
@@ -350,14 +322,11 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
         case INT16:
             setValue((int)ois.readShort());
             break;
-        case CONST:
-            setValue(Constant.getConstant(ois.readByte()));
-            break;
         default:
             setValue((int)firstByte >> 1);
             break;
         }
-        unit = hasUnit ? Unit.getUnit(ois.readByte()) : Unit.NO_UNIT;
+        unit = hasUnit ? Unit.getUnitLegacy(ois.readByte()) : null;
     }
 
     @Override
@@ -367,32 +336,26 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
         value = source.value;
     }
 
-
-    /**
-     * @return Current value Constant (only works if type is Type.CONSTANT)
-     */
-    private Constant getConstant() {
-        return ((Constant)unit);
-    }
-
     /**
      * @return Unit of data
      */
     public Unit getUnit() {
-        return numType == Type.CONSTANT ? getConstant().unit : unit;
+        return unit;
     }
 
     public String toString() {
+        String unitString = "";
+        if (unit != null) {
+            unitString = " " + unit.toString();
+        }
         switch (numType) {
-        case CONSTANT:
-            return getConstant().toString();
         case INT:
         case LONG:
-            return (value + " " + unit.toString()).trim();
+            return value + unitString;
         case FLOAT:
-            return (floatValue() + " " + unit.toString()).trim();
+            return floatValue() + unitString;
         case DOUBLE:
-            return (doubleValue() + " " + unit.toString()).trim();
+            return doubleValue() + unitString;
         default:
             return "Internal Error... shouldn't happen... whatever";
         }
@@ -484,10 +447,9 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
     /**
      * Changes unit
      *
-     * @param unit2 new unit
+     * @param unit2 new unit (may be null)
      */
     public void setUnit(Unit unit2) {
-        assert(unit2 != null);
         unit = unit2;
     }
 
@@ -509,8 +471,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
             return doubleValue();
         case FLOAT:
             return floatValue();
-        case CONSTANT:
-            return ((Constant)unit).getValue().getNumericRepresentation();
         default:
             // Should not happen
             return (int)Float.NaN;

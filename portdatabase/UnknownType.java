@@ -35,8 +35,7 @@ import org.rrlib.serialization.rtti.GenericObject;
 /**
  * @author Max Reichardt
  *
- * RPC interface data type.
- * (Should only be created once per data type with name and methods constructor!)
+ * Types that are not available in Java - but can possibly be handled.
  */
 public class UnknownType extends DataTypeBase {
 

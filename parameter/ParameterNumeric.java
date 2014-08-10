@@ -79,7 +79,7 @@ public class ParameterNumeric<T extends Number> extends Parameter<CoreNumber> {
     }
 
     public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds<T> b) {
-        this(name, parent, defaultValue, b, Unit.NO_UNIT, "");
+        this(name, parent, defaultValue, b, null, "");
     }
 
     public ParameterNumeric(String name, FrameworkElement parent, T defaultValue, Bounds<T> b, Unit u) {
