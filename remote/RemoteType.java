@@ -71,6 +71,12 @@ public class RemoteType extends DataTypeBase {
                 }
             }
         }
+
+        synchronized (listener) {
+            for (Listener remoteTypeListener : listener) {
+                remoteTypeListener.remoteTypeAdded(this);
+            }
+        }
     }
 
     /**
