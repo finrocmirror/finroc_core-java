@@ -39,7 +39,7 @@ public class RemotePort extends RemoteFrameworkElement implements PortWrapperTre
     /** Wrapped port link */
     private final FrameworkElement.Link portLink;
 
-    public final DataTypeBase TYPE = new DataType<RemotePortLink>(RemotePortLink.class);
+    public final static DataTypeBase TYPE = new DataType<RemotePortLink>(RemotePortLink.class);
 
     /**
      * @param remoteHandle Remote handle of port
