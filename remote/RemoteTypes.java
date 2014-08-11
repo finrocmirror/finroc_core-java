@@ -133,8 +133,16 @@ public class RemoteTypes implements TypeEncoder {
 
             e.name = name;
             if (local == null) {
-                local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, traits);
-                FinrocTypeInfo.get(local).init(type);
+                synchronized (DataTypeBase.class) {
+                    local = DataTypeBase.findType(name);
+                    if (local != null) {
+                        e.localDataType = local;
+                    } else {
+                        local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, traits);
+                        FinrocTypeInfo.get(local).init(type);
+                    }
+                }
+
             }
 
             types.add(e, true);

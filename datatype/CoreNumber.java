@@ -407,7 +407,7 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
     public void deserialize(StringInputStream is) throws Exception {
 
         // scan for unit
-        String s = is.readWhile("-.", StringInputStream.DIGIT | StringInputStream.WHITESPACE | StringInputStream.LETTER, true);
+        String s = is.readWhile("-./^", StringInputStream.DIGIT | StringInputStream.WHITESPACE | StringInputStream.LETTER, true);
         String num = s;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);

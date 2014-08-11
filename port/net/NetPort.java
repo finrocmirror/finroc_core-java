@@ -268,7 +268,7 @@ public abstract class NetPort implements PortListener {
                 if (remoteType == null) {
                     manager.getObject().deserialize(stream, encoding);
                 } else {
-                    remoteType.deserialize(manager.getObject());
+                    remoteType.deserialize(stream, manager.getObject());
                 }
                 pb.publishFromNet(manager, changeType);
             } else if (isCCType()) {

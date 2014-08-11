@@ -24,6 +24,8 @@ package org.finroc.core.datatype;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.rrlib.serialization.rtti.Immutable;
+
 /**
  * @author Max Reichardt
  *
@@ -32,7 +34,7 @@ import java.util.List;
  * Class should initialize cleanly in C++.
  * Can be initialized separately from rest of framework.
  */
-public class Unit {
+public class Unit implements Immutable {
 
     /** String that identifies this unit */
     private String string;

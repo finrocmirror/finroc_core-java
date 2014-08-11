@@ -42,6 +42,7 @@ import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.stream.StreamCommitThread;
 import org.finroc.core.portdatabase.DataTypeUtil;
+import org.finroc.core.remote.RemoteTypeAdapter;
 import org.finroc.core.thread.ExecutionControl;
 
 /**
@@ -127,6 +128,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         BoundedQElementContainer.staticInit();
         ChunkedBuffer.staticInit();
         DataTypeUtil.initCCTypes();
+        new RemoteTypeAdapter.Default();
 
         new RuntimeEnvironment(); // should be done before any ports/elements are added
 

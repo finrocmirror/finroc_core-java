@@ -42,7 +42,7 @@ public class RPCInterfaceType extends DataTypeBase {
      * @param methods Methods in interface
      */
     public RPCInterfaceType(String name, Method ... methods) {
-        setName(name);
+        super(name);
         type = DataTypeBase.Classification.OTHER;
         FinrocTypeInfo.get(this).init(FinrocTypeInfo.Type.METHOD);
         this.methods = methods;

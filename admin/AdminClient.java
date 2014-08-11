@@ -141,7 +141,7 @@ public class AdminClient extends ClientPort {
             if (np.getRemoteType() == null) {
                 container.getObject().serialize(co, np.getNetworkEncoding());
             } else {
-                np.getRemoteType().serialize(container.getObject());
+                np.getRemoteType().serialize(co, container.getObject());
             }
             co.close();
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);

@@ -23,6 +23,8 @@ package org.finroc.core.remote;
 
 import java.util.ArrayList;
 
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.EnumValue;
 import org.rrlib.serialization.Serialization.DataEncoding;
 import org.rrlib.serialization.rtti.DataTypeBase;
@@ -52,26 +54,22 @@ public class RemoteType extends DataTypeBase {
      * @param Relevant type traits of remote type
      */
     public RemoteType(String name, Object[] enumConstants, byte traits) {
-        this.setName(name);
+        super(name);
         this.typeTraits = traits;
         this.enumConstants = enumConstants;
         this.type = Classification.PLAIN; // we might need to changes this some time
 
-        if ((traits & IS_ENUM) == 0) {
-            synchronized (RemoteTypeAdapter.adapters) {
-                for (RemoteTypeAdapter adapter : RemoteTypeAdapter.adapters) {
-                    if (adapter.handlesType(this, adapterInfo)) {
-                        typeAdapter = adapter;
-                        if (adapterInfo.localType == null || adapterInfo.networkEncoding == null) {
-                            throw new RuntimeException("Network adapter did not set all mandatory info");
-                        }
-                        javaClass = adapterInfo.localType;
-                        break;
+        synchronized (RemoteTypeAdapter.adapters) {
+            for (RemoteTypeAdapter adapter : RemoteTypeAdapter.adapters) {
+                if (adapter.handlesType(this, adapterInfo)) {
+                    typeAdapter = adapter;
+                    if (adapterInfo.localType == null || adapterInfo.networkEncoding == null) {
+                        throw new RuntimeException("Network adapter did not set all mandatory info");
                     }
+                    javaClass = adapterInfo.localType;
+                    break;
                 }
             }
-        } else {
-            this.javaClass = EnumValue.class;
         }
     }
 
@@ -142,18 +140,20 @@ public class RemoteType extends DataTypeBase {
     /**
      * Deserialize adaptable data from stream and place result in provided object
      *
+     * @param stream Stream to deserialize from
      * @param object Object to put result in
      */
-    public void deserialize(GenericObject object) {
-        typeAdapter.deserialize(object, this, adapterInfo);
+    public void deserialize(BinaryInputStream stream, GenericObject object) throws Exception {
+        typeAdapter.deserialize(stream, object, this, adapterInfo);
     }
 
     /**
      * Serialize provided object to stream in the correct data format
      *
+     * @param stream Stream to serialize to
      * @param object Object containing data to adapt and serialize
      */
-    public void serialize(GenericObject object) {
-        typeAdapter.serialize(object, this, adapterInfo);
+    public void serialize(BinaryOutputStream stream, GenericObject object) {
+        typeAdapter.serialize(stream, object, this, adapterInfo);
     }
 }

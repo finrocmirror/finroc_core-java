@@ -152,7 +152,7 @@ public class SIUnit extends Unit {
         }
         if (denominator.length() > 0) {
             flipExponents(exponents);
-            parseExponents(nominator, exponents);
+            parseExponents(denominator, exponents);
             flipExponents(exponents);
         }
         return getInstance(exponents[0], exponents[1], exponents[2], exponents[3], exponents[4], exponents[5], exponents[6]);
@@ -323,7 +323,7 @@ public class SIUnit extends Unit {
             if (unitString.contains(symbol.string)) {
                 int index = unitString.indexOf(symbol.string);
                 String extraString = "";
-                for (int j = index; j < unitString.length(); j++) {
+                for (int j = index + 1; j < unitString.length(); j++) {
                     char c = unitString.charAt(j);
                     if (Character.isLetter(c)) {
                         break;
@@ -348,9 +348,9 @@ public class SIUnit extends Unit {
                     }
                 }
             }
-            if (unitString.trim().length() > 0) {
-                throw new RuntimeException("Error parsing '" + originalString + "'");
-            }
+        }
+        if (unitString.trim().length() > 0) {
+            throw new RuntimeException("Error parsing '" + originalString + "'");
         }
     }
 
