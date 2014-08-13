@@ -85,7 +85,7 @@ public class PortCreationInfo {
 
     public PortCreationInfo(String name, Class<?> dataType, int flags) {
         this.name = name;
-        this.dataType = DataTypeBase.findType(dataType);
+        this.dataType = DataTypeBase.findType(dataType, null);
         this.flags = flags;
     }
 

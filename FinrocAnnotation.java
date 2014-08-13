@@ -62,7 +62,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements Binary
         if (type != null) {
             return; // already set
         }
-        type = DataTypeBase.findType(this.getClass());
+        type = DataTypeBase.findType(this.getClass(), null);
         assert type != null : "Unknown Object type";
     }
 

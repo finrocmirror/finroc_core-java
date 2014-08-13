@@ -295,7 +295,7 @@ public class StaticParameterBase implements HasDestructor {
         if (type == null || (!type.getJavaClass().isAssignableFrom(newValue.getClass()))) {
             throw new Exception("Value has type (" + newValue.getClass().getSimpleName() + ") that is not assignable to static parameter's (" + type.getJavaClass().getSimpleName() + ")");
         }
-        DataTypeBase dt = DataTypeBase.findType(newValue.getClass());
+        DataTypeBase dt = DataTypeBase.findType(newValue.getClass(), type);
         if (dt == null) {
             throw new Exception("Value has type (" + newValue.getClass().getSimpleName() + ") that was not registered in rrlib_serialization (rtti)");
         }
