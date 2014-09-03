@@ -123,11 +123,22 @@ public class RemoteTypes implements TypeEncoder {
 
             // remote enum type?
             ArrayList<String> enumConstants = null;
+            long[] enumValues = null;
             if ((traits & DataTypeBase.IS_ENUM) != 0) {
                 enumConstants = new ArrayList<String>();
                 short n = ci.readShort();
                 for (int i = 0; i < n; i++) {
-                    enumConstants.add(ci.readString());
+                    String s = ci.readString();
+                    if (s.contains("|")) {
+                        if (enumValues == null) {
+                            enumValues = new long[n];
+                        }
+                        String[] strings = s.split("\\|");
+                        enumConstants.add(strings[0]);
+                        enumValues[i] = Long.parseLong(strings[1]);
+                    } else {
+                        enumConstants.add(s);
+                    }
                 }
             }
 
@@ -138,7 +149,7 @@ public class RemoteTypes implements TypeEncoder {
                     if (local != null) {
                         e.localDataType = local;
                     } else {
-                        local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, traits);
+                        local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, enumValues, traits);
                         FinrocTypeInfo.get(local).init(type);
                     }
                 }
