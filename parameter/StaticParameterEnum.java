@@ -64,14 +64,14 @@ public class StaticParameterEnum<E extends Enum<E>> extends StaticParameter<Enum
      * @param defaultValue new value
      */
     public void set(E e) {
-        super.getValue().set(e.ordinal());
+        super.getValue().setIndex(e.ordinal());
     }
 
     /**
      * @return Current value
      */
     public E get() {
-        return enumClass.getEnumConstants()[super.getValue().getOrdinal()];
+        return enumClass.getEnumConstants()[super.getValue().getIndex()];
     }
 
     /**

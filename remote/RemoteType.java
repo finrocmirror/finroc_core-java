@@ -51,12 +51,14 @@ public class RemoteType extends DataTypeBase {
     /**
      * @param name Name of remote type
      * @param enumConstants Enum constants if this is a (remote) enum type - otherwise NULL (may be an array of strings)
+     * @param enumValues Enum value - if this is a remote enum type with non-standard values
      * @param Relevant type traits of remote type
      */
-    public RemoteType(String name, Object[] enumConstants, byte traits) {
+    public RemoteType(String name, Object[] enumConstants, long[] enumValues, byte traits) {
         super(name);
         this.typeTraits = traits;
         this.enumConstants = enumConstants;
+        this.enumValues = enumValues;
         this.type = Classification.PLAIN; // we might need to changes this some time
 
         synchronized (RemoteTypeAdapter.adapters) {
