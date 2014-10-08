@@ -43,6 +43,7 @@ import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.MemoryBuffer;
 import org.rrlib.serialization.BinaryOutputStream.TypeEncoding;
 import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 import org.rrlib.serialization.rtti.GenericObjectManager;
 
 /**
@@ -133,15 +134,15 @@ public class AdminClient extends ClientPort {
      * @param container Data to assign to remote port
      * @param handler Method return handler. Receives empty string if everything worked out - otherwise an error message.
      */
-    public void setRemotePortValue(NetPort np, GenericObjectManager container, ResponseHandler handler) {
+    public void setRemotePortValue(NetPort np, GenericObject container, ResponseHandler handler) {
         if (np != null && getAdminInterface(np) == this) {
             MemoryBuffer mb = new MemoryBuffer();
             BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
             co.writeEnum(np.getNetworkEncoding());
             if (np.getRemoteType() == null) {
-                container.getObject().serialize(co, np.getNetworkEncoding());
+                container.serialize(co, np.getNetworkEncoding());
             } else {
-                np.getRemoteType().serialize(co, container.getObject());
+                np.getRemoteType().serialize(co, container);
             }
             co.close();
             this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
