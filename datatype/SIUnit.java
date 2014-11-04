@@ -95,6 +95,9 @@ public class SIUnit extends Unit {
     public static final SIUnit MEGAHERTZ = getInstance(HERTZ, 1000000, "MHz");
     public static final SIUnit GIGAHERTZ = getInstance(HERTZ, 1000000000, "GHz");
 
+    /** Helper units for nicer string output */
+    public static final SIUnit RAD_PER_SECOND = getInstance(HERTZ, 1, "rad/s");
+
     /**
      * Get unique unit instance for specified exponents
      *
