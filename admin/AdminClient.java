@@ -203,7 +203,7 @@ public class AdminClient extends ClientPort {
         co.close();
 
         try {
-            String cs = (String)this.callSynchronous(2000, AdminServer.CREATE_MODULE, cma.remoteIndex, name, parentHandle, mb);
+            String cs = (String)this.callSynchronous(5000, AdminServer.CREATE_MODULE, cma.remoteIndex, name, parentHandle, mb);
             if (cs != null) {
                 return cs;
             }

@@ -95,6 +95,9 @@ public class RemoteRuntime extends RemoteFrameworkElement {
      * @return RemoteRuntime object - or null if none could be found
      */
     public static RemoteRuntime find(ModelNode remoteElement) {
+        if (remoteElement == null) {
+            return null;
+        }
         do {
             if (remoteElement instanceof RemoteRuntime) {
                 return (RemoteRuntime)remoteElement;

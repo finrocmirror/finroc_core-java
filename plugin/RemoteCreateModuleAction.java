@@ -54,7 +54,7 @@ public class RemoteCreateModuleAction implements Comparable<RemoteCreateModuleAc
     }
 
     public String toString() {
-        return name + "  (" + groupName + ")";
+        return name; // + "  (" + groupName + ")";
     }
 
     @Override
