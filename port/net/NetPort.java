@@ -266,7 +266,7 @@ public abstract class NetPort implements PortListener {
                     manager.getTimestamp().deserialize(stream);
                 }
                 if (remoteType == null) {
-                    manager.getObject().deserialize(stream, encoding);
+                    manager.getObject().deserialize(stream, dataEncoding);
                 } else {
                     remoteType.deserialize(stream, manager.getObject());
                 }
@@ -277,7 +277,7 @@ public abstract class NetPort implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, encoding);
+                manager.getObject().deserialize(stream, dataEncoding);
                 pb.publishFromNet(manager, changeType);
             } else { // interface port
                 throw new RuntimeException("Method calls are not handled using this mechanism");
