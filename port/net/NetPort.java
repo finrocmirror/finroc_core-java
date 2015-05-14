@@ -52,6 +52,15 @@ import org.rrlib.serialization.rtti.DataTypeBase;
 @SuppressWarnings("rawtypes")
 public abstract class NetPort implements PortListener {
 
+    public interface ExtraEdgeProvider {
+
+        /**
+         * @param resultList List to put the targets of the remote edges in (filled after call) - edges with reverse direction are the last in the list
+         * @return Index of the first edge in reverse direction
+         */
+        public abstract int getRemoteEdgeDestinations(List<AbstractPort> resultList);
+    }
+
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
 
@@ -75,6 +84,10 @@ public abstract class NetPort implements PortListener {
 
     /** If network port has a data type whose implementation is only available remotely, this stores the remote type - otherwise null */
     private RemoteType remoteType;
+
+    /** Attached extra provider of remote edges (null if none is attached) */
+    private ExtraEdgeProvider extraEdgeProvider = null;
+
 
     public NetPort(PortCreationInfo pci, Object belongsTo) {
         // keep most these flags
@@ -759,5 +772,19 @@ public abstract class NetPort implements PortListener {
      */
     public RemoteType getRemoteType() {
         return remoteType;
+    }
+
+    /**
+     * @return Attached extra provider of remote edges (null if none is attached)
+     */
+    public ExtraEdgeProvider getExtraEdgeProvider() {
+        return extraEdgeProvider;
+    }
+
+    /**
+     * @param extraEdgeProvider Attach new extra provider of remote edges (null if none is to be attached)
+     */
+    public void setExtraEdgeProvider(ExtraEdgeProvider extraEdgeProvider) {
+        this.extraEdgeProvider = extraEdgeProvider;
     }
 }
