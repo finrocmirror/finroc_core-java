@@ -64,12 +64,14 @@ public class JavaReleasePluginLoader implements PluginLoader {
         // collect jars
         File rootDir = RuntimeSettings.getRootDir();
         for (File file : rootDir.listFiles()) {
-            if ((file.getName().startsWith("finroc_plugins_") || file.getName().startsWith("finroc_tools_gui_plugins_")) && file.getName().endsWith(".jar")) {
-                pluginMainJars.add(file);
-                try {
-                    allJars.add(file.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    Log.log(LogLevel.WARNING, "Error finding plugin", e);
+            for (String validPrefix : Plugins.getInstance().getPrefixesOfPluginsToLoad()) {
+                if (file.getName().startsWith(validPrefix) && file.getName().endsWith(".jar")) {
+                    pluginMainJars.add(file);
+                    try {
+                        allJars.add(file.toURI().toURL());
+                    } catch (MalformedURLException e) {
+                        Log.log(LogLevel.WARNING, "Error finding plugin", e);
+                    }
                 }
             }
         }

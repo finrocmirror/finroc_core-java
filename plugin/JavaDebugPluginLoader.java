@@ -115,7 +115,10 @@ public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
                 Document doc = dbuilder.parse(file);
 
                 // find FinrocJavaPlugin tags
-                NodeList nl = doc.getElementsByTagName("finrocplugin");
+                NodeList nl = doc.getElementsByTagName("library");
+                if (nl.getLength() == 0) {
+                    nl = doc.getElementsByTagName("finrocplugin");
+                }
                 for (int i = 0; i < nl.getLength(); i++) {
                     Node n = nl.item(i).getAttributes().getNamedItem("plugin-class");
                     if (n != null) {
@@ -197,22 +200,24 @@ public class JavaDebugPluginLoader implements PluginLoader, FilenameFilter {
             Document doc = dbuilder.parse(dir + "/make.xml");
 
             // this should be the first target
-            NodeList nl = doc.getElementsByTagName("finrocplugin");
-            String prefix = "finroc_plugin_";
+            NodeList nl = doc.getElementsByTagName("library");
             if (nl.getLength() == 0) {
-                nl = doc.getElementsByTagName("finroclibrary");
-                prefix = "finroc_";
-            }
-            if (nl.getLength() == 0) {
-                nl = doc.getElementsByTagName("rrlib");
-                prefix = "rrlib_";
+                nl = doc.getElementsByTagName("program");
             }
             if (nl.getLength() == 0) {
                 Log.log(LogLevel.ERROR, this, "Can't find suitable target in " + dir + "/make.xml");
                 return "unknown binary";
             }
+            String prefix = "";
+            File dirFile = new File(dir);
+            while (!(dirFile.getParentFile().getName().equals("sources") && dirFile.getName().equals("java"))) {
+                prefix = dirFile.getName() + (prefix.length() == 0 ? "" : "_") + prefix;
+                dirFile = dirFile.getParentFile();
+            }
+            if (prefix.startsWith("org_")) {
+                prefix = prefix.substring(4);
+            }
             return prefix + ((Element)nl.item(0)).getAttribute("name") + ".jar";
-
         } catch (Exception e) {
             Log.log(LogLevel.ERROR, this, "Cannot determine jar file name", e);
             return null;

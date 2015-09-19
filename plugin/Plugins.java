@@ -59,6 +59,9 @@ public class Plugins { /*implements HTTPResource*/
     /** Plugin loader implementation */
     private PluginLoader pluginLoader;
 
+    /** Prefixes of plugin jar files to load (contains "finroc_plugins_" by default) */
+    private ArrayList<String> prefixesOfPluginsToLoad = new ArrayList<String>();
+
     /**
      * Loads plugins
      */
@@ -73,8 +76,19 @@ public class Plugins { /*implements HTTPResource*/
     public static Plugins getInstance() {
         if (instance == null) {
             instance = new Plugins();
+            instance.prefixesOfPluginsToLoad.add("finroc_plugins_");
         }
         return instance;
+    }
+
+    /**
+     * Tools/libraries can use this to load additional plugins at program startup.
+     * Needs to be called before Finroc runtime environment is instantiated in order to have an effect.
+     *
+     * @param additionalPrefix Additional .jar file prefix (e.g. "finroc_tools_gui_plugins_") of plugins to load on initialization
+     */
+    public void addPrefixForPluginsToLoad(String additionalPrefix) {
+        prefixesOfPluginsToLoad.add(additionalPrefix);
     }
 
     private void findAndLoadPlugins() {
@@ -195,6 +209,13 @@ public class Plugins { /*implements HTTPResource*/
     }
 
     /**
+     * @return Prefixes of plugin jar files to load
+     */
+    ArrayList<String> getPrefixesOfPluginsToLoad() {
+        return prefixesOfPluginsToLoad;
+    }
+
+    /**
      * Returns/loads CreateFrameworkElementAction with specified name and specified .so file.
      * (doesn't do any dynamic loading, if .so is already present)
      *
@@ -216,5 +237,4 @@ public class Plugins { /*implements HTTPResource*/
         Log.log(LogLevel.ERROR, this, "Could not find/load module " + name + " in " + group);
         return null;
     }
-
 }

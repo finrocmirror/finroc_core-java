@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <targets>
 
-  <finroclibrary>
+  <library>
     <sources exclude="test/** finstructable/Finstructed.java">
       **.java
     </sources>
-  </finroclibrary>
+  </library>
 
   <!--testprogram name="tests" libs="finroc_core.jar finroc_plugin_blackboard.jar finroc_plugin_tcp.jar">
     <sources>
@@ -20,9 +20,9 @@
     <script name="basic_realtime_java" main-class="org.finroc.core.test.BasicRealtimeTest"/>
   </testprogram-->
   
-  <finrocprogram name="finstructed_java" main-class="org.finroc.core.finstructable.Finstructed">
+  <program name="finstructed_java" main-class="org.finroc.core.finstructable.Finstructed">
     <sources>
       finstructable/Finstructed.java
     </sources>
-  </finrocprogram>
+  </program>
 </targets>
