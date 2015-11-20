@@ -462,18 +462,6 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
 
     @Override
     public Number getNumericRepresentation() {
-        switch (numType) {
-        case INT:
-            return intValue();
-        case LONG:
-            return longValue();
-        case DOUBLE:
-            return doubleValue();
-        case FLOAT:
-            return floatValue();
-        default:
-            // Should not happen
-            return (int)Float.NaN;
-        }
+        return this;
     }
 }

@@ -28,11 +28,17 @@ import java.util.Date;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 
+import org.finroc.core.portdatabase.CCType;
+import org.finroc.core.portdatabase.ExpressData;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
+import org.rrlib.serialization.NumericRepresentation;
 import org.rrlib.serialization.Serialization;
 import org.rrlib.serialization.StringInputStream;
 import org.rrlib.serialization.StringOutputStream;
+import org.rrlib.serialization.StringSerializable;
+import org.rrlib.serialization.rtti.Copyable;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -43,14 +49,17 @@ import org.rrlib.serialization.rtti.DataTypeBase;
  *
  * String serialization of time stamps follows ISO 8601 (or W3C XML Schema 1.0 specification)
  */
-public class Duration extends CoreNumber {
-
-    /** UID */
-    private static final long serialVersionUID = 134572469459944L;
+public class Duration implements BinarySerializable, StringSerializable, NumericRepresentation, ExpressData, CCType, Copyable<Duration> {
 
     public final static DataTypeBase TYPE = new DataType<Duration>(Duration.class, "Duration");
 
     private static final DatatypeFactory factory;
+
+    /** Duration in nanoseconds */
+    private long nanoseconds;
+
+    /** Duration in seconds */
+    private final CoreNumber number = new CoreNumber();
 
     static {
         DatatypeFactory tmp = null;
@@ -63,14 +72,16 @@ public class Duration extends CoreNumber {
     }
 
     public void deserialize(BinaryInputStream is) {
-        setValue(is.readLong(), SIUnit.NANOSECOND);
+        setNanoseconds(is.readLong());
     }
+
 
     @Override
     public void serialize(BinaryOutputStream oos) {
-        assert(getUnit() == SIUnit.NANOSECOND);
-        oos.writeLong(longValue());
+        oos.writeLong(nanoseconds);
     }
+
+
 
     /*static final long MINUTE = 60;
     static final long HOUR = MINUTE * 60;
@@ -80,8 +91,13 @@ public class Duration extends CoreNumber {
     static final long YEAR = DAY * 365;*/
 
     @Override
+    public Number getNumericRepresentation() {
+        return number;
+    }
+
+    @Override
     public void serialize(StringOutputStream os) {
-        long l = longValue();
+        long l = nanoseconds;
         long ms = l / 1000000;
         long ns = l % 1000000;
         javax.xml.datatype.Duration d = factory.newDuration(ms);
@@ -159,7 +175,7 @@ public class Duration extends CoreNumber {
         if (bd != null) {
             ns = bd.scaleByPowerOfTen(9).longValueExact() % 1000000;
         }
-        setValue(ms * 1000000 + ns, SIUnit.NANOSECOND);
+        setNanoseconds(nanoseconds = ms * 1000000 + ns);
 
         /*String s = is.readLine().trim();
         Matcher m = p.matcher(s);
@@ -205,24 +221,38 @@ public class Duration extends CoreNumber {
     }
 
     /**
-     * @param ms Timestamp in milliseconds (as obtained from System.currentTimeMillis())
+     * @param ms Duration in milliseconds
      */
     public void set(long ms) {
-        setValue(ms * 1000000, SIUnit.NANOSECOND);
+        setNanoseconds(ms * 1000000);
     }
 
     /**
-     * @param ms Timestamp in milliseconds (as obtained from System.currentTimeMillis())
+     * @param ms Duration in milliseconds
      * @param nanos Addtional nanoseconds
      */
     public void set(long ms, int nanos) {
-        setValue(ms * 1000000 + nanos, SIUnit.NANOSECOND);
+        setNanoseconds(ms * 1000000 + nanos);
+    }
+
+    /**
+     * @param ns Duration in nanoseconds
+     */
+    public void setNanoseconds(long ns) {
+        this.nanoseconds = ns;
+        //number.setValue(nanoseconds / 1000000000.0, SIUnit.SECOND);
+        number.setValue(nanoseconds / 1000000.0, SIUnit.MILLISECOND);
     }
 
     /**
      * @return Timestamp in milliseconds since 1.1.1970 (same time format as System.currentTimeMillis())
      */
     public long getInMs() {
-        return longValue() / 1000000;
+        return nanoseconds / 1000000;
+    }
+
+    @Override
+    public void copyFrom(Duration source) {
+        setNanoseconds(source.nanoseconds);
     }
 }
