@@ -41,4 +41,9 @@ public interface PortWrapperTreeNode { /*extends TreeNode*/
      * @return Display as input port in connection panel?
      */
     public boolean isInputPort();
+
+    /**
+     * @return Should this port be displayed as proxy port?
+     */
+    public boolean isProxy();
 }

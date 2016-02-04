@@ -23,6 +23,7 @@ package org.finroc.core.remote;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
+import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
@@ -99,7 +100,7 @@ public class RemotePort extends RemoteFrameworkElement implements PortWrapperTre
 
     @Override
     public boolean isInputPort() {
-        return getPort().isOutputPort();  // the other way round for GUI ... for historical reasons
+        return getFlag(FrameworkElementFlags.IS_OUTPUT_PORT);  // the other way round for GUI ... for historical reasons
     }
 
     @Override
@@ -107,5 +108,10 @@ public class RemotePort extends RemoteFrameworkElement implements PortWrapperTre
         StringBuilder sb = new StringBuilder();
         getPort().getQualifiedLink(sb, portLink);
         return sb.toString();
+    }
+
+    @Override
+    public boolean isProxy() {
+        return getFlag(FrameworkElementFlags.ACCEPTS_DATA) && getFlag(FrameworkElementFlags.EMITS_DATA);
     }
 }
