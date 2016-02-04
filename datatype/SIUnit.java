@@ -76,7 +76,7 @@ public class SIUnit extends Unit {
     public static final SIUnit MICROMETER = getInstance(METER, 0.000001, "um");
     public static final SIUnit NANOMETER = getInstance(METER, 0.000000001, "nm");
 
-    public static final SIUnit KILOMETER_PER_SECOND = getInstance(METER_PER_SECOND, 3.6, "km/h");
+    public static final SIUnit KILOMETER_PER_SECOND = getInstance(METER_PER_SECOND, 0.278, "km/h");
 
     public static final SIUnit MILLIGRAM = getInstance(KILOGRAM, 0.000001, "mg");
     public static final SIUnit GRAM = getInstance(KILOGRAM, 0.001, "g");
