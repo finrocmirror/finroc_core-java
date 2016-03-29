@@ -254,7 +254,11 @@ public class RemoteTypes implements TypeEncoder {
         for (int i = 0, n = iterable.size(); i < n; i++) {
             Entry e = iterable.get(i);
             if (e != null) {
-                result.add(e.name);
+                if (e.localDataType != null) {
+                    result.add(e.localDataType.getName());
+                } else {
+                    result.add(e.name);
+                }
             }
         }
         return result;
