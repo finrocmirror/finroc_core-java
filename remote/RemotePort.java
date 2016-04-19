@@ -21,10 +21,16 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
+import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.port.AbstractPort;
+import org.finroc.core.port.net.NetPort;
+import org.finroc.tools.finstruct.Finstruct;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -34,7 +40,7 @@ import org.rrlib.serialization.rtti.DataTypeBase;
  *
  * This class contains information about and wraps remote ports
  */
-public class RemotePort extends RemoteFrameworkElement implements PortWrapperTreeNode, HasUid {
+public class RemotePort extends RemoteFrameworkElement implements HasUid, PortWrapper {
 
 
     /** Wrapped port link */
@@ -99,19 +105,75 @@ public class RemotePort extends RemoteFrameworkElement implements PortWrapperTre
     }
 
     @Override
-    public boolean isInputPort() {
-        return getFlag(FrameworkElementFlags.IS_OUTPUT_PORT);  // the other way round for GUI ... for historical reasons
-    }
-
-    @Override
     public String getUid() {
         StringBuilder sb = new StringBuilder();
         getPort().getQualifiedLink(sb, portLink);
         return sb.toString();
     }
 
-    @Override
     public boolean isProxy() {
         return getFlag(FrameworkElementFlags.ACCEPTS_DATA) && getFlag(FrameworkElementFlags.EMITS_DATA);
     }
+
+    /**
+     * @return Outgoing connections in remote runtime and also incoming network connections initiated by remote runtime
+     */
+    public Collection<RemotePort> getOutgoingConnections() {
+        ArrayList<RemotePort> result = new ArrayList<RemotePort>();
+        NetPort np = getPort().asNetPort();
+        if (np != null) {
+            for (AbstractPort fe : np.getRemoteEdgeDestinations()) {
+                for (RemotePort remotePort : RemotePort.get(fe)) {
+                    result.add(remotePort);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * (note: this can be quite computationally expensive - O(n) with n being the number of connections in the remote model (searches through all connections))
+     *
+     * @return Incoming connections in remote runtime and also outgoing network connections initiated by some other remote runtime
+     */
+    public Collection<RemotePort> getIncomingConnections() {
+        final ArrayList<RemotePort> result = new ArrayList<RemotePort>();
+        FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(FrameworkElementFlags.PORT | FrameworkElementFlags.STATUS_FLAGS,
+                FrameworkElementFlags.PORT | FrameworkElementFlags.READY | FrameworkElementFlags.PUBLISHED);
+        filter.traverseElementTree(Finstruct.getInstance().getIoInterface().getRootFrameworkElement(), new FrameworkElementTreeFilter.Callback<Object>() {
+            @Override
+            public void treeFilterCallback(FrameworkElement fe, Object customParam) {
+                AbstractPort scannedPort = (AbstractPort)fe;
+                NetPort netPort = scannedPort.asNetPort();
+                if (netPort != null) {
+                    for (AbstractPort destPort : netPort.getRemoteEdgeDestinations()) {
+                        if (destPort == RemotePort.this.getPort()) {
+                            for (RemotePort remotePort : RemotePort.get(scannedPort)) {
+                                result.add(remotePort);
+                            }
+                        }
+                    }
+                }
+            }
+        }, null);
+        return result;
+    }
+
+    /**
+     * It this remote port connected to other port in remote runtime?
+     *
+     * @param other Other port
+     * @return Answer
+     */
+    public boolean isConnectedTo(RemotePort other) {
+        return (getOutgoingConnections().contains(other) || other.getOutgoingConnections().contains(this));
+    }
+
+    /**
+     * @return Data type of remote port (possibly different from wrapped ports possibly adapted data type)
+     */
+    public DataTypeBase getDataType() {
+        return getPort().asNetPort() != null && getPort().asNetPort().getRemoteType() != null ? getPort().asNetPort().getRemoteType() : getPort().getDataType();
+    }
+
 }

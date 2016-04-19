@@ -44,7 +44,6 @@ import org.rrlib.serialization.MemoryBuffer;
 import org.rrlib.serialization.BinaryOutputStream.TypeEncoding;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
-import org.rrlib.serialization.rtti.GenericObjectManager;
 
 /**
  * @author Max Reichardt

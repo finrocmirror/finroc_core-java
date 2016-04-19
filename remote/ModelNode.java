@@ -393,4 +393,11 @@ public class ModelNode {
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
     }
+
+    /**
+     * @return Is this node a remote interface?
+     */
+    public boolean isInterface() {
+        return false;
+    }
 }

@@ -40,7 +40,7 @@ public class FrameworkElementFlags {
     /** Mask for changeable flags (second 9 bit)*/
     public final static int NON_CONSTANT_FLAGS = 0x7FC00000;
 
-    // Constant flags (both ports and non-ports - first 8 are tranferred to finstruct)
+    // Constant flags (both ports and non-ports - first 8 are transferred to finstruct)
     public final static int
     PORT = 1 << 0,                  //!< Is this framework element a port?
     EDGE_AGGREGATOR = 1 << 1,       //!< Is this an edge aggregating framework element? (edges connect ports)
@@ -58,7 +58,6 @@ public class FrameworkElementFlags {
     // Constant port-only flags
     HAS_QUEUE = 1 << 11,               //!< Does Port have a queue for storing incoming data?
     HAS_DEQUEUE_ALL_QUEUE = 1 << 12,   //!< Does Port have a queue with tDequeueMode::ALL instead of tDequeueMode::FIFO?
-    //MAY_ACCEPT_REVERSE_DATA,         //!< Does the flag ACCEPTS_REVERSE_DATA may change at runtime?
     ACCEPTS_DATA = 1 << 13,            //!< Does port accept incoming data? Also set for server RPC ports, since they accept RPC calls
     EMITS_DATA = 1 << 14,              //!< Does port emit data (normal direction)? Also set for client RPC ports, since they "emit" RPC calls
     MULTI_TYPE_BUFFER_POOL = 1 << 15,  //!< Does port have buffer pool with multiple data types?
@@ -94,8 +93,16 @@ public class FrameworkElementFlags {
     USES_QUEUE = 1 << 28,            //!< Does Port currently store incoming data in queue? - requires HAS_QUEUE
     DEFAULT_ON_DISCONNECT = 1 << 29, //!< Restore default value, if port is disconnected?
     PUSH_STRATEGY = 1 << 30,         //!< Use push strategy rather than pull strategy?
-    PUSH_STRATEGY_REVERSE = 1 << 31; //!< Use push strategy rather than pull strategy in reverse direction?
+    PUSH_STRATEGY_REVERSE = 1 << 31, //!< Use push strategy rather than pull strategy in reverse direction?
 
+
+    // Interface-only flags (mainly relevant for editable interfaces)
+    INTERFACE_FOR_RPC_PORTS = 1 << 11,          //!< Can interface contains RPC ports?
+    INTERFACE_FOR_DATA_PORTS = 1 << 12,         //!< Can interface contains data ports?
+    INTERFACE_FOR_INPUTS = 1 << 13,             //!< Can interface contain input ports?
+    INTERFACE_FOR_OUTPUTS = 1 << 14,            //!< Can interface contain output ports?
+    PROXY_INTERFACE = 1 << 15,                  //!< Is this an interface of a composite component?
+    FINAL_INTERFACE_CLASSIFICATION = 1 << 16;   //!< Can any of the above flags (11-15) appear later? (if true, they cannot)
 
     // Common flag combinations
 

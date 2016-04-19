@@ -26,6 +26,11 @@ import java.util.List;
 
 import org.finroc.core.Annotatable;
 import org.finroc.core.FinrocAnnotation;
+import org.finroc.core.FrameworkElementFlags;
+import org.finroc.core.finstructable.EditableInterfaces;
+import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 
@@ -47,6 +52,13 @@ public class RemoteFrameworkElement extends ModelNode {
 
     /** Manages annotations for this element */
     private Annotatable annotationManager = new Annotatable();
+
+    /** Has element been checked for editable interfaces? */
+    private boolean editableInterfacesChecked = false;
+
+    /** List of editable interfaces of this element - if it has any (lazily initialized). List may contain empty, not-yet-existent interfaces (that could be created). They have remoteHandle 0. */
+    private ArrayList<RemoteFrameworkElement> editableInterfaces;
+
 
     /**
      * @param remoteHandle Handle of remote framework element handle
@@ -168,5 +180,188 @@ public class RemoteFrameworkElement extends ModelNode {
             return getParentWithFlags((ModelNode)node.getParent(), flags, true);
         }
         return null;
+    }
+
+    /**
+     * @return Is this an interface with only output data ports? (if it has no data ports, checks whether name contains 'output')
+     */
+    public boolean isOutputOnlyInterface() {
+        classifyInterface();
+        return isInterface() && getFlag(FrameworkElementFlags.INTERFACE_FOR_OUTPUTS) && (!getFlag(FrameworkElementFlags.INTERFACE_FOR_INPUTS));
+    }
+
+    /**
+     * @return Is this an interface with only input data ports? (if it has no data ports, checks whether name contains 'input')
+     */
+    public boolean isInputOnlyInterface() {
+        classifyInterface();
+        return isInterface() && getFlag(FrameworkElementFlags.INTERFACE_FOR_INPUTS) && (!getFlag(FrameworkElementFlags.INTERFACE_FOR_OUTPUTS));
+    }
+
+    /**
+     * @return Is this an interface for sensor data (only)?
+     */
+    public boolean isSensorInterface() {
+        return isInterface() && getFlag(FrameworkElementFlags.SENSOR_DATA) && (!getFlag(FrameworkElementFlags.CONTROLLER_DATA));
+    }
+
+    /**
+     * @return Is this an interface for controller data (only)?
+     */
+    public boolean isControllerInterface() {
+        return isInterface() && getFlag(FrameworkElementFlags.CONTROLLER_DATA) && (!getFlag(FrameworkElementFlags.SENSOR_DATA));
+    }
+
+    /**
+     * @return Is this remote element a component?
+     */
+    public boolean isComponent() {
+        return isTagged("module") || isCompositeComponent();
+    }
+
+    /**
+     * @return Is this remote element a composite component?
+     */
+    public boolean isCompositeComponent() {
+        return isTagged("group");
+    }
+
+    /**
+     * @return Is this a proxy interface? (interface of a composite component)
+     */
+    public boolean isProxyInterface() {
+        classifyInterface();
+        return isInterface() && getFlag(FrameworkElementFlags.PROXY_INTERFACE);
+    }
+
+    /**
+     * @return Is this an RPC-only interface
+     */
+    public boolean isRpcOnlyInterface() {
+        classifyInterface();
+        return isInterface() && (flags & (FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS)) == FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS;
+    }
+
+    /**
+     * @return Is this an editable interface?
+     */
+    public boolean isEditableInterface() {
+        if (isInterface() && getParent() instanceof RemoteFrameworkElement) {
+            ArrayList<RemoteFrameworkElement> editableInterfaces = ((RemoteFrameworkElement)getParent()).getEditableInterfaces();
+            return editableInterfaces != null && editableInterfaces.contains(this);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isInterface() {
+        return getFlag(FrameworkElementFlags.INTERFACE);
+    }
+
+    /**
+     * Unlike getEditableInterfacesObject(), this method only blocks on the first call (light-weight version).
+     *
+     * @return Editable interfaces of this element (which is typically a component). null if it has no editable interfaces - or if they could not be queried. List may contain empty, not-yet-existent interfaces (that could be created). They have remoteHandle 0.
+     */
+    public synchronized ArrayList<RemoteFrameworkElement> getEditableInterfaces() {
+        if (!editableInterfacesChecked) {
+            try {
+                EditableInterfaces interfaces = getEditableInterfacesObject();
+                editableInterfacesChecked = true;
+                if (interfaces == null) {
+                    editableInterfaces = null;
+                } else {
+                    editableInterfaces = new ArrayList<RemoteFrameworkElement>();
+                    for (int i = 0; i < interfaces.getStaticParameterList().size(); i++) {
+                        RemoteFrameworkElement newElement = new RemoteFrameworkElement(0, interfaces.getStaticParameterList().get(i).getName());
+                        editableInterfaces.add(newElement);
+                        newElement.flags = FrameworkElementFlags.INTERFACE | FrameworkElementFlags.EDGE_AGGREGATOR;
+                        newElement.classifyInterface();
+                        if (isCompositeComponent()) {
+                            newElement.flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        if (editableInterfaces == null) {
+            return null;
+        }
+        for (int i = 0; i < editableInterfaces.size(); i++) {
+            if (editableInterfaces.get(i).getRemoteHandle() == 0) {
+                ModelNode child = this.getChildByName(editableInterfaces.get(i).getName());
+                if (child instanceof RemoteFrameworkElement && ((RemoteFrameworkElement)child).isInterface()) {
+                    editableInterfaces.set(i, (RemoteFrameworkElement)child);
+                } else if (child != null) {
+                    Log.log(LogLevel.WARNING, "Non-interface with name that actually interface should have");
+                }
+            }
+        }
+        return editableInterfaces;
+    }
+
+    /**
+     * @return Editable interfaces object for this element (blocks until they have been received from remote runtime)
+     * @throws Exception if receiving interfaces failed
+     */
+    public EditableInterfaces getEditableInterfacesObject() throws Exception {
+        RemoteRuntime runtime = RemoteRuntime.find(this);
+        if (runtime == null) {
+            throw new Exception("No runtime found for this element");
+        }
+        return (EditableInterfaces)runtime.getAdminInterface().getAnnotation(getRemoteHandle(), EditableInterfaces.TYPE);
+    }
+
+    /**
+     * Checks whether interface is classified.
+     * If not, set flags as to whether this is e.g. input or output interface.
+     */
+    private void classifyInterface() {
+        int ALL_FLAGS = FrameworkElementFlags.INTERFACE_FOR_OUTPUTS | FrameworkElementFlags.INTERFACE_FOR_INPUTS | FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS;
+        if (isInterface()) {
+            if ((flags & ALL_FLAGS) == 0) {
+                // currently classification is determined by-name. However, this should not be based on heuristics in future finroc versions.
+                if (getName().contains("Output") || getName().contains("output")) {
+                    flags |= FrameworkElementFlags.INTERFACE_FOR_OUTPUTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS | FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+                }
+                if (getName().contains("Input") || getName().contains("input") || getName().equals("Parameters")) {
+                    flags |= FrameworkElementFlags.INTERFACE_FOR_INPUTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS | FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+                }
+                if (getName().equals("Services")) {
+                    flags |= FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA | FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+                }
+                if (getName().equals("Blackboards")) {
+                    flags |= FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA | FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS  | FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+                }
+                if (getParent() instanceof RemoteFrameworkElement && ((RemoteFrameworkElement)getParent()).isCompositeComponent()) {
+                    flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                }
+                if (getName().contains("Sensor") || getName().contains("sensor")) {
+                    flags |= FrameworkElementFlags.SENSOR_DATA;
+                }
+                if (getName().contains("Control") || getName().contains("control")) {
+                    flags |= FrameworkElementFlags.CONTROLLER_DATA;
+                }
+            }
+            if ((flags & FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION) == 0) {
+                for (int i = 0; i < getChildCount(); i++) {
+                    if (getChildAt(i) instanceof RemotePort) {
+                        RemotePort remotePort = (RemotePort)getChildAt(i);
+                        flags |= (remotePort.getFlags() & FrameworkElementFlags.IS_OUTPUT_PORT) != 0 ? FrameworkElementFlags.INTERFACE_FOR_OUTPUTS : FrameworkElementFlags.INTERFACE_FOR_INPUTS;
+                        if (FinrocTypeInfo.isMethodType(remotePort.getDataType())) {
+                            flags |= FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS;
+                        } else if (FinrocTypeInfo.isCCType(remotePort.getDataType()) || FinrocTypeInfo.isStdType(remotePort.getDataType())) {
+                            flags |= FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS;
+                        }
+                    }
+                }
+                if ((flags & ALL_FLAGS) == ALL_FLAGS) {
+                    flags |= FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+                }
+            }
+        }
     }
 }

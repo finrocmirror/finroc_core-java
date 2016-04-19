@@ -28,22 +28,12 @@ import org.finroc.core.port.AbstractPort;
 /**
  * @author Max Reichardt
  *
- * Interface for tree nodes that are tree nodes representing a port
+ * Interface for objects that wrap a port
  */
-public interface PortWrapperTreeNode { /*extends TreeNode*/
+public interface PortWrapper {
 
     /**
-     * @return Wrapped port
+     * @return Wrapped port (must not be null)
      */
     public AbstractPort getPort();
-
-    /**
-     * @return Display as input port in connection panel?
-     */
-    public boolean isInputPort();
-
-    /**
-     * @return Should this port be displayed as proxy port?
-     */
-    public boolean isProxy();
 }
