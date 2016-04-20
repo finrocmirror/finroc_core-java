@@ -23,14 +23,13 @@ package org.finroc.core.remote;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.FrameworkElementFlags;
-import org.finroc.core.FrameworkElementTreeFilter;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.net.NetPort;
-import org.finroc.tools.finstruct.Finstruct;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -137,26 +136,35 @@ public class RemotePort extends RemoteFrameworkElement implements HasUid, PortWr
      * @return Incoming connections in remote runtime and also outgoing network connections initiated by some other remote runtime
      */
     public Collection<RemotePort> getIncomingConnections() {
-        final ArrayList<RemotePort> result = new ArrayList<RemotePort>();
-        FrameworkElementTreeFilter filter = new FrameworkElementTreeFilter(FrameworkElementFlags.PORT | FrameworkElementFlags.STATUS_FLAGS,
-                FrameworkElementFlags.PORT | FrameworkElementFlags.READY | FrameworkElementFlags.PUBLISHED);
-        filter.traverseElementTree(Finstruct.getInstance().getIoInterface().getRootFrameworkElement(), new FrameworkElementTreeFilter.Callback<Object>() {
-            @Override
-            public void treeFilterCallback(FrameworkElement fe, Object customParam) {
-                AbstractPort scannedPort = (AbstractPort)fe;
-                NetPort netPort = scannedPort.asNetPort();
-                if (netPort != null) {
-                    for (AbstractPort destPort : netPort.getRemoteEdgeDestinations()) {
-                        if (destPort == RemotePort.this.getPort()) {
-                            for (RemotePort remotePort : RemotePort.get(scannedPort)) {
-                                result.add(remotePort);
-                            }
+        final HashSet<RemotePort> result = new HashSet<RemotePort>();
+        getIncomingConnectionsHelper(result, this.getRoot());
+        return result;
+    }
+
+    /**
+     * Helper for getIncomingConnections() - called recursively
+     *
+     * @param result List with result
+     * @param node Current node
+     */
+    private void getIncomingConnectionsHelper(HashSet<RemotePort> result, ModelNode node) {
+        if (node.getClass() == RemotePort.class) {
+            AbstractPort otherPort = ((RemotePort)node).getPort();
+            NetPort netPort = otherPort.asNetPort();
+            if (netPort != null && otherPort != this.getPort()) {
+                for (AbstractPort destPort : netPort.getRemoteEdgeDestinations()) {
+                    if (destPort == this.getPort()) {
+                        for (RemotePort remotePort : RemotePort.get(otherPort)) {
+                            result.add(remotePort);
                         }
                     }
                 }
             }
-        }, null);
-        return result;
+        }
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            getIncomingConnectionsHelper(result, node.getChildAt(i));
+        }
     }
 
     /**
