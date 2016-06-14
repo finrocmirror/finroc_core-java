@@ -145,7 +145,7 @@ public class SIUnit extends Unit {
         // try parsing unit string
         String[] unitStringParts = unitString.split("/");
         if (unitStringParts.length > 2) {
-            throw new RuntimeException("Unit string " + unitString + " has more than on '/'");
+            throw new RuntimeException("Unit string " + unitString + " has more than one '/'");
         }
         String nominator = unitStringParts[0];
         String denominator = unitStringParts.length > 1 ? unitStringParts[1] : "";
