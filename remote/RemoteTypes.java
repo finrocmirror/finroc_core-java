@@ -44,7 +44,7 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 public class RemoteTypes implements TypeEncoder {
 
     /** Entry in remote type register */
-    static class Entry {
+    public static class Entry {
 
         /** local data type that represents the same time - null if there is no such type in local runtime environment */
         private DataTypeBase localDataType = null;
@@ -60,9 +60,13 @@ public class RemoteTypes implements TypeEncoder {
         public Entry(DataTypeBase local) {
             localDataType = local;
         }
+
+        public DataTypeBase getLocalDataType() {
+            return localDataType;
+        }
     }
 
-    /** List with remote types - index is remote type id (=> mapping: remote type id => local type id */
+    /** List with remote types - index is remote type id (=> mapping: remote type id => local type id) */
     private SafeConcurrentlyIterableList<Entry> types = new SafeConcurrentlyIterableList<Entry>(200, 2);
 
     /** List with remote type update times - index is local type id */
@@ -146,14 +150,12 @@ public class RemoteTypes implements TypeEncoder {
             if (local == null) {
                 synchronized (DataTypeBase.class) {
                     local = DataTypeBase.findType(name);
-                    if (local != null) {
-                        e.localDataType = local;
-                    } else {
+                    if (local == null) {
                         local = new RemoteType(name, enumConstants != null ? enumConstants.toArray() : null, enumValues, traits);
                         FinrocTypeInfo.get(local).init(type);
                     }
+                    e.localDataType = local;
                 }
-
             }
 
             types.add(e, true);
@@ -307,5 +309,12 @@ public class RemoteTypes implements TypeEncoder {
      */
     public boolean typeUpdateNecessary() {
         return DataTypeBase.getTypeCount() > localTypesSent;
+    }
+
+    /**
+     * @return List with remote types - index is remote type id
+     */
+    public SafeConcurrentlyIterableList<Entry> getTypes() {
+        return types;
     }
 }
