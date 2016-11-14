@@ -407,13 +407,13 @@ public class CoreNumber extends Number implements StringSerializable, ExpressDat
     public void deserialize(StringInputStream is) throws Exception {
 
         // scan for unit
-        String s = is.readWhile("-./^", StringInputStream.DIGIT | StringInputStream.WHITESPACE | StringInputStream.LETTER, true);
+        String s = is.readWhile("-+./^", StringInputStream.DIGIT | StringInputStream.WHITESPACE | StringInputStream.LETTER, true);
         String num = s;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             char nextChar = i + 1 < s.length() ? s.charAt(i + 1) : 0;
             if (Character.isLetter(c) || (nextChar == '/' && c == '1')) {
-                if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (s.charAt(i + 1) == '-' || Character.isDigit(s.charAt(i + 1)))) {
+                if ((c == 'e' || c == 'E') && (s.length() > i + 1) && (s.charAt(i + 1) == '-' || s.charAt(i + 1) == '+' || Character.isDigit(s.charAt(i + 1)))) {
                     continue; // exponent in decimal notation
                 }
                 num = s.substring(0, i).trim();
