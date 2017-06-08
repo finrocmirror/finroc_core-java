@@ -21,28 +21,31 @@
 //----------------------------------------------------------------------
 package org.finroc.core.admin;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElement;
 import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ParameterInfo;
-import org.finroc.core.parameter.StaticParameterList;
-import org.finroc.core.plugin.RemoteCreateModuleAction;
 import org.finroc.core.port.PortCreationInfo;
-import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.rpc.ClientPort;
 import org.finroc.core.port.rpc.ResponseHandler;
+import org.finroc.core.remote.FrameworkElementInfo;
+import org.finroc.core.remote.RemoteConnectOptions;
+import org.finroc.core.remote.RemoteConnector;
+import org.finroc.core.remote.RemoteCreateAction;
 import org.finroc.core.remote.RemoteFrameworkElement;
+import org.finroc.core.remote.RemotePort;
 import org.finroc.core.remote.RemoteRuntime;
+import org.finroc.core.remote.RemoteStaticParameterList;
+import org.finroc.core.remote.RemoteUriConnector;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.BinarySerializable;
 import org.rrlib.serialization.MemoryBuffer;
-import org.rrlib.serialization.BinaryOutputStream.TypeEncoding;
-import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
 
 /**
@@ -56,51 +59,151 @@ public class AdminClient extends ClientPort {
         super(new PortCreationInfo(name, parent, AdminServer.DATA_TYPE));
     }
 
+//    /**
+//     * Connect two ports in remote runtime
+//     *
+//     * @param port1 Port1
+//     * @param port2 Port2
+//     */
+//    public void connect(RemotePort port1, RemotePort port2) {
+//        if (port1 != null && port2 != null && getAdminInterface(port1) == this && getAdminInterface(port2) == this) {
+//            this.call(AdminServer.CONNECT, port1.getRemoteHandle(), port2.getRemoteHandle());
+//            return;
+//        }
+//        Log.log(LogLevel.WARNING, getLogDescription(), "Connecting remote ports failed");
+//    }
+
     /**
      * Connect two ports in remote runtime
      *
-     * @param np1 Port1
-     * @param np2 Port2
+     * @param port1 Port1
+     * @param port2 Port2
+     * @param connectOptions Connect options
      */
-    public void connect(NetPort np1, NetPort np2) {
-        if (np1 != null && np2 != null && getAdminInterface(np1) == this && getAdminInterface(np2) == this) {
-            this.call(AdminServer.CONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
-            return;
+    public String connectPorts(RemotePort port1, RemotePort port2, RemoteConnectOptions connectOptions) {
+        if (port1 != null && port2 != null && getAdminInterface(port1) == this && getAdminInterface(port2) == this) {
+            RemoteRuntime runtime = RemoteRuntime.find(port1);
+            try {
+                if (runtime.getSerializationInfo().getRevision() == 0) {
+                    this.call(AdminServer.CONNECT, port1.getRemoteHandle(), port2.getRemoteHandle());
+                    return "";
+                } else {
+                    return (String)this.callSynchronous(2000, AdminServer.CONNECT_PORTS, port1.getRemoteHandle(), port2.getRemoteHandle(), connectOptions);
+                }
+            } catch (Exception e) {
+                return "Timeout";
+            }
+        } else {
+            return "Connecting remote ports failed";
         }
-        Log.log(LogLevel.WARNING, getLogDescription(), "Connecting remote ports failed");
     }
 
     /**
-     * Disconnect two ports in remote runtime
+     * Create URI connector in remote runtime connecting port using one of the supported URI schemes (provided e.g. by network transports).
      *
-     * @param np1 Port1
-     * @param np2 Port2
+     * @param port Owner port of URI connector
+     * @param uri URI of partner port
+     * @param connectOptions Connect options
+     * @return Returns error message if connecting failed. On success an empty string is returned.
      */
-    public void disconnect(NetPort np1, NetPort np2) {
-        if (np1 != null && np2 != null && getAdminInterface(np1) == this && getAdminInterface(np2) == this) {
-            this.call(AdminServer.DISCONNECT, np1.getRemoteHandle(), np2.getRemoteHandle());
-            return;
+    public String createUriConnector(RemotePort port, String uri, RemoteConnectOptions connectOptions) {
+        if (port != null && getAdminInterface(port) == this) {
+            RemoteRuntime runtime = RemoteRuntime.find(port);
+            try {
+                if (runtime.getSerializationInfo().getRevision() == 0) {
+                    URI uriObject = new URI(uri);
+                    String authority = uriObject.getAuthority();
+                    if (authority == null || authority.length() == 0) {
+                        return "Local URI connectors are not supported for legacy Finroc runtimes";
+                    }
+                    String[] authorityParts = authority.split(":");
+                    if (authorityParts.length != 2) {
+                        return "Invalid authority: " + authority;
+                    }
+                    String path = uriObject.getPath();
+                    if (!path.startsWith("/")) {
+                        path = "/" + path;
+                    }
+                    return (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port.getRemoteHandle(), "tcp", authorityParts[0], authorityParts[1], path, false);
+                } else {
+                    return (String)this.callSynchronous(2000, AdminServer.CREATE_URI_CONNECTOR, port.getRemoteHandle(), uri, connectOptions);
+                }
+            } catch (Exception e) {
+                return "Timeout";
+            }
+        } else {
+            return "Connecting remote ports failed";
+        }
+    }
+
+    /**
+     * Remove connector in remote runtime
+     *
+     * @param connector Connector to remove
+     */
+    public void disconnect(RemoteConnector connector) {
+        try {
+            if (connector instanceof FrameworkElementInfo.LegacyNetworkConnector) {
+                FrameworkElementInfo.LegacyNetworkConnector legacyConnector = (FrameworkElementInfo.LegacyNetworkConnector)connector;
+                RemotePort port = legacyConnector.getOwnerRuntime().getRemotePort(legacyConnector.getOwnerPortHandle());
+                networkConnect(port, "tcp", legacyConnector.uuid, legacyConnector.portHandle, "", true);
+            } else if (connector instanceof RemoteUriConnector) {
+                RemoteUriConnector uriConnector = (RemoteUriConnector)connector;
+                //if (remoteRuntime.getSerializationInfo().getRevision() == 0) {
+                //    throw new Exception("Disconnecting URI connector not supported for legacy runtimes");  // TODO
+                //} else {
+                this.call(AdminServer.DELETE_URI_CONNECTOR, uriConnector.getOwnerPortHandle(), uriConnector.getIndex());
+                return;
+                //}
+            } else {
+                this.call(AdminServer.DISCONNECT, connector.getSourceHandle(), connector.getDestinationHandle());
+                return;
+            }
+        } catch (Exception e) {
+            Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed: " + e.toString());
         }
         Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed");
     }
 
     /**
+     * Remove local connector in remote runtime
+     *
+     * @param port1 Port1
+     * @param port2 Port2
+     */
+    public void disconnect(RemotePort port1, RemotePort port2) {
+
+
+        // TODO search for connector (might be local URI connector)
+        if (port1 != null && port2 != null && getAdminInterface(port1) == this && getAdminInterface(port2) == this) {
+            try {
+                this.call(AdminServer.DISCONNECT, port1.getRemoteHandle(), port2.getRemoteHandle());
+                return;
+            } catch (Exception e) {
+                Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed: " + e.toString());
+            }
+        } else {
+            Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote ports failed");
+        }
+    }
+
+    /**
      * Disconnect port in remote runtime
      *
-     * @param np1 Port1
+     * @param port Port
      */
-    public void disconnectAll(NetPort np1) {
-        if (np1 != null && getAdminInterface(np1) == this) {
-            this.call(AdminServer.DISCONNECT_ALL, np1.getRemoteHandle());
+    public void disconnectAll(RemotePort port) {
+        if (port != null && getAdminInterface(port) == this) {
+            this.call(AdminServer.DISCONNECT_ALL, port.getRemoteHandle());
             return;
         }
         Log.log(LogLevel.WARNING, getLogDescription(), "Disconnecting remote port failed");
     }
 
     /**
-     * Connect port in remote runtime to port in another remote runtime
+     * Connect port in remote runtime to port in another remote runtime (legacy)
      *
-     * @param port1 Port1
+     * @param port Remote port to connect
      * @param preferredTransport ID of preferred network transport to be used (e.g. "tcp"). If specified, it will be attempted to create the connection using this transport first.
      * @param remoteRuntimeUuid UUID of remote runtime
      * @param remotePortHandle Handle of remote port
@@ -108,11 +211,11 @@ public class AdminClient extends ClientPort {
      * @param disconnect If 'false' the ports are connected - if 'true' the ports are disconnected
      * @return Returns error message if connecting failed. On success, null is returned.
      */
-    public String networkConnect(NetPort port1, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
+    public String networkConnect(RemotePort port, String preferredTransport, String remoteRuntimeUuid, int remotePortHandle, String remotePortLink, boolean disconnect) {
         String result;
-        if (port1 != null && getAdminInterface(port1) == this) {
+        if (port != null && getAdminInterface(port) == this) {
             try {
-                result = (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port1.getRemoteHandle(), preferredTransport, remoteRuntimeUuid, remotePortHandle, remotePortLink, disconnect);
+                result = (String)this.callSynchronous(2000, AdminServer.NETWORK_CONNECT, port.getRemoteHandle(), preferredTransport, remoteRuntimeUuid, remotePortHandle, remotePortLink, disconnect);
                 if (result.length() == 0) {
                     result = null;
                 }
@@ -121,7 +224,7 @@ public class AdminClient extends ClientPort {
             }
             return result;
         }
-        result = "No suitable administration interface found for connecting port '" + port1.getPort().getQualifiedLink() + "'";
+        result = "No suitable administration interface found for connecting port '" + port.getQualifiedLink() + "'";
         Log.log(LogLevel.WARNING, getLogDescription(), result);
         return result;
     }
@@ -129,53 +232,71 @@ public class AdminClient extends ClientPort {
     /**
      * Sets value of remote port
      *
-     * @param np network port of remote port
+     * @param port Remote port
      * @param container Data to assign to remote port
      * @param handler Method return handler. Receives empty string if everything worked out - otherwise an error message.
      */
-    public void setRemotePortValue(NetPort np, GenericObject container, ResponseHandler handler) {
-        if (np != null && getAdminInterface(np) == this) {
+    public void setRemotePortValue(RemotePort port, GenericObject container, ResponseHandler handler) {
+        if (port != null && getAdminInterface(port) == this) {
             MemoryBuffer mb = new MemoryBuffer();
-            BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
+            BinaryOutputStream stream = new BinaryOutputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
+            final byte STATIC_CAST = 3;
+            if (port.getDataType().getCastCountForDefaultLocalType() > 0) {
+                stream.writeByte(STATIC_CAST - 1 + port.getDataType().getCastCountForDefaultLocalType());
+                stream.writeByte(port.getDataType().getEncodingForDefaultLocalType().ordinal());
+                stream.writeShort(port.getDataType().getHandle());
+                if (port.getDataType().getCastCountForDefaultLocalType() > 1) {
+                    stream.writeShort(port.getDataType().getDefaultLocalTypeIsCastedFrom().getHandle());
+                }
+            } else {
+                stream.writeByte(port.getDataType().getEncodingForDefaultLocalType().ordinal());
+            }
+            port.getDataType().serializeData(stream, container);
+
+            /*NetPort np = port.getPort().asNetPort();
             co.writeEnum(np.getNetworkEncoding());
             if (np.getRemoteType() == null) {
                 container.serialize(co, np.getNetworkEncoding());
             } else {
                 np.getRemoteType().serialize(co, container);
-            }
-            co.close();
-            this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, np.getRemoteHandle(), mb);
+            }*/
+            stream.close();
+            this.callAsynchronous(handler, AdminServer.SET_PORT_VALUE, port.getRemoteHandle(), mb);
             return;
         }
         Log.log(LogLevel.WARNING, getLogDescription(), "Setting value of remote port failed");
     }
 
     /**
+     * @param remoteRuntime Runtime to read annotation from
      * @return Module types in remote Runtime
      */
-    public ArrayList<RemoteCreateModuleAction> getRemoteModuleTypes() {
+    public ArrayList<RemoteCreateAction> getRemoteModuleTypes(RemoteRuntime remoteRuntime) {
         try {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(2000, AdminServer.GET_CREATE_MODULE_ACTIONS);
-            return toRemoteCreateModuleActionArray(mb);
+            return toRemoteCreateModuleActionArray(mb, remoteRuntime);
         } catch (Exception e) {
             Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
-        return new ArrayList<RemoteCreateModuleAction>();
+        return new ArrayList<RemoteCreateAction>();
     }
 
     /**
      * @param mb Memory buffer (locked - one lock will be released by this method
      * @return List with Deserialized remote create module actions
      */
-    private ArrayList<RemoteCreateModuleAction> toRemoteCreateModuleActionArray(MemoryBuffer mb) {
-        ArrayList<RemoteCreateModuleAction> result = new ArrayList<RemoteCreateModuleAction>();
-        BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
-        while (ci.moreDataAvailable()) {
-            String name = ci.readString();
-            RemoteCreateModuleAction a = new RemoteCreateModuleAction(this, name, ci.readString(), result.size());
-            boolean hasParameters = ci.readBoolean();
+    private ArrayList<RemoteCreateAction> toRemoteCreateModuleActionArray(MemoryBuffer mb, RemoteRuntime remoteRuntime) throws Exception {
+        ArrayList<RemoteCreateAction> result = new ArrayList<RemoteCreateAction>();
+        remoteRuntime.resolveDefaultLocalTypes();
+        BinaryInputStream stream = new BinaryInputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
+        stream.setSharedSerializationInfo(AdministrationService.BASIC_UID_SERIALIZATION_INFO, remoteRuntime.getInputStream());
+        while (stream.moreDataAvailable()) {
+            String name = stream.readString();
+            RemoteCreateAction a = new RemoteCreateAction(name, stream.readString(), result.size());
+            boolean hasParameters = stream.readBoolean();
             if (hasParameters) {
-                a.parameters.deserialize(ci);
+                a.createParametersObject();
+                a.getParameters().deserialize(stream);
             }
             result.add(a);
         }
@@ -191,9 +312,9 @@ public class AdminClient extends ClientPort {
      * @param spl Parameters
      * @return Did module creation succeed? If not, contains error message.
      */
-    public String createModule(RemoteCreateModuleAction cma, String name, int parentHandle, StaticParameterList spl) {
+    public String createModule(RemoteCreateAction cma, String name, int parentHandle, RemoteStaticParameterList spl) {
         MemoryBuffer mb = new MemoryBuffer();
-        BinaryOutputStream co = new BinaryOutputStream(mb, TypeEncoding.Names);
+        BinaryOutputStream co = new BinaryOutputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
         if (spl != null) {
             for (int i = 0; i < spl.size(); i++) {
                 spl.get(i).serializeValue(co);
@@ -202,7 +323,7 @@ public class AdminClient extends ClientPort {
         co.close();
 
         try {
-            String cs = (String)this.callSynchronous(5000, AdminServer.CREATE_MODULE, cma.remoteIndex, name, parentHandle, mb);
+            String cs = (String)this.callSynchronous(5000, AdminServer.CREATE_MODULE, cma.getHandle(), name, parentHandle, mb);
             if (cs != null) {
                 return cs;
             }
@@ -213,12 +334,20 @@ public class AdminClient extends ClientPort {
         }
     }
 
+//    /**
+//     * @param np Remote port
+//     * @return Admin interface for remote port
+//     */
+//    private AdminClient getAdminInterface(NetPort np) {
+//        return RemoteRuntime.find(np).getAdminInterface();
+//    }
+
     /**
-     * @param np Remote port
+     * @param port Remote port
      * @return Admin interface for remote port
      */
-    private AdminClient getAdminInterface(NetPort np) {
-        return RemoteRuntime.find(np).getAdminInterface();
+    private AdminClient getAdminInterface(RemotePort port) {
+        return RemoteRuntime.find(port).getAdminInterface();
     }
 
     /**
@@ -249,21 +378,20 @@ public class AdminClient extends ClientPort {
      * Get annotation from remote framework element
      *
      * @param remoteHandle remote handle of framework element
-     * @param annType Annotation type
-     * @return Annotation - or null, if element has no annotation
+     * @param annotationTypeName Annotation type name in remote runtime
+     * @param remoteRuntime Runtime to read annotation from
+     * @return Stream that annotation can be serialized from (has BASIC_UID_SERIALIZATION_INFO by default - for simplicity e.g. with backward-compatibility)
      */
-    public FinrocAnnotation getAnnotation(int remoteHandle, DataTypeBase annType) {
+    public BinaryInputStream getAnnotation(int remoteHandle, String annotationTypeName, RemoteRuntime remoteRuntime) {
         try {
-            MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(5000, AdminServer.GET_ANNOTATION, remoteHandle, annType.getName());
-            if (mb == null || mb.getSize() == 0) {
+            MemoryBuffer buffer = (MemoryBuffer)this.callSynchronous(5000, AdminServer.GET_ANNOTATION, remoteHandle, annotationTypeName);
+            if (buffer == null || buffer.getSize() == 0) {
                 return null;
             }
-            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
-            //DataTypeBase dt = DataTypeBase.findType(ci.readString());
-            FinrocAnnotation fa = (FinrocAnnotation)annType.createInstance();
-            fa.deserialize(ci);
-            ci.close();
-            return fa;
+            remoteRuntime.resolveDefaultLocalTypes();
+            BinaryInputStream stream = new BinaryInputStream(buffer, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
+            stream.setSharedSerializationInfo(AdministrationService.BASIC_UID_SERIALIZATION_INFO, remoteRuntime.getInputStream());
+            return stream;
         } catch (Exception e) {
             Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
@@ -275,20 +403,18 @@ public class AdminClient extends ClientPort {
      * (Creates new one - or writes data to existing one)
      *
      * @param remoteHandle remote handle of framework element
-     * @param ann Annotation to write
+     * @param annotationTypeName Annotation type name in remote runtime
+     * @param annotation Annotation to write
      */
-    public void setAnnotation(int remoteHandle, FinrocAnnotation ann) {
-        MemoryBuffer mb = new MemoryBuffer();
-        BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
-        if (ann.getType() == null) {
-            ann.initDataType();
-        }
-        co.writeType(ann.getType());
-        ann.serialize(co);
-        co.close();
+    public void setAnnotation(int remoteHandle, String annotationTypeName, BinarySerializable annotation) {
+        MemoryBuffer buffer = new MemoryBuffer();
+        BinaryOutputStream stream = new BinaryOutputStream(buffer, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
+        stream.writeString(annotationTypeName);
+        annotation.serialize(stream);
+        stream.close();
 
         try {
-            this.call(AdminServer.SET_ANNOTATION, remoteHandle, mb);
+            this.call(AdminServer.SET_ANNOTATION, remoteHandle, buffer);
         } catch (Exception e) {
             Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
@@ -360,7 +486,7 @@ public class AdminClient extends ClientPort {
             if (mb == null) {
                 return;
             }
-            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
+            BinaryInputStream ci = new BinaryInputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
 
             // No config file available?
             if (ci.readBoolean() == false) {
@@ -418,7 +544,7 @@ public class AdminClient extends ClientPort {
         ArrayList<String> result = new ArrayList<String>();
         try {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(2000, AdminServer.GET_MODULE_LIBRARIES);
-            BinaryInputStream ci = new BinaryInputStream(mb, BinaryInputStream.TypeEncoding.Names);
+            BinaryInputStream ci = new BinaryInputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
             while (ci.moreDataAvailable()) {
                 result.add(ci.readString());
             }
@@ -432,19 +558,34 @@ public class AdminClient extends ClientPort {
     /**
      * Load module library in external runtime
      *
-     * @param load module library to load
+     * @param load Module library to load
+     * @param remoteRuntime Runtime to read annotation from
      * @return Updated list of remote create module actions
      */
-    public List<RemoteCreateModuleAction> loadModuleLibrary(String load) {
+    public List<RemoteCreateAction> loadModuleLibrary(String load, RemoteRuntime remoteRuntime) {
         try {
             MemoryBuffer mb = (MemoryBuffer)this.callSynchronous(5000, AdminServer.LOAD_MODULE_LIBRARY, load);
             if (mb == null) {
                 return null;
             }
-            return toRemoteCreateModuleActionArray(mb);
+            return toRemoteCreateModuleActionArray(mb, remoteRuntime);
         } catch (Exception e) {
             Log.log(LogLevel.WARNING, getLogDescription(), e);
         }
         return null;
+    }
+
+    /**
+     * Gets all updates on specified register and all registers to be updated on change.
+     * After calling this method, the client's data on these remote registers is up to date.
+     *
+     * @param registerUid Uid of register to obtain updates for
+     */
+    public void getRegisterUpdates(int registerUid) {
+        try {
+            this.callSynchronous(5000, AdminServer.GET_REGISTER_UPDATES, registerUid);
+        } catch (Exception e) {
+            Log.log(LogLevel.WARNING, getLogDescription(), e);
+        }
     }
 }

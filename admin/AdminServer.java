@@ -52,13 +52,17 @@ public class AdminServer extends ServerPort<AdministrationService> {
     SET_ANNOTATION = new Method(AdministrationService.class, "setAnnotation"),
     SET_PORT_VALUE = new Method(AdministrationService.class, "setPortValue"),
     START_EXECUTION = new Method(AdministrationService.class, "startExecution"),
-    NETWORK_CONNECT = new Method(AdministrationService.class, "networkConnect");
+    NETWORK_CONNECT = new Method(AdministrationService.class, "networkConnect"),
+    CONNECT_PORTS = new Method(AdministrationService.class, "connectPorts"),
+    CREATE_URI_CONNECTOR = new Method(AdministrationService.class, "createUriConnector"),
+    DELETE_URI_CONNECTOR = new Method(AdministrationService.class, "deleteUriConnector"),
+    GET_REGISTER_UPDATES = new Method(AdministrationService.class, "getRegisterUpdates");
 
     /** Data Type of method calls to this port */
     public static final RPCInterfaceType DATA_TYPE = new RPCInterfaceType("Administration Interface", CONNECT, CREATE_MODULE, DELETE_ELEMENT,
             DISCONNECT, DISCONNECT_ALL, GET_ANNOTATION, GET_CREATE_MODULE_ACTIONS, GET_MODULE_LIBRARIES, GET_PARAMETER_INFO, IS_EXECUTING,
             LOAD_MODULE_LIBRARY, PAUSE_EXECUTION, SAVE_ALL_FINSTRUCTABLE_FILES, SAVE_FINSTRUCTABLE_GROUP, SET_ANNOTATION, SET_PORT_VALUE, START_EXECUTION,
-            NETWORK_CONNECT);
+            NETWORK_CONNECT, CONNECT_PORTS, CREATE_URI_CONNECTOR, DELETE_URI_CONNECTOR, GET_REGISTER_UPDATES);
 
     public AdminServer() {
         super(new AdministrationService(), new PortCreationInfo(AdministrationService.PORT_NAME, AdminServer.DATA_TYPE, 0));

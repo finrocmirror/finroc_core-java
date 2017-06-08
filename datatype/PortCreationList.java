@@ -78,7 +78,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
 
         public Entry(String name, DataTypeReference type, byte createOptions) {
             this.name = name;
-            this.type = new DataTypeReference(type.get());
+            this.type = new DataTypeReference(type);
             this.createOptions = createOptions;
         }
     }

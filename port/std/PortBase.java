@@ -35,7 +35,6 @@ import org.finroc.core.port.PortListener;
 import org.finroc.core.port.PortListenerManager;
 import org.finroc.core.port.ThreadLocalCache;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.finroc.core.remote.RemoteType;
 
 /**
  * @author Max Reichardt
@@ -107,7 +106,7 @@ public class PortBase extends AbstractPort { /*implements Callable<PullCall>*/
      */
     public PortBase(PortCreationInfo pci) {
         super(processPci(pci));
-        assert(FinrocTypeInfo.isStdType(pci.dataType) || (pci.dataType instanceof RemoteType));
+        assert(FinrocTypeInfo.isStdType(pci.dataType));
         initLists(edgesSrc, edgesDest);
 
         // init types

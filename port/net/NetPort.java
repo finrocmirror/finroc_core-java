@@ -21,9 +21,6 @@
 //----------------------------------------------------------------------
 package org.finroc.core.port.net;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.PortCreationInfo;
@@ -39,7 +36,6 @@ import org.finroc.core.portdatabase.FinrocTypeInfo;
 import org.finroc.core.remote.RemoteType;
 import org.rrlib.finroc_core_utils.jc.ArrayWrapper;
 import org.rrlib.serialization.BinaryInputStream;
-import org.rrlib.serialization.Serialization;
 import org.rrlib.serialization.Serialization.DataEncoding;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -52,20 +48,11 @@ import org.rrlib.serialization.rtti.DataTypeBase;
 @SuppressWarnings("rawtypes")
 public abstract class NetPort implements PortListener {
 
-    public interface ExtraEdgeProvider {
-
-        /**
-         * @param resultList List to put the targets of the remote edges in (filled after call) - edges with reverse direction are the last in the list
-         * @return Index of the first edge in reverse direction
-         */
-        public abstract int getRemoteEdgeDestinations(List<AbstractPort> resultList);
-    }
-
     /** Default timeout for pulling data over the net */
     public final static int PULL_TIMEOUT = 1000;
 
-    /** TCPServerConnection or RemoteServer instance that this port belongs to */
-    protected final Object belongsTo;
+    ///** TCPServerConnection or RemoteServer instance that this port belongs to */
+    //protected final Object belongsTo;
 
     /** Last time the value was updated (used to make sure that minimum update interval is kept) */
     public long lastUpdate = Long.MIN_VALUE;
@@ -76,20 +63,15 @@ public abstract class NetPort implements PortListener {
     /** Handle of Remote port */
     protected int remoteHandle;
 
-    /** Finroc Type info type */
-    protected final FinrocTypeInfo.Type ftype;
+    /** Data type in remote runtime environment */
+    private final RemoteType remoteType;
 
-    /** Data type to use when writing data to the network */
-    private Serialization.DataEncoding encoding = Serialization.DataEncoding.BINARY;
-
-    /** If network port has a data type whose implementation is only available remotely, this stores the remote type - otherwise null */
-    private RemoteType remoteType;
-
-    /** Attached extra provider of remote edges (null if none is attached) */
-    private ExtraEdgeProvider extraEdgeProvider = null;
+    /** Data type used in this runtime environment to represent remoteType */
+    private final DataTypeBase localType;
 
 
-    public NetPort(PortCreationInfo pci, Object belongsTo) {
+    public NetPort(PortCreationInfo pci, /*Object belongsTo,*/ RemoteType remoteType) {
+        this.remoteType = remoteType;
         // keep most these flags
         int f = pci.flags & (FrameworkElementFlags.ACCEPTS_DATA | FrameworkElementFlags.EMITS_DATA | FrameworkElementFlags.IS_OUTPUT_PORT |
                              FrameworkElementFlags.EXPRESS_PORT | FrameworkElementFlags.NON_STANDARD_ASSIGN /*| PortFlags.IS_CC_PORT | PortFlags.IS_INTERFACE_PORT*/ |
@@ -104,23 +86,13 @@ public abstract class NetPort implements PortListener {
                 f |= FrameworkElementFlags.USES_QUEUE;
             }
         }
-        ftype = FinrocTypeInfo.get(pci.dataType).getType();
-        remoteType = (pci.dataType instanceof RemoteType) ? (RemoteType)pci.dataType : null;
-        if (isStdType() || isMethodType() || (remoteType != null && remoteType.isAdaptable())) {
+        if (isMethodType()) {
             f |= FrameworkElementFlags.MULTI_TYPE_BUFFER_POOL; // different data types may be incoming - cc types are thread local
         }
         pci.flags = f;
-        this.belongsTo = belongsTo;
-
-        if (remoteType != null) {
-            if (remoteType.isAdaptable()) {
-                encoding = remoteType.getNetworkEncoding();
-                wrapped = new StdNetPort(pci);
-            } else {
-                wrapped = new UnknownTypedNetPort(pci);
-            }
-            return;
-        }
+        //this.belongsTo = belongsTo;
+        localType = remoteType.getDefaultLocalDataType();
+        pci.dataType = localType;
 
         wrapped = (isMethodType() ? (AbstractPort)new RPCNetPort(pci) :
                    (isCCType() ? (AbstractPort)new CCNetPort(pci) :
@@ -134,19 +106,19 @@ public abstract class NetPort implements PortListener {
 
     /** Helper methods for data type type */
     public boolean isStdType() {
-        return ftype == FinrocTypeInfo.Type.STD;
+        return FinrocTypeInfo.isStdType(localType);
     }
 
     public boolean isCCType() {
-        return ftype == FinrocTypeInfo.Type.CC;
+        return FinrocTypeInfo.isCCType(localType);
     }
 
     public boolean isMethodType() {
-        return ftype == FinrocTypeInfo.Type.METHOD;
+        return (remoteType.getTypeTraits() & DataTypeBase.IS_RPC_TYPE) != 0;
     }
 
     public boolean isTransactionType() {
-        return ftype == FinrocTypeInfo.Type.TRANSACTION;
+        return false;
     }
 
     public void updateFlags(int flags) {
@@ -157,12 +129,7 @@ public abstract class NetPort implements PortListener {
         flags &= ~(keepFlags);
         flags |= curFlags;
 
-        if (remoteType != null && (!remoteType.isAdaptable())) {
-            ((UnknownTypedNetPort)wrapped).updateFlags(flags);
-            return;
-        }
-
-        if (isStdType() || isTransactionType() || (remoteType != null && remoteType.isAdaptable())) {
+        if (isStdType() || isTransactionType()) {
             ((StdNetPort)wrapped).updateFlags(flags);
         } else if (isCCType()) {
             ((CCNetPort)wrapped).updateFlags(flags);
@@ -185,12 +152,12 @@ public abstract class NetPort implements PortListener {
         this.lastUpdate = lastUpdate;
     }
 
-    /**
-     * @return TCPServerConnection or RemoteServer instance that this port belongs to
-     */
-    public Object getBelongsTo() {
-        return belongsTo;
-    }
+//    /**
+//     * @return TCPServerConnection or RemoteServer instance that this port belongs to
+//     */
+//    public Object getBelongsTo() {
+//        return belongsTo;
+//    }
 
     /**
      * @return Wrapped port
@@ -278,11 +245,7 @@ public abstract class NetPort implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                if (remoteType == null) {
-                    manager.getObject().deserialize(stream, dataEncoding);
-                } else {
-                    remoteType.deserialize(stream, manager.getObject());
-                }
+                remoteType.deserializeData(stream, manager.getObject());
                 pb.publishFromNet(manager, changeType);
             } else if (isCCType()) {
                 CCNetPort pb = (CCNetPort)wrapped;
@@ -290,7 +253,7 @@ public abstract class NetPort implements PortListener {
                 if (readTimestamp) {
                     manager.getTimestamp().deserialize(stream);
                 }
-                manager.getObject().deserialize(stream, dataEncoding);
+                remoteType.deserializeData(stream, manager.getObject());
                 pb.publishFromNet(manager, changeType);
             } else { // interface port
                 throw new RuntimeException("Method calls are not handled using this mechanism");
@@ -612,87 +575,6 @@ public abstract class NetPort implements PortListener {
 //        }
     }
 
-    /**
-     * Remote port with unknown type
-     *
-     * Artificial construct for finstruct.
-     * This way, ports with unknown types can be displayed and connected.
-     */
-    public class UnknownTypedNetPort extends AbstractPort {
-
-        /** Edges emerging from this port */
-        protected final EdgeList<AbstractPort> edgesSrc = new EdgeList<AbstractPort>();
-
-        /** Edges ending at this port */
-        protected final EdgeList<AbstractPort> edgesDest = new EdgeList<AbstractPort>();
-
-        public UnknownTypedNetPort(PortCreationInfo pci) {
-            super(pci);
-            assert(remoteType != null);
-            initLists(edgesSrc, edgesDest);
-        }
-
-        @Override
-        public NetPort asNetPort() {
-            return NetPort.this;
-        }
-
-        @Override
-        protected synchronized void prepareDelete() {
-            super.prepareDelete();
-            NetPort.this.prepareDelete();
-        }
-
-        @Override
-        protected void postChildInit() {
-            super.postChildInit();
-            NetPort.this.postChildInit();
-        }
-
-        @Override
-        protected void preChildInit() {
-            super.preChildInit();
-            NetPort.this.preChildInit();
-        }
-
-        @Override
-        public void notifyDisconnect() {
-            NetPort.this.notifyDisconnect();
-        }
-
-        public void updateFlags(int flags) {
-            setFlag(flags & Flag.NON_CONSTANT_FLAGS);
-        }
-
-        @Override
-        protected void connectionRemoved(AbstractPort partner, boolean partnerIsDestination) {
-            NetPort.this.connectionRemoved();
-        }
-
-        @Override
-        protected void connectionAdded(AbstractPort partner, boolean partnerIsDestination) {
-            NetPort.this.connectionAdded();
-        }
-
-        @Override
-        protected void initialPushTo(AbstractPort target, boolean reverse) {}
-
-        @Override
-        protected void setMaxQueueLengthImpl(int length) {}
-
-        @Override
-        protected int getMaxQueueLengthImpl() {
-            return 0;
-        }
-
-        @Override
-        protected void clearQueueImpl() {}
-
-        @Override
-        public void forwardData(AbstractPort other) {}
-
-    }
-
     @Override
     public void portChanged(AbstractPort origin, Object value) {
         portChanged();
@@ -732,21 +614,6 @@ public abstract class NetPort implements PortListener {
     }
 
     /**
-     * @return Targets of remote edges
-     */
-    public List<AbstractPort> getRemoteEdgeDestinations() {
-        ArrayList<AbstractPort> result = new ArrayList<AbstractPort>();
-        getRemoteEdgeDestinations(result);
-        return result;
-    }
-
-    /**
-     * @param resultList List to put the targets of the remote edges in (filled after call) - edges with reverse direction are the last in the list
-     * @return Index of the first edge in reverse direction
-     */
-    public abstract int getRemoteEdgeDestinations(List<AbstractPort> resultList);
-
-    /**
      * @return Data type of port in remote runtime (with unknown types this might be different from type of local port)
      */
     public DataTypeBase getDataType() {
@@ -754,37 +621,9 @@ public abstract class NetPort implements PortListener {
     }
 
     /**
-     * @return Data type to use when writing data to the network
-     */
-    public Serialization.DataEncoding getNetworkEncoding() {
-        return encoding;
-    }
-
-    /**
-     * @param enc Data type to use when writing data to the network
-     */
-    public void setEncoding(Serialization.DataEncoding enc) {
-        encoding = enc;
-    }
-
-    /**
      * @return If network port has a data type whose implementation is only available remotely, this stores the remote type - otherwise null
      */
     public RemoteType getRemoteType() {
         return remoteType;
-    }
-
-    /**
-     * @return Attached extra provider of remote edges (null if none is attached)
-     */
-    public ExtraEdgeProvider getExtraEdgeProvider() {
-        return extraEdgeProvider;
-    }
-
-    /**
-     * @param extraEdgeProvider Attach new extra provider of remote edges (null if none is to be attached)
-     */
-    public void setExtraEdgeProvider(ExtraEdgeProvider extraEdgeProvider) {
-        this.extraEdgeProvider = extraEdgeProvider;
     }
 }

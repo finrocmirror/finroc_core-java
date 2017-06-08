@@ -28,7 +28,6 @@ import org.finroc.core.FrameworkElementFlags;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.finstructable.FinstructableGroup;
 import org.finroc.core.portdatabase.SerializationHelper;
-import org.rrlib.finroc_core_utils.jc.HasDestructor;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
@@ -45,7 +44,7 @@ import org.rrlib.xml.XMLNode;
  * Static Parameter class
  * (Generic base class without template type)
  */
-public class StaticParameterBase implements HasDestructor {
+public class StaticParameterBase {
 
     /** Name of parameter */
     private String name;
@@ -75,9 +74,6 @@ public class StaticParameterBase implements HasDestructor {
 
     /** Index in parameter list */
     protected int listIndex;
-
-    /** Is this a remote parameter? */
-    private final boolean remote;
 
     /**
      * Command line option to set this parameter
@@ -110,10 +106,6 @@ public class StaticParameterBase implements HasDestructor {
     /** List of attached parameters */
     private ArrayList<StaticParameterBase> attachedParameters = new ArrayList<StaticParameterBase>();
 
-    /** Constructor for remote parameters */
-    public StaticParameterBase() {
-        remote = true;
-    }
 
     /**
      * @param name Name of parameter
@@ -137,12 +129,11 @@ public class StaticParameterBase implements HasDestructor {
         if ((!constructorPrototype) && type != DataTypeBase.NULL_TYPE) {
             createBuffer(type);
         }
-        remote = false;
     }
 
     public void serialize(BinaryOutputStream os) {
         os.writeString(name);
-        os.writeType(type);
+        type.serialize(os);
         os.writeString(commandLineOption);
         os.writeString(outerParameterAttachment);
         os.writeBoolean(createOuterParameter);
@@ -162,19 +153,14 @@ public class StaticParameterBase implements HasDestructor {
         GenericObject val = valPointer();
         os.writeBoolean(val != null);
         if (val != null) {
-            os.writeType(val.getType());
+            val.getType().serialize(os);
             val.serialize(os, Serialization.DataEncoding.XML);
         }
     }
 
-    public void deserialize(BinaryInputStream is) {
-        if (remoteValue()) {
-            name = is.readString();
-            type = is.readType();
-        } else {
-            is.readString();
-            is.readType();
-        }
+    public void deserialize(BinaryInputStream is) throws Exception {
+        is.readString();
+        DataTypeBase.deserialize(is);
 
         String commandLineOptionTmp = is.readString();
         outerParameterAttachment = is.readString();
@@ -199,7 +185,7 @@ public class StaticParameterBase implements HasDestructor {
      */
     public void deserializeValue(BinaryInputStream is) throws Exception {
         if (is.readBoolean()) {
-            DataTypeBase dt = is.readType();
+            DataTypeBase dt = DataTypeBase.deserialize(is);
             GenericObject val = valPointer();
             if (val == null || val.getType() != dt) {
                 createBuffer(dt);
@@ -268,10 +254,6 @@ public class StaticParameterBase implements HasDestructor {
         }
     }
 
-    @Override
-    public void delete() {
-    }
-
     /**
      * @return Value serialized as string (reverse operation to set)
      */
@@ -319,13 +301,6 @@ public class StaticParameterBase implements HasDestructor {
 
         sp.value = type.createInstanceGeneric(null);
         assert(sp.value != null);
-    }
-
-    /**
-     * @return Is this a remote parameter?
-     */
-    private boolean remoteValue() {
-        return remote;
     }
 
     /**
@@ -553,9 +528,6 @@ public class StaticParameterBase implements HasDestructor {
      * @param parent Parent framework element
      */
     public void loadValue() {
-        if (remote) {
-            return;
-        }
 
         FrameworkElement parent = parentList.getAnnotated();
         if (useValueOf == this && (!enforceCurrentValue)) {

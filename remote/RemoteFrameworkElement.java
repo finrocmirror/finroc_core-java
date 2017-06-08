@@ -27,10 +27,6 @@ import java.util.List;
 import org.finroc.core.Annotatable;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElementFlags;
-import org.finroc.core.finstructable.EditableInterfaces;
-import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.rrlib.logging.Log;
-import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 
@@ -56,7 +52,7 @@ public class RemoteFrameworkElement extends ModelNode {
     /** Has element been checked for editable interfaces? */
     private boolean editableInterfacesChecked = false;
 
-    /** List of editable interfaces of this element - if it has any (lazily initialized). List may contain empty, not-yet-existent interfaces (that could be created). They have remoteHandle 0. */
+    /** List of editable interfaces of this element */
     private ArrayList<RemoteFrameworkElement> editableInterfaces;
 
 
@@ -246,11 +242,7 @@ public class RemoteFrameworkElement extends ModelNode {
      * @return Is this an editable interface?
      */
     public boolean isEditableInterface() {
-        if (isInterface() && getParent() instanceof RemoteFrameworkElement) {
-            ArrayList<RemoteFrameworkElement> editableInterfaces = ((RemoteFrameworkElement)getParent()).getEditableInterfaces();
-            return editableInterfaces != null && editableInterfaces.contains(this);
-        }
-        return false;
+        return isInterface() && isTagged("edit");
     }
 
     @Override
@@ -259,47 +251,29 @@ public class RemoteFrameworkElement extends ModelNode {
     }
 
     /**
-     * Unlike getEditableInterfacesObject(), this method only blocks on the first call (light-weight version).
+     * Unlike getEditableInterfacesObject() this method does not block
      *
-     * @return Editable interfaces of this element (which is typically a component). null if it has no editable interfaces - or if they could not be queried. List may contain empty, not-yet-existent interfaces (that could be created). They have remoteHandle 0.
+     * @return Editable interfaces of this element (which is typically a component). null if it has no editable interfaces.
      */
     public synchronized ArrayList<RemoteFrameworkElement> getEditableInterfaces() {
+
         if (!editableInterfacesChecked) {
-            try {
-                EditableInterfaces interfaces = getEditableInterfacesObject();
-                editableInterfacesChecked = true;
-                if (interfaces == null) {
-                    editableInterfaces = null;
-                } else {
-                    editableInterfaces = new ArrayList<RemoteFrameworkElement>();
-                    for (int i = 0; i < interfaces.getStaticParameterList().size(); i++) {
-                        RemoteFrameworkElement newElement = new RemoteFrameworkElement(0, interfaces.getStaticParameterList().get(i).getName());
-                        editableInterfaces.add(newElement);
-                        newElement.flags = FrameworkElementFlags.INTERFACE | FrameworkElementFlags.EDGE_AGGREGATOR;
-                        newElement.classifyInterface();
-                        if (isCompositeComponent()) {
-                            newElement.flags |= FrameworkElementFlags.PROXY_INTERFACE;
-                        }
+            for (int i = 0; i < getChildCount(); i++) {
+                RemoteFrameworkElement child = (RemoteFrameworkElement)this.getChildAt(i);
+                if (child.isEditableInterface()) {
+                    if (editableInterfaces == null) {
+                        editableInterfaces = new ArrayList<RemoteFrameworkElement>();
                     }
+                    child.classifyInterface();
+                    if (isCompositeComponent()) {
+                        child.flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                    }
+                    editableInterfaces.add(child);
                 }
-            } catch (Exception e) {
-                return null;
             }
+            editableInterfacesChecked = true;
         }
 
-        if (editableInterfaces == null) {
-            return null;
-        }
-        for (int i = 0; i < editableInterfaces.size(); i++) {
-            if (editableInterfaces.get(i).getRemoteHandle() == 0) {
-                ModelNode child = this.getChildByName(editableInterfaces.get(i).getName());
-                if (child instanceof RemoteFrameworkElement && ((RemoteFrameworkElement)child).isInterface()) {
-                    editableInterfaces.set(i, (RemoteFrameworkElement)child);
-                } else if (child != null) {
-                    Log.log(LogLevel.WARNING, "Non-interface with name that actually interface should have");
-                }
-            }
-        }
         return editableInterfaces;
     }
 
@@ -307,12 +281,14 @@ public class RemoteFrameworkElement extends ModelNode {
      * @return Editable interfaces object for this element (blocks until they have been received from remote runtime)
      * @throws Exception if receiving interfaces failed
      */
-    public EditableInterfaces getEditableInterfacesObject() throws Exception {
+    public RemoteEditableInterfaces getEditableInterfacesObject() throws Exception {
         RemoteRuntime runtime = RemoteRuntime.find(this);
         if (runtime == null) {
             throw new Exception("No runtime found for this element");
         }
-        return (EditableInterfaces)runtime.getAdminInterface().getAnnotation(getRemoteHandle(), EditableInterfaces.TYPE);
+        RemoteEditableInterfaces result = new RemoteEditableInterfaces();
+        result.deserialize(runtime.getAdminInterface().getAnnotation(getRemoteHandle(), RemoteEditableInterfaces.TYPE_NAME, runtime));
+        return result;
     }
 
     /**
@@ -351,9 +327,9 @@ public class RemoteFrameworkElement extends ModelNode {
                     if (getChildAt(i) instanceof RemotePort) {
                         RemotePort remotePort = (RemotePort)getChildAt(i);
                         flags |= (remotePort.getFlags() & FrameworkElementFlags.IS_OUTPUT_PORT) != 0 ? FrameworkElementFlags.INTERFACE_FOR_OUTPUTS : FrameworkElementFlags.INTERFACE_FOR_INPUTS;
-                        if (FinrocTypeInfo.isMethodType(remotePort.getDataType())) {
+                        if ((remotePort.getDataType().getTypeTraits() & DataTypeBase.IS_RPC_TYPE) != 0) {
                             flags |= FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS;
-                        } else if (FinrocTypeInfo.isCCType(remotePort.getDataType()) || FinrocTypeInfo.isStdType(remotePort.getDataType())) {
+                        } else if ((remotePort.getDataType().getTypeTraits() & DataTypeBase.IS_DATA_TYPE) != 0) {
                             flags |= FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS;
                         }
                     }
@@ -363,5 +339,14 @@ public class RemoteFrameworkElement extends ModelNode {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isHidden(boolean checkAncestors) {
+        // Hide empty interfaces
+        if (isInterface() && getChildCount() == 0) {
+            return true;
+        }
+        return super.isHidden(checkAncestors);
     }
 }

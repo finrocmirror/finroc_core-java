@@ -66,8 +66,9 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
     /** Default number of event threads */
     //public static final IntSetting NUM_OF_EVENT_THREADS = inst.add("NUM_OF_EVENT_THREADS", 2, false);
 
-    /** Default minimum network update time (ms) */
-    public static ParameterNumeric<Integer> DEFAULT_MINIMUM_NETWORK_UPDATE_TIME;
+    /** Default minimum network update times (ms) */
+    public static final int DEFAULT_MINIMUM_NETWORK_UPDATE_TIME_BULK = 40;
+    public static final int DEFAULT_MINIMUM_NETWORK_UPDATE_TIME_EXPRESS = 0;
 
     public static final int EDGE_LIST_DEFAULT_SIZE = 0;
     public static final int EDGE_LIST_SIZE_INCREASE_FACTOR = 2;
@@ -167,7 +168,6 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
         super(new FrameworkElement(RuntimeEnvironment.getInstance(), "Settings"), "Core");
         WARN_ON_CYCLE_TIME_EXCEED = new ParameterBool("WARN_ON_CYCLE_TIME_EXCEED", this, true);
         DEFAULT_CYCLE_TIME = new ParameterNumeric<Long>("DEFAULT_CYCLE_TIME", this, 50L, new Bounds<Long>(1, 2000));
-        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME = new ParameterNumeric<Integer>("DEFAULT_MINIMUM_NETWORK_UPDATE_TIME", this, 40, new Bounds<Integer>(1, 2000));
         STREAM_THREAD_CYCLE_TIME = new ParameterNumeric<Integer>("STREAM_THREAD_CYCLE_TIME", this, 200, new Bounds<Integer>(1, 2000));
         GARBAGE_COLLECTOR_SAFETY_PERIOD = new ParameterNumeric<Integer>("GARBAGE_COLLECTOR_SAFETY_PERIOD", this, 5000, new Bounds<Integer>(500, 50000));
 
@@ -185,7 +185,6 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
         //inst.sharedPorts = new SharedPorts(inst.portRoot);
         //inst.init(RuntimeEnvironment.getInstance());
         getInstance();
-        DEFAULT_MINIMUM_NETWORK_UPDATE_TIME.addPortListener(inst);
     }
 
     /** @return Singleton instance */
@@ -253,7 +252,7 @@ public class RuntimeSettings extends FrameworkElement implements PortListener<Co
      * (This may only be changed before any data type has been registered and any port created)
      */
     public static void setUseCCPorts(boolean newUseCCPorts) {
-        if (DataTypeBase.getTypeCount() > 0) {
+        if (DataTypeBase.getTypeCount() > 1) {
             throw new RuntimeException("This is only possible before any type has been loaded.");
         }
         useCCPorts = newUseCCPorts;

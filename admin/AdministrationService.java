@@ -35,7 +35,6 @@ import org.finroc.core.parameter.ConfigFile;
 import org.finroc.core.parameter.ConstructorParameters;
 import org.finroc.core.parameter.ParameterInfo;
 import org.finroc.core.parameter.StaticParameterBase;
-import org.finroc.core.parameter.StaticParameterList;
 import org.finroc.core.plugin.CreateFrameworkElementAction;
 import org.finroc.core.plugin.Plugins;
 import org.finroc.core.port.AbstractPort;
@@ -45,14 +44,16 @@ import org.finroc.core.port.cc.CCPortDataManagerTL;
 import org.finroc.core.port.std.PortBase;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
+import org.finroc.core.remote.RemoteConnectOptions;
 import org.finroc.core.thread.ExecutionControl;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.MemoryBuffer;
+import org.rrlib.serialization.RegisterUpdate;
 import org.rrlib.serialization.Serialization;
-import org.rrlib.serialization.BinaryInputStream.TypeEncoding;
+import org.rrlib.serialization.SerializationInfo;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
@@ -117,6 +118,19 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
     }
 
     /**
+     * Connect source port to destination port with connect options
+     * (new connect method)
+     *
+     * @param sourcePortHandle Handle of source port
+     * @param destinationPortHandle Handle of destination port
+     * @param connectOptions Connect options
+     * @return Returns error message if connecting failed. On success an empty string is returned.
+     */
+    public String connectPorts(int sourcePortHandle, int destinationPortHandle, RemoteConnectOptions connectOptions) {
+        return "Not implemented in Java yet";
+    }
+
+    /**
      * Created module
      *
      * @param createActionIndex Index of create action
@@ -144,7 +158,7 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
 
                     if (cma.getParameterTypes() != null && cma.getParameterTypes().size() > 0) {
                         params = cma.getParameterTypes().instantiate();
-                        BinaryInputStream ci = new BinaryInputStream(serializedCreationParameters, TypeEncoding.Names);
+                        BinaryInputStream ci = new BinaryInputStream(serializedCreationParameters, BASIC_UID_SERIALIZATION_INFO);
                         for (int i = 0; i < params.size(); i++) {
                             StaticParameterBase param = params.get(i);
                             try {
@@ -173,6 +187,18 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
     }
 
     /**
+     * Create URI connector connecting local port using one of the supported URI schemes (provided e.g. by network transports).
+     *
+     * @param localPortHandle Handle of local owner port
+     * @param uri URI of partner port
+     * @param connectOptions Connect options
+     * @return Returns error message if connecting failed. On success an empty string is returned.
+     */
+    public String createUriConnector(int localPortHandle, String uri, RemoteConnectOptions connectOptions) {
+        return "Not implemented in Java yet";
+    }
+
+    /**
      * Deletes specified framework element
      *
      * @param elementHandle Handle of framework element
@@ -186,6 +212,18 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
             Log.log(LogLevel.ERROR, this, "Could not delete Framework element, because it does not appear to be available.");
         }
         return;
+    }
+
+    /**
+     * Delete URI connector
+     *
+     * @param localPortHandle Handle of local owner port
+     * @param uri Index of URI connector in owner port's list
+     * @return Whether any connector was deleted
+     */
+    public boolean deleteUriConnector(int localPortHandle, int index) {
+        Log.log(LogLevel.WARNING, this, "Not implemented in Java yet");
+        return false;
     }
 
     /**
@@ -255,8 +293,8 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
             return new MemoryBuffer(0);
         } else {
             MemoryBuffer buf = new MemoryBuffer();
-            BinaryOutputStream co = new BinaryOutputStream(buf, BinaryOutputStream.TypeEncoding.Names);
-            co.writeType(result.getType());
+            BinaryOutputStream co = new BinaryOutputStream(buf, BASIC_UID_SERIALIZATION_INFO);
+            result.getType().serialize(co);
             result.serialize(co);
             co.close();
             return buf;
@@ -267,23 +305,8 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
      * @return All actions for creating framework element currently registered in this runtime environment - serialized
      */
     public MemoryBuffer getCreateModuleActions() {
-        MemoryBuffer mb = new MemoryBuffer();
-        BinaryOutputStream co = new BinaryOutputStream(mb, BinaryOutputStream.TypeEncoding.Names);
-
-        ArrayList<CreateFrameworkElementAction> moduleTypes = Plugins.getInstance().getModuleTypes();
-        for (int i = 0; i < moduleTypes.size(); i++) {
-            CreateFrameworkElementAction cma = moduleTypes.get(i);
-            co.writeString(cma.getName());
-            co.writeString(cma.getModuleGroup());
-            if (cma.getParameterTypes() != null) {
-                cma.getParameterTypes().serialize(co);
-            } else {
-                StaticParameterList.EMPTY.serialize(co);
-            }
-        }
-
-        co.close();
-        return mb;
+        Log.log(LogLevel.WARNING, this, "GetCreateModuleActions() is superseded");
+        return new MemoryBuffer();
     }
 
     /**
@@ -307,7 +330,7 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
 
         ConfigFile cf = ConfigFile.find(fe);
         MemoryBuffer buf = new MemoryBuffer();
-        BinaryOutputStream co = new BinaryOutputStream(buf, BinaryOutputStream.TypeEncoding.Names);
+        BinaryOutputStream co = new BinaryOutputStream(buf, BASIC_UID_SERIALIZATION_INFO);
         if (cf == null) {
             co.writeBoolean(false);
         } else {
@@ -320,6 +343,17 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
         }
         co.close();
         return buf;
+    }
+
+    /**
+     * Gets all updates on specified register and all registers to be updated on change.
+     * After calling this method, the client's data on these remote registers is up to date.
+     *
+     * @param registerUid Uid of register to obtain updates for
+     * @return Updates (object does not need to be processed - does its work during deserialization)
+     */
+    public RegisterUpdate getRegisterUpdates(int registerUid) {
+        return new RegisterUpdate(registerUid);
     }
 
     /**
@@ -429,21 +463,25 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
         if (elem == null || (!elem.isReady())) {
             Log.log(LogLevel.ERROR, this, "Parent not available. Cancelling setting of annotation.");
         } else {
-            BinaryInputStream ci = new BinaryInputStream(serializedAnnotation, BinaryInputStream.TypeEncoding.Names);
-            DataTypeBase dt = ci.readType();
-            if (dt == null) {
-                Log.log(LogLevel.ERROR, this, "Data type not available. Cancelling setting of annotation.");
-            } else {
-                FinrocAnnotation ann = elem.getAnnotation(dt);
-                if (ann == null) {
-                    Log.log(LogLevel.ERROR, this, "Creating new annotations not supported yet. Cancelling setting of annotation.");
-                } else if (ann.getType() != dt) {
-                    Log.log(LogLevel.ERROR, this, "Existing annotation has wrong type?!. Cancelling setting of annotation.");
+            try {
+                BinaryInputStream ci = new BinaryInputStream(serializedAnnotation, BASIC_UID_SERIALIZATION_INFO);
+                DataTypeBase dt = DataTypeBase.deserialize(ci);
+                if (dt == null) {
+                    Log.log(LogLevel.ERROR, this, "Data type not available. Cancelling setting of annotation.");
                 } else {
-                    ann.deserialize(ci);
+                    FinrocAnnotation ann = elem.getAnnotation(dt);
+                    if (ann == null) {
+                        Log.log(LogLevel.ERROR, this, "Creating new annotations not supported yet. Cancelling setting of annotation.");
+                    } else if (ann.getType() != dt) {
+                        Log.log(LogLevel.ERROR, this, "Existing annotation has wrong type?!. Cancelling setting of annotation.");
+                    } else {
+                        ann.deserialize(ci);
+                    }
                 }
+                ci.close();
+            } catch (Exception e) {
+                Log.log(LogLevel.ERROR, this, "Error setting annotation: ", e);
             }
-            ci.close();
         }
     }
 
@@ -461,9 +499,9 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
             synchronized (port) {
                 if (port.isReady()) {
                     try {
-                        BinaryInputStream ci = new BinaryInputStream(serializedNewValue, BinaryInputStream.TypeEncoding.Names);
+                        BinaryInputStream ci = new BinaryInputStream(serializedNewValue, BASIC_UID_SERIALIZATION_INFO);
                         Serialization.DataEncoding enc = ci.readEnum(Serialization.DataEncoding.class);
-                        DataTypeBase dt = ci.readType();
+                        DataTypeBase dt = DataTypeBase.deserialize(ci);
                         if (FinrocTypeInfo.isCCType(port.getDataType()) && FinrocTypeInfo.isCCType(dt)) {
                             CCPortBase p = (CCPortBase)port;
                             CCPortDataManagerTL c = ThreadLocalCache.get().getUnusedBuffer(dt);
@@ -582,4 +620,7 @@ public class AdministrationService implements FrameworkElementTreeFilter.Callbac
     public String toString() {
         return "AdministrationService";
     }
+
+    /** Serialization info for memory buffers in some commands */
+    static final SerializationInfo BASIC_UID_SERIALIZATION_INFO = new SerializationInfo(0, SerializationInfo.RegisterEntryEncoding.UID, 0);
 }

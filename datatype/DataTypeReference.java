@@ -21,6 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.datatype;
 
+import org.finroc.core.remote.RemoteType;
 import org.rrlib.serialization.rtti.DataType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
@@ -38,29 +39,57 @@ public class DataTypeReference extends CoreString {
     public final static DataTypeBase TYPE = new DataType<DataTypeReference>(DataTypeReference.class);
 
     public DataTypeReference() {
-        set(CoreNumber.TYPE); // default is CoreNumber
+        set(CoreString.TYPE); // default is CoreString
     }
 
     /**
-     * @param dt DataType to reference
+     * @param type DataType to reference
      */
-    public DataTypeReference(DataTypeBase dt) {
-        set(dt);
+    public DataTypeReference(DataTypeBase type) {
+        set(type);
     }
 
     /**
-     * @param dt new DataType to reference
+     * @param type DataType to reference
      */
-    public void set(DataTypeBase dt) {
-        super.set(dt.getName());
+    public DataTypeReference(RemoteType type) {
+        set(type);
     }
 
     /**
-     * @return Referenced data type - null if it doesn't exist in this runtime
+     * @param other DataTypeReference to copy
      */
-    public DataTypeBase get() {
-        return DataTypeBase.findType(getBuffer().toString());
+    public DataTypeReference(DataTypeReference other) {
+        set(other.toString());
     }
+
+    /**
+     * @param name Name of type
+     */
+    public DataTypeReference(String name) {
+        set(name);
+    }
+
+    /**
+     * @param type new DataType to reference
+     */
+    public void set(DataTypeBase type) {
+        super.set(type.getName());
+    }
+
+    /**
+     * @param type new DataType to reference
+     */
+    public void set(RemoteType type) {
+        super.set(type.getName());
+    }
+
+//    /**
+//     * @return Referenced data type - null if it doesn't exist in this runtime
+//     */
+//    public DataTypeBase get() {
+//        return DataTypeBase.findType(getBuffer().toString());
+//    }
 
     public boolean equals(Object other) {
         return (other instanceof DataTypeReference) && toString().equals(other.toString());

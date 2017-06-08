@@ -30,8 +30,8 @@ import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.parameter.StaticParameterString;
 import org.finroc.core.parameter.StaticParameterList;
+import org.finroc.core.remote.BufferedModelChanges;
 import org.finroc.core.remote.ModelHandler;
-import org.finroc.core.remote.ModelNode;
 
 
 /**
@@ -257,21 +257,8 @@ public abstract class ExternalConnection extends FrameworkElement {
     public class EmptyModelHandler implements ModelHandler {
 
         @Override
-        public void addNode(ModelNode parent, ModelNode newChild) {}
+        public void applyModelChanges(BufferedModelChanges bufferedChanges) {
+        }
 
-        @Override
-        public void changeNodeName(ModelNode node, String newName) {}
-
-        @Override
-        public void removeNode(ModelNode childToRemove) {}
-
-        @Override
-        public void replaceNode(ModelNode oldNode, ModelNode newNode) {}
-
-        @Override
-        public void setModelRoot(ModelNode root) {}
-
-        @Override
-        public void updateModel(Runnable updateTask) {}
     }
 }

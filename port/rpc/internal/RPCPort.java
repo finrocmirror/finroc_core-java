@@ -77,7 +77,9 @@ public class RPCPort extends AbstractPort {
             ArrayWrapper<RPCPort> it = edgesSrc.getIterable();
             for (int i = 0; i < it.size(); i++) {
                 current = it.get(i);
-                break;
+                if (current != null) {
+                    break;
+                }
             }
 
             if (current == null || current == last) {

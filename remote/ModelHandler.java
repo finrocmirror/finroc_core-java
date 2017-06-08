@@ -35,52 +35,9 @@ package org.finroc.core.remote;
 public interface ModelHandler {
 
     /**
-     * Adds node to specified parent node.
-     * The ordering of elements is determined by the model handler.
+     * Applies buffered model changes
      *
-     * @param parent Parent node
-     * @param newChild Child node to add to parent node
+     * @param bufferedChanges Buffered changes
      */
-    public void addNode(ModelNode parent, ModelNode newChild);
-
-    /**
-     * Changes name of specified node.
-     *
-     * @param node Node to change name of.
-     * @param newName New name.
-     */
-    public void changeNodeName(ModelNode node, String newName);
-
-    /**
-     * Removes node from parent node.
-     *
-     * @param childToRemove Child node to remove from parent node
-     */
-    public void removeNode(ModelNode childToRemove);
-
-    /**
-     * Replaces node with new node
-     *
-     * @param oldNode Node to be replaced and removed from model
-     * @param newNode Node that replaces old node (added to model)
-     */
-    public void replaceNode(ModelNode oldNode, ModelNode newNode);
-
-    /**
-     * Replaces model.
-     * The old model is to be discarded.
-     *
-     * @param root Root element of new model
-     */
-    public void setModelRoot(ModelNode root);
-
-    /**
-     * Updates model.
-     * The update task is provided as a runnable.
-     * This way, model updates can be dispatched e.g. to the Swing UI thread.
-     *
-     * @param updateTask Update task. run() must be called to trigger the update.
-     *        It might be called later (after the method has already returned).
-     */
-    public void updateModel(Runnable updateTask);
+    public void applyModelChanges(BufferedModelChanges bufferedChanges);
 }

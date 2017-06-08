@@ -389,4 +389,17 @@ public class Port<T extends BinarySerializable> extends PortWrapperBase {
             }
         }
     }
+
+    /**
+     * Wraps abstract port as port
+     *
+     * @param port Abstract port to wrap
+     * @return Wrapped port
+     */
+    public static Port<?> wrap(AbstractPort port) {
+        Port<?> result = new Port<>();
+        result.wrapped = port;
+        result.ccType = FinrocTypeInfo.isCCType(port.getDataType());
+        return result;
+    }
 }

@@ -24,7 +24,6 @@ package org.finroc.core.portdatabase;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.finroc.core.RuntimeSettings;
-import org.finroc.core.remote.RemoteType;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
 
@@ -185,14 +184,14 @@ public class FinrocTypeInfo {
         return get(dt).getType() == Type.METHOD;
     }
 
-    /**
-     * @param dt Data type to look this up for
-     * @param includeRemoteTypes Also return true for remote (unknown) RPC types?
-     * @return is this a RPC interface port data type?
-     */
-    public static boolean isMethodType(DataTypeBase dt, boolean includeRemoteTypes) {
-        return get(dt).getType() == Type.METHOD && (includeRemoteTypes || (dt instanceof RemoteType));
-    }
+//    /**
+//     * @param dt Data type to look this up for
+//     * @param includeRemoteTypes Also return true for remote (unknown) RPC types?
+//     * @return is this a RPC interface port data type?
+//     */
+//    public static boolean isMethodType(DataTypeBase dt, boolean includeRemoteTypes) {
+//        return get(dt).getType() == Type.METHOD && (includeRemoteTypes || (dt instanceof RemoteType));
+//    }
 
     /**
      * @return "Cheap copy" index

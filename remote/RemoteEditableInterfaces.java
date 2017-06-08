@@ -19,34 +19,30 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-package org.finroc.core.finstructable;
+package org.finroc.core.remote;
 
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.datatype.PortCreationList;
-import org.finroc.core.parameter.StaticParameter;
-import org.finroc.core.parameter.StaticParameterList;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
-import org.rrlib.serialization.rtti.DataType;
-import org.rrlib.serialization.rtti.DataTypeBase;
 
 /**
  * @author Max Reichardt
  *
- * Simple group for creating hierarchy
+ * Remote editable interfaces
  */
-public class EditableInterfaces extends FinrocAnnotation {
+public class RemoteEditableInterfaces extends FinrocAnnotation {
 
     /** Data Type */
-    public static DataTypeBase TYPE = new DataType<EditableInterfaces>(EditableInterfaces.class);
+    public static String TYPE_NAME = "EditableInterfaces";
 
     /** Editable interfaces in remote runtime environment - stored in a static parameter list */
-    private StaticParameterList editableInterfaces = new StaticParameterList();
+    private RemoteStaticParameterList editableInterfaces = new RemoteStaticParameterList();
 
     /**
      * @return Editable interfaces in remote runtime environment - stored in a static parameter list
      */
-    public StaticParameterList getStaticParameterList() {
+    public RemoteStaticParameterList getStaticParameterList() {
         return editableInterfaces;
     }
 
@@ -55,39 +51,38 @@ public class EditableInterfaces extends FinrocAnnotation {
      *
      * @param staticParameterList The StaticParameterList
      */
-    public void setStaticParameterList(StaticParameterList staticParameterList) {
+    public void setStaticParameterList(RemoteStaticParameterList staticParameterList) {
         this.editableInterfaces = staticParameterList;
     }
 
     @Override
-    public void deserialize(BinaryInputStream stream) {
+    public void deserialize(BinaryInputStream stream) throws Exception {
         int size = stream.readByte();
-        editableInterfaces = new StaticParameterList();
+        editableInterfaces = new RemoteStaticParameterList();
         for (int i = 0; i < size; i++) {
-            StaticParameter<PortCreationList> editableInterface = new StaticParameter<PortCreationList>(stream.readString(), PortCreationList.TYPE);
-            editableInterfaces.add(editableInterface);
+            editableInterfaces.add(stream.readString(), RemoteType.find(stream, PortCreationList.TYPE.getName(), "finroc.runtime_construction." + PortCreationList.TYPE.getName(), true));
             boolean interfaceHasPorts = stream.readBoolean();
             if (interfaceHasPorts) {
-                editableInterface.getValue().deserialize(stream);
+                ((PortCreationList)editableInterfaces.get(0).getValue().getData()).deserialize(stream);
             } else {
-                editableInterface.getValue().setSelectableCreateOptions(stream.readByte());
+                ((PortCreationList)editableInterfaces.get(0).getValue().getData()).setSelectableCreateOptions(stream.readByte());
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void serialize(BinaryOutputStream stream) {
         stream.writeByte(editableInterfaces.size());
         for (int i = 0; i < editableInterfaces.size(); i++) {
-            StaticParameter<PortCreationList> editableInterface = (StaticParameter<PortCreationList>)editableInterfaces.get(i);
+            RemoteStaticParameterList.Parameter editableInterface = editableInterfaces.get(i);
             stream.writeString(editableInterface.getName());
-            boolean hasPorts = editableInterface.getValue().getSize() > 0;
+            PortCreationList value = (PortCreationList)editableInterface.getValue().getData();
+            boolean hasPorts = value.getSize() > 0;
             stream.writeBoolean(hasPorts);
             if (hasPorts) {
-                editableInterface.getValue().serialize(stream);
+                value.serialize(stream);
             } else {
-                stream.writeByte(editableInterface.getValue().getSelectableCreateOptions());
+                stream.writeByte(value.getSelectableCreateOptions());
             }
         }
     }

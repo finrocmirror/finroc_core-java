@@ -113,7 +113,7 @@ public class Promise {
         @Override
         public void serialize(BinaryOutputStream stream) {
             // Deserialized by network transport implementation
-            stream.writeType(method.getInterfaceType());
+            method.getInterfaceType().serialize(stream);
             stream.writeByte(method.getMethodID());
             stream.writeLong(remotePromiseCallId);
 

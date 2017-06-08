@@ -66,18 +66,6 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
         }
     }
 
-    public void delete() {
-        clear();
-        super.delete();
-    }
-
-    /** Clear list (deletes parameters) */
-    private void clear() {
-        for (int i = parameters.size() - 1; i >= 0; i--) {
-            parameters.remove(i).delete();
-        }
-    }
-
     @Override
     public void serialize(BinaryOutputStream os) {
         os.writeInt(createAction);
@@ -88,16 +76,9 @@ public class StaticParameterList extends FinrocAnnotation implements HasDestruct
     }
 
     @Override
-    public void deserialize(BinaryInputStream is) {
+    public void deserialize(BinaryInputStream is) throws Exception {
         if (getAnnotated() == null) {
-            createAction = is.readInt();
-            clear();
-            int newSize = is.readInt();
-            for (int i = 0; i < newSize; i++) {
-                StaticParameterBase param = new StaticParameterBase();
-                param.deserialize(is);
-                add(param);
-            }
+            throw new RuntimeException("RemoteStaticParameters class should be used");
         } else { // attached to module - only update parameter values
             if (createAction != is.readInt() || ((int)parameters.size()) != is.readInt()) {
                 throw new RuntimeException("Invalid action id or parameter number");

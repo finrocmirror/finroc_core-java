@@ -68,7 +68,7 @@ public class RPCMessage extends AbstractCall {
     @Override
     public void serialize(BinaryOutputStream stream) {
         // Deserialized by network transport implementation
-        stream.writeType(method.getInterfaceType());
+        method.getInterfaceType().serialize(stream);
         stream.writeByte(method.getMethodID());
 
         // Deserialized by this class

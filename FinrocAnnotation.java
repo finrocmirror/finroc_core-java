@@ -82,7 +82,7 @@ public abstract class FinrocAnnotation extends TypedObjectImpl implements Binary
     }
 
     @Override
-    public void deserialize(BinaryInputStream is) {
+    public void deserialize(BinaryInputStream is) throws Exception {
         throw new RuntimeException("Unsupported");
     }
 

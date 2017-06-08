@@ -41,7 +41,6 @@ import org.finroc.core.RuntimeSettings;
 import org.finroc.core.port.net.NetPort;
 import org.finroc.core.port.std.PortDataManager;
 import org.finroc.core.portdatabase.FinrocTypeInfo;
-import org.finroc.core.remote.RemoteType;
 
 /**
  * @author Max Reichardt
@@ -71,7 +70,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
     /**
      * List class for edges
      */
-    protected static class EdgeList<T> extends SafeConcurrentlyIterableList<T> {
+    public static class EdgeList<T> extends SafeConcurrentlyIterableList<T> {
 
         public EdgeList() {
             super(RuntimeSettings.EDGE_LIST_DEFAULT_SIZE, RuntimeSettings.EDGE_LIST_SIZE_INCREASE_FACTOR);
@@ -715,29 +714,29 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
         return null;
     }
 
-    /**
-     * Find network port connected to this port that belongs to specified framework element
-     *
-     * @param belongsTo Instance (usually TCPServerConnection or RemoteServer) that this port belongs to
-     * @return Network port if it could be found - otherwise null
-     */
-    @SuppressWarnings("unchecked")
-    public NetPort findNetPort(Object belongsTo) {
-        if (belongsTo == null) {
-            return null;
-        }
-        ArrayWrapper<AbstractPort> it = isOutputPort() ? edgesSrc.getIterable() : edgesDest.getIterable();
-        for (int i = 0, n = it.size(); i < n; i++) {
-            AbstractPort port = it.get(i);
-            if (port != null && port.getFlag(Flag.NETWORK_ELEMENT)) {
-                NetPort np = port.asNetPort();
-                if (np != null && np.getBelongsTo() == belongsTo) {
-                    return np;
-                }
-            }
-        }
-        return null;
-    }
+//    /**
+//     * Find network port connected to this port that belongs to specified framework element
+//     *
+//     * @param belongsTo Instance (usually TCPServerConnection or RemoteServer) that this port belongs to
+//     * @return Network port if it could be found - otherwise null
+//     */
+//    @SuppressWarnings("unchecked")
+//    public NetPort findNetPort(Object belongsTo) {
+//        if (belongsTo == null) {
+//            return null;
+//        }
+//        ArrayWrapper<AbstractPort> it = isOutputPort() ? edgesSrc.getIterable() : edgesDest.getIterable();
+//        for (int i = 0, n = it.size(); i < n; i++) {
+//            AbstractPort port = it.get(i);
+//            if (port != null && port.getFlag(Flag.NETWORK_ELEMENT)) {
+//                NetPort np = port.asNetPort();
+//                if (np != null && np.getBelongsTo() == belongsTo) {
+//                    return np;
+//                }
+//            }
+//        }
+//        return null;
+//    }
 
     /**
      * @return Minimum Network Update Interval (only-port specific one; -1 if there's no specific setting for port)
@@ -1178,7 +1177,7 @@ public abstract class AbstractPort extends FrameworkElement implements HasDestru
 
     @Override
     public GenericObject createGenericObject(DataTypeBase dt, Object factoryParameter) {
-        if (FinrocTypeInfo.isStdType(dt) || (dt instanceof RemoteType)) {
+        if (FinrocTypeInfo.isStdType(dt)) {
             return getUnusedBufferRaw(dt).getObject();
         } else if (FinrocTypeInfo.isCCType(dt)) {
             if (factoryParameter == null) {

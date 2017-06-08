@@ -249,7 +249,7 @@ public class ModelNode {
      * @return Child with the specified qualified name. Null if no such child exists.
      */
     public ModelNode getChildByQualifiedName(String qualifiedName, char separator) {
-        return getChildByQualifiedName(qualifiedName, 0, separator);
+        return getChildByQualifiedName(qualifiedName, 0, separator, false);
     }
 
     /**
@@ -258,11 +258,12 @@ public class ModelNode {
      * @param qualifiedName Qualified name (Names of elements separated with separator char)
      * @param qualifiedNameStartIndex Start index of relevant substring in qualifiedName
      * @param separator Separator
-     * @return Child with the specified qualified name. Null if no such child exists.
+     * @param returnDeepestAncestorElement If element with specified link is not in tree, return element whose link has the longest match with qualified name
+     * @return ModelNode with the specified qualified name. Null or deepest ancestor if no such child exists.
      */
-    public ModelNode getChildByQualifiedName(String qualifiedName, int qualifiedNameStartIndex, char separator) {
+    public ModelNode getChildByQualifiedName(String qualifiedName, int qualifiedNameStartIndex, char separator, boolean returnDeepestAncestorElement) {
         if (children == null) {
-            return null;
+            return returnDeepestAncestorElement ? this : null;
         }
         for (ModelNode child : children) {
             if (qualifiedName.regionMatches(qualifiedNameStartIndex, child.name, 0, child.name.length())) {
@@ -270,14 +271,34 @@ public class ModelNode {
                     return child;
                 }
                 if (qualifiedName.charAt(qualifiedNameStartIndex + child.name.length()) == separator) {
-                    ModelNode result = child.getChildByQualifiedName(qualifiedName, qualifiedNameStartIndex + child.name.length() + 1, separator);
+                    ModelNode result = child.getChildByQualifiedName(qualifiedName, qualifiedNameStartIndex + child.name.length() + 1, separator, returnDeepestAncestorElement);
                     if (result != null) {
                         return result;
                     }
                 }
             }
         }
-        return null;
+        return returnDeepestAncestorElement ? this : null;
+    }
+
+    /**
+     * Returns child with the specified path
+     *
+     * @param path Path
+     * @return Child with the specified path. null if no such child exists.
+     */
+    public ModelNode getChildByPath(Path path) {
+        if (children == null) {
+            return null;
+        }
+        ModelNode current = this;
+        for (int i = 0; i < path.path.length; i++) {
+            current = current.getChildByName(path.path[i]);
+            if (current == null) {
+                return null;
+            }
+        }
+        return current;
     }
 
     /**
