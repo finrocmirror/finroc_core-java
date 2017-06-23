@@ -216,12 +216,18 @@ public abstract class RemoteProxyPort extends NetPort {
 
         boolean useQ = getPort().getFlag(FrameworkElementFlags.USES_QUEUE);
         boolean first = true;
+        int flags = getRemoteType().getEncodingForDefaultLocalType().ordinal() | Definitions.MESSAGE_FLAG_TO_SERVER;
 
         if (getPort() instanceof StdNetPort) {
             stream.writeEnum(Definitions.OpCode.PORT_VALUE_CHANGE);
             stream.writeSkipOffsetPlaceholder();
-            stream.writeInt(-getRemoteHandle());
-            stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+            if (stream.getTargetInfo().getRevision() == 0) {
+                stream.writeInt(getRemoteHandle());
+                stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+            } else {
+                stream.writeInt(-getPort().getHandle());
+                stream.writeByte(flags);
+            }
 
             StdNetPort pb = (StdNetPort)getPort();
             if (!useQ) {
@@ -253,8 +259,13 @@ public abstract class RemoteProxyPort extends NetPort {
                 boolean writeTime = ccitc.getTimestamp().equals(Timestamp.ZERO);
                 stream.writeEnum(writeTime ? Definitions.OpCode.SMALL_PORT_VALUE_CHANGE : Definitions.OpCode.SMALL_PORT_VALUE_CHANGE_WITHOUT_TIMESTAMP);
                 stream.writeSkipOffsetPlaceholder(true);
-                stream.writeInt(-getRemoteHandle());
-                stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+                if (stream.getTargetInfo().getRevision() == 0) {
+                    stream.writeInt(getRemoteHandle());
+                    stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+                } else {
+                    stream.writeInt(-getPort().getHandle());
+                    stream.writeByte(flags);
+                }
                 stream.writeByte(changedFlag);
                 if (writeTime) {
                     ccitc.getTimestamp().serialize(stream);
@@ -266,8 +277,13 @@ public abstract class RemoteProxyPort extends NetPort {
 
                 stream.writeEnum(Definitions.OpCode.PORT_VALUE_CHANGE);
                 stream.writeSkipOffsetPlaceholder();
-                stream.writeInt(-getRemoteHandle());
-                stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+                if (stream.getTargetInfo().getRevision() == 0) {
+                    stream.writeInt(getRemoteHandle());
+                    stream.writeEnum(getRemoteType().getEncodingForDefaultLocalType());
+                } else {
+                    stream.writeInt(-getPort().getHandle());
+                    stream.writeByte(flags);
+                }
 
                 CCQueueFragmentRaw fragment = ThreadLocalCache.getFast().tempCCFragment;
                 pb.dequeueAllRaw(fragment);

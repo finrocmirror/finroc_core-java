@@ -1154,9 +1154,16 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
             timeSent = System.currentTimeMillis();
             callId = getUniqueCallId();
             encoding = netport.getRemoteType().getEncodingForDefaultLocalType();
-            getWriteStream().writeInt(netport.getRemoteHandle());
-            getWriteStream().writeLong(callId);
-            getWriteStream().writeEnum(encoding);
+            if (getWriteStream().getTargetInfo().getRevision() == 0) {
+                getWriteStream().writeInt(netport.getRemoteHandle());
+                getWriteStream().writeLong(callId);
+                getWriteStream().writeEnum(netport.getRemoteType().getEncodingForDefaultLocalType());
+            } else {
+                int flags = encoding.ordinal() | Definitions.MESSAGE_FLAG_TO_SERVER | (netport.getRemoteType().isCheapCopyType() ? Definitions.MESSAGE_FLAG_HIGH_PRIORITY : 0);
+                getWriteStream().writeInt(netport.getPort().getHandle());
+                getWriteStream().writeLong(callId);
+                getWriteStream().writeByte(flags);
+            }
         }
 
         /** Time when call was created/sent */
