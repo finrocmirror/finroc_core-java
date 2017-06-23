@@ -140,7 +140,6 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
         public void deserialize(BinaryInputStream stream, GenericObject object, RemoteType type, Info adapterInfo) throws Exception {
             if (adapterInfo.localType == RemoteEnumValue.TYPE) {
                 String[] strings = type.getEnumConstants();
-                long[] values = type.getEnumValues();
                 int index = -1;
                 if (strings.length <= 0x100) {
                     index = stream.readByte();
@@ -150,8 +149,7 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                     assert(strings.length < 0x7FFFFFFF);
                     index = stream.readInt();
                 }
-                long value = values != null ? values[index] : index;
-                ((RemoteEnumValue)object.getData()).set(value, index, strings[index]);
+                ((RemoteEnumValue)object.getData()).set(index, type);
             } else if (adapterInfo.localType == XML.TYPE) {
                 object.deserialize(stream, Serialization.DataEncoding.BINARY);
             } else {
@@ -164,27 +162,10 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
             if (adapterInfo.localType == RemoteEnumValue.TYPE) {
                 RemoteEnumValue value = (RemoteEnumValue)object.getData();
                 int index = value.getOrdinal();
-                String[] strings = type.getEnumConstants();
-                if (index < 0 && value.getValue() >= 0) {
-                    long[] values = type.getEnumValues();
-                    for (int i = 0; i < values.length; i++) {
-                        if (values[i] == value.getValue()) {
-                            index = i;
-                            break;
-                        }
-                    }
-                }
-                if (index < 0 && value.getString() != null) {
-                    for (int i = 0; i < strings.length; i++) {
-                        if (strings[i].equals(value.getString())) {
-                            index = i;
-                            break;
-                        }
-                    }
-                }
                 if (index < 0) {
-                    throw new RuntimeException("Cannot resolve enum index");
+                    throw new RuntimeException("Invalid enum index");
                 }
+                String[] strings = type.getEnumConstants();
                 if (strings.length <= 0x100) {
                     stream.writeByte(index);
                 } else if (strings.length <= 0x10000) {

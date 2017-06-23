@@ -49,15 +49,11 @@ public class RemoteEnumValue implements BinarySerializable, StringSerializable, 
     @Override
     public void serialize(BinaryOutputStream stream) {
         stream.writeInt(index);
-        stream.writeLong(value);
-        stream.writeString(string);
     }
 
     @Override
     public void deserialize(BinaryInputStream stream) {
         index = stream.readInt();
-        value = stream.readLong();
-        string = stream.readString();
     }
 
     @Override
@@ -67,20 +63,51 @@ public class RemoteEnumValue implements BinarySerializable, StringSerializable, 
 
     @Override
     public void deserialize(StringInputStream stream) throws Exception {
+        if (type == null || type.getEnumConstants() == null) {
+            throw new Exception("No remote enum type set");
+        }
+
         String enumString = stream.readWhile("", StringInputStream.DIGIT | StringInputStream.LETTER | StringInputStream.WHITESPACE, true).trim();
         int bracketIndex = enumString.indexOf('(');
-        index = 0;
+        index = -1;
+        String string = null;
+        Long value = null;
         if (bracketIndex >= 0 && enumString.endsWith(")")) {
             string = enumString.substring(0, bracketIndex).trim();
             value = Long.parseLong(enumString.substring(bracketIndex + 1, enumString.length() - bracketIndex - 2).trim());
         } else {
             if (Character.isDigit(enumString.charAt(0))) {
                 value = Long.parseLong(enumString);
-                string = null;
             } else {
                 string = enumString;
-                value = -1;
             }
+        }
+
+        if (string != null) {
+            for (int i = 0; i < type.getEnumConstants().length; i++) {
+                if (string.equalsIgnoreCase(type.getEnumConstants()[i])) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+        if (index < 0 && value != null) {
+            if (type.getEnumValues() != null) {
+                for (int i = 0; i < type.getEnumValues().length; i++) {
+                    if (value == type.getEnumValues()[i]) {
+                        index = i;
+                        break;
+                    }
+                }
+            } else {
+                if (value < 0 || value >= type.getEnumConstants().length) {
+                    throw new Exception("Invalid enum value: " + value);
+                }
+                index = value.intValue();
+            }
+        }
+        if (index < 0) {
+            throw new Exception("Invalid enum string: " + enumString);
         }
     }
 
@@ -92,71 +119,71 @@ public class RemoteEnumValue implements BinarySerializable, StringSerializable, 
     }
 
     /**
+     * @return Remote type that contains enum constants
+     */
+    public RemoteType getType() {
+        return type;
+    }
+
+    /**
      * @return Enum string (null if not set)
      */
     public String getString() {
-        return string;
+        return (type == null || index < 0) ? null : type.getEnumConstants()[index];
     }
 
     /**
      * @return Enum numeric value (-1 if not set)
      */
     public long getValue() {
-        return value;
+        return (type == null || index < 0) ? -1 : (type.getEnumValues() != null ? type.getEnumValues()[index] : index);
     }
 
 
     @Override
     public void copyFrom(RemoteEnumValue source) {
         index = source.index;
-        value = source.value;
-        string = source.string;
+        type = source.type;
     }
 
     @Override
     public Number getNumericRepresentation() {
-        return value;
+        return getValue();
     }
 
     /**
      * Sets current value
      *
-     * @param value Numeric value of enum (-1 if not set)
      * @param index Index/ordinal of enum (-1 if not set)
-     * @param string String representation of enum (-1 if not set)
+     * @param type Remote type that contains enum constants
      */
-    public void set(long value, int index, String string) {
-        this.value = value;
+    public void set(int index, RemoteType type) {
         this.index = index;
-        this.string = string;
+        this.type = type;
     }
 
     @Override
     public boolean equals(Object other) {
         if (other instanceof RemoteEnumValue) {
             RemoteEnumValue o = (RemoteEnumValue)other;
-            return value == o.value && index == o.index && string.equals(o.string);
+            return type == o.type && index == o.index;
         }
         return false;
     }
 
     @Override
     public String toString() {
-        if (string != null) {
-            return string + (value >= 0 ? (" (" + value + ")") : "");
-        } else {
-            return "" + value;
+        if (index == -1 || type == null) {
+            return "Invalid enum";
         }
+        return getString() + " (" + getValue() + ")";
     }
 
-
-    /** Enum value (-1 if not set) */
-    private long value = -1;
 
     /** Enum index/ordinal (-1 if not set) */
     private int index = -1;
 
-    /** Enum string (null if not set) */
-    private String string;
+    /** Remote type that contains enum constants */
+    private RemoteType type;
 
 }
