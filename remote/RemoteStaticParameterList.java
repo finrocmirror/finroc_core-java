@@ -28,6 +28,7 @@ import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.BinarySerializable;
 import org.rrlib.serialization.Serialization;
 import org.rrlib.serialization.SerializationInfo;
+import org.rrlib.serialization.rtti.Copyable;
 import org.rrlib.serialization.rtti.GenericObject;
 
 
@@ -36,10 +37,10 @@ import org.rrlib.serialization.rtti.GenericObject;
  *
  * Remote static parameter list
  */
-public class RemoteStaticParameterList implements BinarySerializable {
+public class RemoteStaticParameterList implements BinarySerializable, Copyable<RemoteStaticParameterList> {
 
     /** Single remote static parameter */
-    public class Parameter  implements BinarySerializable {
+    public class Parameter implements BinarySerializable {
 
         /**
          * @return Name of parameter
@@ -306,5 +307,17 @@ public class RemoteStaticParameterList implements BinarySerializable {
         p.type = type;
         p.value = type.getDefaultLocalDataType().createInstanceGeneric(null);
         parameters.add(p);
+    }
+
+    @Override
+    public void copyFrom(RemoteStaticParameterList source) {
+        this.createAction = source.createAction;
+        this.parameters.clear();
+        for (Parameter parameter : source.parameters) {
+            this.parameters.add(parameter.deepCopy());
+            if (parameter.value == null) {
+                this.parameters.get(this.parameters.size() - 1).value = null; // (deepCopy always creates a value buffer)
+            }
+        }
     }
 }

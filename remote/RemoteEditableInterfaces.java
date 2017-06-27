@@ -25,13 +25,14 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.datatype.PortCreationList;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
+import org.rrlib.serialization.rtti.Copyable;
 
 /**
  * @author Max Reichardt
  *
  * Remote editable interfaces
  */
-public class RemoteEditableInterfaces extends FinrocAnnotation {
+public class RemoteEditableInterfaces extends FinrocAnnotation implements Copyable<RemoteEditableInterfaces> {
 
     /** Data Type */
     public static String TYPE_NAME = "EditableInterfaces";
@@ -85,5 +86,10 @@ public class RemoteEditableInterfaces extends FinrocAnnotation {
                 stream.writeByte(value.getSelectableCreateOptions());
             }
         }
+    }
+
+    @Override
+    public void copyFrom(RemoteEditableInterfaces source) {
+        this.editableInterfaces.copyFrom(source.editableInterfaces);
     }
 }
