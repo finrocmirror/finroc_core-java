@@ -27,6 +27,8 @@ import java.util.List;
 import org.finroc.core.Annotatable;
 import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElementFlags;
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 
@@ -242,7 +244,17 @@ public class RemoteFrameworkElement extends ModelNode {
      * @return Is this an editable interface?
      */
     public boolean isEditableInterface() {
-        return isInterface() && isTagged("edit");
+        if (isInterface() && getParent() instanceof RemoteFrameworkElement) {
+            RemoteRuntime runtime = RemoteRuntime.find(this);
+            if (runtime.getSerializationInfo().getRevision() == 0) {
+                // legacy support
+                ArrayList<RemoteFrameworkElement> editableInterfaces = ((RemoteFrameworkElement)getParent()).getEditableInterfaces();
+                return editableInterfaces != null && editableInterfaces.contains(this);
+            } else {
+                return isTagged("edit");
+            }
+        }
+        return false;
     }
 
     @Override
@@ -251,27 +263,69 @@ public class RemoteFrameworkElement extends ModelNode {
     }
 
     /**
-     * Unlike getEditableInterfacesObject() this method does not block
+     * Unlike getEditableInterfacesObject() this method does not block (blocks on the first call for legacy runtime environments)
      *
      * @return Editable interfaces of this element (which is typically a component). null if it has no editable interfaces.
      */
     public synchronized ArrayList<RemoteFrameworkElement> getEditableInterfaces() {
+        RemoteRuntime runtime = RemoteRuntime.find(this);
+        boolean legacyRuntime = runtime.getSerializationInfo().getRevision() == 0;
 
         if (!editableInterfacesChecked) {
-            for (int i = 0; i < getChildCount(); i++) {
-                RemoteFrameworkElement child = (RemoteFrameworkElement)this.getChildAt(i);
-                if (child.isEditableInterface()) {
-                    if (editableInterfaces == null) {
+            if (legacyRuntime) {
+                // legacy support
+                try {
+                    RemoteEditableInterfaces interfaces = getEditableInterfacesObject();
+                    editableInterfacesChecked = true;
+                    if (interfaces == null) {
+                        editableInterfaces = null;
+                    } else {
                         editableInterfaces = new ArrayList<RemoteFrameworkElement>();
+                        for (int i = 0; i < interfaces.getStaticParameterList().size(); i++) {
+                            RemoteFrameworkElement newElement = new RemoteFrameworkElement(0, interfaces.getStaticParameterList().get(i).getName());
+                            editableInterfaces.add(newElement);
+                            newElement.flags = FrameworkElementFlags.INTERFACE | FrameworkElementFlags.EDGE_AGGREGATOR;
+                            newElement.classifyInterface();
+                            if (isCompositeComponent()) {
+                                newElement.flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                            }
+                        }
                     }
-                    child.classifyInterface();
-                    if (isCompositeComponent()) {
-                        child.flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                } catch (Exception e) {
+                    return null;
+                }
+            } else {
+                for (int i = 0; i < getChildCount(); i++) {
+                    RemoteFrameworkElement child = (RemoteFrameworkElement)this.getChildAt(i);
+                    if (child.isEditableInterface()) {
+                        if (editableInterfaces == null) {
+                            editableInterfaces = new ArrayList<RemoteFrameworkElement>();
+                        }
+                        child.classifyInterface();
+                        if (isCompositeComponent()) {
+                            child.flags |= FrameworkElementFlags.PROXY_INTERFACE;
+                        }
+                        editableInterfaces.add(child);
                     }
-                    editableInterfaces.add(child);
+                }
+                editableInterfacesChecked = true;
+            }
+        }
+
+        if (legacyRuntime) {
+            if (editableInterfaces == null) {
+                return null;
+            }
+            for (int i = 0; i < editableInterfaces.size(); i++) {
+                if (editableInterfaces.get(i).getRemoteHandle() == 0) {
+                    ModelNode child = this.getChildByName(editableInterfaces.get(i).getName());
+                    if (child instanceof RemoteFrameworkElement && ((RemoteFrameworkElement)child).isInterface()) {
+                        editableInterfaces.set(i, (RemoteFrameworkElement)child);
+                    } else if (child != null) {
+                        Log.log(LogLevel.WARNING, "Non-interface with name that actually interface should have");
+                    }
                 }
             }
-            editableInterfacesChecked = true;
         }
 
         return editableInterfaces;

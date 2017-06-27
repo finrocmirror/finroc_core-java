@@ -267,7 +267,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
     public ArrayList<RemoteConnectOptions> getConversionOptions(RemoteType sourceType, RemoteType destinationType, boolean singleOperationsOnly) {
         ArrayList<RemoteConnectOptions> result = new ArrayList<RemoteConnectOptions>();
         if (sourceType == destinationType) {
-            result.add(new RemoteConnectOptions());
+            result.add(new RemoteConnectOptions(Definitions.TypeConversionRating.NO_CONVERSION));
             return result;
         }
         ArrayList<GetCastOperationEntry> fromSourceType = new ArrayList<GetCastOperationEntry>();
@@ -566,9 +566,11 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         ratings.singleOperationsResultsOnly = false;
         ratings.cachedConversionRatings = new byte[ratings.typeCount];
         System.arraycopy(singleRatings.cachedConversionRatings, 0, ratings.cachedConversionRatings, 0, singleRatings.cachedConversionRatings.length);
-        for (int i = 0; i < ratings.cachedConversionRatings.length; i++) {
-            if (ratings.cachedConversionRatings[i] == 0) {
-                ratings.cachedConversionRatings[i] = 1; // Deprecated binary conversion works for all types
+        if (getSerializationInfo().getRevision() != 0) {
+            for (int i = 0; i < ratings.cachedConversionRatings.length; i++) {
+                if (ratings.cachedConversionRatings[i] == 0 && (remoteTypes.get(i).getTypeTraits() & DataTypeBase.IS_DATA_TYPE) != 0) {
+                    ratings.cachedConversionRatings[i] = 1; // Deprecated binary conversion works for all types
+                }
             }
         }
 
