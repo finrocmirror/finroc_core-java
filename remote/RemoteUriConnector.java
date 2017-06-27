@@ -58,11 +58,11 @@ public class RemoteUriConnector extends RemoteConnector {
      * @return Answer
      */
     protected boolean currentConnectionMayGoTo(RemoteRuntime runtime) {
-        return status == Status.CONNECTED && runtime != ownerRuntime && (runtime.uuid.equals(getAuthority()) || getAuthority().length() == 0);
+        return status == Status.CONNECTED && runtime != ownerRuntime && (authority == null || authority.length() == 0 || runtime.uuid.equals(authority));
     }
 
     /**
-     * @return Authority part of URI
+     * @return Authority part of URI (may be null if authority is not set)
      */
     public String getAuthority() {
         return authority;
