@@ -82,6 +82,10 @@ public class Duration extends CoreNumber {
     @Override
     public void serialize(StringOutputStream os) {
         long l = longValue();
+        if (l == 0) {
+            os.append("PT0S");
+            return;
+        }
         long ms = l / 1000000;
         long ns = l % 1000000;
         javax.xml.datatype.Duration d = factory.newDuration(ms);
