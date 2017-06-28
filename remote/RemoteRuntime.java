@@ -247,7 +247,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                     ArrayWrapper<RemoteUriConnector> iterable = ((RemoteRuntime)child).uriConnectors.getIterable();
                     for (int j = 0, n = iterable.size(); j < n; j++) {
                         RemoteUriConnector connector = iterable.get(j);
-                        if (connector != null && connector.currentPartner == port) {
+                        if (connector != null && (connector.currentPartner == port || (connector.getOwnerRuntime() == this && connector.getOwnerPortHandle() == port.getRemoteHandle()))) {
                             result.add(connector);
                         }
                     }
