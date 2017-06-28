@@ -102,7 +102,8 @@ public class FrameworkElementFlags {
     INTERFACE_FOR_INPUTS = 1 << 13,             //!< Can interface contain input ports?
     INTERFACE_FOR_OUTPUTS = 1 << 14,            //!< Can interface contain output ports?
     PROXY_INTERFACE = 1 << 15,                  //!< Is this an interface of a composite component?
-    FINAL_INTERFACE_CLASSIFICATION = 1 << 16;   //!< Can any of the above flags (11-15) appear later? (if true, they cannot)
+    PARAMETER_INTERFACE = 1 << 16,             //!< Is this an interface for parameters?
+    FINAL_INTERFACE_CLASSIFICATION = 1 << 17;   //!< Can any of the above flags (11-16) appear later? (if true, they cannot)
 
     // Common flag combinations
 

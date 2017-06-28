@@ -241,6 +241,14 @@ public class RemoteFrameworkElement extends ModelNode {
     }
 
     /**
+     * @return Is this an interface for parameters
+     */
+    public boolean isParameterInterface() {
+        classifyInterface();
+        return isInterface() && (flags & FrameworkElementFlags.PARAMETER_INTERFACE) != 0;
+    }
+
+    /**
      * @return Is this an editable interface?
      */
     public boolean isEditableInterface() {
@@ -374,6 +382,9 @@ public class RemoteFrameworkElement extends ModelNode {
                 }
                 if (getName().contains("Control") || getName().contains("control")) {
                     flags |= FrameworkElementFlags.CONTROLLER_DATA;
+                }
+                if (getName().equals("Parameters")) {
+                    flags |= FrameworkElementFlags.PARAMETER_INTERFACE;
                 }
             }
             if ((flags & FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION) == 0) {
