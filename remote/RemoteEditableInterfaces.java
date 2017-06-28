@@ -64,9 +64,9 @@ public class RemoteEditableInterfaces extends FinrocAnnotation implements Copyab
             editableInterfaces.add(stream.readString(), RemoteType.find(stream, PortCreationList.TYPE.getName(), "finroc.runtime_construction." + PortCreationList.TYPE.getName(), true));
             boolean interfaceHasPorts = stream.readBoolean();
             if (interfaceHasPorts) {
-                ((PortCreationList)editableInterfaces.get(0).getValue().getData()).deserialize(stream);
+                ((PortCreationList)editableInterfaces.get(i).getValue().getData()).deserialize(stream);
             } else {
-                ((PortCreationList)editableInterfaces.get(0).getValue().getData()).setSelectableCreateOptions(stream.readByte());
+                ((PortCreationList)editableInterfaces.get(i).getValue().getData()).setSelectableCreateOptions(stream.readByte());
             }
         }
     }
