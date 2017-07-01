@@ -104,6 +104,9 @@ public class RemoteStaticParameterList implements BinarySerializable, Copyable<R
                     value = type.getDefaultLocalDataType().createInstanceGeneric(null);
                 }
                 readType(stream);
+                if (type.getDefaultLocalDataType() == RemoteEnumValue.TYPE) {
+                    ((RemoteEnumValue)value.getData()).set(0, type);
+                }
                 value.deserialize(stream, Serialization.DataEncoding.XML);
             }
             changed = false;
