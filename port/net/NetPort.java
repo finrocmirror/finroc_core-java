@@ -129,12 +129,12 @@ public abstract class NetPort implements PortListener {
         flags &= ~(keepFlags);
         flags |= curFlags;
 
-        if (isStdType() || isTransactionType()) {
+        if (isMethodType()) {
+            ((RPCNetPort)wrapped).updateFlags(flags);
+        } else if (isStdType() || isTransactionType()) {
             ((StdNetPort)wrapped).updateFlags(flags);
         } else if (isCCType()) {
             ((CCNetPort)wrapped).updateFlags(flags);
-        } else {
-            ((RPCNetPort)wrapped).updateFlags(flags);
         }
     }
 
