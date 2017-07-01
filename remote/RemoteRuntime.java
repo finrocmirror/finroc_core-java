@@ -847,7 +847,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
             if (connector.getStatus() != RemoteUriConnector.Status.CONNECTED) {
                 connector.currentPartner = null;
                 RemotePort errorPort = getRemotePort(connector.getOwnerPortHandle());
-                if (errorPort != null) {
+                if (errorPort != null && (!elementsInErrorState.contains(errorPort))) {
                     elementsInErrorState.add(errorPort);
                 }
                 continue;
