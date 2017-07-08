@@ -65,7 +65,7 @@ import org.finroc.core.port.ThreadLocalCache;
 public class FrameworkElement extends Annotatable {
 
     /** Uid of thread that created this framework element */
-    protected final long createrThreadUid;
+    protected long createrThreadUid;
 
     // Splitting flags up might allow compiler optimizations??
 
@@ -1497,6 +1497,16 @@ public class FrameworkElement extends Annotatable {
                 }
             }
         }
+    }
+
+    /**
+     * Sets thread that initialize this framework element.
+     * This is only necessary to set, if initializer is a different thread that creator.
+     *
+     * @param threadId Id of thread that initialized element
+     */
+    public void setInitializerThread(long threadId) {
+        createrThreadUid = threadId;
     }
 
     /**

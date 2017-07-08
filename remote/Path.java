@@ -87,6 +87,19 @@ public class Path implements BinarySerializable {
         if (stream.getAbsoluteReadPosition() != readPos + size) {
             throw new Exception("Erroneously encoded path");
         }
+        this.path = strings.toArray(new String[0]);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < path.length; i++) {
+            if (i != 0 || absolute) {
+                buffer.append('/');
+            }
+            buffer.append(path[i]);
+        }
+        return buffer.toString();
     }
 
 

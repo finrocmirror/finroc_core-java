@@ -71,8 +71,9 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
         /** List with runtime listeners */
         private final RuntimeListenerManager listeners = new RuntimeListenerManager();
 
-        /** Temporary buffer - may be used in synchronized context */
+        /** Temporary buffers - may be used in synchronized context */
         private StringBuilder tempBuffer = new StringBuilder();
+        private ArrayList<FrameworkElement.Link> tempElementBuffer = new ArrayList<>();
 
         /** Lock to thread local cache list */
         ArrayList<WeakReference<ThreadLocalCache>> infosLock;
@@ -313,7 +314,7 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
             if (fe == null) {
                 for (int i = 0; i < registry.alternativeLinkRoots.size(); i++) {
                     FrameworkElement altRoot = registry.alternativeLinkRoots.get(i);
-                    fe = altRoot.getChildElement(linkName, 0, true, altRoot);
+                    fe = altRoot.getChildElement(linkName, 0, false, altRoot);
                     if (fe != null && !fe.isDeleted()) {
                         assert fe.isPort();
                         return (AbstractPort)fe;
@@ -323,6 +324,23 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
             }
             assert fe.isPort();
             return (AbstractPort)fe;
+        }
+    }
+
+    /**
+     * @param linkName (relative) Fully qualified name of port
+     * @return Number of ports with this name
+     */
+    public int countElements(String linkName) {
+        synchronized (registry) {
+            int result = getChildElement(linkName, false) == null ? 0 : 1;
+            for (int i = 0; i < registry.alternativeLinkRoots.size(); i++) {
+                FrameworkElement altRoot = registry.alternativeLinkRoots.get(i);
+                if (altRoot.getChildElement(linkName, 0, false, altRoot) != null) {
+                    result++;
+                }
+            }
+            return result;
         }
     }
 
@@ -462,13 +480,27 @@ public class RuntimeEnvironment extends FrameworkElement implements FrameworkEle
                 if (changeType == RuntimeListener.ADD && element.isPort()) { // check links
                     AbstractPort ap = (AbstractPort)element;
                     for (int i = 0; i < ap.getLinkCount(); i++) {
-                        ap.getQualifiedLink(registry.tempBuffer, i);
-                        String s = registry.tempBuffer.toString();
-                        Log.log(LogLevel.DEBUG_VERBOSE_2, this, "Checking link " + s + " with respect to link edges");
-                        LinkEdge le = registry.linkEdges.get(s);
-                        while (le != null) {
-                            le.linkAdded(this, s, ap);
-                            le = le.getNextEdge();
+                        registry.tempElementBuffer.clear();
+                        registry.tempElementBuffer.add(ap.getLink(i));
+                        FrameworkElement elementToCollect = ap.getLink(i).getParent();
+                        while (elementToCollect != null) {
+                            registry.tempElementBuffer.add(elementToCollect.getLink(0));
+                            elementToCollect = elementToCollect.getParent();
+                        }
+                        for (int j = registry.tempElementBuffer.size() - 1; j > 0; j--) {
+                            if (registry.tempElementBuffer.get(j).getChild() == this || registry.tempElementBuffer.get(j).getChild().getFlag(FrameworkElementFlags.ALTERNATIVE_LINK_ROOT)) {
+                                registry.tempBuffer.delete(0, registry.tempBuffer.length());
+                                for (int k = j - 1; k >= 0; k--) {
+                                    registry.tempBuffer.append('/').append(registry.tempElementBuffer.get(k).getName());
+                                }
+                                String s = registry.tempBuffer.toString();
+                                Log.log(LogLevel.DEBUG_VERBOSE_2, this, "Checking link " + s + " with respect to link edges");
+                                LinkEdge le = registry.linkEdges.get(s);
+                                while (le != null) {
+                                    le.linkAdded(this, s, ap);
+                                    le = le.getNextEdge();
+                                }
+                            }
                         }
                     }
 

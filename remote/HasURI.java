@@ -21,16 +21,18 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
+import java.net.URI;
+
 /**
  * @author Max Reichardt
  *
  * Element with a unique string identifier.
  * Used in tree models in Java tooling.
  */
-public interface HasUid {
+public interface HasURI {
 
     /**
      * @return Unique string identifier
      */
-    public String getUid();
+    public URI getURI();
 }

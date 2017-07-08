@@ -76,16 +76,12 @@ public class BufferedModelChanges implements ModelOperations, Runnable {
                 executeOn.updateModel((Runnable)buffer.get(index));
                 index += 1;
                 break;
-//            case addRemoteStructure:
-//                runtime.addRemoteStructure((FrameworkElementInfo)buffer.get(index), false, executeOn);
-//                index += 1;
-//                callInitPorts = true;
-//                break;
+            case initializePorts:
+                ((org.finroc.core.net.generic_protocol.RemoteRuntime)buffer.get(index)).initializeUninitializedRemotePorts();
+                index += 1;
+                break;
             }
         }
-//        if (callInitPorts) {
-//            runtime.initializeUninitializedRemotePorts();
-//        }
     }
 
     @Override
@@ -100,6 +96,11 @@ public class BufferedModelChanges implements ModelOperations, Runnable {
         buffer.add(Operation.changeNodeName);
         buffer.add(node);
         buffer.add(newName);
+    }
+
+    public void initializeUnitializedPorts(org.finroc.core.net.generic_protocol.RemoteRuntime runtime) {
+        buffer.add(Operation.initializePorts);
+        buffer.add(runtime);
     }
 
     @Override
@@ -142,7 +143,7 @@ public class BufferedModelChanges implements ModelOperations, Runnable {
     }
 
     /** Opcodes for operations */
-    private enum Operation { addNode, changeNodeName, removeNode, replaceNode, setModelRoot, updateModel }
+    private enum Operation { addNode, changeNodeName, removeNode, replaceNode, setModelRoot, updateModel, initializePorts }
 
     /** Stores buffered operations */
     private ArrayList<Object> buffer = new ArrayList<Object>();

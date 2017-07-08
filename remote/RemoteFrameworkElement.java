@@ -21,6 +21,7 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +38,7 @@ import org.rrlib.serialization.rtti.DataTypeBase;
  *
  * This class contains information about remote framework element
  */
-public class RemoteFrameworkElement extends ModelNode {
+public class RemoteFrameworkElement extends ModelNode implements HasURI {
 
     /** Handle of remote element */
     private final int remoteHandle;
@@ -413,5 +414,31 @@ public class RemoteFrameworkElement extends ModelNode {
             return true;
         }
         return super.isHidden(checkAncestors);
+    }
+
+    @Override
+    public URI getURI() {
+        try {
+            RemoteRuntime runtime = RemoteRuntime.find(this);
+            if (runtime == null) {
+                throw new RuntimeException("No runtime)");
+            }
+            String scheme = runtime.getParent().getName().toLowerCase();
+            String authority = runtime.getName().replaceAll("/", "%2F");
+            ModelNode currentElement = this;
+            String path = null;
+            if (currentElement.getParent() == runtime) {
+                path = "/" + currentElement.getName();  // this is already a path
+            } else {
+                while (currentElement != runtime) {
+                    path = "/" + currentElement.getName().replaceAll("/", "%2F") + (path != null ? (path) : "");
+                    currentElement = currentElement.getParent();
+                }
+            }
+
+            return new URI(scheme, authority, path, null, null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

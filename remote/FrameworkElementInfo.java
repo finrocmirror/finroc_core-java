@@ -332,6 +332,11 @@ public class FrameworkElementInfo {
 
         /** Element with globally unique path? */
         public boolean unique;
+
+        @Override
+        public String toString() {
+            return (name != null) ? name : path.toString().substring(1);
+        }
     }
 
     /** Per-link data - in fixed array for efficiency reasons */

@@ -34,7 +34,7 @@ import org.rrlib.serialization.rtti.DataTypeBase;
  *
  * This class contains information about and wraps remote ports
  */
-public class RemotePort extends RemoteFrameworkElement implements HasUid, PortWrapper {
+public class RemotePort extends RemoteFrameworkElement implements PortWrapper {
 
     /** Wrapped port link */
     private final FrameworkElement.Link portLink;
@@ -104,13 +104,6 @@ public class RemotePort extends RemoteFrameworkElement implements HasUid, PortWr
         public RemotePort[] getRemotePorts() {
             return remotePorts;
         }
-    }
-
-    @Override
-    public String getUid() {
-        StringBuilder sb = new StringBuilder();
-        getPort().getQualifiedLink(sb, portLink);
-        return sb.toString();
     }
 
     public boolean isProxy() {

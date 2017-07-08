@@ -80,9 +80,6 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
     /** Connection to transfer "express" ports data */
     private Connection expressConnection;
 
-    /** Framework element that contains all global links - possibly NULL */
-    private FrameworkElement globalLinks;
-
     /** Framework element that contains all server ports - possibly NULL */
     //private FrameworkElement serverPorts;
 
@@ -126,7 +123,7 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
 
     /** Peer info this part is associated with  */
     protected RemoteRuntime(FrameworkElement parent, String name, boolean createAdminClient, int handleStampWidth) {
-        super(parent, name);
+        super(parent, name, Flag.NETWORK_ELEMENT | Flag.GLOBALLY_UNIQUE_LINK | Flag.ALTERNATIVE_LINK_ROOT, -1);
         this.handleStampWidth = handleStampWidth;
         adminInterface = createAdminClient ? new AdminClient("AdminClient " + getName(), this) : null;
     }
@@ -184,11 +181,11 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
             }
             ProxyPort port = new ProxyPort(info);
             for (int i = 0; i < info.getLinkCount(); i++) {
-                RemoteFrameworkElement remoteElement = new RemotePort(info.getHandle(), info.getLink(i).name, port.getPort(), i, info.getDataType());
+                RemoteFrameworkElement remoteElement = new RemotePort(info.getHandle(), info.getLink(i).toString(), port.getPort(), i, info.getDataType());
                 if (i == 0) {
                     remoteRuntime.setElementLookupEntry(info.getHandle(), remoteElement);
                 }
-                remoteElement.setName(info.getLink(i).name);
+                remoteElement.setName(info.getLink(i).toString());
                 remoteElement.setTags(info.getTags());
                 remoteElement.setFlags(info.getFlags());
                 ModelNode parent = remoteRuntime.obtainFrameworkElement(info.getLink(i).parent);  // should be thread-safe
@@ -211,7 +208,7 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
             }
         } else {
             RemoteFrameworkElement remoteElement = remoteRuntime.obtainFrameworkElement(info.getHandle());
-            remoteElement.setName(info.getLink(0).name);
+            remoteElement.setName(info.getLink(0).toString());
             remoteElement.setTags(info.getTags());
             remoteElement.setFlags(info.getFlags());
             ModelNode parent = remoteRuntime.obtainFrameworkElement(info.getLink(0).parent);
@@ -318,16 +315,6 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
         } else {
             return ((float)pingTime - 300.0f) / 1000.0f;
         }
-    }
-
-    /**
-     * @return Framework element that contains all global links (possibly created by call to this)
-     */
-    public FrameworkElement getGlobalLinkElement() {
-        if (globalLinks == null) {
-            globalLinks = new FrameworkElement(this, "global", Flag.NETWORK_ELEMENT | Flag.GLOBALLY_UNIQUE_LINK | Flag.ALTERNATIVE_LINK_ROOT, -1);
-        }
-        return globalLinks;
     }
 
     /**
@@ -769,6 +756,7 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
                     for (int j = 0; j < remotePorts.length; j++) {
                         port.getPort().setName(createPortName(remotePorts[j]), j);
                     }
+                    port.getPort().setInitializerThread(Thread.currentThread().getId());
                     port.getPort().init();
                     uninitializedRemotePorts.remove(i);
                     i--;
@@ -840,7 +828,6 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
         if (connection == primaryConnection) {
             primaryConnection = null;
             deleteAllChildren();
-            globalLinks = null;
             //serverPorts = null;
             uninitializedRemotePorts.clear();
             pullCallsAwaitingResponse.clear();
@@ -890,12 +877,10 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
 
             Log.log(LogLevel.DEBUG_VERBOSE_2, this, "Updating port info: " + portInfo.toString());
             for (int i = 1, n = portInfo.getLinkCount(); i < n; i++) {
-                FrameworkElement parent = portInfo.getLink(i).unique ? getGlobalLinkElement() : (FrameworkElement)RemoteRuntime.this;
-                getPort().link(parent, portInfo.getLink(i).name);
+                getPort().link(RemoteRuntime.this, portInfo.getLink(i).toString());
             }
-            FrameworkElement parent = portInfo.getLink(0).unique ? getGlobalLinkElement() : (FrameworkElement)RemoteRuntime.this;
-            getPort().setName(portInfo.getLink(0).name);
-            parent.addChild(getPort());
+            getPort().setName(portInfo.getLink(0).toString());
+            RemoteRuntime.this.addChild(getPort());
             FrameworkElementTags.addTags(getPort(), portInfo.getTags());
 
             if (getPort() instanceof CCPortBase) {
