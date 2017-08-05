@@ -594,7 +594,7 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
         case STRUCTURE_DELETED:
             handle = stream.readInt();
             element = getModelNode().getRemoteElement(handle);  // TODO: check that port is only registered with first link
-            if (element == null || (!(element instanceof RemotePort))) {
+            if (element == null || (!(element instanceof RemoteFrameworkElement))) {
                 throw new Exception("STRUCTURE_DELETED on element that does not exist");
             }
             if (element instanceof RemotePort) {
