@@ -108,7 +108,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 ArrayWrapper<RemoteConnector> iterable = list.getIterable();
                 for (int j = 0, n = iterable.size(); j < n; j++) {
                     RemoteConnector existingConnector = iterable.get(j);
-                    if (existingConnector.getSourceHandle() == connector.getSourceHandle() && existingConnector.getDestinationHandle() == connector.getDestinationHandle()) {
+                    if (existingConnector != null && existingConnector.getSourceHandle() == connector.getSourceHandle() && existingConnector.getDestinationHandle() == connector.getDestinationHandle()) {
                         Log.log(LogLevel.WARNING, "The same connector was added again. Discarding new connector.");
                         return;
                     }
@@ -757,6 +757,10 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         int index = (int)((portHandle & 0xFFFFFFFFL) >> handleStampWidth);
         AbstractPort.EdgeList<RemoteConnector> list = connectorTable.get(index);
         if (list != null) {
+            ArrayWrapper<RemoteConnector> iterable = list.getIterable();
+            for (int i = 0, n = iterable.size(); i < n; i++) {
+                removeConnector(iterable.get(i));
+            }
             list.clear();
         }
 
