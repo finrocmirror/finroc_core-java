@@ -23,9 +23,7 @@ package org.finroc.core.remote;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.Event;
-import org.finroc.core.datatype.XML;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.PublishedRegisters;
@@ -106,7 +104,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Data encoding to use in binary streams
      */
     public Serialization.DataEncoding getEncodingForDefaultLocalType() {
-        return localTypeMatch == LocalTypeMatch.XML ? Serialization.DataEncoding.XML : (localTypeMatch == LocalTypeMatch.STRING ? Serialization.DataEncoding.STRING : Serialization.DataEncoding.BINARY);
+        return typeAdapter != null ? adapterInfo.networkEncoding : Serialization.DataEncoding.BINARY;
     }
 
     /**
@@ -191,10 +189,14 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         }
 
         // Option 2: There is a type adapter for this type
+        RemoteTypeAdapter defaultAdapter = null;
+        RemoteTypeAdapter.Info info = new RemoteTypeAdapter.Info();
         synchronized (RemoteTypeAdapter.adapters) {
-            RemoteTypeAdapter.Info info = new RemoteTypeAdapter.Info();
             for (RemoteTypeAdapter adapter : RemoteTypeAdapter.adapters) {
-                if (adapter.handlesType(this, info)) {
+                if (adapter instanceof RemoteTypeAdapter.Default) {
+                    defaultAdapter = (RemoteTypeAdapter.Default)adapter;
+                }
+                if (adapter.handlesType(this, info) && (isEnum() || adapter != defaultAdapter)) {
                     typeAdapter = adapter;
                     adapterInfo = info;
                     if (adapterInfo.localType == null || adapterInfo.networkEncoding == null) {
@@ -236,21 +238,16 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
             return;
         }
 
-        // Option 4: Type has a string representation
-        if ((typeTraits & DataTypeBase.IS_STRING_SERIALIZABLE) != 0) {
-            localDataType = CoreString.TYPE;
-            localTypeMatch = LocalTypeMatch.STRING;
+        // Options 4 and 5: Type has a string  or XML representation
+        if (defaultAdapter.handlesType(this, info)) {
+            typeAdapter = defaultAdapter;
+            adapterInfo = info;
+            localDataType = adapterInfo.localType;
+            localTypeMatch = adapterInfo.networkEncoding == Serialization.DataEncoding.STRING ? LocalTypeMatch.STRING : LocalTypeMatch.XML;
             return;
         }
 
-        // Option 6: Type has an XML representation
-        if ((typeTraits & DataTypeBase.IS_XML_SERIALIZABLE) != 0) {
-            localDataType = XML.TYPE;
-            localTypeMatch = LocalTypeMatch.XML;
-            return;
-        }
-
-        // Option 7: Use empty (event) type
+        // Option 6: Use empty (event) type
         localDataType = Event.TYPE;
         localTypeMatch = LocalTypeMatch.EVENT;
     }
