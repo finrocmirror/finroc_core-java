@@ -246,7 +246,7 @@ public class AdminClient extends ClientPort {
                 stream.writeByte(port.getDataType().getEncodingForDefaultLocalType().ordinal());
                 stream.writeShort(port.getDataType().getHandle());
                 if (port.getDataType().getCastCountForDefaultLocalType() > 1) {
-                    stream.writeShort(port.getDataType().getDefaultLocalTypeIsCastedFrom().getHandle());
+                    stream.writeShort(port.getDataType().getDefaultTypeRemotelyCastedTo().getHandle());
                 }
             } else {
                 stream.writeByte(port.getDataType().getEncodingForDefaultLocalType().ordinal());

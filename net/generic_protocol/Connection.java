@@ -43,6 +43,7 @@ import org.finroc.core.port.rpc.internal.ResponseSender;
 import org.finroc.core.remote.FrameworkElementInfo;
 import org.finroc.core.remote.ModelHandler;
 import org.finroc.core.remote.RemotePort;
+import org.finroc.core.remote.RemoteType;
 import org.finroc.core.remote.RemoteTypeConversion;
 
 /**
@@ -318,12 +319,13 @@ public abstract class Connection implements ResponseSender {
             command.getWriteStream().writeInt(port.getRemoteHandle());
             //tServerSideConversionInfo
             int casts = port.getDataType().getCastCountForDefaultLocalType();
-            command.getWriteStream().writeString(casts >= 1 ? port.getDataType().getName() : "");
+            RemoteType destinationType = casts == 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getDefaultTypeRemotelyCastedTo() : (casts == 1 ? port.getDataType().getDefaultTypeRemotelyCastedTo() : port.getDataType());
+            command.getWriteStream().writeString(casts >= 1 ? destinationType.getName() : "");
             command.getWriteStream().writeString(casts >= 1 ? RemoteTypeConversion.STATIC_CAST : "");
             command.getWriteStream().writeString("");
             command.getWriteStream().writeString(casts >= 2 ? RemoteTypeConversion.STATIC_CAST : "");
             command.getWriteStream().writeString("");
-            command.getWriteStream().writeString(casts >= 2 ? port.getDataType().getDefaultLocalTypeIsCastedFrom().getName() : "");
+            command.getWriteStream().writeString(casts >= 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getName() : "");
             command.getWriteStream().writeEnum(port.getDataType().getEncodingForDefaultLocalType());
 
             // tDynamicConnectionData

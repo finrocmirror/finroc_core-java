@@ -83,7 +83,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return If default local type is obtained via casting: the number of chained casts. Otherwise 0.
      */
     public int getCastCountForDefaultLocalType() {
-        return localTypeMatch == LocalTypeMatch.CAST ? castedFrom.getCastCountForDefaultLocalType() : 0;
+        return localTypeMatch == LocalTypeMatch.CAST ? (1 + castedTo.getCastCountForDefaultLocalType()) : 0;
     }
 
     /**
@@ -94,17 +94,17 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     }
 
     /**
-     * @return If default local type is obtained via casting: the type this type is casted from - otherwise null.
+     * @return If default local type is obtained via casting: the type this type is casted to (when subscribing) - otherwise null
      */
-    public RemoteType getDefaultLocalTypeIsCastedFrom() {
-        return castedFrom;
+    public RemoteType getDefaultTypeRemotelyCastedTo() {
+        return castedTo;
     }
 
     /**
      * @return Data encoding to use in binary streams
      */
     public Serialization.DataEncoding getEncodingForDefaultLocalType() {
-        return typeAdapter != null ? adapterInfo.networkEncoding : Serialization.DataEncoding.BINARY;
+        return castedTo != null ? castedTo.getEncodingForDefaultLocalType() : (typeAdapter != null ? adapterInfo.networkEncoding : Serialization.DataEncoding.BINARY);
     }
 
     /**
@@ -173,14 +173,79 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     /**
      * Resolves local data type if this has not been done yet
      * Should be done when static cast operations are also available
+     *
+     * @param runtime Remote runtime environment (required for cast operation lookup)
      */
     public void resolveDefaultLocalType(RemoteRuntime runtime) {
+        resolveDefaultLocalType(runtime, 2);
+    }
+
+    /**
+     * Resolves local data type if this has not been done yet
+     * Should be done when static cast operations are also available
+     *
+     * @param runtime Remote runtime environment (required for cast operation lookup)
+     */
+    public void resolveDefaultLocalType(RemoteRuntime runtime, int maxCasts) {
+        if (localTypeCastsChecked) {
+            return;
+        }
+        resolveDefaultLocalTypeWithoutCast();
+        if (localTypeMatch.ordinal() <= LocalTypeMatch.ADAPTED.ordinal()) {
+            localTypeCastsChecked = true;
+            return;
+        }
+
+        // Option 3: Type has a static cast operation to and from known type (underlying type is preferred, next choices are types with best local type match - and smallest size difference)
+        RemoteType castedTo = null;
+        if ((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0) {
+            castedTo = runtime.getTypes().get(underlyingType);
+            if (maxCasts == 2) {
+                castedTo.resolveDefaultLocalType(runtime, 1);
+            } else {
+                castedTo.resolveDefaultLocalTypeWithoutCast();
+            }
+            if (castedTo.getCastCountForDefaultLocalType() > 1 || (!runtime.isStaticCastSupported(castedTo, this))) {
+                castedTo = null;
+            }
+        }
+        if (castedTo == null) {
+            int castsSize = runtime.getStaticCasts().size();
+            for (int i = 0; i < castsSize; i++) {
+                RemoteStaticCast cast = runtime.getStaticCasts().get(i);
+                if (cast.getSourceType() == this && runtime.isStaticCastSupported(cast.getDestinationType(), this)) {
+                    RemoteType candidate = cast.getDestinationType();
+                    if (maxCasts == 2) {
+                        candidate.resolveDefaultLocalType(runtime, 1);
+                    } else {
+                        candidate.resolveDefaultLocalTypeWithoutCast();
+                    }
+                    if (candidate.getCastCountForDefaultLocalType() <= 1 && (castedTo == null || (candidate.localTypeMatch.ordinal() < castedTo.localTypeMatch.ordinal()) || (candidate.localTypeMatch == castedTo.localTypeMatch && Math.abs(candidate.size - this.size) < Math.abs(castedTo.size - this.size)))) {
+                        castedTo = candidate;
+                    }
+                }
+            }
+        }
+
+        localTypeCastsChecked |= (maxCasts >= 2);
+        if (castedTo != null) {
+            this.castedTo = castedTo;
+            localDataType = castedTo.localDataType;
+            localTypeMatch = LocalTypeMatch.CAST;
+            return;
+        }
+    }
+
+    /**
+     * Resolves local data type if this has not been done yet - without checking additional options with casting
+     */
+    private void resolveDefaultLocalTypeWithoutCast() {
         if (localDataType != null) {
             return;
         }
 
         // Option 1: There is an equivalent local type
-        if (!isEnum()) {
+        if (!isEnum() && localDataType == null) {
             localDataType = DataTypeBase.findType(name);
             if (localDataType != null) {
                 localTypeMatch = LocalTypeMatch.EXACT;
@@ -208,34 +273,6 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                     return;
                 }
             }
-        }
-
-        // Option 3: Type has a static cast operation to and from known type (underlying type is preferred, next choices are types with the maximum size <= this type's size)
-        if ((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0) {
-            castedFrom = runtime.getTypes().get(underlyingType);
-            if (castedFrom.getCastCountForDefaultLocalType() > 1 || (!runtime.isStaticCastSupported(castedFrom, this))) {
-                castedFrom = null;
-            }
-        }
-        if (castedFrom == null) {
-            int castsSize = runtime.getStaticCasts().size();
-            for (int i = 0; i < castsSize; i++) {
-                RemoteStaticCast cast = runtime.getStaticCasts().get(i);
-                if (cast.getSourceType() == this && runtime.isStaticCastSupported(cast.getDestinationType(), this)) {
-                    RemoteType candidate = cast.getDestinationType();
-                    candidate.resolveDefaultLocalType(runtime);
-                    if (castedFrom.getCastCountForDefaultLocalType() <= 1 && (castedFrom == null || (candidate.localTypeMatch.ordinal() < castedFrom.localTypeMatch.ordinal()) || (candidate.localTypeMatch == castedFrom.localTypeMatch && candidate.size <= this.size && candidate.size > castedFrom.size))) {
-                        castedFrom = candidate;
-                    }
-                }
-            }
-        }
-
-        if (castedFrom != null) {
-            castedFrom.resolveDefaultLocalType(runtime);
-            localDataType = castedFrom.localDataType;
-            localTypeMatch = LocalTypeMatch.CAST;
-            return;
         }
 
         // Options 4 and 5: Type has a string  or XML representation
@@ -274,10 +311,15 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     public void deserializeData(BinaryInputStream stream, GenericObject object) throws Exception {
         switch (localTypeMatch) {
         case ADAPTED:
+        case STRING:
+        case XML:
             typeAdapter.deserialize(stream, object, this, adapterInfo);
             break;
         case EVENT:
         case NONE:
+            break;
+        case CAST:
+            castedTo.deserializeData(stream, object);
             break;
         default:
             object.deserialize(stream, getEncodingForDefaultLocalType());
@@ -294,10 +336,15 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     public void serializeData(BinaryOutputStream stream, GenericObject object) {
         switch (localTypeMatch) {
         case ADAPTED:
+        case STRING:
+        case XML:
             typeAdapter.serialize(stream, object, this, adapterInfo);
             break;
         case EVENT:
         case NONE:
+            break;
+        case CAST:
+            castedTo.serializeData(stream, object);
             break;
         default:
             object.serialize(stream, getEncodingForDefaultLocalType());
@@ -315,7 +362,8 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         localDataType = null;
         typeAdapter = null;
         adapterInfo = null;
-        castedFrom = null;
+        castedTo = null;
+        localTypeCastsChecked = false;
 
         if (legacyProtocol) {
 
@@ -451,8 +499,11 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     /** How default local data type was resolved  */
     private LocalTypeMatch localTypeMatch = LocalTypeMatch.NONE;
 
-    /** If default local type is obtained via casting: the type this type is casted from - otherwise null. */
-    private RemoteType castedFrom;
+    /** Whether casting has already been checked for resolving local type */
+    private boolean localTypeCastsChecked = false;
+
+    /** If default local type is obtained via casting: the type this type is casted to (when subscribing) - otherwise null */
+    private RemoteType castedTo;
 
     /** Create legacy remote null type */
     static RemoteType createLegacyRemoteNullTypeInstance() {
