@@ -150,7 +150,7 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
                     if (conversion.getParameter() == null) {
                         throw new Exception("No parameter defined in conversion operation");
                     }
-                    parameter.deserialize(stream, Serialization.DataEncoding.BINARY);
+                    conversion.getParameter().getType().deserializeData(stream, parameter);
                 }
                 if (i == 1) {
                     operation1 = conversion;
@@ -210,7 +210,7 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
                 stream.writeByte(flags);
                 stream.writeShort(conversion.getHandle());
                 if (sendParameter) {
-                    parameter.serialize(stream, Serialization.DataEncoding.BINARY);
+                    conversion.getParameter().getType().serializeData(stream, parameter);
                 }
             }
             if (size >= 2) {
