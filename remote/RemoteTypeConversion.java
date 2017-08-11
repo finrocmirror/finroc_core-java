@@ -21,9 +21,12 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
+import org.rrlib.logging.Log;
+import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.PublishedRegisters;
+import org.rrlib.serialization.Serialization;
 
 /**
  * @author Max Reichardt
@@ -125,6 +128,9 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
         if (stream.readBoolean()) {
             parameter = new ParameterDefinition();
             parameter.deserialize(stream);
+            if (!parameter.getType().isBinarySerializationSupported()) {
+                Log.log(LogLevel.WARNING, "Parameter of type '" + parameter.getType().getName() + "' in remote type conversion '" + name + "' is not supported");
+            }
         }
     }
 

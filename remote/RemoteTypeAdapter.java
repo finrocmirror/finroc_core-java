@@ -24,6 +24,7 @@ package org.finroc.core.remote;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.CoreString;
 import org.finroc.core.datatype.XML;
 import org.rrlib.serialization.BinaryInputStream;
@@ -115,6 +116,9 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
      * Also handles enum types.
      */
     public static class Default extends RemoteTypeAdapter {
+
+        enum Type { INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT, DOUBLE, ENUM, STRING_SERIALIZABLE, XML_SERIALIZABLE }
+
         public Default() {
             super(0);
         }
@@ -122,23 +126,65 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
         @Override
         public boolean handlesType(RemoteType remoteType, Info adapterInfo) {
             if (remoteType.isEnum()) {
+                adapterInfo.customAdapterData1 = Type.ENUM;
                 adapterInfo.localType = RemoteEnumValue.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.BINARY;
             } else if ((remoteType.getTypeTraits() & DataTypeBase.IS_STRING_SERIALIZABLE) != 0) {
+
+                for (int i = 0; i <= Type.DOUBLE.ordinal(); i++) {
+                    if (remoteType.getName().equalsIgnoreCase(Type.values()[i].toString())) {
+                        adapterInfo.customAdapterData1 = Type.values()[i];
+                        adapterInfo.localType = CoreNumber.TYPE;
+                        adapterInfo.networkEncoding = Serialization.DataEncoding.BINARY;
+                        return true;
+                    }
+                }
+
+                adapterInfo.customAdapterData1 = Type.STRING_SERIALIZABLE;
                 adapterInfo.localType = CoreString.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.STRING;
+                return true;
             } else if ((remoteType.getTypeTraits() & DataTypeBase.IS_XML_SERIALIZABLE) != 0) {
+                adapterInfo.customAdapterData1 = Type.XML_SERIALIZABLE;
                 adapterInfo.localType = XML.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.XML;
-            } else {
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
 
         @Override
         public void deserialize(BinaryInputStream stream, GenericObject object, RemoteType type, Info adapterInfo) throws Exception {
-            if (adapterInfo.localType == RemoteEnumValue.TYPE) {
+            switch ((Type)adapterInfo.customAdapterData1) {
+            case INT8:
+                ((CoreNumber)object.getData()).setValue(stream.readByte());
+                break;
+            case UINT8:
+                ((CoreNumber)object.getData()).setValue(stream.readByte() & 0xFF);
+                break;
+            case INT16:
+                ((CoreNumber)object.getData()).setValue(stream.readShort());
+                break;
+            case UINT16:
+                ((CoreNumber)object.getData()).setValue(stream.readShort() & 0xFFFF);
+                break;
+            case INT32:
+                ((CoreNumber)object.getData()).setValue(stream.readInt());
+                break;
+            case UINT32:
+                ((CoreNumber)object.getData()).setValue(stream.readInt() & 0xFFFFFFFFL);
+                break;
+            case INT64:
+            case UINT64:
+                ((CoreNumber)object.getData()).setValue(stream.readLong());
+                break;
+            case FLOAT:
+                ((CoreNumber)object.getData()).setValue(stream.readFloat());
+                break;
+            case DOUBLE:
+                ((CoreNumber)object.getData()).setValue(stream.readDouble());
+                break;
+            case ENUM:
                 String[] strings = type.getEnumConstants();
                 int index = -1;
                 if (strings.length <= 0x100) {
@@ -150,16 +196,42 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                     index = stream.readInt();
                 }
                 ((RemoteEnumValue)object.getData()).set(index, type);
-            } else if (adapterInfo.localType == XML.TYPE) {
-                object.deserialize(stream, Serialization.DataEncoding.BINARY);
-            } else {
+                break;
+            case STRING_SERIALIZABLE:
                 object.deserialize(stream, adapterInfo.networkEncoding);
+                break;
+            case XML_SERIALIZABLE:
+                object.deserialize(stream, Serialization.DataEncoding.BINARY);
+                break;
             }
         }
 
         @Override
         public void serialize(BinaryOutputStream stream, GenericObject object, RemoteType type, Info adapterInfo) {
-            if (adapterInfo.localType == RemoteEnumValue.TYPE) {
+            switch ((Type)adapterInfo.customAdapterData1) {
+            case INT8:
+            case UINT8:
+                stream.writeByte(((CoreNumber)object.getData()).byteValue());
+                break;
+            case INT16:
+            case UINT16:
+                stream.writeShort(((CoreNumber)object.getData()).shortValue());
+                break;
+            case INT32:
+            case UINT32:
+                stream.writeInt(((CoreNumber)object.getData()).intValue());
+                break;
+            case INT64:
+            case UINT64:
+                stream.writeLong(((CoreNumber)object.getData()).longValue());
+                break;
+            case FLOAT:
+                stream.writeFloat(((CoreNumber)object.getData()).floatValue());
+                break;
+            case DOUBLE:
+                stream.writeDouble(((CoreNumber)object.getData()).doubleValue());
+                break;
+            case ENUM:
                 RemoteEnumValue value = (RemoteEnumValue)object.getData();
                 int index = value.getOrdinal();
                 if (index < 0) {
@@ -173,10 +245,13 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                 } else {
                     stream.writeInt(index);
                 }
-            } else if (adapterInfo.localType == XML.TYPE) {
-                object.serialize(stream, Serialization.DataEncoding.BINARY);
-            } else {
+                break;
+            case STRING_SERIALIZABLE:
                 object.serialize(stream, adapterInfo.networkEncoding);
+                break;
+            case XML_SERIALIZABLE:
+                object.serialize(stream, Serialization.DataEncoding.BINARY);
+                break;
             }
         }
     }

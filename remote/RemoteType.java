@@ -90,7 +90,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Default local data type that represents the same type (null if type has not been resolved)
      */
     public DataTypeBase getDefaultLocalDataType() {
-        return localDataType;
+        return localTypeCastsChecked ? localDataType : null;
     }
 
     /**
@@ -150,6 +150,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     }
 
     /**
+     * @return Whether native plain binary serialization (without casting) is supported for this type. Note that this methods returns valid result before resolveDefaultLocalType() is called.
+     */
+    public boolean isBinarySerializationSupported() {
+        return localTypeMatch.ordinal() <= LocalTypeMatch.ADAPTED.ordinal() && getEncodingForDefaultLocalType() == Serialization.DataEncoding.BINARY;
+    }
+
+    /**
      * @return Whether this is a cheap-copy type in remote runtime environment
      */
     public boolean isCheapCopyType() {
@@ -186,11 +193,10 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      *
      * @param runtime Remote runtime environment (required for cast operation lookup)
      */
-    public void resolveDefaultLocalType(RemoteRuntime runtime, int maxCasts) {
+    private void resolveDefaultLocalType(RemoteRuntime runtime, int maxCasts) {
         if (localTypeCastsChecked) {
             return;
         }
-        resolveDefaultLocalTypeWithoutCast();
         if (localTypeMatch.ordinal() <= LocalTypeMatch.ADAPTED.ordinal()) {
             localTypeCastsChecked = true;
             return;
@@ -202,8 +208,6 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
             castedTo = runtime.getTypes().get(underlyingType);
             if (maxCasts == 2) {
                 castedTo.resolveDefaultLocalType(runtime, 1);
-            } else {
-                castedTo.resolveDefaultLocalTypeWithoutCast();
             }
             if (castedTo.getCastCountForDefaultLocalType() > 1 || (!runtime.isStaticCastSupported(castedTo, this))) {
                 castedTo = null;
@@ -217,8 +221,6 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                     RemoteType candidate = cast.getDestinationType();
                     if (maxCasts == 2) {
                         candidate.resolveDefaultLocalType(runtime, 1);
-                    } else {
-                        candidate.resolveDefaultLocalTypeWithoutCast();
                     }
                     if (candidate.getCastCountForDefaultLocalType() <= 1 && (castedTo == null || (candidate.localTypeMatch.ordinal() < castedTo.localTypeMatch.ordinal()) || (candidate.localTypeMatch == castedTo.localTypeMatch && Math.abs(candidate.size - this.size) < Math.abs(castedTo.size - this.size)))) {
                         castedTo = candidate;
@@ -261,7 +263,10 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                 if (adapter instanceof RemoteTypeAdapter.Default) {
                     defaultAdapter = (RemoteTypeAdapter.Default)adapter;
                 }
-                if (adapter.handlesType(this, info) && (isEnum() || adapter != defaultAdapter)) {
+                if (adapter.handlesType(this, info)) {
+                    if (adapter == defaultAdapter && info.networkEncoding != Serialization.DataEncoding.BINARY) {
+                        continue;
+                    }
                     typeAdapter = adapter;
                     adapterInfo = info;
                     if (adapterInfo.localType == null || adapterInfo.networkEncoding == null) {
@@ -426,6 +431,8 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                 }
             }
         }
+
+        resolveDefaultLocalTypeWithoutCast();
     }
 
     @Override
