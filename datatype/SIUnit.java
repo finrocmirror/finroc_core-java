@@ -97,6 +97,7 @@ public class SIUnit extends Unit {
 
     /** Helper units for nicer string output */
     public static final SIUnit RAD_PER_SECOND = getInstance(HERTZ, 1, "rad/s");
+    public static final SIUnit RAD_PER_SQUARE_SECOND = (SIUnit)getInstance(0, 0, -2, 0, 0, 0, 0).setString("rad/s^2");
 
     /**
      * Get unique unit instance for specified exponents
