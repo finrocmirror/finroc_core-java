@@ -58,6 +58,9 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
     /** List of editable interfaces of this element */
     private ArrayList<RemoteFrameworkElement> editableInterfaces;
 
+    /** All flags for interface classification */
+    static private final int ALL_INTERFACE_CLASSIFICATION_FLAGS = FrameworkElementFlags.INTERFACE_FOR_OUTPUTS | FrameworkElementFlags.INTERFACE_FOR_INPUTS | FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS | FrameworkElementFlags.PROXY_INTERFACE | FrameworkElementFlags.PARAMETER_INTERFACE;
+
 
     /**
      * @param remoteHandle Handle of remote framework element handle
@@ -93,6 +96,12 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
      * @param flags Flags of this remote framework element
      */
     public void setFlags(int flags) {
+        if ((flags & FrameworkElementFlags.INTERFACE) != 0 && (flags & ALL_INTERFACE_CLASSIFICATION_FLAGS) != 0) {
+            flags |= FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
+        }
+        if ((flags & FrameworkElementFlags.INTERFACE) != 0 && (flags & FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS) != 0) {
+            flags |= FrameworkElementFlags.EMITS_DATA | FrameworkElementFlags.ACCEPTS_DATA;
+        }
         this.flags = flags;
     }
 
@@ -359,10 +368,9 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
      * If not, set flags as to whether this is e.g. input or output interface.
      */
     private void classifyInterface() {
-        int ALL_FLAGS = FrameworkElementFlags.INTERFACE_FOR_OUTPUTS | FrameworkElementFlags.INTERFACE_FOR_INPUTS | FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS;
         if (isInterface()) {
-            if ((flags & ALL_FLAGS) == 0) {
-                // currently classification is determined by-name. However, this should not be based on heuristics in future finroc versions.
+            if ((flags & ALL_INTERFACE_CLASSIFICATION_FLAGS) == 0) {
+                // legacy interface classification is determined by-name
                 if (getName().contains("Output") || getName().contains("output")) {
                     flags |= FrameworkElementFlags.INTERFACE_FOR_OUTPUTS | FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS | FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
                 }
@@ -400,7 +408,7 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
                         }
                     }
                 }
-                if ((flags & ALL_FLAGS) == ALL_FLAGS) {
+                if ((flags & ALL_INTERFACE_CLASSIFICATION_FLAGS) != 0) {
                     flags |= FrameworkElementFlags.FINAL_INTERFACE_CLASSIFICATION;
                 }
             }

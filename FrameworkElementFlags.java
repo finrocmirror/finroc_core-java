@@ -97,12 +97,12 @@ public class FrameworkElementFlags {
 
 
     // Interface-only flags (mainly relevant for editable interfaces)
-    INTERFACE_FOR_RPC_PORTS = 1 << 11,          //!< Can interface contains RPC ports?
-    INTERFACE_FOR_DATA_PORTS = 1 << 12,         //!< Can interface contains data ports?
+    INTERFACE_FOR_RPC_PORTS = 1 << 11,          //!< Can interface contain RPC ports?
+    INTERFACE_FOR_DATA_PORTS = 1 << 12,         //!< Can interface contain data ports?
     INTERFACE_FOR_INPUTS = 1 << 13,             //!< Can interface contain input ports?
     INTERFACE_FOR_OUTPUTS = 1 << 14,            //!< Can interface contain output ports?
     PROXY_INTERFACE = 1 << 15,                  //!< Is this an interface of a composite component?
-    PARAMETER_INTERFACE = 1 << 16,             //!< Is this an interface for parameters?
+    PARAMETER_INTERFACE = 1 << 16,              //!< Is this an interface for parameters?
     FINAL_INTERFACE_CLASSIFICATION = 1 << 17;   //!< Can any of the above flags (11-16) appear later? (if true, they cannot)
 
     // Common flag combinations
