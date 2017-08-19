@@ -129,6 +129,7 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                 adapterInfo.customAdapterData1 = Type.ENUM;
                 adapterInfo.localType = RemoteEnumValue.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.BINARY;
+                return true;
             } else if ((remoteType.getTypeTraits() & DataTypeBase.IS_STRING_SERIALIZABLE) != 0) {
 
                 for (int i = 0; i <= Type.DOUBLE.ordinal(); i++) {
