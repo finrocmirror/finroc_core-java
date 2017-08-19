@@ -415,6 +415,8 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
                 if (netPort != null) {
                     netPort.receiveDataFromStream(stream, encoding, opCode != Definitions.OpCode.SMALL_PORT_VALUE_CHANGE_WITHOUT_TIMESTAMP);
                 }
+            } else {
+                Log.log(LogLevel.WARNING, "Port not available");
             }
             break;
         case RPC_CALL:
