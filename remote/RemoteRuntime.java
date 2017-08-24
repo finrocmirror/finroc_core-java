@@ -863,7 +863,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
 
             // Resolve runtimes that match scheme handler and authority (needs to be more sophisticated for supporting additional network transports)
             otherRuntimes.clear();
-            if (connector.getSchemeHandler().getSchemeName().equals("")) {
+            if (connector.getSchemeHandler() != null && connector.getSchemeHandler().getSchemeName().equals("")) {
                 otherRuntimes.add(this);
             } else {
                 ModelNode parent = this.getParent();
