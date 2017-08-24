@@ -26,11 +26,7 @@ package org.finroc.core;
  *
  * This enum contains flags for framework elements.
  * The lower 22 bit are constant flags which may not change
- * at runtime whereas the upper 10 may change
- * (we omit the last bit in Java, because the sign may have ugly side effects).
- * The custom flag may be used by a framework element subclass.
- *
- * Using flags instead of variables saves a lot of memory.
+ * at runtime whereas the upper 10 may change.
  */
 public class FrameworkElementFlags {
 

@@ -30,6 +30,8 @@ import org.finroc.core.FinrocAnnotation;
 import org.finroc.core.FrameworkElementFlags;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
+import org.rrlib.serialization.BinaryInputStream;
+import org.rrlib.serialization.MemoryBuffer;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 
@@ -359,7 +361,11 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
             throw new Exception("No runtime found for this element");
         }
         RemoteEditableInterfaces result = new RemoteEditableInterfaces();
-        result.deserialize(runtime.getAdminInterface().getAnnotation(getRemoteHandle(), RemoteEditableInterfaces.TYPE_NAME, runtime));
+        BinaryInputStream stream = runtime.getAdminInterface().getAnnotation(getRemoteHandle(), RemoteEditableInterfaces.TYPE_NAME, runtime);
+        if (stream == null) {
+            return null;
+        }
+        result.deserialize(stream);
         return result;
     }
 
