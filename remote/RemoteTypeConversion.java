@@ -42,12 +42,15 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
         SINGLE,              //!< Only a single type is supported
         BINARY_SERIALIZABLE, //!< All binary-serializable types are supported
         STRING_SERIALIZABLE, //!< All string-serializable types are supported
+        LISTS,               //!< All list types are supported
         ALL,                 //!< All types are supported
 
         // Special operations defined in rrlib_rtti_conversion (known in Java tooling)
         STATIC_CAST,         //!< Types supported by static casts (only used for tStaticCastOperation)
         GENERIC_VECTOR_CAST, //!< Types supported by generic vector cast
-        GET_LIST_ELEMENT     //!< Types supported by get list element
+        GENERIC_ARRAY_CAST,  //!< Types supported by generic array cast
+        GET_LIST_ELEMENT,    //!< Types supported by get list element
+        GET_ARRAY_ELEMENT    //!< Types supported by get array element
     }
 
     /** Names of some predefined operations in rrlib_rtti_conversion */

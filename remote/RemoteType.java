@@ -80,6 +80,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     }
 
     /**
+     * @return Size of remote array; 1 it this is no array
+     */
+    public int getArraySize() {
+        return (typeTraits & DataTypeBase.IS_ARRAY) != 0 ? size : 1;
+    }
+
+    /**
      * @return If default local type is obtained via casting: the number of chained casts. Otherwise 0.
      */
     public int getCastCountForDefaultLocalType() {
@@ -108,6 +115,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     }
 
     /**
+     * @return Uid of element type
+     */
+    public int getElementType() {
+        return elementType;
+    };
+
+    /**
      * @return If this a remote enum type: Remote enum strings - otherwise nullptr
      */
     public String[] getEnumConstants() {
@@ -125,6 +139,14 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Name of remote type
      */
     public String getName() {
+        if (name == null) {
+            if ((typeTraits & DataTypeBase.IS_LIST_TYPE) != 0) {
+                return "List<" + ((RemoteType)typeRegister.get(elementType)).getName() + ">";
+            } else if ((typeTraits & DataTypeBase.IS_ARRAY) != 0) {
+                RemoteType elementType = (RemoteType)typeRegister.get(this.elementType);
+                return "Array<" + elementType.getName() + ", " + getArraySize() + ">";
+            }
+        }
         return name;
     }
 //
@@ -248,7 +270,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
         // Option 1: There is an equivalent local type
         if (!isEnum() && localDataType == null) {
-            localDataType = DataTypeBase.findType(name);
+            localDataType = DataTypeBase.findType(getName());
             if (localDataType != null) {
                 localTypeMatch = LocalTypeMatch.EXACT;
                 return;
@@ -304,7 +326,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
     @Override
     public String toString() {
-        return name;
+        return getName();
     }
 
     /**
@@ -368,6 +390,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         typeAdapter = null;
         adapterInfo = null;
         castedTo = null;
+        typeRegister = PublishedRegisters.getRemoteRegister(stream, Definitions.RegisterUIDs.TYPE.ordinal());
         localTypeCastsChecked = false;
 
         if (legacyProtocol) {
@@ -407,15 +430,15 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
             //auto reg = *rrlib.serialization.PublishedRegisters.GetRemoteRegister<RemoteType>(stream);
             typeTraits = stream.readShort() << 8;
-            if ((typeTraits & DataTypeBase.IS_LIST_TYPE) != 0) {
-                Register<?> reg = PublishedRegisters.getRemoteRegister(stream, Definitions.RegisterUIDs.TYPE.ordinal());
-                RemoteType lastType = (RemoteType)reg.get(reg.size() - 1);
-                name = "List<" + lastType.name + ">";
-                underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? (lastType.underlyingType + 1) : 0);
+            if ((typeTraits & (DataTypeBase.IS_LIST_TYPE | DataTypeBase.IS_ARRAY)) != 0) {
+                elementType = stream.readShort();
+                underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? stream.readShort() : 0);
+                size = (typeTraits & DataTypeBase.IS_ARRAY) != 0 ? stream.readInt() : 0;
             } else {
                 name = stream.readString();
                 size = stream.readInt();
                 underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? stream.readShort() : 0);
+                elementType = 0;
                 if ((typeTraits & DataTypeBase.IS_ENUM) != 0) {
                     // discard enum info
                     short n = stream.readShort();
@@ -431,7 +454,10 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                 }
             }
         }
+    }
 
+    @Override
+    protected void init() {
         resolveDefaultLocalTypeWithoutCast();
     }
 
@@ -449,6 +475,8 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         } else {
             stream.writeShort((short)((type.getTypeTraits() >> 8) & 0xFFFF));
             if ((type.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
+                stream.writeShort(type.getElementType().getUid());
+                // TODO: add serialization when Java-Finroc has support for array types
                 return;
             }
             stream.writeString(type.getName());
@@ -488,6 +516,9 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     /** Uid of underlying type */
     private short underlyingType;
 
+    /** Uid of element type */
+    private short elementType;
+
     /** If this a remote enum type: Remote enum strings - otherwise nullptr */
     private String[] enumConstants = null;
 
@@ -500,7 +531,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
     /** Info from type adapter */
     private RemoteTypeAdapter.Info adapterInfo = new RemoteTypeAdapter.Info();
 
-    /** Size of remote type (not set for list types (identical) and legacy types (no casts anyway)) */
+    /** Size of remote type (not set for list types (identical) and legacy types (no casts anyway)); Array size if this is a remote array */
     private int size;
 
     /** How default local data type was resolved  */
@@ -511,6 +542,9 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
     /** If default local type is obtained via casting: the type this type is casted to (when subscribing) - otherwise null */
     private RemoteType castedTo;
+
+    /** Type register that this remote type belongs to */
+    private Register<?> typeRegister;
 
     /** Create legacy remote null type */
     static RemoteType createLegacyRemoteNullTypeInstance() {
@@ -568,5 +602,5 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         DATA_FLOW_STANDARD,
         DATA_FLOW_CHEAP_COPY,
         RPC_INTERFACE
-    };
+    }
 }
