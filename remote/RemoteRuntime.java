@@ -315,13 +315,9 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 addAllTypes(fromSourceType, conversion, conversion.getSupportedDestinationTypes(), conversion.getSupportedDestinationType());
             }
         }
-        if ((sourceType.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
+        if (sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
             RemoteTypeConversion getListElementOperation = getTypeConversionOperation(RemoteTypeConversion.GET_LIST_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_LIST_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_LIST_ELEMENT);
             fromSourceType.add(new GetCastOperationEntry(getListElementOperation, remoteTypes.get(sourceType.getElementType()), false));
-        }
-        if ((sourceType.getTypeTraits() & DataTypeBase.IS_ARRAY) != 0) {
-            RemoteTypeConversion getArrayElementOperation = getTypeConversionOperation(RemoteTypeConversion.GET_LIST_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_ARRAY_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_ARRAY_ELEMENT);
-            fromSourceType.add(new GetCastOperationEntry(getArrayElementOperation, remoteTypes.get(sourceType.getElementType()), false));
         }
 
         // Collect all operations from destination type
@@ -393,26 +389,16 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         }
 
         // Try for-each operations
-        boolean sourceIsListType = (sourceType.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0;
-        boolean destinationIsListType = (destinationType.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0;
-        if (sourceIsListType && destinationIsListType) {
-            RemoteTypeConversion forEachOperation = getTypeConversionOperation(RemoteTypeConversion.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.GENERIC_VECTOR_CAST, RemoteTypeConversion.SupportedTypeFilter.GENERIC_VECTOR_CAST);
+        boolean sourceIsListType = sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST;
+        boolean destinationIsListType = destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST;
+        boolean sourceIsArrayType = sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY;
+        boolean destinationIsArrayType = destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY;
+        if ((sourceIsListType && destinationIsListType) || (sourceIsArrayType && destinationIsListType) || (sourceIsArrayType && destinationIsArrayType && sourceType.getArraySize() == destinationType.getArraySize())) {
+            RemoteTypeConversion forEachOperation = getTypeConversionOperation(RemoteTypeConversion.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.FOR_EACH);
             RemoteType sourceElementType = remoteTypes.get(sourceType.getElementType());
             RemoteType destinationElementType = remoteTypes.get(destinationType.getElementType());
             for (RemoteConnectOptions operation : getConversionOptions(sourceElementType, destinationElementType, true)) {
                 result.add(new RemoteConnectOptions(operation.conversionRating == Definitions.TypeConversionRating.IMPLICIT_CAST ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS, forEachOperation, sourceElementType, operation.operation1));
-            }
-        }
-        boolean sourceIsArrayType = (sourceType.getTypeTraits() & DataTypeBase.IS_ARRAY) != 0;
-        boolean destinationIsArrayType = (destinationType.getTypeTraits() & DataTypeBase.IS_ARRAY) != 0;
-        if (sourceIsArrayType && destinationIsArrayType) {
-            RemoteType sourceElementType = remoteTypes.get(sourceType.getElementType());
-            RemoteType destinationElementType = remoteTypes.get(destinationType.getElementType());
-            if (sourceType.getArraySize() == destinationType.getArraySize()) {
-                RemoteTypeConversion forEachOperation = getTypeConversionOperation(RemoteTypeConversion.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.GENERIC_ARRAY_CAST, RemoteTypeConversion.SupportedTypeFilter.GENERIC_ARRAY_CAST);
-                for (RemoteConnectOptions operation : getConversionOptions(sourceElementType, destinationElementType, true)) {
-                    result.add(new RemoteConnectOptions(operation.conversionRating == Definitions.TypeConversionRating.IMPLICIT_CAST ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS, forEachOperation, sourceElementType, operation.operation1));
-                }
             }
         }
 
@@ -587,7 +573,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         System.arraycopy(singleRatings.cachedConversionRatings, 0, ratings.cachedConversionRatings, 0, singleRatings.cachedConversionRatings.length);
         if (getSerializationInfo().getRevision() != 0) {
             for (int i = 0; i < ratings.cachedConversionRatings.length; i++) {
-                if (ratings.cachedConversionRatings[i] == 0 && (remoteTypes.get(i).getTypeTraits() & DataTypeBase.IS_DATA_TYPE) != 0) {
+                if (ratings.cachedConversionRatings[i] == 0 && remoteTypes.get(i).getTypeClassification() != DataTypeBase.CLASSIFICATION_RPC_TYPE) {
                     ratings.cachedConversionRatings[i] = 1; // Deprecated binary conversion works for all types
                 }
             }
@@ -611,32 +597,16 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         }
 
         // For/each operation
-        if ((type.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
+        if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
             RemoteType elementType = remoteTypes.get(type.getElementType());
             RemoteType.CachedConversionRatings intermediateRatings = getTypeSingleConversionRatings(elementType);
             for (int i = 0; i < ratings.cachedConversionRatings.length; i++) {
-                RemoteType destinationListType = remoteTypes.get(i);
-                if ((destinationListType.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
-                    RemoteType destinationElementType = remoteTypes.get(destinationListType.getElementType());
+                RemoteType destinationType = remoteTypes.get(i);
+                if (destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || (destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY && type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY && type.getArraySize() == destinationType.getArraySize())) {
+                    RemoteType destinationElementType = remoteTypes.get(destinationType.getElementType());
                     byte rating = intermediateRatings.cachedConversionRatings[destinationElementType.getHandle()];
                     if (isSingleOperationRating(rating)) {
-                        updateConversionRating(ratings.cachedConversionRatings, destinationListType.getHandle(), rating == Definitions.TypeConversionRating.IMPLICIT_CAST.ordinal() ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS);
-                    }
-                }
-            }
-        } else if ((type.getTypeTraits() & DataTypeBase.IS_ARRAY) != 0) {
-            RemoteType elementType = remoteTypes.get(type.getElementType());
-            RemoteType.CachedConversionRatings intermediateRatings = getTypeSingleConversionRatings(elementType);
-            for (int i = 0; i < ratings.cachedConversionRatings.length; i++) {
-                RemoteType destinationArrayType = remoteTypes.get(i);
-                if ((destinationArrayType.getTypeTraits() & DataTypeBase.IS_ARRAY) != 0) {
-                    RemoteType destinationElementType = remoteTypes.get(destinationArrayType.getElementType());
-                    if (destinationArrayType.getArraySize() == type.getArraySize()) {
-                        continue;
-                    }
-                    byte rating = intermediateRatings.cachedConversionRatings[destinationElementType.getHandle()];
-                    if (isSingleOperationRating(rating)) {
-                        updateConversionRating(ratings.cachedConversionRatings, destinationArrayType.getHandle(), rating == Definitions.TypeConversionRating.IMPLICIT_CAST.ordinal() ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS);
+                        updateConversionRating(ratings.cachedConversionRatings, destinationType.getHandle(), rating == Definitions.TypeConversionRating.IMPLICIT_CAST.ordinal() ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS);
                     }
                 }
             }
@@ -1004,7 +974,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                (filter == SupportedTypeFilter.BINARY_SERIALIZABLE && (type.getTypeTraits() & DataTypeBase.IS_BINARY_SERIALIZABLE) != 0) ||
                (filter == SupportedTypeFilter.SINGLE && singleType == type) ||
                (filter == SupportedTypeFilter.STRING_SERIALIZABLE && (type.getTypeTraits() & DataTypeBase.IS_STRING_SERIALIZABLE) != 0) ||
-               (filter == SupportedTypeFilter.LISTS && (type.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0);
+               (filter == SupportedTypeFilter.LISTS && (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST));
     }
 
     /**
@@ -1019,10 +989,11 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         if (filter == SupportedTypeFilter.SINGLE) {
             result.add(new GetCastOperationEntry(operation, singleType, false));
         } else if (filter == SupportedTypeFilter.ALL || filter == SupportedTypeFilter.BINARY_SERIALIZABLE || filter == SupportedTypeFilter.STRING_SERIALIZABLE || filter == SupportedTypeFilter.LISTS) {
-            int requiredFlag = filter == SupportedTypeFilter.ALL ? 0 : (filter == SupportedTypeFilter.LISTS ? DataTypeBase.IS_LIST_TYPE : (filter == SupportedTypeFilter.BINARY_SERIALIZABLE ? DataTypeBase.IS_BINARY_SERIALIZABLE : DataTypeBase.IS_STRING_SERIALIZABLE));
+            int requiredFlag = (filter == SupportedTypeFilter.ALL || filter == SupportedTypeFilter.LISTS) ? 0 : (filter == SupportedTypeFilter.BINARY_SERIALIZABLE ? DataTypeBase.IS_BINARY_SERIALIZABLE : DataTypeBase.IS_STRING_SERIALIZABLE);
+            int requiredClassification = filter == SupportedTypeFilter.LISTS ? DataTypeBase.CLASSIFICATION_LIST : 0;
             for (int i = 0, n = remoteTypes.size(); i < n; i++) {
                 RemoteType type = remoteTypes.get(i);
-                if ((type.getTypeTraits() & requiredFlag) == requiredFlag) {
+                if ((type.getTypeTraits() & requiredFlag) == requiredFlag && (requiredClassification == 0 || type.getTypeClassification() == requiredClassification)) {
                     result.add(new GetCastOperationEntry(operation, type, false));
                 }
             }
@@ -1044,10 +1015,11 @@ public class RemoteRuntime extends RemoteFrameworkElement {
             Definitions.TypeConversionRating rating = (operation.getSupportedSourceTypes() == SupportedTypeFilter.ALL || operation.getSupportedSourceTypes() == SupportedTypeFilter.BINARY_SERIALIZABLE || operation.getSupportedSourceTypes() == SupportedTypeFilter.STRING_SERIALIZABLE) ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION_TO_GENERIC_TYPE : Definitions.TypeConversionRating.EXPLICIT_CONVERSION;
             updateConversionRating(result.cachedConversionRatings, operation.getSupportedDestinationType().getHandle(), rating);
         } else if (filter == SupportedTypeFilter.ALL || filter == SupportedTypeFilter.BINARY_SERIALIZABLE || filter == SupportedTypeFilter.STRING_SERIALIZABLE || filter == SupportedTypeFilter.LISTS) {
-            int requiredFlag = filter == SupportedTypeFilter.ALL ? 0 : (filter == SupportedTypeFilter.LISTS ? DataTypeBase.IS_LIST_TYPE : (filter == SupportedTypeFilter.BINARY_SERIALIZABLE ? DataTypeBase.IS_BINARY_SERIALIZABLE : DataTypeBase.IS_STRING_SERIALIZABLE));
+            int requiredFlag = (filter == SupportedTypeFilter.ALL || filter == SupportedTypeFilter.LISTS) ? 0 : (filter == SupportedTypeFilter.BINARY_SERIALIZABLE ? DataTypeBase.IS_BINARY_SERIALIZABLE : DataTypeBase.IS_STRING_SERIALIZABLE);
+            int requiredClassification = filter == SupportedTypeFilter.LISTS ? DataTypeBase.CLASSIFICATION_LIST : 0;
             for (int i = 0; i < result.typeCount; i++) {
                 RemoteType type = remoteTypes.get(i);
-                if ((type.getTypeTraits() & requiredFlag) == requiredFlag) {
+                if ((type.getTypeTraits() & requiredFlag) == requiredFlag && (requiredClassification == 0 || type.getTypeClassification() == requiredClassification)) {
                     updateConversionRating(result.cachedConversionRatings, type.getHandle(), Definitions.TypeConversionRating.EXPLICIT_CONVERSION_FROM_GENERIC_TYPE);
                 }
             }
@@ -1119,7 +1091,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         }
 
         // Get list elements operation
-        if ((type.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
+        if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
             updateConversionRating(ratings.cachedConversionRatings, type.getElementType(), Definitions.TypeConversionRating.EXPLICIT_CONVERSION);
         }
 

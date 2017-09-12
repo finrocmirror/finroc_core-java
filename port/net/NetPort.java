@@ -114,7 +114,7 @@ public abstract class NetPort implements PortListener {
     }
 
     public boolean isMethodType() {
-        return (remoteType.getTypeTraits() & DataTypeBase.IS_RPC_TYPE) != 0;
+        return remoteType.getTypeClassification() == DataTypeBase.CLASSIFICATION_RPC_TYPE;
     }
 
     public boolean isTransactionType() {

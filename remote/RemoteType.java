@@ -83,7 +83,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Size of remote array; 1 it this is no array
      */
     public int getArraySize() {
-        return (typeTraits & DataTypeBase.IS_ARRAY) != 0 ? size : 1;
+        return getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY ? size : 1;
     }
 
     /**
@@ -140,11 +140,26 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      */
     public String getName() {
         if (name == null) {
-            if ((typeTraits & DataTypeBase.IS_LIST_TYPE) != 0) {
-                return "List<" + ((RemoteType)typeRegister.get(elementType)).getName() + ">";
-            } else if ((typeTraits & DataTypeBase.IS_ARRAY) != 0) {
+            switch (getTypeClassification()) {
+            case DataTypeBase.CLASSIFICATION_ARRAY:
                 RemoteType elementType = (RemoteType)typeRegister.get(this.elementType);
                 return "Array<" + elementType.getName() + ", " + getArraySize() + ">";
+            case DataTypeBase.CLASSIFICATION_ENUM_BASED_FLAGS:
+                return "EnumFlags<" + ((RemoteType)typeRegister.get(this.elementType)).getName() + ">";
+            case DataTypeBase.CLASSIFICATION_LIST:
+                return "List<" + ((RemoteType)typeRegister.get(this.elementType)).getName() + ">";
+            case DataTypeBase.CLASSIFICATION_PAIR:
+                return "Pair<" + ((RemoteType)typeRegister.get(this.tupleElementTypes[0])).getName() + ", " + ((RemoteType)typeRegister.get(this.tupleElementTypes[1])).getName() + ">";
+            case DataTypeBase.CLASSIFICATION_TUPLE:
+                StringBuilder result = new StringBuilder();
+                result.append("Tuple<");
+                for (int i = 0; i < tupleElementTypes.length; i++) {
+                    result.append(((RemoteType)typeRegister.get(this.tupleElementTypes[0])).getName());
+                    result.append((i == tupleElementTypes.length - 1) ? ">" : ", ");
+                }
+                return result.toString();
+            default:
+                throw new RuntimeException("Unknown type classification for generating type name");
             }
         }
         return name;
@@ -156,6 +171,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 //    public Serialization.DataEncoding getNetworkEncoding() {
 //        return adapterInfo.networkEncoding;
 //    }
+
+    /**
+     * @return Type classification from type traits
+     */
+    public int getTypeClassification() {
+        return typeTraits & DataTypeBase.CLASSIFICATION_BITS;
+    }
 
     /**
      * @return Type traits of remote type
@@ -182,7 +204,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Whether this is a cheap-copy type in remote runtime environment
      */
     public boolean isCheapCopyType() {
-        return (typeTraits & (DataTypeBase.HAS_TRIVIAL_DESTRUCTOR | DataTypeBase.IS_DATA_TYPE)) == (DataTypeBase.HAS_TRIVIAL_DESTRUCTOR | DataTypeBase.IS_DATA_TYPE) && size <= 256;
+        return (typeTraits & DataTypeBase.HAS_TRIVIAL_DESTRUCTOR) != 0 && getTypeClassification() != DataTypeBase.CLASSIFICATION_RPC_TYPE && size <= 256;
     }
 
     /**
@@ -403,9 +425,9 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
             // read additional data we do not need in c++ (remote type traits and enum ant names)
             typeTraits = stream.readByte() << 8; // type traits
             if (classification == TypeClassificationLegacy.RPC_INTERFACE) {
-                typeTraits |= DataTypeBase.IS_RPC_TYPE;
+                typeTraits |= DataTypeBase.CLASSIFICATION_RPC_TYPE;
             } else {
-                typeTraits |= DataTypeBase.IS_DATA_TYPE;
+                typeTraits |= DataTypeBase.CLASSIFICATION_OTHER_DATA_TYPE;
             }
 
             if ((typeTraits & DataTypeBase.IS_ENUM) != 0) {
@@ -428,17 +450,36 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
         } else {
 
-            //auto reg = *rrlib.serialization.PublishedRegisters.GetRemoteRegister<RemoteType>(stream);
             typeTraits = stream.readShort() << 8;
-            if ((typeTraits & (DataTypeBase.IS_LIST_TYPE | DataTypeBase.IS_ARRAY)) != 0) {
+            underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? stream.readShort() : 0);
+            switch (getTypeClassification()) {
+            case DataTypeBase.CLASSIFICATION_LIST:
+            case DataTypeBase.CLASSIFICATION_ENUM_BASED_FLAGS:
                 elementType = stream.readShort();
-                underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? stream.readShort() : 0);
-                size = (typeTraits & DataTypeBase.IS_ARRAY) != 0 ? stream.readInt() : 0;
-            } else {
+                break;
+
+            case DataTypeBase.CLASSIFICATION_ARRAY:
+                elementType = stream.readShort();
+                size = stream.readInt();
+                break;
+
+            case DataTypeBase.CLASSIFICATION_PAIR:
+            case DataTypeBase.CLASSIFICATION_TUPLE:
+                int tupleElementCount = getTypeClassification() == DataTypeBase.CLASSIFICATION_TUPLE ? stream.readShort() : 2;
+                tupleElementTypes = new short[tupleElementCount];
+                for (int i = 0; i < tupleElementCount; i++) {
+                    tupleElementTypes[i] = stream.readShort();
+                }
+                break;
+
+            case DataTypeBase.CLASSIFICATION_RPC_TYPE:
+                name = stream.readString();
+                break;
+
+            case DataTypeBase.CLASSIFICATION_INTEGRAL:
+            case DataTypeBase.CLASSIFICATION_OTHER_DATA_TYPE:
                 name = stream.readString();
                 size = stream.readInt();
-                underlyingType = (short)((typeTraits & DataTypeBase.HAS_UNDERLYING_TYPE) != 0 ? stream.readShort() : 0);
-                elementType = 0;
                 if ((typeTraits & DataTypeBase.IS_ENUM) != 0) {
                     // discard enum info
                     short n = stream.readShort();
@@ -452,6 +493,11 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                         }
                     }
                 }
+                break;
+            default:
+                name = DataTypeBase.NULL_TYPE.getName();
+                localDataType = DataTypeBase.NULL_TYPE;
+                localTypeMatch = LocalTypeMatch.EXACT;
             }
         }
     }
@@ -474,26 +520,50 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
             stream.writeByte(0); // type traits (legacy, unused in c++)
         } else {
             stream.writeShort((short)((type.getTypeTraits() >> 8) & 0xFFFF));
-            if ((type.getTypeTraits() & DataTypeBase.IS_LIST_TYPE) != 0) {
-                stream.writeShort(type.getElementType().getUid());
-                // TODO: add serialization when Java-Finroc has support for array types
-                return;
-            }
-            stream.writeString(type.getName());
-            if ((stream.getTargetInfo().getCustomInfo() & Definitions.INFO_FLAG_JAVA_CLIENT) != 0) {
-                stream.writeInt(0); // Java type size is difficult to obtain and currently irrelevant
-            }
             if ((type.getTypeTraits() & DataTypeBase.HAS_UNDERLYING_TYPE) != 0) {
                 throw new RuntimeException("Underlying types not supported for Java types");
                 //stream.writeShort(type.getUnderlyingType().getHandle());
             }
-            if ((type.getTypeTraits() & DataTypeBase.IS_ENUM) != 0) {
-                Object[] enumConstants = type.getEnumConstants();
-                stream.writeShort(enumConstants.length);
-                stream.writeByte(0); // note that sendValues is no type trait (flag) as it not a compile-time ant (at least not straight-forward)
-                for (Object enumContants : enumConstants) {
-                    stream.writeString(enumContants.toString());
+            boolean javaClient = (stream.getTargetInfo().getCustomInfo() & Definitions.INFO_FLAG_JAVA_CLIENT) != 0;
+
+            switch (type.getTypeClassification()) {
+            case DataTypeBase.CLASSIFICATION_LIST:
+            case DataTypeBase.CLASSIFICATION_ARRAY:
+            case DataTypeBase.CLASSIFICATION_ENUM_BASED_FLAGS:
+                stream.writeShort(type.getElementType().getUid());
+                if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
+                    // TODO: add serialization when Java-Finroc has support for array types
+                    throw new RuntimeException("Array types not supported for Java types");
                 }
+                break;
+
+            case DataTypeBase.CLASSIFICATION_PAIR:
+            case DataTypeBase.CLASSIFICATION_TUPLE:
+                throw new RuntimeException("Tuple types not supported for Java types");
+
+            case DataTypeBase.CLASSIFICATION_RPC_TYPE:
+                stream.writeString(type.getName());
+                break;
+
+            case DataTypeBase.CLASSIFICATION_INTEGRAL:
+            case DataTypeBase.CLASSIFICATION_OTHER_DATA_TYPE:
+                stream.writeString(type.getName());
+                if (javaClient) {
+                    stream.writeInt(0); // Java type size is difficult to obtain and currently irrelevant
+                    if ((type.getTypeTraits() & DataTypeBase.IS_ENUM) != 0) {
+                        Object[] enumConstants = type.getEnumConstants();
+                        stream.writeShort(enumConstants.length);
+                        stream.writeByte(0); // note that sendValues is no type trait (flag) as it not a compile-time ant (at least not straight-forward)
+                        for (Object enumContants : enumConstants) {
+                            stream.writeString(enumContants.toString());
+                        }
+                    }
+                }
+                break;
+            case DataTypeBase.CLASSIFICATION_NULL_TYPE:
+                break;
+            default:
+                throw new RuntimeException("Invalid type classification");
             }
         }
     }
@@ -545,6 +615,9 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
     /** Type register that this remote type belongs to */
     private Register<?> typeRegister;
+
+    /** Tuple element types if this is a std::tuple or std::pair */
+    private short[] tupleElementTypes;
 
     /** Create legacy remote null type */
     static RemoteType createLegacyRemoteNullTypeInstance() {

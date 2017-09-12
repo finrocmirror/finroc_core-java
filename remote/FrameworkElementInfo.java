@@ -242,7 +242,7 @@ public class FrameworkElementInfo {
                 }
             }
 
-            if ((flags & FrameworkElementFlags.PORT) != 0 && (type.getTypeTraits() & DataTypeBase.IS_DATA_TYPE) != 0) {
+            if ((flags & FrameworkElementFlags.PORT) != 0 && type.getTypeClassification() != DataTypeBase.CLASSIFICATION_RPC_TYPE) {
                 strategy = stream.readShort();
             } else {
                 strategy = 0;

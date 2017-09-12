@@ -995,7 +995,7 @@ public abstract class RemoteRuntime extends FrameworkElement implements PullRequ
 
         @Override
         protected void checkSubscription() {
-            if ((getRemoteType().getTypeTraits() & DataTypeBase.IS_RPC_TYPE) != 0) {
+            if (getRemoteType().getTypeClassification() == DataTypeBase.CLASSIFICATION_RPC_TYPE) {
                 return;
             }
 

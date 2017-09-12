@@ -31,7 +31,6 @@ import org.finroc.core.FrameworkElementFlags;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
-import org.rrlib.serialization.MemoryBuffer;
 import org.rrlib.serialization.rtti.DataTypeBase;
 
 
@@ -407,9 +406,9 @@ public class RemoteFrameworkElement extends ModelNode implements HasURI {
                     if (getChildAt(i) instanceof RemotePort) {
                         RemotePort remotePort = (RemotePort)getChildAt(i);
                         flags |= (remotePort.getFlags() & FrameworkElementFlags.IS_OUTPUT_PORT) != 0 ? FrameworkElementFlags.INTERFACE_FOR_OUTPUTS : FrameworkElementFlags.INTERFACE_FOR_INPUTS;
-                        if ((remotePort.getDataType().getTypeTraits() & DataTypeBase.IS_RPC_TYPE) != 0) {
+                        if (remotePort.getDataType().getTypeClassification() == DataTypeBase.CLASSIFICATION_RPC_TYPE) {
                             flags |= FrameworkElementFlags.INTERFACE_FOR_RPC_PORTS;
-                        } else if ((remotePort.getDataType().getTypeTraits() & DataTypeBase.IS_DATA_TYPE) != 0) {
+                        } else if (remotePort.getDataType().getTypeClassification() != DataTypeBase.CLASSIFICATION_RPC_TYPE) {
                             flags |= FrameworkElementFlags.INTERFACE_FOR_DATA_PORTS;
                         }
                     }

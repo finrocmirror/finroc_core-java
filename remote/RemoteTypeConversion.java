@@ -26,7 +26,6 @@ import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.PublishedRegisters;
-import org.rrlib.serialization.Serialization;
 
 /**
  * @author Max Reichardt
@@ -47,10 +46,10 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
 
         // Special operations defined in rrlib_rtti_conversion (known in Java tooling)
         STATIC_CAST,         //!< Types supported by static casts (only used for tStaticCastOperation)
-        GENERIC_VECTOR_CAST, //!< Types supported by generic vector cast
-        GENERIC_ARRAY_CAST,  //!< Types supported by generic array cast
+        FOR_EACH,            //!< Types supported by for-each operation
         GET_LIST_ELEMENT,    //!< Types supported by get list element
-        GET_ARRAY_ELEMENT    //!< Types supported by get array element
+        ARRAY_TO_VECTOR,     //!< Types supported by array to vector operation
+        GET_TUPLE_ELEMENT    //!< Types supported by get tuple element operation
     }
 
     /** Names of some predefined operations in rrlib_rtti_conversion */
