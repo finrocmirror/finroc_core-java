@@ -97,7 +97,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      * @return Default local data type that represents the same type (null if type has not been resolved)
      */
     public DataTypeBase getDefaultLocalDataType() {
-        return localTypeCastsChecked ? localDataType : null;
+        return localTypeCastsChecked || localTypeMatch.ordinal() <= LocalTypeMatch.ADAPTED.ordinal() ? localDataType : null;
     }
 
     /**
@@ -154,7 +154,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                 StringBuilder result = new StringBuilder();
                 result.append("Tuple<");
                 for (int i = 0; i < tupleElementTypes.length; i++) {
-                    result.append(((RemoteType)typeRegister.get(this.tupleElementTypes[0])).getName());
+                    result.append(((RemoteType)typeRegister.get(this.tupleElementTypes[i])).getName());
                     result.append((i == tupleElementTypes.length - 1) ? ">" : ", ");
                 }
                 return result.toString();
@@ -171,6 +171,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 //    public Serialization.DataEncoding getNetworkEncoding() {
 //        return adapterInfo.networkEncoding;
 //    }
+
+    /**
+     * @return Tuple element types if this is a std::tuple or std::pair (otherwise null)
+     */
+    public short[] getTupleElementTypes() {
+        return tupleElementTypes;
+    }
 
     /**
      * @return Type classification from type traits
@@ -465,6 +472,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
 
             case DataTypeBase.CLASSIFICATION_PAIR:
             case DataTypeBase.CLASSIFICATION_TUPLE:
+                size = stream.readInt();
                 int tupleElementCount = getTypeClassification() == DataTypeBase.CLASSIFICATION_TUPLE ? stream.readShort() : 2;
                 tupleElementTypes = new short[tupleElementCount];
                 for (int i = 0; i < tupleElementCount; i++) {

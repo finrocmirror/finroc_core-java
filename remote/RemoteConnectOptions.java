@@ -24,10 +24,12 @@ package org.finroc.core.remote;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.finroc.core.datatype.CoreString;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.BinarySerializable;
 import org.rrlib.serialization.Serialization;
+import org.rrlib.serialization.StringInputStream;
 import org.rrlib.serialization.rtti.DataTypeBase;
 import org.rrlib.serialization.rtti.GenericObject;
 
@@ -72,6 +74,9 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
     /** References to remote conversion operations */
     public RemoteTypeConversion operation1, operation2;
 
+    /** When a remote connector has unresolved conversion operations contains their names */
+    private String operation1Name, operation2Name;
+
     /** Parameters for conversion operations */
     public GenericObject parameter1, parameter2;
 
@@ -104,7 +109,7 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
      * @return Number of conversion operations
      */
     public int conversionOperationCount() {
-        return operation1 == null ? 0 : (operation2 == null ? 1 : 2);
+        return (operation1 == null && operation1Name == null) ? 0 : ((operation2 == null && operation2Name == null) ? 1 : 2);
     }
 
     /**
@@ -124,6 +129,8 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
         operation2 = null;
         parameter1 = null;
         parameter2 = null;
+        operation1Name = null;
+        operation2Name = null;
         intermediateType = null;
 
         flags = stream.readShort() & 0xFFFF;
@@ -134,29 +141,46 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
             }
             for (int i = 0; i < size; i++) {
                 int flags = stream.readByte();
-                if ((flags & SERIALIZATION_FLAG_FULL_OPERATION) == 0) {
-                    throw new Exception("currently only resolved conversion operations are supported");  // TODO: Is support for unresolved conversion operations necessary? (I do not think so)
-                }
-                RemoteTypeConversion conversion = (RemoteTypeConversion)stream.readRegisterEntry(Definitions.RegisterUIDs.CONVERSION_OPERATION.ordinal());
+                String operationName = null;
+                RemoteTypeConversion conversion = null;
                 GenericObject parameter = null;
-                if (conversion.getParameter() != null) {
-                    DataTypeBase localType = conversion.getParameter().getType().getDefaultLocalDataType();
-                    if (localType == null) {
-                        throw new Exception("Only locally available types are supported as connector parameters");
+                if ((flags & SERIALIZATION_FLAG_FULL_OPERATION) == 0) {
+                    operationName = stream.readString();
+                    if ((flags & SERIALIZATION_FLAG_PARAMETER) != 0) {
+                        throw new Exception("Only string parameter are supported for unresolved conversion operations");
+                    } else if ((flags & SERIALIZATION_FLAG_STRING_PARAMETER) != 0) {
+                        parameter = CoreString.TYPE.createInstanceGeneric(null);
+                        ((CoreString)parameter.getData()).deserialize(stream);
                     }
-                    parameter = localType.createInstanceGeneric(null);
-                }
-                if ((flags & SERIALIZATION_FLAG_PARAMETER) != 0) {
-                    if (conversion.getParameter() == null) {
-                        throw new Exception("No parameter defined in conversion operation");
+                } else {
+                    conversion = (RemoteTypeConversion)stream.readRegisterEntry(Definitions.RegisterUIDs.CONVERSION_OPERATION.ordinal());
+                    if (conversion.getParameter() != null) {
+                        DataTypeBase localType = conversion.getParameter().getType().getDefaultLocalDataType();
+                        if (localType == null) {
+                            throw new Exception("Only locally available types are supported as connector parameters");
+                        }
+                        parameter = localType.createInstanceGeneric(null);
                     }
-                    conversion.getParameter().getType().deserializeData(stream, parameter);
+                    if ((flags & SERIALIZATION_FLAG_PARAMETER) != 0) {
+                        if (conversion.getParameter() == null) {
+                            throw new Exception("No parameter defined in conversion operation");
+                        }
+                        conversion.getParameter().getType().deserializeData(stream, parameter);
+                    } else if ((flags & SERIALIZATION_FLAG_STRING_PARAMETER) != 0) {
+                        if (conversion.getParameter() == null) {
+                            throw new Exception("No parameter defined in conversion operation");
+                        }
+                        parameter = CoreString.TYPE.createInstanceGeneric(null);
+                        ((CoreString)parameter.getData()).deserialize(stream);
+                    }
                 }
-                if (i == 1) {
+                if (i == 0) {
                     operation1 = conversion;
+                    operation1Name = operationName;
                     parameter1 = parameter;
                 } else {
                     operation2 = conversion;
+                    operation2Name = operationName;
                     parameter2 = parameter;
                 }
             }
@@ -191,7 +215,7 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
      * @param stream Stream to serialize to
      */
     public void serialize(BinaryOutputStream stream) {
-        if (operation1 != null) {
+        if (operation1 != null || operation1Name != null) {
             flags |= CONVERSION;
         }
         if (parameters != null && parameters.size() > 0) {
@@ -205,12 +229,20 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
             for (int i = 0; i < size; i++) {
                 GenericObject parameter = i == 0 ? parameter1 : parameter2;
                 RemoteTypeConversion conversion = i == 0 ? operation1 : operation2;
-                boolean sendParameter = operation1.getParameter() != null && parameter != null && ((operation1.getParameter().getDefaultValue() == null) || (!Serialization.equals(parameter, operation1.getParameter().getDefaultValue())));
-                int flags = SERIALIZATION_FLAG_FULL_OPERATION | (sendParameter ? SERIALIZATION_FLAG_PARAMETER : 0);
+                String conversionName = i == 0 ? operation1Name : operation2Name;
+                boolean sendParameter = conversion != null && conversion.getParameter() != null && parameter != null && conversion.getParameter().getType().getDefaultLocalDataType() == parameter.getType() && ((conversion.getParameter().getDefaultValue() == null) || (!Serialization.equals(parameter, conversion.getParameter().getDefaultValue())));
+                boolean sendStringParameter = (!sendParameter) && parameter != null && parameter.getType() == CoreString.TYPE;
+                int flags = (conversion != null ? SERIALIZATION_FLAG_FULL_OPERATION : 0) | (sendParameter ? SERIALIZATION_FLAG_PARAMETER : 0) | (sendStringParameter ? SERIALIZATION_FLAG_STRING_PARAMETER : 0);
                 stream.writeByte(flags);
-                stream.writeShort(conversion.getHandle());
+                if (conversion != null) {
+                    stream.writeShort(conversion.getHandle());
+                } else {
+                    stream.writeString(conversionName);
+                }
                 if (sendParameter) {
                     conversion.getParameter().getType().serializeData(stream, parameter);
+                } else if (sendStringParameter) {
+                    stream.writeString(parameter.getData().toString());
                 }
             }
             if (size >= 2) {
@@ -234,7 +266,8 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
     /** Serialization flags */
     private final static int
     SERIALIZATION_FLAG_FULL_OPERATION = 1,
-    SERIALIZATION_FLAG_PARAMETER = 2;
+    SERIALIZATION_FLAG_PARAMETER = 2,
+    SERIALIZATION_FLAG_STRING_PARAMETER = 4;
 
 
     @Override
@@ -277,17 +310,17 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
         case EXPLICIT_CONVERSION_TO_GENERIC_TYPE:
         case EXPLICIT_CONVERSION_FROM_GENERIC_TYPE:
         case EXPLICIT_CONVERSION:
-            return "'" + operation1.toString() + "'";
+            return "'" + operation1.toString(parameter1) + "'";
         case EXPLICIT_CONVERSION_AND_IMPLICIT_CAST:
 
         case TWO_EXPLICIT_CONVERSIONS:
-            if (operation1.getSupportedDestinationTypes() == RemoteTypeConversion.SupportedTypeFilter.SINGLE || operation2.getSupportedSourceTypes() == RemoteTypeConversion.SupportedTypeFilter.SINGLE) {
-                return "'" + operation1.toString() + "' and '" + operation2.toString() + "'";
-            } else {
-                return "'" + operation1.toString() + "' (to " + intermediateType.getName() + ") and '" + operation2.toString() + "'";
-            }
-        case DEPRECATED_CONVERSION:
-            return "(depracated) '" + operation1.toString() + "' and '" + operation2.toString() + "'";
+            //if (operation1.getSupportedDestinationTypes() == RemoteTypeConversion.SupportedTypeFilter.SINGLE || operation2.getSupportedSourceTypes() == RemoteTypeConversion.SupportedTypeFilter.SINGLE) {
+            //    return "'" + operation1.toString(parameter1) + "' and '" + operation2.toString(parameter2) + "'";
+            //} else {
+            return "'" + operation1.toString(parameter1) + "' (to " + intermediateType.getName() + ") and '" + operation2.toString(parameter2) + "'";
+            //}
+        case UNUSUAL_CONVERSION:
+            return "(unusual conversion) '" + operation1.toString(parameter1) + "' and '" + operation2.toString(parameter2) + "'";
         case IMPOSSIBLE:
             return "Impossible";
         }
@@ -316,8 +349,50 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
      * @param destinationPort Destination port
      * @return Type conversion rating
      */
-    public Definitions.TypeConversionRating getTypeConversionRating(RemotePort sourcePort, RemoteRuntime runtime, RemotePort destinationPort) {
+    public Definitions.TypeConversionRating getTypeConversionRating(RemotePort sourcePort, RemoteRuntime runtime, RemotePort destinationPort) throws Exception {
         if (conversionRating == null) {
+
+            // Resolve conversion operation if necessary
+            if (operation1Name != null && operation1 == null) {
+                int requiredOperations = (operation2 != null || operation2Name != null) ? 2 : 1;
+                for (RemoteConnectOptions options : runtime.getConversionOptions(sourcePort.getDataType(), destinationPort.getDataType(), false)) {
+                    if (options.conversionOperationCount() == requiredOperations && (options.operation1 == operation1 || options.operation1.getName().equals(operation1Name)) && (requiredOperations == 1 || options.operation2 == operation2 || options.operation2.getName().equals(operation2Name))) {
+                        if (options.parameter1 != null && (!Serialization.serialize(options.parameter1).equals(parameter1.getData().toString())) ||
+                                options.parameter2 != null && (!Serialization.serialize(options.parameter2).equals(parameter2.getData().toString()))) {
+                            continue;
+                        }
+                        operation1 = options.operation1;
+                        operation2 = options.operation2;
+                        for (int i = 0; i < 2; i++) {
+                            GenericObject localParameter = i == 0 ? parameter1 : parameter2;
+                            GenericObject optionsParameter = i == 0 ? options.parameter1 : options.parameter2;
+                            RemoteTypeConversion conversion = i == 0 ? operation1 : operation2;
+                            if (optionsParameter != null) {
+                                localParameter = optionsParameter;
+                            } else if (localParameter != null && localParameter.getType() == CoreString.TYPE && conversion.getParameter().getType().getDefaultLocalDataType() != CoreString.TYPE) {
+                                DataTypeBase localType = conversion.getParameter().getType().getDefaultLocalDataType();
+                                if (localType == null) {
+                                    throw new Exception("Only locally available types are supported as connector parameters");
+                                }
+                                GenericObject object = localType.createInstanceGeneric(null);
+                                object.deserialize(new StringInputStream(localParameter.getData().toString()));
+                                localParameter = object;
+                            }
+                            if (i == 0) {
+                                parameter1 = localParameter;
+                            } else {
+                                parameter2 = localParameter;
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (operation1 == null) {
+                    throw new Exception("Could not resolve conversion operations");
+                }
+            }
+
+            // Rate conversion if necessary
             if (operation1 == null) {
                 conversionRating = sourcePort.getDataType() == destinationPort.getDataType() ? Definitions.TypeConversionRating.NO_CONVERSION : Definitions.TypeConversionRating.IMPLICIT_CAST;
             } else if (operation2 == null) {
@@ -341,9 +416,8 @@ public class RemoteConnectOptions implements BinarySerializable, Comparable<Remo
                 } else if (firstOperationImplicit || secondOperationImplicit) {
                     conversionRating = Definitions.TypeConversionRating.EXPLICIT_CONVERSION_AND_IMPLICIT_CAST;
                 } else {
-                    if ((operation1.getName().equals(RemoteTypeConversion.TO_STRING) && operation2.getName().equals(RemoteTypeConversion.STRING_DESERIALIZATION)) ||
-                            (operation1.getName().equals(RemoteTypeConversion.BINARY_SERIALIZATION) && operation2.getName().equals(RemoteTypeConversion.BINARY_DESERIALIZATION))) {
-                        conversionRating = Definitions.TypeConversionRating.DEPRECATED_CONVERSION;
+                    if (operation1.getNotUsuallyCombinedWithHandle() == operation2.getHandle() || operation2.getNotUsuallyCombinedWithHandle() == operation1.getHandle()) {
+                        conversionRating = Definitions.TypeConversionRating.UNUSUAL_CONVERSION;
                     } else {
                         conversionRating = Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS;
                     }

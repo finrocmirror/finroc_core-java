@@ -21,11 +21,13 @@
 //----------------------------------------------------------------------
 package org.finroc.core.remote;
 
+import org.finroc.core.datatype.CoreNumber;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.PublishedRegisters;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -52,10 +54,7 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
         GET_TUPLE_ELEMENT    //!< Types supported by get tuple element operation
     }
 
-    /** Names of some predefined operations in rrlib_rtti_conversion */
-    public static final String STATIC_CAST = "static_cast", GET_LIST_ELEMENT = "[]", FOR_EACH = "For Each", BINARY_DESERIALIZATION = "Binary Deserialization",
-                               BINARY_SERIALIZATION = "Binary Serialization", TO_STRING = "ToString", STRING_DESERIALIZATION = "String Deserialization";
-
+    public static final String STATIC_CAST_NAME = "static_cast";
 
     /**
      * @return Name of conversion operation
@@ -69,6 +68,13 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
      */
     public ParameterDefinition getParameter() {
         return parameter;
+    }
+
+    /**
+     * @return Handle of conversion operation that this one is not usually combined with (-1 if there is no such operation)
+     */
+    public short getNotUsuallyCombinedWithHandle() {
+        return notUsuallyCombinedWithHandle;
     }
 
     /**
@@ -103,7 +109,7 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
      * @return Whether this conversion operation is a static cast
      */
     public boolean isStaticCast() {
-        return name.equals(STATIC_CAST);
+        return supportedSourceTypes == SupportedTypeFilter.STATIC_CAST;
     }
 
 
@@ -127,12 +133,18 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
         } else {
             supportedDestinationType = null;
         }
-        if (stream.readBoolean()) {
+        int flags = stream.readByte();
+        final int HAS_PARAMETER = 1;
+        final int NOT_USUALLY_COMBINED_WITH = 2;
+        if ((flags & HAS_PARAMETER) == HAS_PARAMETER) {
             parameter = new ParameterDefinition();
             parameter.deserialize(stream);
             if (!parameter.getType().isBinarySerializationSupported()) {
                 Log.log(LogLevel.WARNING, "Parameter of type '" + parameter.getType().getName() + "' in remote type conversion '" + name + "' is not supported");
             }
+        }
+        if ((flags & NOT_USUALLY_COMBINED_WITH) == NOT_USUALLY_COMBINED_WITH) {
+            notUsuallyCombinedWithHandle = stream.readShort();
         }
     }
 
@@ -143,6 +155,19 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
 
     @Override
     public String toString() {
+        return name;
+    }
+
+    /**
+     * toString method that takes fixed parameter into account (for get tuple element operation)
+     *
+     * @param fixedParameter Fixed parameter (tuple element index)
+     * @return String representation
+     */
+    public String toString(GenericObject fixedParameter) {
+        if (supportedSourceTypes == SupportedTypeFilter.GET_TUPLE_ELEMENT && fixedParameter != null) {
+            return name + "<" + ((CoreNumber)fixedParameter.getData()).intValue() + ">";
+        }
         return name;
     }
 
@@ -164,4 +189,6 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
     /** Parameter definition if conversion operation has a parameter (otherwise null) */
     private ParameterDefinition parameter;
 
+    /** Handle of conversion operation that this one is not usually combined with (-1 if there is no such operation) */
+    private short notUsuallyCombinedWithHandle = -1;
 }

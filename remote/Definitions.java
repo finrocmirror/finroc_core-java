@@ -71,7 +71,7 @@ public class Definitions {
      */
     public enum TypeConversionRating {
         IMPOSSIBLE,
-        DEPRECATED_CONVERSION,
+        UNUSUAL_CONVERSION,
         TWO_EXPLICIT_CONVERSIONS,
         EXPLICIT_CONVERSION_TO_GENERIC_TYPE,   // value for single operations only to detect deprecated casts
         EXPLICIT_CONVERSION_FROM_GENERIC_TYPE, // value for single operations only to detect deprecated casts

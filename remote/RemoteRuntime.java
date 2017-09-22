@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.finroc.core.admin.AdminClient;
+import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.remote.RemoteTypeConversion.SupportedTypeFilter;
 import org.finroc.core.remote.RemoteUriConnector.Status;
@@ -39,6 +40,7 @@ import org.rrlib.serialization.PublishedRegisters;
 import org.rrlib.serialization.Register;
 import org.rrlib.serialization.SerializationInfo;
 import org.rrlib.serialization.rtti.DataTypeBase;
+import org.rrlib.serialization.rtti.GenericObject;
 
 /**
  * @author Max Reichardt
@@ -149,7 +151,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
             ArrayWrapper<RemoteUriConnector> iterable = runtime1.uriConnectors.getIterable();
             for (int i = 0, n = iterable.size(); i < n; i++) {
                 RemoteUriConnector connector = iterable.get(i);
-                if (connector != null && connector.getOwnerRuntime() == runtime1 && (connector.getOwnerPortHandle() == port1.getRemoteHandle() && connector.currentPartner == port2) || (connector.getOwnerPortHandle() == port2.getRemoteHandle() && connector.currentPartner == port1)) {
+                if (connector != null && connector.getOwnerRuntime() == runtime1 && ((connector.getOwnerPortHandle() == port1.getRemoteHandle() && connector.currentPartner == port2) || (connector.getOwnerPortHandle() == port2.getRemoteHandle() && connector.currentPartner == port1))) {
                     return true;
                 }
             }
@@ -276,7 +278,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         short destinationUid = (short)destinationType.getHandle();
 
         // Collect all static casts
-        RemoteTypeConversion staticCast = getTypeConversionOperation(RemoteTypeConversion.STATIC_CAST, RemoteTypeConversion.SupportedTypeFilter.STATIC_CAST, RemoteTypeConversion.SupportedTypeFilter.STATIC_CAST);
+        RemoteTypeConversion staticCast = getTypeConversionOperation(RemoteTypeConversion.SupportedTypeFilter.STATIC_CAST);
         if (sourceType.getUnderlyingType() > 0) {
             fromSourceType.add(new GetCastOperationEntry(staticCast, remoteTypes.get(sourceType.getUnderlyingType()), (sourceType.getTypeTraits() & DataTypeBase.IS_CAST_TO_UNDERLYING_TYPE_IMPLICIT) != 0));
         }
@@ -315,9 +317,27 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 addAllTypes(fromSourceType, conversion, conversion.getSupportedDestinationTypes(), conversion.getSupportedDestinationType());
             }
         }
+        // special operations
+        RemoteTypeConversion getListElementOperation = getTypeConversionOperation(RemoteTypeConversion.SupportedTypeFilter.GET_LIST_ELEMENT);
+        RemoteTypeConversion arrayToListOperation = getTypeConversionOperation(RemoteTypeConversion.SupportedTypeFilter.ARRAY_TO_VECTOR);
+        RemoteTypeConversion getTupleElementOperation = getTypeConversionOperation(RemoteTypeConversion.SupportedTypeFilter.GET_TUPLE_ELEMENT);
         if (sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
-            RemoteTypeConversion getListElementOperation = getTypeConversionOperation(RemoteTypeConversion.GET_LIST_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_LIST_ELEMENT, RemoteTypeConversion.SupportedTypeFilter.GET_LIST_ELEMENT);
             fromSourceType.add(new GetCastOperationEntry(getListElementOperation, remoteTypes.get(sourceType.getElementType()), false));
+        }
+        if (sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
+            for (int i = 0, n = remoteTypes.size(); i < n; i++) {
+                RemoteType type = remoteTypes.get(i);
+                if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST && type.getElementType() == sourceType.getElementType()) {
+                    fromSourceType.add(new GetCastOperationEntry(arrayToListOperation, type, false));
+                    break;
+                }
+            }
+        }
+        if (sourceType.getTupleElementTypes() != null) {
+            for (int i = 0; i < sourceType.getTupleElementTypes().length; i++) {
+                fromSourceType.add(new GetCastOperationEntry(getTupleElementOperation, remoteTypes.get(sourceType.getTupleElementTypes()[i]), false));
+                fromSourceType.get(fromSourceType.size() - 1).tupleElementIndex = i;
+            }
         }
 
         // Collect all operations from destination type
@@ -327,26 +347,36 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 addAllTypes(fromDestinationType, conversion, conversion.getSupportedSourceTypes(), conversion.getSupportedSourceType());
             }
         }
+        // special operations
+        for (int i = 0, n = remoteTypes.size(); i < n; i++) {
+            RemoteType type = remoteTypes.get(i);
+            if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST && type.getElementType() == destinationType.getHandle()) {
+                fromDestinationType.add(new GetCastOperationEntry(getListElementOperation, type, false));
+            }
+            if (destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST && type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY && type.getElementType() == destinationType.getElementType()) {
+                fromDestinationType.add(new GetCastOperationEntry(arrayToListOperation, type, false));
+            }
+            if (type.getTupleElementTypes() != null) {
+                short[] tupleElements = type.getTupleElementTypes();
+                for (int j = 0; j < type.getTupleElementTypes().length; j++) {
+                    if (tupleElements[j] == destinationType.getHandle()) {
+                        fromDestinationType.add(new GetCastOperationEntry(getTupleElementOperation, type, false));
+                        fromDestinationType.get(fromDestinationType.size() - 1).tupleElementIndex = j;
+                    }
+                }
+            }
+        }
 
         // Sort results
         Collections.sort(fromSourceType);
         Collections.sort(fromDestinationType);
 
         // Scan for single operation
-        for (int i = 0; i < 2; i++) {
-            RemoteType relevantType = i == 0 ? destinationType : sourceType;
-            for (GetCastOperationEntry entry : (i == 0 ? fromSourceType : fromDestinationType)) {
-                if (entry.intermediateType == relevantType) {
-                    boolean exists = false;
-                    for (RemoteConnectOptions existing : result) {
-                        if (existing.operation1 == entry.operation) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists) {
-                        result.add(new RemoteConnectOptions(entry.implicitCast ? Definitions.TypeConversionRating.IMPLICIT_CAST : Definitions.TypeConversionRating.EXPLICIT_CONVERSION, entry.operation));
-                    }
+        for (GetCastOperationEntry entry : fromSourceType) {
+            if (entry.intermediateType == destinationType) {
+                result.add(new RemoteConnectOptions(entry.implicitCast ? Definitions.TypeConversionRating.IMPLICIT_CAST : Definitions.TypeConversionRating.EXPLICIT_CONVERSION, entry.operation));
+                if (entry.operation.getSupportedSourceTypes() == SupportedTypeFilter.GET_TUPLE_ELEMENT) {
+                    result.get(result.size() - 1).parameter1 = new GenericObject(new CoreNumber(entry.tupleElementIndex), CoreNumber.TYPE, null);
                 }
             }
         }
@@ -371,7 +401,9 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                     while (fromDestinationIndexTemp < fromDestinationType.size() && fromDestinationType.get(fromDestinationIndexTemp).intermediateType == matchingType) {
                         boolean exists = false;
                         for (RemoteConnectOptions existing : result) {
-                            if (existing.operation1 == fromSourceType.get(fromSourceIndex).operation && existing.operation2 == fromDestinationType.get(fromDestinationIndexTemp).operation && existing.intermediateType == matchingType) {
+                            if (existing.operation1 == fromSourceType.get(fromSourceIndex).operation && (existing.operation1.getSupportedSourceTypes() != SupportedTypeFilter.GET_TUPLE_ELEMENT || ((CoreNumber)existing.parameter1.getData()).intValue() != fromSourceType.get(fromSourceIndex).tupleElementIndex) &&
+                                    existing.operation2 == fromDestinationType.get(fromDestinationIndexTemp).operation && (existing.operation2.getSupportedSourceTypes() != SupportedTypeFilter.GET_TUPLE_ELEMENT || ((CoreNumber)existing.parameter2.getData()).intValue() != fromDestinationType.get(fromDestinationIndexTemp).tupleElementIndex) &&
+                                    existing.intermediateType == matchingType) {
                                 exists = true;
                                 break;
                             }
@@ -380,6 +412,12 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                             int implicitConversions = (fromSourceType.get(fromSourceIndex).implicitCast ? 1 : 0) + (fromDestinationType.get(fromDestinationIndexTemp).implicitCast ? 1 : 0);
                             result.add(new RemoteConnectOptions(implicitConversions == 2 ? Definitions.TypeConversionRating.TWO_IMPLICIT_CASTS : (implicitConversions == 1 ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION_AND_IMPLICIT_CAST : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS),
                                                                 fromSourceType.get(fromSourceIndex).operation, matchingType, fromDestinationType.get(fromDestinationIndexTemp).operation));
+                            if (fromSourceType.get(fromSourceIndex).operation.getSupportedSourceTypes() == SupportedTypeFilter.GET_TUPLE_ELEMENT) {
+                                result.get(result.size() - 1).parameter1 = new GenericObject(new CoreNumber(fromSourceType.get(fromSourceIndex).tupleElementIndex), CoreNumber.TYPE, null);
+                            }
+                            if (fromDestinationType.get(fromDestinationIndexTemp).operation.getSupportedSourceTypes() == SupportedTypeFilter.GET_TUPLE_ELEMENT) {
+                                result.get(result.size() - 1).parameter2 = new GenericObject(new CoreNumber(fromDestinationType.get(fromDestinationIndexTemp).tupleElementIndex), CoreNumber.TYPE, null);
+                            }
                         }
                         fromDestinationIndexTemp++;
                     }
@@ -394,23 +432,21 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         boolean sourceIsArrayType = sourceType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY;
         boolean destinationIsArrayType = destinationType.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY;
         if ((sourceIsListType && destinationIsListType) || (sourceIsArrayType && destinationIsListType) || (sourceIsArrayType && destinationIsArrayType && sourceType.getArraySize() == destinationType.getArraySize())) {
-            RemoteTypeConversion forEachOperation = getTypeConversionOperation(RemoteTypeConversion.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.FOR_EACH, RemoteTypeConversion.SupportedTypeFilter.FOR_EACH);
+            RemoteTypeConversion forEachOperation = getTypeConversionOperation(RemoteTypeConversion.SupportedTypeFilter.FOR_EACH);
             RemoteType sourceElementType = remoteTypes.get(sourceType.getElementType());
             RemoteType destinationElementType = remoteTypes.get(destinationType.getElementType());
             for (RemoteConnectOptions operation : getConversionOptions(sourceElementType, destinationElementType, true)) {
                 result.add(new RemoteConnectOptions(operation.conversionRating == Definitions.TypeConversionRating.IMPLICIT_CAST ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS, forEachOperation, sourceElementType, operation.operation1));
+                if (operation.operation1.getSupportedSourceTypes() == SupportedTypeFilter.GET_TUPLE_ELEMENT) {
+                    result.get(result.size() - 1).parameter2 = operation.parameter1;
+                }
             }
         }
 
         // Mark deprecated casts
-        RemoteTypeConversion toStringOperation = getTypeConversionOperation(RemoteTypeConversion.TO_STRING, RemoteTypeConversion.SupportedTypeFilter.STRING_SERIALIZABLE, RemoteTypeConversion.SupportedTypeFilter.SINGLE);
-        RemoteTypeConversion stringDeserializationOperation = getTypeConversionOperation(RemoteTypeConversion.STRING_DESERIALIZATION, RemoteTypeConversion.SupportedTypeFilter.SINGLE, RemoteTypeConversion.SupportedTypeFilter.STRING_SERIALIZABLE);
-        RemoteTypeConversion binarySerializationOperation = getTypeConversionOperation(RemoteTypeConversion.BINARY_SERIALIZATION, RemoteTypeConversion.SupportedTypeFilter.BINARY_SERIALIZABLE, RemoteTypeConversion.SupportedTypeFilter.SINGLE);
-        RemoteTypeConversion binaryDeserializationOperation = getTypeConversionOperation(RemoteTypeConversion.BINARY_DESERIALIZATION, RemoteTypeConversion.SupportedTypeFilter.SINGLE, RemoteTypeConversion.SupportedTypeFilter.BINARY_SERIALIZABLE);
         for (RemoteConnectOptions operation : result) {
-            if (operation.operation1 == toStringOperation && operation.operation2 == stringDeserializationOperation ||
-                    operation.operation1 == binarySerializationOperation && operation.operation2 == binaryDeserializationOperation) {
-                operation.conversionRating = Definitions.TypeConversionRating.DEPRECATED_CONVERSION;
+            if (operation.operation1 != null && operation.operation2 != null && (operation.operation1.getNotUsuallyCombinedWithHandle() == operation.operation2.getHandle() || operation.operation2.getNotUsuallyCombinedWithHandle() == operation.operation1.getHandle())) {
+                operation.conversionRating = Definitions.TypeConversionRating.UNUSUAL_CONVERSION;
             }
         }
 
@@ -523,16 +559,16 @@ public class RemoteRuntime extends RemoteFrameworkElement {
     }
 
     /**
-     * @param name Name of remote type conversion operation
-     * @param destinationFilter Filter for source types
-     * @param sourceFilter Filter for destination types
+     * Get special conversion operations defined in rrlib_rtti_conversion (known in Java tooling)
+     *
+     * @param sourceFilter Filter for source types
      * @return Return type conversion operation with specified name - or null if no type conversion operation with this name exists
      */
-    public RemoteTypeConversion getTypeConversionOperation(String name, SupportedTypeFilter sourceFilter, SupportedTypeFilter destinationFilter) {
+    public RemoteTypeConversion getTypeConversionOperation(SupportedTypeFilter sourceFilter) {
         for (int i = 0, n = remoteTypeConversions.size(); i < n; i++) {
             RemoteTypeConversion conversion = remoteTypeConversions.get(i);
-            if (conversion.getSupportedSourceTypes() == sourceFilter && conversion.getSupportedDestinationTypes() == destinationFilter && conversion.getName().equals(name)) {
-                return remoteTypeConversions.get(i);
+            if (conversion.getSupportedSourceTypes() == sourceFilter) {
+                return conversion;
             }
         }
         return null;
@@ -590,7 +626,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                         int implicitCasts = (rating == Definitions.TypeConversionRating.IMPLICIT_CAST.ordinal() ? 1 : 0) + (rating2 == Definitions.TypeConversionRating.IMPLICIT_CAST.ordinal() ? 1 : 0);
                         boolean deprecatedConversion = ((rating == Definitions.TypeConversionRating.EXPLICIT_CONVERSION_FROM_GENERIC_TYPE.ordinal()) && (rating2 == Definitions.TypeConversionRating.EXPLICIT_CONVERSION_TO_GENERIC_TYPE.ordinal())) ||
                                                        ((rating2 == Definitions.TypeConversionRating.EXPLICIT_CONVERSION_FROM_GENERIC_TYPE.ordinal()) && (rating == Definitions.TypeConversionRating.EXPLICIT_CONVERSION_TO_GENERIC_TYPE.ordinal()));
-                        updateConversionRating(ratings.cachedConversionRatings, j, deprecatedConversion ? Definitions.TypeConversionRating.DEPRECATED_CONVERSION : (implicitCasts == 2 ? Definitions.TypeConversionRating.TWO_IMPLICIT_CASTS : (implicitCasts == 1 ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION_AND_IMPLICIT_CAST : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS)));
+                        updateConversionRating(ratings.cachedConversionRatings, j, deprecatedConversion ? Definitions.TypeConversionRating.UNUSUAL_CONVERSION : (implicitCasts == 2 ? Definitions.TypeConversionRating.TWO_IMPLICIT_CASTS : (implicitCasts == 1 ? Definitions.TypeConversionRating.EXPLICIT_CONVERSION_AND_IMPLICIT_CAST : Definitions.TypeConversionRating.TWO_EXPLICIT_CONVERSIONS)));
                     }
                 }
             }
@@ -746,7 +782,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 ArrayWrapper<RemoteConnector> iterable = list.getIterable();
                 for (int j = 0, n = iterable.size(); j < n; j++) {
                     RemoteConnector connector = iterable.get(j);
-                    if ((connector.sourceHandle == sourceHandle && connector.destinationHandle == destinationHandle) || (connector.sourceHandle == destinationHandle && connector.destinationHandle == sourceHandle)) {
+                    if (connector != null && ((connector.sourceHandle == sourceHandle && connector.destinationHandle == destinationHandle) || (connector.sourceHandle == destinationHandle && connector.destinationHandle == sourceHandle))) {
                         list.remove(connector);
                     }
                 }
@@ -945,6 +981,7 @@ public class RemoteRuntime extends RemoteFrameworkElement {
         final RemoteType intermediateType;
         final RemoteTypeConversion operation;
         final boolean implicitCast;
+        int tupleElementIndex;
 
         public GetCastOperationEntry(RemoteTypeConversion operation, RemoteType intermediateType, boolean implicitCast) {
             this.operation = operation;
@@ -958,6 +995,11 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 return Integer.compare(intermediateType.getHandle(), o.intermediateType.getHandle());
             }
             return operation.getName().compareTo(o.operation.getName());
+        }
+
+        @Override
+        public String toString() {
+            return operation.toString();
         }
     }
 
@@ -1089,11 +1131,28 @@ public class RemoteRuntime extends RemoteFrameworkElement {
                 addAllDestinationTypes(ratings, conversion);
             }
         }
-
+        // Special operations
         // Get list elements operation
         if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST || type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
             updateConversionRating(ratings.cachedConversionRatings, type.getElementType(), Definitions.TypeConversionRating.EXPLICIT_CONVERSION);
         }
+        // Array to list operation
+        if (type.getTypeClassification() == DataTypeBase.CLASSIFICATION_ARRAY) {
+            for (int i = 0, n = remoteTypes.size(); i < n; i++) {
+                RemoteType listType = remoteTypes.get(i);
+                if (listType.getTypeClassification() == DataTypeBase.CLASSIFICATION_LIST && listType.getElementType() == type.getElementType()) {
+                    updateConversionRating(ratings.cachedConversionRatings, listType.getHandle(), Definitions.TypeConversionRating.EXPLICIT_CONVERSION);
+                    break;
+                }
+            }
+        }
+        // Get tuple element operation
+        if (type.getTupleElementTypes() != null) {
+            for (int i = 0; i < type.getTupleElementTypes().length; i++) {
+                updateConversionRating(ratings.cachedConversionRatings, type.getTupleElementTypes()[i], Definitions.TypeConversionRating.EXPLICIT_CONVERSION);
+            }
+        }
+
 
         // Replace result if it has not changed
         if (type.cachedConversionRatings.compareAndSet(currentRatings, ratings)) {

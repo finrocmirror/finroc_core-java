@@ -75,7 +75,7 @@ public class ParameterDefinition {
                 throw new Exception("No local type available for default value (this is mandatory)");
             }
             defaultValue = localType.createInstanceGeneric(null);
-            defaultValue.deserialize(stream, Serialization.DataEncoding.BINARY);
+            type.deserializeData(stream, defaultValue);
         } else {
             defaultValue = null;
         }

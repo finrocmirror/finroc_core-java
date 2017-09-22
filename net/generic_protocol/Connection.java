@@ -321,9 +321,9 @@ public abstract class Connection implements ResponseSender {
             int casts = port.getDataType().getCastCountForDefaultLocalType();
             RemoteType destinationType = casts == 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getDefaultTypeRemotelyCastedTo() : (casts == 1 ? port.getDataType().getDefaultTypeRemotelyCastedTo() : port.getDataType());
             command.getWriteStream().writeString(casts >= 1 ? destinationType.getName() : "");
-            command.getWriteStream().writeString(casts >= 1 ? RemoteTypeConversion.STATIC_CAST : "");
+            command.getWriteStream().writeString(casts >= 1 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
             command.getWriteStream().writeString("");
-            command.getWriteStream().writeString(casts >= 2 ? RemoteTypeConversion.STATIC_CAST : "");
+            command.getWriteStream().writeString(casts >= 2 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
             command.getWriteStream().writeString("");
             command.getWriteStream().writeString(casts >= 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getName() : "");
             command.getWriteStream().writeEnum(port.getDataType().getEncodingForDefaultLocalType());
