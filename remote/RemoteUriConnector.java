@@ -22,6 +22,7 @@
 package org.finroc.core.remote;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.rrlib.serialization.BinaryInputStream;
 
@@ -144,9 +145,21 @@ public class RemoteUriConnector extends RemoteConnector {
         uri = stream.readString();
         schemeHandler = (RemoteUriSchemeHandler)stream.readRegisterEntry(Definitions.RegisterUIDs.SCHEME_HANDLER.ordinal());
         status = stream.<Status>readEnum(Status.class);
-        URI uriObject = new URI(uri);
-        authority = uriObject.getAuthority();
-        path = new Path(uriObject.getPath()); // TODO: more sophisticated parsing may be required if path elements contain slashes
+        while (true) {
+            try {
+                URI uriObject = new URI(uri);
+                authority = uriObject.getAuthority();
+                path = new Path(uriObject.getPath()); // TODO: more sophisticated parsing may be required if path elements contain slashes
+                break;
+            } catch (URISyntaxException e) {
+                if (e.getIndex() >= 0) {
+                    String escaped = "%" + TO_HEX_TABLE[uri.charAt(e.getIndex()) >> 4] + TO_HEX_TABLE[uri.charAt(e.getIndex()) & 0xF];
+                    uri = uri.substring(0, e.getIndex()) + escaped + uri.substring(e.getIndex() + 1);
+                } else {
+                    break;
+                }
+            }
+        }
     }
 
 
@@ -167,6 +180,9 @@ public class RemoteUriConnector extends RemoteConnector {
 
     /** Status of this connector */
     private Status status = Status.DISCONNECTED;
+
+    /** To escape characters in URIs */
+    private char[] TO_HEX_TABLE = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     /** Temporary variable written used by remote runtime (should only be accessed by AWT Thread) */
     protected RemotePort currentPartner;
