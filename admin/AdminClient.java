@@ -39,6 +39,7 @@ import org.finroc.core.remote.RemoteFrameworkElement;
 import org.finroc.core.remote.RemotePort;
 import org.finroc.core.remote.RemoteRuntime;
 import org.finroc.core.remote.RemoteStaticParameterList;
+import org.finroc.core.remote.RemoteType;
 import org.finroc.core.remote.RemoteUriConnector;
 import org.rrlib.logging.Log;
 import org.rrlib.logging.LogLevel;
@@ -241,7 +242,10 @@ public class AdminClient extends ClientPort {
             MemoryBuffer mb = new MemoryBuffer();
             BinaryOutputStream stream = new BinaryOutputStream(mb, AdministrationService.BASIC_UID_SERIALIZATION_INFO);
             final byte STATIC_CAST = 3;
-            if (port.getDataType().getCastCountForDefaultLocalType() > 0) {
+            if (port.getDataType().getLocalTypeMatch() == RemoteType.LocalTypeMatch.EVENT) {
+                Log.log(LogLevel.WARNING, getLogDescription(), "Setting value of remote port failed. Data type not supported.");
+                return;
+            } else if (port.getDataType().getCastCountForDefaultLocalType() > 0) {
                 stream.writeByte(STATIC_CAST - 1 + port.getDataType().getCastCountForDefaultLocalType());
                 stream.writeByte(port.getDataType().getEncodingForDefaultLocalType().ordinal());
                 stream.writeShort(port.getDataType().getHandle());

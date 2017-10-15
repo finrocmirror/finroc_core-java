@@ -26,6 +26,7 @@ import java.util.Collections;
 
 import org.finroc.core.datatype.CoreNumber;
 import org.finroc.core.datatype.CoreString;
+import org.finroc.core.datatype.Event;
 import org.finroc.core.datatype.XML;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
@@ -117,7 +118,7 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
      */
     public static class Default extends RemoteTypeAdapter {
 
-        enum Type { INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT, DOUBLE, ENUM, STRING_SERIALIZABLE, XML_SERIALIZABLE }
+        enum Type { INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT, DOUBLE, ENUM, STRING_SERIALIZABLE, XML_SERIALIZABLE, TIMESTAMP_ONLY }
 
         public Default() {
             super(0);
@@ -140,18 +141,30 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                         return true;
                     }
                 }
+            }
+            return false;
+        }
 
+        /**
+         * Handle type in default/generic way
+         *
+         * @param remoteType Remote type to check
+         * @param adapterInfo AdapterInfo to fill with all relevant info. This Info object will be passed to all other methods.
+         */
+        public void handleType(RemoteType remoteType, Info adapterInfo) {
+            if ((remoteType.getTypeTraits() & DataTypeBase.IS_STRING_SERIALIZABLE) != 0) {
                 adapterInfo.customAdapterData1 = Type.STRING_SERIALIZABLE;
                 adapterInfo.localType = CoreString.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.STRING;
-                return true;
             } else if ((remoteType.getTypeTraits() & DataTypeBase.IS_XML_SERIALIZABLE) != 0) {
                 adapterInfo.customAdapterData1 = Type.XML_SERIALIZABLE;
                 adapterInfo.localType = XML.TYPE;
                 adapterInfo.networkEncoding = Serialization.DataEncoding.XML;
-                return true;
+            } else {
+                adapterInfo.customAdapterData1 = Type.TIMESTAMP_ONLY;
+                adapterInfo.localType = Event.TYPE;
+                adapterInfo.networkEncoding = Serialization.DataEncoding.NONE;
             }
-            return false;
         }
 
         @Override
@@ -204,6 +217,8 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
             case XML_SERIALIZABLE:
                 object.deserialize(stream, Serialization.DataEncoding.BINARY);
                 break;
+            case TIMESTAMP_ONLY:
+                break;
             }
         }
 
@@ -252,6 +267,8 @@ public abstract class RemoteTypeAdapter implements Comparable<RemoteTypeAdapter>
                 break;
             case XML_SERIALIZABLE:
                 object.serialize(stream, Serialization.DataEncoding.BINARY);
+                break;
+            case TIMESTAMP_ONLY:
                 break;
             }
         }

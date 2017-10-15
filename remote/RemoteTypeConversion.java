@@ -54,7 +54,7 @@ public class RemoteTypeConversion extends PublishedRegisters.RemoteEntryBase<Obj
         GET_TUPLE_ELEMENT    //!< Types supported by get tuple element operation
     }
 
-    public static final String STATIC_CAST_NAME = "static_cast";
+    public static final String STATIC_CAST_NAME = "static_cast", TO_EVENT_NAME = "ToEvent";
 
     /**
      * @return Name of conversion operation

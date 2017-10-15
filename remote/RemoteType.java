@@ -23,7 +23,6 @@ package org.finroc.core.remote;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.finroc.core.datatype.Event;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.PublishedRegisters;
@@ -43,7 +42,7 @@ import org.rrlib.serialization.rtti.GenericObject;
  */
 public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase> {
 
-    /** How deafault local data type was resolved (sorted by preference) */
+    /** How default local data type was resolved (sorted by preference) */
     public enum LocalTypeMatch {
         EXACT,     // Option 1: Local type is the exact counterpart to remote type
         ADAPTED,   // Option 2: Local type is adapted via a type adapter
@@ -133,6 +132,13 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
      */
     public long[] getEnumValues() {
         return enumValues;
+    }
+
+    /**
+     * @return How default local data type is resolved and obtained
+     */
+    public LocalTypeMatch getLocalTypeMatch() {
+        return localTypeMatch;
     }
 
     /**
@@ -307,7 +313,7 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         }
 
         // Option 2: There is a type adapter for this type
-        RemoteTypeAdapter defaultAdapter = null;
+        RemoteTypeAdapter.Default defaultAdapter = null;
         RemoteTypeAdapter.Info info = new RemoteTypeAdapter.Info();
         synchronized (RemoteTypeAdapter.adapters) {
             for (RemoteTypeAdapter adapter : RemoteTypeAdapter.adapters) {
@@ -315,9 +321,6 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
                     defaultAdapter = (RemoteTypeAdapter.Default)adapter;
                 }
                 if (adapter.handlesType(this, info)) {
-                    if (adapter == defaultAdapter && info.networkEncoding != Serialization.DataEncoding.BINARY) {
-                        continue;
-                    }
                     typeAdapter = adapter;
                     adapterInfo = info;
                     if (adapterInfo.localType == null || adapterInfo.networkEncoding == null) {
@@ -332,17 +335,12 @@ public class RemoteType extends PublishedRegisters.RemoteEntryBase<DataTypeBase>
         }
 
         // Options 4 and 5: Type has a string  or XML representation
-        if (defaultAdapter.handlesType(this, info)) {
-            typeAdapter = defaultAdapter;
-            adapterInfo = info;
-            localDataType = adapterInfo.localType;
-            localTypeMatch = adapterInfo.networkEncoding == Serialization.DataEncoding.STRING ? LocalTypeMatch.STRING : LocalTypeMatch.XML;
-            return;
-        }
-
         // Option 6: Use empty (event) type
-        localDataType = Event.TYPE;
-        localTypeMatch = LocalTypeMatch.EVENT;
+        defaultAdapter.handleType(this, info);
+        typeAdapter = defaultAdapter;
+        adapterInfo = info;
+        localDataType = adapterInfo.localType;
+        localTypeMatch = adapterInfo.networkEncoding == Serialization.DataEncoding.STRING ? LocalTypeMatch.STRING : (adapterInfo.networkEncoding == Serialization.DataEncoding.XML ? LocalTypeMatch.XML : LocalTypeMatch.EVENT);
     }
 
     /**

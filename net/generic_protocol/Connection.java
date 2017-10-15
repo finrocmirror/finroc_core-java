@@ -30,11 +30,13 @@ import org.rrlib.finroc_core_utils.jc.container.SafeConcurrentlyIterableList;
 import org.rrlib.serialization.BinaryInputStream;
 import org.rrlib.serialization.BinaryOutputStream;
 import org.rrlib.serialization.MemoryBuffer;
+import org.rrlib.serialization.Serialization;
 import org.rrlib.serialization.SerializationInfo;
 
 import org.finroc.core.LockOrderLevels;
 import org.finroc.core.RuntimeEnvironment;
 import org.finroc.core.datatype.Duration;
+import org.finroc.core.datatype.Event;
 import org.finroc.core.parameter.ParameterNumeric;
 import org.finroc.core.port.AbstractPort;
 import org.finroc.core.port.rpc.FutureStatus;
@@ -276,6 +278,9 @@ public abstract class Connection implements ResponseSender {
      * @param localIndex Local Port Index
      */
     public void subscribeLegacy(RemotePort port, short strategy, boolean reversePush, short updateInterval, int localIndex) {
+        if (port.getDataType().getLocalTypeMatch() == RemoteType.LocalTypeMatch.EVENT) {
+            return; // do not subscribe to unknown data types for legacy runtimes
+        }
         SerializedMessage command = new SerializedMessage(Definitions.OpCode.SUBSCRIBE_LEGACY, 16);
         command.getWriteStream().writeInt(port.getRemoteHandle());
         command.getWriteStream().writeShort(strategy);
@@ -318,15 +323,28 @@ public abstract class Connection implements ResponseSender {
             // tStaticNetworkConnectorParameters
             command.getWriteStream().writeInt(port.getRemoteHandle());
             //tServerSideConversionInfo
-            int casts = port.getDataType().getCastCountForDefaultLocalType();
-            RemoteType destinationType = casts == 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getDefaultTypeRemotelyCastedTo() : (casts == 1 ? port.getDataType().getDefaultTypeRemotelyCastedTo() : port.getDataType());
-            command.getWriteStream().writeString(casts >= 1 ? destinationType.getName() : "");
-            command.getWriteStream().writeString(casts >= 1 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
-            command.getWriteStream().writeString("");
-            command.getWriteStream().writeString(casts >= 2 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
-            command.getWriteStream().writeString("");
-            command.getWriteStream().writeString(casts >= 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getName() : "");
-            command.getWriteStream().writeEnum(port.getDataType().getEncodingForDefaultLocalType());
+            if (port.getDataType().getLocalTypeMatch() == RemoteType.LocalTypeMatch.EVENT) {
+                if (publishConnection) {
+                    return;  // no publishing of data to ports of unknown type (this should be more explicit - e.g. by remote type conversion)
+                }
+                command.getWriteStream().writeString(Event.TYPE.toString());
+                command.getWriteStream().writeString(RemoteTypeConversion.TO_EVENT_NAME);
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeEnum(port.getDataType().getEncodingForDefaultLocalType());
+            } else {
+                int casts = port.getDataType().getCastCountForDefaultLocalType();
+                RemoteType destinationType = casts == 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getDefaultTypeRemotelyCastedTo() : (casts == 1 ? port.getDataType().getDefaultTypeRemotelyCastedTo() : port.getDataType());
+                command.getWriteStream().writeString(casts >= 1 ? destinationType.getName() : "");
+                command.getWriteStream().writeString(casts >= 1 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeString(casts >= 2 ? RemoteTypeConversion.STATIC_CAST_NAME : "");
+                command.getWriteStream().writeString("");
+                command.getWriteStream().writeString(casts >= 2 ? port.getDataType().getDefaultTypeRemotelyCastedTo().getName() : "");
+                command.getWriteStream().writeEnum(port.getDataType().getEncodingForDefaultLocalType());
+            }
 
             // tDynamicConnectionData
             Duration d = new Duration();
@@ -346,10 +364,18 @@ public abstract class Connection implements ResponseSender {
      */
     public void unsubscribe(RemotePort port, boolean publishConnection) {
         if (remoteRuntime.getModelNode().getSerializationInfo().getRevision() == 0) {
+            if (port.getDataType().getLocalTypeMatch() == RemoteType.LocalTypeMatch.EVENT) {
+                return; // do not unsubscribe - as not subscribed
+            }
+
             SerializedMessage command = new SerializedMessage(Definitions.OpCode.UNSUBSCRIBE_LEGACY, 8);
             command.getWriteStream().writeInt(port.getRemoteHandle());
             sendCall(command);
         } else {
+            if (port.getDataType().getLocalTypeMatch() == RemoteType.LocalTypeMatch.EVENT && publishConnection) {
+                return; // do not unsubscribe - as not subscribed
+            }
+
             int connectionHandle = port.getPort().getHandle() * (publishConnection ? -1 : 1);
             SerializedMessage command = new SerializedMessage(Definitions.OpCode.DISCONNECT_PORTS, 8);
             command.getWriteStream().writeInt(connectionHandle);
