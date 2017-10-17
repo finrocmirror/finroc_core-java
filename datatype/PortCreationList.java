@@ -322,7 +322,7 @@ public class PortCreationList implements BinarySerializable, XMLSerializable, Co
 
     @Override
     public void deserialize(XMLNode node) throws Exception {
-        selectableCreateOptions = node.getBoolAttribute("showOutputSelection") ? CREATE_OPTION_OUTPUT : 0;
+        selectableCreateOptions = node.hasAttribute("showOutputSelection") && node.getBoolAttribute("showOutputSelection") ? CREATE_OPTION_OUTPUT : 0;
         if (ioVector == null) {
             for (XMLNode port : node.children()) {
                 String portName = port.getName();

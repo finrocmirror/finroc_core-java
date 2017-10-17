@@ -39,7 +39,8 @@ public class PortQueueFragmentRaw extends QueueFragment<PortDataReference, PortQ
      * @return Next element in QueueFragment
      */
     public PortDataManager dequeueUnsafe() {
-        return dequeue().getManager();
+        PortDataReference dequeued = dequeue();
+        return dequeued == null ? null : dequeued.getManager();
     }
 
     /**
